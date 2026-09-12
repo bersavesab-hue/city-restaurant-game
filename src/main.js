@@ -1,22 +1,14 @@
 'use strict';
 
-const runtime =
-  globalThis.GameRuntime;
+const runtime = globalThis.GameRuntime;
 
 if (!runtime) {
-  throw new Error(
-    'GameRuntime 未初始化'
-  );
+  throw new Error('GameRuntime 未初始化');
 }
 
-const api =
-  runtime.api;
-
-const canvas =
-  runtime.canvas;
-
-const ctx =
-  runtime.ctx;
+const api = runtime.api;
+const canvas = runtime.canvas;
+const ctx = runtime.ctx;
 
 /* =========================
    核心系统
@@ -36,6 +28,9 @@ const animationManager =
 
 const popupManager =
   require('./core/popupManager.js');
+
+const resourceManager =
+  require('./core/resourceManager.js');
 
 const citySystem =
   require('./city/citySystem.js');
@@ -60,15 +55,25 @@ const businessScene =
   require('./scenes/businessScene.js');
 
 /* =========================
-   基础尺寸
+   设计尺寸
 ========================= */
 
 const DESIGN_W = 390;
 const DESIGN_H = 844;
 
 const TOP_H = 100;
+
+const MAP_X = 10;
+const MAP_Y = 110;
+const MAP_W = 370;
+const MAP_H = 636;
+
 const NAV_Y = 766;
 const NAV_H = 78;
+
+/* =========================
+   颜色
+========================= */
 
 const COLORS = {
   bg: '#F3EBDD',
@@ -78,16 +83,6 @@ const COLORS = {
   nav: '#2C2927',
 
   panel: '#FFF8EE',
-
-  map: '#E7D4B7',
-
-  road: '#C7AC88',
-
-  river: '#79B7C8',
-
-  riverLight: '#D4EDF2',
-
-  block: '#D7C09E',
 
   text: '#2F211C',
 
@@ -110,47 +105,50 @@ const COLORS = {
 
 /* =========================
    商圈地图坐标
+
+   后面正式做地图拖动/缩放后
+   会继续调整。
 ========================= */
 
 const DISTRICT_LAYOUT = {
   oldtown: {
-    x: 78,
-    y: 228
+    x: 115,
+    y: 455
   },
 
   cbd: {
-    x: 205,
-    y: 180
+    x: 220,
+    y: 400
   },
 
   university: {
-    x: 278,
+    x: 105,
     y: 305
   },
 
   market: {
-    x: 128,
-    y: 356
+    x: 82,
+    y: 545
   },
 
   village: {
-    x: 67,
-    y: 440
+    x: 135,
+    y: 640
   },
 
   industry: {
-    x: 225,
-    y: 457
+    x: 280,
+    y: 555
   },
 
   hightech: {
-    x: 321,
-    y: 220
+    x: 285,
+    y: 315
   }
 };
 
 /* =========================
-   文本映射
+   文本
 ========================= */
 
 const WEATHER_NAMES = {
@@ -171,7 +169,7 @@ const MEAL_NAMES = {
 };
 
 /* =========================
-   Canvas适配
+   Canvas状态
 ========================= */
 
 let scale = 1;
@@ -182,29 +180,27 @@ let offsetY = 0;
 
 let pixelRatio = 1;
 
-let lastFrameTime =
-  null;
+let lastFrameTime = null;
 
 const buttons = [];
 
+/* =========================
+   屏幕适配
+========================= */
+
 function getSystemInfo() {
   if (
-    api.getSystemInfoSync
+    api &&
+    typeof api.getSystemInfoSync ===
+      'function'
   ) {
-    return (
-      api.getSystemInfoSync()
-    );
+    return api.getSystemInfoSync();
   }
 
   return {
-    windowWidth:
-      DESIGN_W,
-
-    windowHeight:
-      DESIGN_H,
-
-    pixelRatio:
-      1
+    windowWidth: DESIGN_W,
+    windowHeight: DESIGN_H,
+    pixelRatio: 1
   };
 }
 
@@ -224,17 +220,32 @@ function resizeCanvas() {
     info.pixelRatio ||
     1;
 
-  canvas.width =
+  const targetW =
     Math.floor(
       screenW *
       pixelRatio
     );
 
-  canvas.height =
+  const targetH =
     Math.floor(
       screenH *
       pixelRatio
     );
+
+  /*
+   * 只有尺寸变化时才真正调整Canvas。
+   * 动画期间不能每帧重新创建画布。
+   */
+  if (
+    canvas.width !== targetW ||
+    canvas.height !== targetH
+  ) {
+    canvas.width =
+      targetW;
+
+    canvas.height =
+      targetH;
+  }
 
   scale =
     Math.min(
@@ -260,21 +271,12 @@ function resizeCanvas() {
     ) / 2;
 
   ctx.setTransform(
-    pixelRatio *
-      scale,
-
+    pixelRatio * scale,
     0,
-
     0,
-
-    pixelRatio *
-      scale,
-
-    offsetX *
-      pixelRatio,
-
-    offsetY *
-      pixelRatio
+    pixelRatio * scale,
+    offsetX * pixelRatio,
+    offsetY * pixelRatio
   );
 }
 
@@ -410,6 +412,153 @@ function addButton(
 }
 
 /* =========================
+   图片圆角裁切
+========================= */
+
+function clipRoundedRect(
+  x,
+  y,
+  w,
+  h,
+  radius
+) {
+  ctx.beginPath();
+
+  ctx.moveTo(
+    x + radius,
+    y
+  );
+
+  ctx.arcTo(
+    x + w,
+    y,
+    x + w,
+    y + h,
+    radius
+  );
+
+  ctx.arcTo(
+    x + w,
+    y + h,
+    x,
+    y + h,
+    radius
+  );
+
+  ctx.arcTo(
+    x,
+    y + h,
+    x,
+    y,
+    radius
+  );
+
+  ctx.arcTo(
+    x,
+    y,
+    x + w,
+    y,
+    radius
+  );
+
+  ctx.closePath();
+
+  ctx.clip();
+}
+
+/* =========================
+   Cover模式绘图
+
+   图片不会被拉伸变形。
+========================= */
+
+function drawImageCover(
+  image,
+  x,
+  y,
+  w,
+  h
+) {
+  const imageW =
+    image.naturalWidth ||
+    image.width;
+
+  const imageH =
+    image.naturalHeight ||
+    image.height;
+
+  if (
+    !imageW ||
+    !imageH
+  ) {
+    return;
+  }
+
+  const imageRatio =
+    imageW /
+    imageH;
+
+  const boxRatio =
+    w /
+    h;
+
+  let sourceX = 0;
+  let sourceY = 0;
+
+  let sourceW =
+    imageW;
+
+  let sourceH =
+    imageH;
+
+  /*
+   * 城市图目前本身较宽。
+   * 竖屏地图会优先显示中部城区。
+   *
+   * 后续加入地图拖动和缩放后，
+   * 玩家可以浏览整张城市图。
+   */
+  if (
+    imageRatio >
+    boxRatio
+  ) {
+    sourceW =
+      imageH *
+      boxRatio;
+
+    sourceX =
+      (
+        imageW -
+        sourceW
+      ) / 2;
+  } else {
+    sourceH =
+      imageW /
+      boxRatio;
+
+    sourceY =
+      (
+        imageH -
+        sourceH
+      ) / 2;
+  }
+
+  ctx.drawImage(
+    image,
+
+    sourceX,
+    sourceY,
+    sourceW,
+    sourceH,
+
+    x,
+    y,
+    w,
+    h
+  );
+}
+
+/* =========================
    时间按钮
 ========================= */
 
@@ -459,7 +608,7 @@ function drawSpeedButton(
 }
 
 /* =========================
-   顶部状态栏
+   顶部栏
 ========================= */
 
 function drawTopBar() {
@@ -489,6 +638,10 @@ function drawTopBar() {
     TOP_H
   );
 
+  /*
+   * 城市名字不再固定。
+   */
+
   drawText(
     gameState
       .getCityName(),
@@ -499,6 +652,10 @@ function drawTopBar() {
     COLORS.white,
     '700'
   );
+
+  /*
+   * 资金
+   */
 
   drawText(
     '¥' +
@@ -513,6 +670,10 @@ function drawTopBar() {
     'right'
   );
 
+  /*
+   * 日期
+   */
+
   drawText(
     display.date,
     16,
@@ -521,6 +682,10 @@ function drawTopBar() {
     '#DCE7EC',
     '500'
   );
+
+  /*
+   * 当前时间
+   */
 
   drawText(
     display.time,
@@ -531,6 +696,10 @@ function drawTopBar() {
     '700',
     'center'
   );
+
+  /*
+   * 天气
+   */
 
   drawText(
     weatherName +
@@ -563,6 +732,10 @@ function drawTopBar() {
     timeSystem
       .getSpeed();
 
+  /*
+   * 暂停
+   */
+
   drawSpeedButton(
     'time:pause',
 
@@ -575,6 +748,10 @@ function drawTopBar() {
     paused
   );
 
+  /*
+   * 1倍
+   */
+
   drawSpeedButton(
     'time:speed:1',
     '1×',
@@ -583,6 +760,10 @@ function drawTopBar() {
     !paused &&
     speed === 1
   );
+
+  /*
+   * 2倍
+   */
 
   drawSpeedButton(
     'time:speed:2',
@@ -593,6 +774,10 @@ function drawTopBar() {
     speed === 2
   );
 
+  /*
+   * 5倍
+   */
+
   drawSpeedButton(
     'time:speed:5',
     '5×',
@@ -602,6 +787,10 @@ function drawTopBar() {
     speed === 5
   );
 
+  /*
+   * 10倍
+   */
+
   drawSpeedButton(
     'time:speed:10',
     '10×',
@@ -610,6 +799,10 @@ function drawTopBar() {
     !paused &&
     speed === 10
   );
+
+  /*
+   * 当前餐饮时段
+   */
 
   drawText(
     paused
@@ -632,190 +825,127 @@ function drawTopBar() {
 }
 
 /* =========================
-   临时城市地图
+   正式城市地图
 ========================= */
 
-function drawRoad(
-  x1,
-  y1,
-  x2,
-  y2
-) {
-  ctx.beginPath();
-
-  ctx.moveTo(
-    x1,
-    y1
-  );
-
-  ctx.lineTo(
-    x2,
-    y2
-  );
-
-  ctx.strokeStyle =
-    COLORS.road;
-
-  ctx.lineWidth =
-    7;
-
-  ctx.lineCap =
-    'round';
-
-  ctx.stroke();
-}
-
 function drawMap() {
+  /*
+   * 底色
+   */
+
   roundedRect(
-    10,
-    110,
-    370,
-    636,
+    MAP_X,
+    MAP_Y,
+    MAP_W,
+    MAP_H,
     22,
-    COLORS.map
+    '#CBBEAA'
   );
 
-  drawRoad(
-    45,
-    205,
-    348,
-    232
-  );
+  const image =
+    resourceManager
+      .getImage(
+        'city_base_01'
+      );
 
-  drawRoad(
-    90,
-    130,
-    118,
-    690
-  );
+  /*
+   * 图片还没加载完成
+   */
 
-  drawRoad(
-    182,
-    122,
-    250,
-    700
-  );
-
-  drawRoad(
-    310,
-    130,
-    285,
-    680
-  );
-
-  drawRoad(
-    40,
-    400,
-    342,
-    430
-  );
-
-  drawRoad(
-    45,
-    570,
-    340,
-    600
-  );
-
-  const blocks = [
-    [35, 130, 60, 40],
-    [120, 140, 50, 48],
-    [205, 122, 60, 42],
-    [285, 142, 50, 38],
-
-    [40, 265, 55, 42],
-    [125, 250, 65, 50],
-    [210, 260, 50, 42],
-    [295, 275, 48, 42],
-
-    [30, 420, 62, 36],
-    [120, 410, 55, 45],
-    [235, 430, 58, 40],
-    [305, 405, 42, 38],
-
-    [45, 525, 58, 42],
-    [128, 540, 70, 48],
-    [235, 530, 55, 40],
-    [302, 545, 48, 42],
-
-    [35, 625, 65, 42],
-    [122, 640, 52, 38],
-    [215, 625, 62, 46],
-    [300, 645, 45, 38]
-  ];
-
-  for (
-    let i = 0;
-    i < blocks.length;
-    i++
-  ) {
-    const b =
-      blocks[i];
-
-    roundedRect(
-      b[0],
-      b[1],
-      b[2],
-      b[3],
-      7,
-      COLORS.block
+  if (!image) {
+    drawText(
+      '城市地图加载中…',
+      DESIGN_W / 2,
+      MAP_Y +
+        MAP_H / 2,
+      13,
+      COLORS.muted,
+      '600',
+      'center'
     );
+
+    return;
   }
 
-  ctx.beginPath();
+  /*
+   * 地图圆角区域
+   */
 
-  ctx.moveTo(
-    30,
-    670
+  ctx.save();
+
+  clipRoundedRect(
+    MAP_X,
+    MAP_Y,
+    MAP_W,
+    MAP_H,
+    22
   );
 
-  ctx.bezierCurveTo(
-    90,
-    570,
-    145,
-    610,
-    205,
-    510
+  drawImageCover(
+    image,
+    MAP_X,
+    MAP_Y,
+    MAP_W,
+    MAP_H
   );
 
-  ctx.bezierCurveTo(
-    260,
-    420,
-    310,
-    430,
-    365,
-    245
+  /*
+   * 很轻的暗层。
+   * 让商圈标记更清楚。
+   */
+
+  ctx.fillStyle =
+    'rgba(20,30,35,0.06)';
+
+  ctx.fillRect(
+    MAP_X,
+    MAP_Y,
+    MAP_W,
+    MAP_H
   );
 
-  ctx.strokeStyle =
-    COLORS.river;
+  ctx.restore();
 
-  ctx.lineWidth =
-    22;
+  /*
+   * 外框
+   */
 
-  ctx.stroke();
+  roundedRect(
+    MAP_X,
+    MAP_Y,
+    MAP_W,
+    MAP_H,
+    22,
+    null,
+    'rgba(40,50,55,0.28)'
+  );
 
-  ctx.strokeStyle =
-    COLORS.riverLight;
+  /*
+   * 地图提示
+   */
 
-  ctx.lineWidth =
-    5;
-
-  ctx.stroke();
+  roundedRect(
+    120,
+    706,
+    150,
+    28,
+    14,
+    'rgba(20,30,35,0.56)'
+  );
 
   drawText(
-    '点击任意商圈查看详情',
+    '点击商圈查看详情',
     195,
-    715,
+    720,
     11,
-    '#6F5A4F',
-    '600',
+    COLORS.white,
+    '700',
     'center'
   );
 }
 
 /* =========================
-   商圈
+   商圈数据
 ========================= */
 
 function getDistricts() {
@@ -829,6 +959,10 @@ function getDistricts() {
       )
   );
 }
+
+/* =========================
+   商圈标记
+========================= */
 
 function drawDistrict(
   district
@@ -849,10 +983,10 @@ function drawDistrict(
     gameState
       .getWorld()
       .currentDistrictId ===
-      district.id;
+        district.id;
 
-  const cardW = 88;
-  const cardH = 50;
+  const cardW = 86;
+  const cardH = 46;
 
   const x =
     layout.x -
@@ -862,21 +996,25 @@ function drawDistrict(
     layout.y -
     cardH / 2;
 
+  /*
+   * 选中商圈发光
+   */
+
   if (selected) {
     ctx.save();
 
     ctx.shadowColor =
-      'rgba(74,164,216,0.75)';
+      'rgba(74,164,216,0.9)';
 
     ctx.shadowBlur =
-      15;
+      16;
 
     roundedRect(
       x - 2,
       y - 2,
       cardW + 4,
       cardH + 4,
-      15,
+      14,
       '#FFFDF8',
       COLORS.blue
     );
@@ -888,20 +1026,29 @@ function drawDistrict(
       y,
       cardW,
       cardH,
-      14,
-      '#FFFDF8'
+      13,
+      'rgba(255,253,248,0.94)',
+      'rgba(60,55,50,0.18)'
     );
   }
+
+  /*
+   * 商圈名字
+   */
 
   drawText(
     district.name,
     layout.x,
-    y + 17,
-    12,
+    y + 15,
+    11,
     COLORS.text,
     '700',
     'center'
   );
+
+  /*
+   * 饱和度
+   */
 
   drawText(
     '饱和 ' +
@@ -909,8 +1056,8 @@ function drawDistrict(
       '%',
 
     layout.x,
-    y + 35,
-    10,
+    y + 32,
+    9,
 
     district.saturation >=
       85
@@ -933,7 +1080,7 @@ function drawDistrict(
 }
 
 /* =========================
-   商圈弹窗
+   商圈详情弹窗
 ========================= */
 
 function drawDistrictPopup() {
@@ -946,18 +1093,20 @@ function drawDistrictPopup() {
   }
 
   const data =
-    popupManager.getData();
+    popupManager
+      .getData();
 
   if (!data) {
     return;
   }
 
-  const d =
-    citySystem.getDistrict(
-      data.districtId
-    );
+  const district =
+    citySystem
+      .getDistrict(
+        data.districtId
+      );
 
-  if (!d) {
+  if (!district) {
     return;
   }
 
@@ -971,16 +1120,16 @@ function drawDistrictPopup() {
     return;
   }
 
-  /*
-   * 半透明遮罩
-   */
+  /* =========================
+     遮罩
+  ========================= */
 
   ctx.save();
 
   ctx.globalAlpha =
     popupManager
       .getMaskAlpha(
-        0.38
+        0.42
       );
 
   ctx.fillStyle =
@@ -990,13 +1139,14 @@ function drawDistrictPopup() {
     0,
     TOP_H,
     DESIGN_W,
-    NAV_Y - TOP_H
+    NAV_Y -
+      TOP_H
   );
 
   ctx.restore();
 
   /*
-   * 遮罩点击区域
+   * 遮罩点击区域。
    */
 
   addButton(
@@ -1004,8 +1154,13 @@ function drawDistrictPopup() {
     0,
     TOP_H,
     DESIGN_W,
-    NAV_Y - TOP_H
+    NAV_Y -
+      TOP_H
   );
+
+  /* =========================
+     底部卡片
+  ========================= */
 
   const panelH =
     230;
@@ -1018,7 +1173,7 @@ function drawDistrictPopup() {
   const slideOffset =
     popupManager
       .getSlideOffset(
-        panelH + 20
+        panelH + 30
       );
 
   const panelY =
@@ -1026,16 +1181,16 @@ function drawDistrictPopup() {
     slideOffset;
 
   /*
-   * 卡片阴影
+   * 阴影
    */
 
   ctx.save();
 
   ctx.shadowColor =
-    'rgba(0,0,0,0.28)';
+    'rgba(0,0,0,0.32)';
 
   ctx.shadowBlur =
-    18;
+    20;
 
   ctx.shadowOffsetY =
     -4;
@@ -1052,7 +1207,21 @@ function drawDistrictPopup() {
   ctx.restore();
 
   /*
-   * 顶部拖拽提示条
+   * 重要：
+   * 吃掉卡片内部的点击，
+   * 不让它误触遮罩关闭。
+   */
+
+  addButton(
+    'popup:panel',
+    10,
+    panelY,
+    370,
+    panelH
+  );
+
+  /*
+   * 顶部拖拽条
    */
 
   roundedRect(
@@ -1069,7 +1238,7 @@ function drawDistrictPopup() {
    */
 
   drawText(
-    d.name +
+    district.name +
       '商圈',
 
     25,
@@ -1079,16 +1248,20 @@ function drawDistrictPopup() {
     '700'
   );
 
+  /*
+   * 市场状态
+   */
+
   drawText(
-    d.saturation >= 85
+    district.saturation >= 85
       ? '竞争激烈'
       : '仍有机会',
 
-    330,
+    326,
     panelY + 34,
     11,
 
-    d.saturation >= 85
+    district.saturation >= 85
       ? COLORS.danger
       : COLORS.accentDark,
 
@@ -1127,32 +1300,36 @@ function drawDistrictPopup() {
     36
   );
 
-  /*
-   * 四项核心数据
-   */
+  /* =========================
+     四项基础数据
+  ========================= */
 
   const cols = [
     [
       '人口',
-      d.population
+
+      district.population
         .toLocaleString()
     ],
 
     [
       '日需求',
-      d.baseDemand
+
+      district.baseDemand
         .toLocaleString()
     ],
 
     [
       '客单',
+
       '¥' +
-        d.avgSpend
+        district.avgSpend
     ],
 
     [
       '餐饮店',
-      d.restaurantCount +
+
+      district.restaurantCount +
         '家'
     ]
   ];
@@ -1186,9 +1363,9 @@ function drawDistrictPopup() {
     );
   }
 
-  /*
-   * 实时需求
-   */
+  /* =========================
+     实时需求
+  ========================= */
 
   const mealPeriod =
     timeSystem
@@ -1203,7 +1380,7 @@ function drawDistrictPopup() {
   const currentDemand =
     demandSystem
       .getTotalDemand(
-        d.id
+        district.id
       );
 
   roundedRect(
@@ -1239,13 +1416,13 @@ function drawDistrictPopup() {
     'right'
   );
 
-  /*
-   * 饱和度
-   */
+  /* =========================
+     饱和度
+  ========================= */
 
   drawText(
     '市场饱和度 ' +
-      d.saturation +
+      district.saturation +
       '%',
 
     25,
@@ -1270,21 +1447,21 @@ function drawDistrictPopup() {
 
     340 *
       (
-        d.saturation /
+        district.saturation /
         100
       ),
 
     8,
     4,
 
-    d.saturation >= 85
+    district.saturation >= 85
       ? COLORS.danger
       : COLORS.gold
   );
 
-  /*
-   * 进入商圈
-   */
+  /* =========================
+     进入商圈
+  ========================= */
 
   roundedRect(
     25,
@@ -1315,12 +1492,13 @@ function drawDistrictPopup() {
 }
 
 /* =========================
-   所有弹窗
+   弹窗层
 ========================= */
 
 function drawPopupLayer() {
   if (
-    !popupManager.isOpen()
+    !popupManager
+      .isOpen()
   ) {
     return;
   }
@@ -1461,8 +1639,7 @@ function drawBottomNav() {
 ========================= */
 
 const cityScene = {
-  id:
-    'city',
+  id: 'city',
 
   enter() {
   },
@@ -1514,6 +1691,10 @@ const cityScene = {
       return false;
     }
 
+    /*
+     * 点击商圈
+     */
+
     if (
       target.id
         .indexOf(
@@ -1561,7 +1742,7 @@ const cityScene = {
 };
 
 /* =========================
-   注册页面
+   注册场景
 ========================= */
 
 sceneManager.register(
@@ -1599,6 +1780,10 @@ function render() {
   buttons.length =
     0;
 
+  /*
+   * 清空设计区域
+   */
+
   ctx.clearRect(
     0,
     0,
@@ -1615,14 +1800,13 @@ function render() {
   );
 
   /*
-   * 动态弹窗
+   * 弹窗层
    */
 
   drawPopupLayer();
 
   /*
-   * 底栏放最后，
-   * 保持导航永远可以点击
+   * 底部导航
    */
 
   drawBottomNav();
@@ -1653,6 +1837,10 @@ function screenToDesign(
   };
 }
 
+/* =========================
+   点击检测
+========================= */
+
 function hitTest(
   x,
   y
@@ -1665,19 +1853,21 @@ function hitTest(
 
     i--
   ) {
-    const b =
+    const button =
       buttons[i];
 
     if (
-      x >= b.x &&
+      x >= button.x &&
       x <=
-        b.x + b.w &&
+        button.x +
+        button.w &&
 
-      y >= b.y &&
+      y >= button.y &&
       y <=
-        b.y + b.h
+        button.y +
+        button.h
     ) {
-      return b;
+      return button;
     }
   }
 
@@ -1732,7 +1922,7 @@ function handleTimeButton(
 }
 
 /* =========================
-   弹窗点击
+   弹窗按钮
 ========================= */
 
 function handlePopupButton(
@@ -1740,12 +1930,17 @@ function handlePopupButton(
 ) {
   if (
     !target ||
-    target.id.indexOf(
-      'popup:'
-    ) !== 0
+    target.id
+      .indexOf(
+        'popup:'
+      ) !== 0
   ) {
     return false;
   }
+
+  /*
+   * 点遮罩关闭
+   */
 
   if (
     target.id ===
@@ -1757,6 +1952,22 @@ function handlePopupButton(
     return true;
   }
 
+  /*
+   * 点弹窗主体：
+   * 只拦截，不关闭。
+   */
+
+  if (
+    target.id ===
+    'popup:panel'
+  ) {
+    return true;
+  }
+
+  /*
+   * X关闭
+   */
+
   if (
     target.id ===
     'popup:close'
@@ -1767,28 +1978,44 @@ function handlePopupButton(
     return true;
   }
 
+  /*
+   * 进入商圈
+   */
+
   if (
     target.id ===
     'popup:enterDistrict'
   ) {
-    const d =
+    const district =
       citySystem
         .getCurrentDistrict();
 
     if (
-      api.showToast &&
-      d
+      district &&
+      api &&
+      typeof api.showToast ===
+        'function'
     ) {
       api.showToast({
         title:
           '进入' +
-          d.name +
+          district.name +
           '商圈',
 
         icon:
           'none'
       });
     }
+
+    /*
+     * 下一阶段这里会真正进入：
+     *
+     * 商圈
+     * ↓
+     * 街道
+     * ↓
+     * 房源
+     */
 
     return true;
   }
@@ -1797,14 +2024,14 @@ function handlePopupButton(
 }
 
 /* =========================
-   点击处理
+   总点击逻辑
 ========================= */
 
 function handleTap(
   screenX,
   screenY
 ) {
-  const p =
+  const point =
     screenToDesign(
       screenX,
       screenY
@@ -1812,12 +2039,12 @@ function handleTap(
 
   const target =
     hitTest(
-      p.x,
-      p.y
+      point.x,
+      point.y
     );
 
   /*
-   * 时间控制
+   * 时间按钮
    */
 
   if (
@@ -1867,7 +2094,8 @@ function handleTap(
   }
 
   /*
-   * 弹窗按钮优先
+   * 有弹窗时，
+   * 弹窗优先处理点击。
    */
 
   if (
@@ -1884,16 +2112,11 @@ function handleTap(
       return;
     }
 
-    /*
-     * 弹窗存在时，
-     * 不允许点击下面的地图。
-     */
-
     return;
   }
 
   /*
-   * 当前场景
+   * 当前页面
    */
 
   const currentScene =
@@ -1910,8 +2133,8 @@ function handleTap(
     const changed =
       currentScene
         .handleTap(
-          p.x,
-          p.y,
+          point.x,
+          point.y,
           target
         );
 
@@ -1926,15 +2149,15 @@ function handleTap(
 ========================= */
 
 if (
-  api.onTouchEnd
+  api &&
+  typeof api.onTouchEnd ===
+    'function'
 ) {
   api.onTouchEnd(
     function (event) {
       const touch =
-        event
-          .changedTouches &&
-        event
-          .changedTouches[0];
+        event.changedTouches &&
+        event.changedTouches[0];
 
       if (!touch) {
         return;
@@ -2006,7 +2229,7 @@ function gameLoop(
     now;
 
   /*
-   * 当前页面更新
+   * 页面更新
    */
 
   sceneManager.update(
@@ -2014,7 +2237,7 @@ function gameLoop(
   );
 
   /*
-   * 动画更新
+   * UI动画
    */
 
   const animationChanged =
@@ -2023,7 +2246,7 @@ function gameLoop(
     );
 
   /*
-   * 游戏时间推进
+   * 游戏时间
    */
 
   let advancedMinutes =
@@ -2040,7 +2263,7 @@ function gameLoop(
   }
 
   /*
-   * 时间变化或者动画播放时重绘
+   * 时间改变或动画播放时重绘。
    */
 
   if (
@@ -2056,6 +2279,38 @@ function gameLoop(
 }
 
 /* =========================
+   城市资源
+========================= */
+
+function loadCityResources() {
+  resourceManager
+    .loadImage(
+      'city_base_01',
+
+      'assets/images/map/city_base_01.png',
+
+      'city'
+    )
+    .then(
+      function () {
+        console.log(
+          '城市地图加载成功'
+        );
+
+        render();
+      }
+    )
+    .catch(
+      function (error) {
+        console.error(
+          '城市地图加载失败',
+          error
+        );
+      }
+    );
+}
+
+/* =========================
    启动
 ========================= */
 
@@ -2063,7 +2318,21 @@ sceneManager.switchTo(
   'city'
 );
 
+/*
+ * 先显示UI。
+ */
+
 render();
+
+/*
+ * 再异步加载地图。
+ */
+
+loadCityResources();
+
+/*
+ * 开始游戏循环。
+ */
 
 scheduleNextFrame(
   gameLoop
