@@ -1,23 +1,22 @@
 'use strict';
 
-const gameState = require('./gameState.js');
+const gameState =
+  require('./gameState.js');
 
 /**
  * 游戏时间系统
  *
- * 负责：
- * - 分钟推进
- * - 小时推进
- * - 天数推进
- * - 月份推进
- * - 年份推进
+ * 1× = 现实1秒推进游戏1分钟
+ * 2× = 现实1秒推进游戏2分钟
+ * 5× = 现实1秒推进游戏5分钟
+ * 10× = 现实1秒推进游戏10分钟
  *
- * 以后营业、房租、工资、天气、事件、商圈变化
- * 都会依赖这个系统。
+ * 后面天气、NPC、营业、订单、
+ * 房租、工资、事件等全部跟这个时间走。
  */
 
 const DAYS_IN_MONTH = [
-  31, // 1月
+  31,
   28,
   31,
   30,
@@ -31,10 +30,156 @@ const DAYS_IN_MONTH = [
   31
 ];
 
+const BASE_GAME_MINUTES_PER_SECOND =
+  1;
+
 class TimeSystem {
+  constructor() {
+    /**
+     * 保存不足1分钟的小数部分
+     */
+    this.minuteAccumulator =
+      0;
+  }
+
   getTime() {
     return gameState.getTime();
   }
+
+  /* =========================
+     实时时间推进
+  ========================= */
+
+  /**
+   * 游戏主循环每帧调用
+   *
+   * deltaMs = 距离上一帧过去的毫秒
+   */
+  update(deltaMs) {
+    if (
+      gameState.isTimePaused()
+    ) {
+      return 0;
+    }
+
+    let delta =
+      Number(deltaMs);
+
+    if (
+      !Number.isFinite(delta) ||
+      delta <= 0
+    ) {
+      return 0;
+    }
+
+    /**
+     * 防止手机切后台后回来
+     * 一口气跳过几天。
+     *
+     * 离线收益以后单独做。
+     */
+    delta =
+      Math.min(
+        delta,
+        1000
+      );
+
+    const seconds =
+      delta / 1000;
+
+    const speed =
+      gameState.getTimeSpeed();
+
+    const gameMinutes =
+      seconds *
+      BASE_GAME_MINUTES_PER_SECOND *
+      speed;
+
+    this.minuteAccumulator +=
+      gameMinutes;
+
+    const wholeMinutes =
+      Math.floor(
+        this.minuteAccumulator
+      );
+
+    if (
+      wholeMinutes <= 0
+    ) {
+      return 0;
+    }
+
+    this.minuteAccumulator -=
+      wholeMinutes;
+
+    this.addMinutes(
+      wholeMinutes
+    );
+
+    return wholeMinutes;
+  }
+
+  /* =========================
+     时间倍率
+  ========================= */
+
+  setSpeed(speed) {
+    return (
+      gameState.setTimeSpeed(
+        speed
+      )
+    );
+  }
+
+  getSpeed() {
+    return (
+      gameState.getTimeSpeed()
+    );
+  }
+
+  getSpeedText() {
+    return (
+      this.getSpeed() +
+      '×'
+    );
+  }
+
+  pause() {
+    gameState.setTimePaused(
+      true
+    );
+  }
+
+  resume() {
+    gameState.setTimePaused(
+      false
+    );
+  }
+
+  togglePause() {
+    return (
+      gameState.toggleTimePause()
+    );
+  }
+
+  isPaused() {
+    return (
+      gameState.isTimePaused()
+    );
+  }
+
+  /**
+   * 切换速度时清除碎片时间，
+   * 防止出现突然跳一分钟。
+   */
+  resetAccumulator() {
+    this.minuteAccumulator =
+      0;
+  }
+
+  /* =========================
+     日期计算
+  ========================= */
 
   isLeapYear(year) {
     return (
@@ -46,7 +191,10 @@ class TimeSystem {
     );
   }
 
-  getDaysInMonth(year, month) {
+  getDaysInMonth(
+    year,
+    month
+  ) {
     if (
       month === 2 &&
       this.isLeapYear(year)
@@ -54,41 +202,89 @@ class TimeSystem {
       return 29;
     }
 
-    return DAYS_IN_MONTH[
-      month - 1
-    ];
+    return (
+      DAYS_IN_MONTH[
+        month - 1
+      ]
+    );
   }
 
+  /* =========================
+     手动推进
+  ========================= */
+
   addMinutes(minutes) {
+    const value =
+      Math.floor(
+        Number(minutes)
+      );
+
+    if (
+      !Number.isFinite(value) ||
+      value <= 0
+    ) {
+      return;
+    }
+
     const time =
       gameState.getTime();
 
-    time.minute += minutes;
+    time.minute +=
+      value;
 
-    while (time.minute >= 60) {
+    while (
+      time.minute >= 60
+    ) {
       time.minute -= 60;
       time.hour += 1;
     }
 
-    while (time.hour >= 24) {
+    while (
+      time.hour >= 24
+    ) {
       time.hour -= 24;
+
       this.addDays(1);
     }
   }
 
   addHours(hours) {
+    const value =
+      Math.floor(
+        Number(hours)
+      );
+
+    if (
+      !Number.isFinite(value) ||
+      value <= 0
+    ) {
+      return;
+    }
+
     this.addMinutes(
-      hours * 60
+      value * 60
     );
   }
 
   addDays(days) {
+    const value =
+      Math.floor(
+        Number(days)
+      );
+
+    if (
+      !Number.isFinite(value) ||
+      value <= 0
+    ) {
+      return;
+    }
+
     const time =
       gameState.getTime();
 
     for (
       let i = 0;
-      i < days;
+      i < value;
       i++
     ) {
       time.day += 1;
@@ -100,17 +296,22 @@ class TimeSystem {
         );
 
       if (
-        time.day > maxDay
+        time.day >
+        maxDay
       ) {
         time.day = 1;
-        time.month += 1;
+
+        time.month +=
+          1;
       }
 
       if (
         time.month > 12
       ) {
         time.month = 1;
-        time.year += 1;
+
+        time.year +=
+          1;
       }
     }
   }
@@ -119,11 +320,17 @@ class TimeSystem {
     const time =
       gameState.getTime();
 
+    this.addDays(1);
+
     time.hour = 8;
     time.minute = 0;
 
-    this.addDays(1);
+    this.resetAccumulator();
   }
+
+  /* =========================
+     设置时间
+  ========================= */
 
   setTime(
     hour,
@@ -137,7 +344,9 @@ class TimeSystem {
         0,
         Math.min(
           23,
-          hour
+          Math.floor(
+            Number(hour) || 0
+          )
         )
       );
 
@@ -146,10 +355,18 @@ class TimeSystem {
         0,
         Math.min(
           59,
-          minute
+          Math.floor(
+            Number(minute) || 0
+          )
         )
       );
+
+    this.resetAccumulator();
   }
+
+  /* =========================
+     UI显示
+  ========================= */
 
   getTimeText() {
     const time =
@@ -201,9 +418,40 @@ class TimeSystem {
     );
   }
 
+  /**
+   * 给顶部UI一次性读取
+   */
+  getDisplayState() {
+    return {
+      date:
+        this.getDateText(),
+
+      time:
+        this.getTimeText(),
+
+      speed:
+        this.getSpeed(),
+
+      speedText:
+        this.getSpeedText(),
+
+      paused:
+        this.isPaused(),
+
+      mealPeriod:
+        this.getMealPeriod()
+    };
+  }
+
+  /* =========================
+     餐饮时段
+  ========================= */
+
   getMealPeriod() {
     const hour =
-      gameState.getTime().hour;
+      gameState
+        .getTime()
+        .hour;
 
     if (
       hour >= 6 &&
