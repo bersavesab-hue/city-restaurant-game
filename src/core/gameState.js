@@ -2,6 +2,11 @@
 
 /**
  * 游戏全局状态
+ *
+ * 原则：
+ * - 静态规则放在各系统/config中
+ * - 当前世界结果放在 state 中
+ * - 新字段通过 mergeDefaults 兼容旧存档
  */
 
 const INITIAL_STATE = {
@@ -20,24 +25,31 @@ const INITIAL_STATE = {
     hour: 10,
     minute: 20,
 
-    // 时间倍率
     speed: 1,
-
-    // 是否暂停
     paused: false
   },
 
   world: {
-    // 内部城市ID，不给玩家看
     currentCityId: 'yunzhou',
-
-    // 显示名称由玩家命名或随机生成
     cityName: '',
-
     currentDistrictId: 'university',
 
-    weather: 'sunny',
-    temperature: 23
+    // 天气不再写死为“晴23℃”，由 simulationSystem 初始化并每日更新。
+    weather: null,
+    temperature: null,
+
+    simulation: {
+      initialized: false,
+      lastProcessedDay: null,
+      seed: null,
+
+      districtState: {},
+
+      weatherHistory: [],
+      newsFeed: [],
+
+      lastDailySnapshot: null
+    }
   },
 
   business: {
@@ -58,10 +70,6 @@ function clone(value) {
   );
 }
 
-/**
- * 兼容旧存档。
- * 新增字段时不会把旧存档直接弄坏。
- */
 function mergeDefaults(
   defaults,
   source
@@ -150,6 +158,22 @@ class GameState {
     return this.data.business;
   }
 
+  getSimulation() {
+    const world =
+      this.data.world;
+
+    if (!world.simulation) {
+      world.simulation =
+        clone(
+          INITIAL_STATE
+            .world
+            .simulation
+        );
+    }
+
+    return world.simulation;
+  }
+
   /* =========================
      城市名称
   ========================= */
@@ -202,20 +226,18 @@ class GameState {
   }
 
   setTimeSpeed(speed) {
+    const config =
+      require('./simulationConfig.js');
+
     const value =
       Number(speed);
 
-    const allowed = [
-      1,
-      2,
-      5,
-      10
-    ];
-
     if (
-      allowed.indexOf(
-        value
-      ) === -1
+      config.time
+        .allowedSpeeds
+        .indexOf(
+          value
+        ) === -1
     ) {
       return false;
     }
@@ -287,6 +309,21 @@ class GameState {
   setDistrict(id) {
     this.data.world.currentDistrictId =
       id;
+  }
+
+  setWeather(
+    weather,
+    temperature
+  ) {
+    this.data.world.weather =
+      weather || null;
+
+    this.data.world.temperature =
+      temperature == null
+        ? null
+        : Number(
+            temperature
+          );
   }
 
   addShop(shop) {

@@ -3,17 +3,8 @@
 const gameState =
   require('./gameState.js');
 
-/**
- * 游戏时间系统
- *
- * 1× = 现实1秒推进游戏1分钟
- * 2× = 现实1秒推进游戏2分钟
- * 5× = 现实1秒推进游戏5分钟
- * 10× = 现实1秒推进游戏10分钟
- *
- * 后面天气、NPC、营业、订单、
- * 房租、工资、事件等全部跟这个时间走。
- */
+const simulationConfig =
+  require('./simulationConfig.js');
 
 const DAYS_IN_MONTH = [
   31,
@@ -30,14 +21,8 @@ const DAYS_IN_MONTH = [
   31
 ];
 
-const BASE_GAME_MINUTES_PER_SECOND =
-  1;
-
 class TimeSystem {
   constructor() {
-    /**
-     * 保存不足1分钟的小数部分
-     */
     this.minuteAccumulator =
       0;
   }
@@ -46,15 +31,6 @@ class TimeSystem {
     return gameState.getTime();
   }
 
-  /* =========================
-     实时时间推进
-  ========================= */
-
-  /**
-   * 游戏主循环每帧调用
-   *
-   * deltaMs = 距离上一帧过去的毫秒
-   */
   update(deltaMs) {
     if (
       gameState.isTimePaused()
@@ -72,12 +48,6 @@ class TimeSystem {
       return 0;
     }
 
-    /**
-     * 防止手机切后台后回来
-     * 一口气跳过几天。
-     *
-     * 离线收益以后单独做。
-     */
     delta =
       Math.min(
         delta,
@@ -85,14 +55,17 @@ class TimeSystem {
       );
 
     const seconds =
-      delta / 1000;
+      delta /
+      1000;
 
     const speed =
       gameState.getTimeSpeed();
 
     const gameMinutes =
       seconds *
-      BASE_GAME_MINUTES_PER_SECOND *
+      simulationConfig
+        .time
+        .baseGameMinutesPerSecond *
       speed;
 
     this.minuteAccumulator +=
@@ -119,10 +92,6 @@ class TimeSystem {
     return wholeMinutes;
   }
 
-  /* =========================
-     时间倍率
-  ========================= */
-
   setSpeed(speed) {
     return (
       gameState.setTimeSpeed(
@@ -141,6 +110,15 @@ class TimeSystem {
     return (
       this.getSpeed() +
       '×'
+    );
+  }
+
+  getEffectiveMinutesPerSecond() {
+    return (
+      simulationConfig
+        .time
+        .baseGameMinutesPerSecond *
+      this.getSpeed()
     );
   }
 
@@ -168,18 +146,10 @@ class TimeSystem {
     );
   }
 
-  /**
-   * 切换速度时清除碎片时间，
-   * 防止出现突然跳一分钟。
-   */
   resetAccumulator() {
     this.minuteAccumulator =
       0;
   }
-
-  /* =========================
-     日期计算
-  ========================= */
 
   isLeapYear(year) {
     return (
@@ -208,10 +178,6 @@ class TimeSystem {
       ]
     );
   }
-
-  /* =========================
-     手动推进
-  ========================= */
 
   addMinutes(minutes) {
     const value =
@@ -300,7 +266,6 @@ class TimeSystem {
         maxDay
       ) {
         time.day = 1;
-
         time.month +=
           1;
       }
@@ -309,7 +274,6 @@ class TimeSystem {
         time.month > 12
       ) {
         time.month = 1;
-
         time.year +=
           1;
       }
@@ -327,10 +291,6 @@ class TimeSystem {
 
     this.resetAccumulator();
   }
-
-  /* =========================
-     设置时间
-  ========================= */
 
   setTime(
     hour,
@@ -363,10 +323,6 @@ class TimeSystem {
 
     this.resetAccumulator();
   }
-
-  /* =========================
-     UI显示
-  ========================= */
 
   getTimeText() {
     const time =
@@ -418,9 +374,6 @@ class TimeSystem {
     );
   }
 
-  /**
-   * 给顶部UI一次性读取
-   */
   getDisplayState() {
     return {
       date:
@@ -435,6 +388,9 @@ class TimeSystem {
       speedText:
         this.getSpeedText(),
 
+      effectiveMinutesPerSecond:
+        this.getEffectiveMinutesPerSecond(),
+
       paused:
         this.isPaused(),
 
@@ -442,10 +398,6 @@ class TimeSystem {
         this.getMealPeriod()
     };
   }
-
-  /* =========================
-     餐饮时段
-  ========================= */
 
   getMealPeriod() {
     const hour =

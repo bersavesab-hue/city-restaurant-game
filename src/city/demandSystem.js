@@ -9,9 +9,8 @@ const timeSystem =
 const gameState =
   require('../core/gameState.js');
 
-/**
- * 顾客群体基础特征
- */
+const simulationConfig =
+  require('../core/simulationConfig.js');
 
 const CUSTOMER_TYPES = {
   student: {
@@ -141,10 +140,6 @@ const CUSTOMER_TYPES = {
   }
 };
 
-/**
- * 不同商圈客群比例
- */
-
 const DISTRICT_CUSTOMER_MIX = {
   oldtown: {
     resident: 0.48,
@@ -189,19 +184,6 @@ const DISTRICT_CUSTOMER_MIX = {
   }
 };
 
-/**
- * 天气对餐饮需求的影响
- */
-
-const WEATHER_MODIFIERS = {
-  sunny: 1.00,
-  cloudy: 0.98,
-  rain: 0.90,
-  heavyRain: 0.76,
-  hot: 0.93,
-  cold: 1.04
-};
-
 class DemandSystem {
   getCustomerType(id) {
     return CUSTOMER_TYPES[id] || null;
@@ -220,9 +202,140 @@ class DemandSystem {
       gameState.getWorld();
 
     return (
-      WEATHER_MODIFIERS[
-        world.weather
-      ] || 1
+      simulationConfig
+        .demand
+        .weatherFactors[
+          world.weather
+        ] ||
+      1
+    );
+  }
+
+  getWeekdayModifier() {
+    const time =
+      gameState.getTime();
+
+    const dateIndex =
+      this.getDayOrdinal(
+        time
+      );
+
+    const weekday =
+      dateIndex %
+      7;
+
+    const weekend =
+      weekday ===
+        0 ||
+      weekday ===
+        6;
+
+    return weekend
+      ? simulationConfig
+          .demand
+          .weekdayFactors
+          .weekend
+      : simulationConfig
+          .demand
+          .weekdayFactors
+          .weekday;
+  }
+
+  isLeapYear(year) {
+    return (
+      year % 400 ===
+        0 ||
+      (
+        year % 4 ===
+          0 &&
+        year % 100 !==
+          0
+      )
+    );
+  }
+
+  getDayOrdinal(time) {
+    const y =
+      Math.max(
+        1,
+        Number(
+          time.year
+        ) ||
+        1
+      );
+
+    const m =
+      Math.max(
+        1,
+        Math.min(
+          12,
+          Number(
+            time.month
+          ) ||
+          1
+        )
+      );
+
+    const d =
+      Math.max(
+        1,
+        Number(
+          time.day
+        ) ||
+        1
+      );
+
+    const y0 =
+      y -
+      1;
+
+    let days =
+      y0 *
+        365 +
+      Math.floor(
+        y0 /
+        4
+      ) -
+      Math.floor(
+        y0 /
+        100
+      ) +
+      Math.floor(
+        y0 /
+        400
+      );
+
+    const monthDays = [
+      31,
+      this.isLeapYear(
+        y
+      )
+        ? 29
+        : 28,
+      31,
+      30,
+      31,
+      30,
+      31,
+      31,
+      30,
+      31,
+      30,
+      31
+    ];
+
+    for (
+      let i = 0;
+      i < m - 1;
+      i++
+    ) {
+      days +=
+        monthDays[i];
+    }
+
+    return (
+      days +
+      d
     );
   }
 
@@ -238,23 +351,89 @@ class DemandSystem {
     );
   }
 
-  getTotalDemand(
+  getDemandBreakdown(
     districtId
   ) {
-    const base =
-      this.getBaseDemand(
+    const district =
+      citySystem.getDistrict(
         districtId
       );
 
-    const weather =
+    if (!district) {
+      return null;
+    }
+
+    const mealPeriod =
+      timeSystem.getMealPeriod();
+
+    const mealRatio =
+      district.mealDemand[
+        mealPeriod
+      ] ||
+      0;
+
+    const dynamicDailyDemand =
+      district.baseDemand;
+
+    const beforeWeather =
+      dynamicDailyDemand *
+      mealRatio;
+
+    const weatherFactor =
       this.getWeatherModifier();
 
-    return Math.max(
-      0,
-      Math.floor(
-        base * weather
-      )
-    );
+    const weekdayFactor =
+      this.getWeekdayModifier();
+
+    const total =
+      Math.max(
+        0,
+        Math.floor(
+          beforeWeather *
+          weatherFactor *
+          weekdayFactor
+        )
+      );
+
+    return {
+      districtId,
+      mealPeriod,
+
+      effectivePopulation:
+        district.population,
+
+      residentPopulation:
+        district.residentPopulation,
+
+      dynamicDailyDemand,
+
+      mealRatio,
+
+      weatherFactor,
+
+      weekdayFactor,
+
+      eventDemandFactor:
+        district.eventDemandFactor,
+
+      eventTrafficFactor:
+        district.eventTrafficFactor,
+
+      total
+    };
+  }
+
+  getTotalDemand(
+    districtId
+  ) {
+    const breakdown =
+      this.getDemandBreakdown(
+        districtId
+      );
+
+    return breakdown
+      ? breakdown.total
+      : 0;
   }
 
   getDemandByCustomerType(
@@ -272,10 +451,13 @@ class DemandSystem {
 
     const result = {};
 
-    let assigned = 0;
+    let assigned =
+      0;
 
     const keys =
-      Object.keys(mix);
+      Object.keys(
+        mix
+      );
 
     for (
       let i = 0;
@@ -289,18 +471,23 @@ class DemandSystem {
 
       if (
         i ===
-        keys.length - 1
+        keys.length -
+        1
       ) {
         amount =
-          total - assigned;
+          total -
+          assigned;
       } else {
         amount =
           Math.floor(
             total *
-            mix[typeId]
+            mix[
+              typeId
+            ]
           );
 
-        assigned += amount;
+        assigned +=
+          amount;
       }
 
       result[typeId] = {
@@ -385,7 +572,9 @@ class DemandSystem {
     const actual =
       Math.min(
         pool.remainingDemand,
-        Math.floor(amount)
+        Math.floor(
+          amount
+        )
       );
 
     pool.remainingDemand -=
@@ -418,7 +607,9 @@ class DemandSystem {
       Math.min(
         group.demand,
         pool.remainingDemand,
-        Math.floor(amount)
+        Math.floor(
+          amount
+        )
       );
 
     group.demand -=
@@ -435,7 +626,8 @@ class DemandSystem {
   ) {
     if (
       !pool ||
-      pool.totalDemand <= 0
+      pool.totalDemand <=
+        0
     ) {
       return 0;
     }
