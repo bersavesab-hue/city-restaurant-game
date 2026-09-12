@@ -1,4 +1,4 @@
-#Sat Sep 12 16:08:01 UTC 2026
+#Sat Sep 12 16:31:19 UTC 2026
 base.1=/home/runner/work/city-restaurant-game/city-restaurant-game/android/app/build/intermediates/dex/debug/mergeProjectDexDebug/13/classes.dex
 path.1=13/classes.dex
 base.0=/home/runner/work/city-restaurant-game/city-restaurant-game/android/app/build/intermediates/dex/debug/mergeProjectDexDebug/0/classes.dex

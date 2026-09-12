@@ -7080,6 +7080,7 @@
       }
       var api = runtime.api || {};
       var gameState = require_gameState();
+      var sceneManager = require_sceneManager();
       var citySystem = require_citySystem();
       var resourceManager = require_resourceManager();
       var propertyData = require_propertyData();
@@ -8616,9 +8617,9 @@
             ctx2,
             this.getDistrictName(
               this.districtId
-            ) + " \xB7 \u627E\u94FA",
-            "\u6302\u724C\u968F\u65F6\u95F4\u3001\u4E8B\u4EF6\u548CNPC\u7ADE\u4E89\u52A8\u6001\u53D8\u5316",
-            null
+            ) + " \xB7 \u623F\u6E90\u5E02\u573A",
+            "\u8FD9\u91CC\u53EA\u8D1F\u8D23\u627E\u94FA\uFF1B\u5DF2\u7B7E\u7EA6\u95E8\u5E97\u56DE\u201C\u95E8\u5E97\u201D\u9875\u9762\u7BA1\u7406",
+            "market:back"
           );
           this.drawDistrictTabs(
             ctx2,
@@ -10623,6 +10624,15 @@
             return false;
           }
           const id = local.id;
+          if (id === "market:back") {
+            sceneManager.switchTo(
+              "district",
+              {
+                districtId: this.districtId
+              }
+            );
+            return true;
+          }
           if (id.indexOf(
             "district:"
           ) === 0) {
@@ -10820,12 +10830,17 @@
             this.showToast(
               result.message
             );
-            this.mode = "browse";
             this.selectedListingKey = null;
             this.syncMarket(
               true
             );
             this.refreshData();
+            sceneManager.switchTo(
+              "shop",
+              {
+                shopId: result.shop.id
+              }
+            );
             return true;
           }
           if (id === "filter:back" || id === "filter:apply") {
@@ -10909,6 +10924,1723 @@
         }
       };
       module.exports = new ShopScene();
+    }
+  });
+
+  // src/scenes/storeScene.js
+  var require_storeScene = __commonJS({
+    "src/scenes/storeScene.js"(exports, module) {
+      "use strict";
+      var runtime = globalThis.GameRuntime;
+      if (!runtime) {
+        throw new Error(
+          "StoreScene\uFF1AGameRuntime \u672A\u521D\u59CB\u5316"
+        );
+      }
+      var api = runtime.api || {};
+      var gameState = require_gameState();
+      var citySystem = require_citySystem();
+      var sceneManager = require_sceneManager();
+      var DESIGN_W = 390;
+      var COLORS = {
+        navy: "#12384D",
+        navy2: "#0A2A3B",
+        paper: "#F4EBDD",
+        panel: "#FFF9EF",
+        panel2: "#F8F0E4",
+        text: "#24323A",
+        muted: "#718087",
+        gold: "#E4AA48",
+        orange: "#D9853E",
+        red: "#BF584A",
+        green: "#4B9567",
+        blue: "#4C86A6",
+        line: "#DED1C1",
+        white: "#FFFFFF"
+      };
+      function money(value) {
+        return "\xA5" + Math.max(
+          0,
+          Math.round(
+            Number(
+              value
+            ) || 0
+          )
+        ).toLocaleString();
+      }
+      var StoreScene = class {
+        constructor() {
+          this.id = "shop";
+          this.viewH = 780;
+          this.navH = 64;
+          this.contentBottom = 716;
+          this.buttons = [];
+          this.selectedModule = null;
+        }
+        getLayout() {
+          let height = 780;
+          if (api && typeof api.getSystemInfoSync === "function") {
+            const info = api.getSystemInfoSync();
+            const screenW = Math.max(
+              1,
+              Number(
+                info.windowWidth
+              ) || DESIGN_W
+            );
+            const screenH = Math.max(
+              1,
+              Number(
+                info.windowHeight
+              ) || 780
+            );
+            const scale = screenW / DESIGN_W;
+            height = screenH / scale;
+          }
+          this.viewH = height;
+          this.navH = height < 740 ? 60 : 64;
+          this.contentBottom = height - this.navH;
+        }
+        enter() {
+          this.selectedModule = null;
+        }
+        exit() {
+          this.buttons = [];
+        }
+        update() {
+        }
+        roundedPath(ctx2, x, y, w, h, r) {
+          const radius = Math.min(
+            r,
+            w / 2,
+            h / 2
+          );
+          ctx2.beginPath();
+          ctx2.moveTo(
+            x + radius,
+            y
+          );
+          ctx2.arcTo(
+            x + w,
+            y,
+            x + w,
+            y + h,
+            radius
+          );
+          ctx2.arcTo(
+            x + w,
+            y + h,
+            x,
+            y + h,
+            radius
+          );
+          ctx2.arcTo(
+            x,
+            y + h,
+            x,
+            y,
+            radius
+          );
+          ctx2.arcTo(
+            x,
+            y,
+            x + w,
+            y,
+            radius
+          );
+          ctx2.closePath();
+        }
+        roundedRect(ctx2, x, y, w, h, r, fill, stroke, width) {
+          this.roundedPath(
+            ctx2,
+            x,
+            y,
+            w,
+            h,
+            r
+          );
+          if (fill) {
+            ctx2.fillStyle = fill;
+            ctx2.fill();
+          }
+          if (stroke) {
+            ctx2.strokeStyle = stroke;
+            ctx2.lineWidth = width || 1;
+            ctx2.stroke();
+          }
+        }
+        text(ctx2, text, x, y, size, color, weight, align) {
+          ctx2.fillStyle = color || COLORS.text;
+          ctx2.font = (weight || "500") + " " + size + "px sans-serif";
+          ctx2.textAlign = align || "left";
+          ctx2.textBaseline = "middle";
+          ctx2.fillText(
+            String(
+              text
+            ),
+            x,
+            y
+          );
+        }
+        addButton(id, x, y, w, h) {
+          this.buttons.push({
+            id,
+            x,
+            y,
+            w,
+            h
+          });
+        }
+        hitButton(x, y) {
+          for (let i = this.buttons.length - 1; i >= 0; i--) {
+            const item = this.buttons[i];
+            if (x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h) {
+              return item;
+            }
+          }
+          return null;
+        }
+        getCurrentShop() {
+          const business = gameState.getBusiness();
+          if (!business.hasShop || !business.shops.length) {
+            return null;
+          }
+          return business.shops.find(
+            (item) => item.id === business.currentShopId
+          ) || business.shops[0];
+        }
+        drawHeader(ctx2, title, subtitle) {
+          ctx2.fillStyle = COLORS.navy2;
+          ctx2.fillRect(
+            0,
+            0,
+            DESIGN_W,
+            67
+          );
+          this.text(
+            ctx2,
+            title,
+            15,
+            22,
+            17,
+            COLORS.white,
+            "700"
+          );
+          this.text(
+            ctx2,
+            subtitle,
+            15,
+            45,
+            8,
+            "rgba(255,255,255,0.70)",
+            "500"
+          );
+          this.text(
+            ctx2,
+            money(
+              gameState.getPlayer().cash
+            ),
+            376,
+            22,
+            13,
+            "#FFE8AE",
+            "700",
+            "right"
+          );
+          this.text(
+            ctx2,
+            "\u53EF\u7528\u8D44\u91D1",
+            376,
+            45,
+            7,
+            "#D8E5EB",
+            "500",
+            "right"
+          );
+        }
+        drawProgress(ctx2, activeIndex, y) {
+          const steps = [
+            "\u9009\u5740",
+            "\u7B7E\u7EA6",
+            "\u88C5\u4FEE",
+            "\u8BC1\u7167",
+            "\u62DB\u8058",
+            "\u5F00\u4E1A"
+          ];
+          this.text(
+            ctx2,
+            "\u5F00\u5E97\u8FDB\u5EA6",
+            17,
+            y,
+            8,
+            COLORS.muted,
+            "700"
+          );
+          for (let i = 0; i < steps.length; i++) {
+            const x = 24 + i * 67;
+            if (i < steps.length - 1) {
+              ctx2.strokeStyle = i < activeIndex ? COLORS.green : "#D8CEC1";
+              ctx2.lineWidth = 3;
+              ctx2.beginPath();
+              ctx2.moveTo(
+                x + 14,
+                y + 28
+              );
+              ctx2.lineTo(
+                x + 53,
+                y + 28
+              );
+              ctx2.stroke();
+            }
+            this.roundedRect(
+              ctx2,
+              x,
+              y + 17,
+              22,
+              22,
+              11,
+              i <= activeIndex ? i === activeIndex ? COLORS.gold : COLORS.green : "#E7DED2"
+            );
+            this.text(
+              ctx2,
+              i < activeIndex ? "\u2713" : String(
+                i + 1
+              ),
+              x + 11,
+              y + 28,
+              7.5,
+              i <= activeIndex ? COLORS.white : COLORS.muted,
+              "700",
+              "center"
+            );
+            this.text(
+              ctx2,
+              steps[i],
+              x + 11,
+              y + 51,
+              6.5,
+              i === activeIndex ? COLORS.navy : COLORS.muted,
+              i === activeIndex ? "700" : "500",
+              "center"
+            );
+          }
+        }
+        renderNoShop(ctx2) {
+          this.drawHeader(
+            ctx2,
+            "\u95E8\u5E97\u7B79\u5907",
+            "\u8FD9\u91CC\u7BA1\u7406\u81EA\u5DF1\u7684\u95E8\u5E97\uFF0C\u4E0D\u518D\u628A\u201C\u95E8\u5E97\u201D\u548C\u201C\u627E\u94FA\u5E02\u573A\u201D\u6DF7\u5728\u4E00\u8D77"
+          );
+          this.roundedRect(
+            ctx2,
+            12,
+            82,
+            366,
+            126,
+            15,
+            COLORS.panel,
+            COLORS.line
+          );
+          this.text(
+            ctx2,
+            "\u5F53\u524D\u8FD8\u6CA1\u6709\u5DF2\u7B7E\u7EA6\u95E8\u5E97",
+            24,
+            108,
+            15,
+            COLORS.text,
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u7ECF\u8425\u76EE\u6807",
+            24,
+            140,
+            7,
+            COLORS.orange,
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u9009\u62E9\u5408\u9002\u5546\u5708 \u2192 \u770B\u94FA \u2192 \u8C08\u5224 \u2192 \u7B7E\u4E0B\u7B2C\u4E00\u5BB6\u5E97",
+            24,
+            162,
+            9,
+            COLORS.navy,
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u95E8\u5E97\u9875\u53EA\u663E\u793A\u4F60\u7684\u7ECF\u8425\u8D44\u4EA7\uFF1B\u5546\u5708\u4E0E\u623F\u6E90\u4ECE\u57CE\u5E02\u5730\u56FE\u8FDB\u5165\u3002",
+            24,
+            188,
+            7,
+            COLORS.muted,
+            "500"
+          );
+          this.drawProgress(
+            ctx2,
+            0,
+            242
+          );
+          this.roundedRect(
+            ctx2,
+            12,
+            335,
+            366,
+            156,
+            14,
+            COLORS.panel,
+            COLORS.line
+          );
+          this.text(
+            ctx2,
+            "\u6B63\u786E\u6D41\u7A0B",
+            24,
+            357,
+            10,
+            COLORS.text,
+            "700"
+          );
+          const lines = [
+            "\u2460 \u57CE\u5E02\u5730\u56FE\u9009\u62E9\u5546\u5708",
+            "\u2461 \u67E5\u770B\u5546\u5708\u4EBA\u53E3\u3001\u6D88\u8D39\u4EBA\u7FA4\u3001\u9700\u6C42\u4E0E\u7ADE\u4E89",
+            "\u2462 \u4ECE\u5546\u5708\u8BE6\u60C5\u8FDB\u5165\u623F\u6E90\u5E02\u573A",
+            "\u2463 \u5B9E\u5730\u770B\u94FA\u3001\u8C08\u5224\u5E76\u7B7E\u7EA6"
+          ];
+          for (let i = 0; i < lines.length; i++) {
+            this.text(
+              ctx2,
+              lines[i],
+              24,
+              389 + i * 24,
+              8,
+              i === 1 ? COLORS.orange : COLORS.text,
+              i === 1 ? "700" : "600"
+            );
+          }
+          const actionY = this.contentBottom - 54;
+          this.roundedRect(
+            ctx2,
+            12,
+            actionY,
+            366,
+            42,
+            12,
+            COLORS.gold,
+            "#D49434"
+          );
+          this.text(
+            ctx2,
+            "\u56DE\u57CE\u5E02\u9009\u62E9\u7ECF\u8425\u533A\u57DF",
+            195,
+            actionY + 21,
+            10,
+            "#26343B",
+            "700",
+            "center"
+          );
+          this.addButton(
+            "go-city",
+            12,
+            actionY,
+            366,
+            42
+          );
+        }
+        drawShopMetric(ctx2, x, y, w, label, value, sub, color) {
+          this.roundedRect(
+            ctx2,
+            x,
+            y,
+            w,
+            64,
+            11,
+            COLORS.panel2
+          );
+          this.text(
+            ctx2,
+            label,
+            x + 11,
+            y + 15,
+            6.8,
+            COLORS.muted,
+            "600"
+          );
+          this.text(
+            ctx2,
+            value,
+            x + 11,
+            y + 37,
+            11,
+            color,
+            "700"
+          );
+          this.text(
+            ctx2,
+            sub,
+            x + 11,
+            y + 53,
+            6.2,
+            COLORS.muted,
+            "500"
+          );
+        }
+        drawModule(ctx2, id, title, sub, x, y, w) {
+          this.roundedRect(
+            ctx2,
+            x,
+            y,
+            w,
+            69,
+            12,
+            COLORS.panel,
+            COLORS.line
+          );
+          this.text(
+            ctx2,
+            title,
+            x + 12,
+            y + 22,
+            9,
+            COLORS.text,
+            "700"
+          );
+          this.text(
+            ctx2,
+            sub,
+            x + 12,
+            y + 46,
+            6.5,
+            COLORS.muted,
+            "500"
+          );
+          this.text(
+            ctx2,
+            "\u203A",
+            x + w - 15,
+            y + 22,
+            13,
+            COLORS.orange,
+            "700",
+            "center"
+          );
+          this.addButton(
+            "module:" + id,
+            x,
+            y,
+            w,
+            69
+          );
+        }
+        renderShop(ctx2, shop) {
+          const district = citySystem.getDistrict(
+            shop.districtId
+          );
+          this.drawHeader(
+            ctx2,
+            "\u6211\u7684\u95E8\u5E97",
+            district ? district.name + " \xB7 " + shop.address : shop.address
+          );
+          this.roundedRect(
+            ctx2,
+            12,
+            80,
+            366,
+            100,
+            15,
+            COLORS.panel,
+            COLORS.line
+          );
+          this.roundedRect(
+            ctx2,
+            24,
+            94,
+            76,
+            26,
+            9,
+            "#FFF0D6",
+            "#E4B564"
+          );
+          this.text(
+            ctx2,
+            "\u5F85\u88C5\u4FEE",
+            62,
+            107,
+            8,
+            COLORS.orange,
+            "700",
+            "center"
+          );
+          this.text(
+            ctx2,
+            shop.name || shop.address,
+            24,
+            143,
+            14,
+            COLORS.text,
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u5DF2\u7B7E\u7EA6 \xB7 \u4E0B\u4E00\u6B65\u8FDB\u5165\u88C5\u4FEE\u7B79\u5907",
+            24,
+            165,
+            7.5,
+            COLORS.muted,
+            "600"
+          );
+          this.text(
+            ctx2,
+            "\u7B7E\u7EA6\u524D\u6295\u5165 " + money(
+              shop.upfrontPaid
+            ),
+            365,
+            108,
+            8,
+            COLORS.red,
+            "700",
+            "right"
+          );
+          const metricY = 194;
+          const gap = 7;
+          const w = (DESIGN_W - 24 - gap * 2) / 3;
+          this.drawShopMetric(
+            ctx2,
+            12,
+            metricY,
+            w,
+            "\u9762\u79EF",
+            shop.grossArea + "\u33A1",
+            "\u53EF\u7528 " + shop.usableArea + "\u33A1",
+            COLORS.blue
+          );
+          this.drawShopMetric(
+            ctx2,
+            12 + w + gap,
+            metricY,
+            w,
+            "\u5EA7\u4F4D\u9884\u4F30",
+            shop.seatEstimate + "\u5E2D",
+            "\u88C5\u4FEE\u540E\u53EF\u8C03\u6574",
+            COLORS.green
+          );
+          this.drawShopMetric(
+            ctx2,
+            12 + (w + gap) * 2,
+            metricY,
+            w,
+            "\u6708\u79DF",
+            money(
+              shop.monthlyRent
+            ),
+            shop.freeRentDays + "\u5929\u514D\u79DF",
+            COLORS.red
+          );
+          this.drawProgress(
+            ctx2,
+            2,
+            284
+          );
+          this.roundedRect(
+            ctx2,
+            12,
+            365,
+            366,
+            82,
+            13,
+            COLORS.panel,
+            COLORS.line
+          );
+          this.text(
+            ctx2,
+            "\u79DF\u7EA6\u6458\u8981",
+            24,
+            385,
+            9,
+            COLORS.text,
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u62BC" + shop.depositMonths + " \xB7 \u4ED8" + shop.paymentMonths + " \xB7 \u79DF\u671F" + shop.leaseYears + "\u5E74",
+            24,
+            413,
+            8,
+            COLORS.navy,
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u8F6C\u8BA9\u8D39 " + money(
+              shop.transferFee
+            ) + " \xB7 \u4E2D\u4ECB\u8D39 " + money(
+              shop.brokerFee
+            ),
+            24,
+            436,
+            7,
+            COLORS.muted,
+            "600"
+          );
+          const modulesY = 463;
+          this.text(
+            ctx2,
+            "\u5F00\u4E1A\u7B79\u5907",
+            17,
+            modulesY,
+            8,
+            COLORS.muted,
+            "700"
+          );
+          const moduleW = 177;
+          this.drawModule(
+            ctx2,
+            "renovation",
+            "\u88C5\u4FEE\u65B9\u6848",
+            "\u7A7A\u95F4\u3001\u540E\u53A8\u3001\u5EA7\u4F4D\u5E03\u5C40",
+            12,
+            modulesY + 15,
+            moduleW
+          );
+          this.drawModule(
+            ctx2,
+            "equipment",
+            "\u8BBE\u5907\u91C7\u8D2D",
+            "\u540E\u53A8\u3001\u51B7\u94FE\u3001\u6536\u94F6\u8BBE\u5907",
+            201,
+            modulesY + 15,
+            moduleW
+          );
+          this.drawModule(
+            ctx2,
+            "license",
+            "\u8BC1\u7167\u529E\u7406",
+            "\u7ECF\u8425\u3001\u6D88\u9632\u3001\u98DF\u54C1\u8BB8\u53EF",
+            12,
+            modulesY + 94,
+            moduleW
+          );
+          this.drawModule(
+            ctx2,
+            "staff",
+            "\u62DB\u8058\u56E2\u961F",
+            "\u5E97\u957F\u3001\u53A8\u5E08\u3001\u670D\u52A1\u4EBA\u5458",
+            201,
+            modulesY + 94,
+            moduleW
+          );
+        }
+        render(ctx2) {
+          if (!ctx2) {
+            return;
+          }
+          this.getLayout();
+          this.buttons = [];
+          ctx2.save();
+          ctx2.fillStyle = COLORS.paper;
+          ctx2.fillRect(
+            0,
+            0,
+            DESIGN_W,
+            this.viewH
+          );
+          const shop = this.getCurrentShop();
+          if (shop) {
+            this.renderShop(
+              ctx2,
+              shop
+            );
+          } else {
+            this.renderNoShop(
+              ctx2
+            );
+          }
+          ctx2.restore();
+        }
+        handleTap(x, y) {
+          const item = this.hitButton(
+            x,
+            y
+          );
+          if (!item) {
+            return false;
+          }
+          if (item.id === "go-city") {
+            sceneManager.switchTo(
+              "city"
+            );
+            return true;
+          }
+          if (item.id.indexOf(
+            "module:"
+          ) === 0) {
+            const moduleId = item.id.split(":")[1];
+            const names = {
+              renovation: "\u88C5\u4FEE\u65B9\u6848",
+              equipment: "\u8BBE\u5907\u91C7\u8D2D",
+              license: "\u8BC1\u7167\u529E\u7406",
+              staff: "\u62DB\u8058\u56E2\u961F"
+            };
+            if (api && typeof api.showToast === "function") {
+              api.showToast({
+                title: (names[moduleId] || "\u7B79\u5907\u6A21\u5757") + "\u5C06\u5728\u4E0B\u4E00\u9636\u6BB5\u63A5\u5165",
+                icon: "none"
+              });
+            }
+            return true;
+          }
+          return false;
+        }
+      };
+      module.exports = new StoreScene();
+    }
+  });
+
+  // src/city/districtInsightSystem.js
+  var require_districtInsightSystem = __commonJS({
+    "src/city/districtInsightSystem.js"(exports, module) {
+      "use strict";
+      var citySystem = require_citySystem();
+      var demandSystem = require_demandSystem();
+      var propertyMarketSystem = require_propertyMarketSystem();
+      var simulationConfig = require_simulationConfig();
+      function clamp(value, min, max) {
+        return Math.max(
+          min,
+          Math.min(
+            max,
+            value
+          )
+        );
+      }
+      var CUSTOMER_HINTS = {
+        student: [
+          "\u5FEB\u9910",
+          "\u5C0F\u5403",
+          "\u996E\u54C1"
+        ],
+        teacher: [
+          "\u7B80\u9910",
+          "\u5496\u5561",
+          "\u54C1\u8D28\u9910"
+        ],
+        resident: [
+          "\u5BB6\u5E38\u83DC",
+          "\u65E9\u9910",
+          "\u793E\u533A\u9910"
+        ],
+        elderly: [
+          "\u65E9\u9910",
+          "\u9762\u70B9",
+          "\u5BB6\u5E38\u83DC"
+        ],
+        family: [
+          "\u6B63\u9910",
+          "\u706B\u9505",
+          "\u4EB2\u5B50\u9910"
+        ],
+        office: [
+          "\u5DE5\u4F5C\u9910",
+          "\u5496\u5561",
+          "\u8F7B\u98DF"
+        ],
+        business: [
+          "\u5546\u52A1\u9910",
+          "\u54C1\u8D28\u6B63\u9910",
+          "\u5496\u5561"
+        ],
+        tourist: [
+          "\u5730\u65B9\u7279\u8272",
+          "\u5C0F\u5403",
+          "\u4F34\u624B\u9910"
+        ],
+        vendor: [
+          "\u65E9\u9910",
+          "\u5FEB\u9910",
+          "\u9762\u996D"
+        ],
+        worker: [
+          "\u5FEB\u9910",
+          "\u9762\u996D",
+          "\u591C\u5BB5"
+        ],
+        tenant: [
+          "\u5E73\u4EF7\u5FEB\u9910",
+          "\u5916\u5356",
+          "\u591C\u5BB5"
+        ],
+        driver: [
+          "\u5FEB\u9910",
+          "\u65E9\u9910",
+          "\u4FBF\u6377\u9910"
+        ],
+        staff: [
+          "\u5DE5\u4F5C\u9910",
+          "\u7B80\u9910",
+          "\u5916\u5356"
+        ],
+        tech: [
+          "\u5496\u5561",
+          "\u8F7B\u98DF",
+          "\u54C1\u8D28\u5FEB\u9910"
+        ]
+      };
+      var DistrictInsightSystem = class {
+        getCompetitionLabel(saturation) {
+          const bands = simulationConfig.city.competitionBands;
+          if (saturation >= bands.extreme) {
+            return "\u9AD8\u5EA6\u9971\u548C";
+          }
+          if (saturation >= bands.high) {
+            return "\u7ADE\u4E89\u6FC0\u70C8";
+          }
+          if (saturation >= bands.medium) {
+            return "\u7ADE\u4E89\u4E2D\u7B49";
+          }
+          return "\u7ADE\u4E89\u8F83\u4F4E";
+        }
+        getCustomerGroups(districtId) {
+          const groups = demandSystem.getDemandByCustomerType(
+            districtId
+          );
+          const total = Object.values(
+            groups
+          ).reduce(
+            (sum, item) => sum + item.demand,
+            0
+          );
+          return Object.values(
+            groups
+          ).map(
+            (item) => ({
+              ...item,
+              share: total > 0 ? item.demand / total : 0
+            })
+          ).sort(
+            (a, b) => b.share - a.share
+          );
+        }
+        getMealProfile(district) {
+          const entries = Object.keys(
+            district.mealDemand || {}
+          ).map(
+            (key) => ({
+              id: key,
+              share: district.mealDemand[key] || 0
+            })
+          ).sort(
+            (a, b) => b.share - a.share
+          );
+          return entries;
+        }
+        getDistrictEvents(districtId) {
+          const state = propertyMarketSystem.getState();
+          const active = Array.isArray(
+            state.activeEvents
+          ) ? state.activeEvents : [];
+          const external = Array.isArray(
+            state.externalModifiers
+          ) ? state.externalModifiers : [];
+          return active.concat(
+            external
+          ).filter(
+            (event) => !event.districtId || event.districtId === districtId
+          ).slice(
+            0,
+            5
+          );
+        }
+        getBusinessHints(customerGroups) {
+          const result = [];
+          for (let i = 0; i < Math.min(
+            3,
+            customerGroups.length
+          ); i++) {
+            const hints = CUSTOMER_HINTS[customerGroups[i].typeId] || [];
+            for (let j = 0; j < hints.length; j++) {
+              if (result.indexOf(
+                hints[j]
+              ) === -1) {
+                result.push(
+                  hints[j]
+                );
+              }
+              if (result.length >= 5) {
+                return result;
+              }
+            }
+          }
+          return result;
+        }
+        getInsight(districtId) {
+          const district = citySystem.getDistrict(
+            districtId
+          );
+          if (!district) {
+            return null;
+          }
+          const demand = demandSystem.getDemandBreakdown(
+            districtId
+          );
+          const customerGroups = this.getCustomerGroups(
+            districtId
+          );
+          const mealProfile = this.getMealProfile(
+            district
+          );
+          const market = propertyMarketSystem.getDistrictSummary(
+            districtId
+          );
+          const events = this.getDistrictEvents(
+            districtId
+          );
+          const rentLevel = district.rentIndex >= 1.05 ? "\u504F\u9AD8" : district.rentIndex >= 0.78 ? "\u4E2D\u9AD8" : district.rentIndex >= 0.52 ? "\u4E2D\u7B49" : "\u8F83\u4F4E";
+          const customerConcentration = customerGroups.length ? customerGroups[0].share : 0;
+          const diversity = customerConcentration >= 0.68 ? "\u5BA2\u7FA4\u96C6\u4E2D" : customerConcentration >= 0.48 ? "\u4E3B\u529B\u660E\u663E" : "\u5BA2\u7FA4\u591A\u5143";
+          return {
+            id: district.id,
+            name: district.name,
+            population: district.population,
+            residentPopulation: district.residentPopulation,
+            populationDelta: district.populationDelta,
+            currentDemand: demand ? demand.total : 0,
+            dynamicDailyDemand: demand ? demand.dynamicDailyDemand : district.baseDemand,
+            demandDeltaRatio: district.demandDeltaRatio,
+            avgSpend: district.avgSpend,
+            restaurantCount: district.restaurantCount,
+            saturation: district.saturation,
+            competitionLabel: this.getCompetitionLabel(
+              district.saturation
+            ),
+            rentIndex: district.rentIndex,
+            rentLevel,
+            economyMomentum: district.economyMomentum,
+            customerGroups,
+            customerDiversity: diversity,
+            mealProfile,
+            peakMeal: mealProfile.length ? mealProfile[0].id : null,
+            businessHints: this.getBusinessHints(
+              customerGroups
+            ),
+            market: market ? {
+              activeListingCount: market.activeListingCount,
+              averageAskingRent: market.averageAskingRent,
+              averageDaysOnMarket: market.averageDaysOnMarket,
+              hottestStreet: market.hottestStreet
+            } : null,
+            events,
+            eventTrafficFactor: district.eventTrafficFactor,
+            eventDemandFactor: district.eventDemandFactor,
+            trendScore: clamp(
+              district.demandDeltaRatio * 2 + district.populationDelta / Math.max(
+                1,
+                district.residentPopulation
+              ),
+              -1,
+              1
+            )
+          };
+        }
+      };
+      module.exports = new DistrictInsightSystem();
+    }
+  });
+
+  // src/scenes/districtScene.js
+  var require_districtScene = __commonJS({
+    "src/scenes/districtScene.js"(exports, module) {
+      "use strict";
+      var runtime = globalThis.GameRuntime;
+      if (!runtime) {
+        throw new Error(
+          "DistrictScene\uFF1AGameRuntime \u672A\u521D\u59CB\u5316"
+        );
+      }
+      var api = runtime.api || {};
+      var gameState = require_gameState();
+      var citySystem = require_citySystem();
+      var districtInsightSystem = require_districtInsightSystem();
+      var sceneManager = require_sceneManager();
+      var DESIGN_W = 390;
+      var COLORS = {
+        navy: "#12384D",
+        navy2: "#0A2A3B",
+        paper: "#F4EBDD",
+        panel: "#FFF9EF",
+        panel2: "#F8F0E4",
+        text: "#24323A",
+        muted: "#718087",
+        gold: "#E4AA48",
+        orange: "#D9853E",
+        red: "#BF584A",
+        green: "#4B9567",
+        blue: "#4C86A6",
+        line: "#DED1C1",
+        white: "#FFFFFF"
+      };
+      var MEAL_NAMES = {
+        breakfast: "\u65E9\u9910",
+        lunch: "\u5348\u9910",
+        afternoon: "\u4E0B\u5348\u8336",
+        dinner: "\u665A\u9910",
+        night: "\u591C\u5BB5"
+      };
+      function money(value) {
+        return "\xA5" + Math.max(
+          0,
+          Math.round(
+            Number(
+              value
+            ) || 0
+          )
+        ).toLocaleString();
+      }
+      function percent(value) {
+        return Math.round(
+          Number(
+            value
+          ) * 100
+        ) + "%";
+      }
+      var DistrictScene = class {
+        constructor() {
+          this.id = "district";
+          this.districtId = "university";
+          this.viewH = 780;
+          this.navH = 64;
+          this.contentBottom = 716;
+          this.buttons = [];
+        }
+        getLayout() {
+          let height = 780;
+          if (api && typeof api.getSystemInfoSync === "function") {
+            const info = api.getSystemInfoSync();
+            const screenW = Math.max(
+              1,
+              Number(
+                info.windowWidth
+              ) || DESIGN_W
+            );
+            const screenH = Math.max(
+              1,
+              Number(
+                info.windowHeight
+              ) || 780
+            );
+            const scale = screenW / DESIGN_W;
+            height = screenH / scale;
+          }
+          this.viewH = height;
+          this.navH = height < 740 ? 60 : 64;
+          this.contentBottom = height - this.navH;
+        }
+        enter(payload) {
+          const data = payload || {};
+          const requested = data.districtId || gameState.getWorld().currentDistrictId || "university";
+          const district = citySystem.getDistrict(
+            requested
+          );
+          if (district) {
+            this.districtId = requested;
+            citySystem.setCurrentDistrict(
+              requested
+            );
+          }
+        }
+        exit() {
+          this.buttons = [];
+        }
+        update() {
+        }
+        roundedPath(ctx2, x, y, w, h, r) {
+          const radius = Math.min(
+            r,
+            w / 2,
+            h / 2
+          );
+          ctx2.beginPath();
+          ctx2.moveTo(
+            x + radius,
+            y
+          );
+          ctx2.arcTo(
+            x + w,
+            y,
+            x + w,
+            y + h,
+            radius
+          );
+          ctx2.arcTo(
+            x + w,
+            y + h,
+            x,
+            y + h,
+            radius
+          );
+          ctx2.arcTo(
+            x,
+            y + h,
+            x,
+            y,
+            radius
+          );
+          ctx2.arcTo(
+            x,
+            y,
+            x + w,
+            y,
+            radius
+          );
+          ctx2.closePath();
+        }
+        roundedRect(ctx2, x, y, w, h, r, fill, stroke, lineWidth) {
+          this.roundedPath(
+            ctx2,
+            x,
+            y,
+            w,
+            h,
+            r
+          );
+          if (fill) {
+            ctx2.fillStyle = fill;
+            ctx2.fill();
+          }
+          if (stroke) {
+            ctx2.strokeStyle = stroke;
+            ctx2.lineWidth = lineWidth || 1;
+            ctx2.stroke();
+          }
+        }
+        text(ctx2, text, x, y, size, color, weight, align) {
+          ctx2.fillStyle = color || COLORS.text;
+          ctx2.font = (weight || "500") + " " + size + "px sans-serif";
+          ctx2.textAlign = align || "left";
+          ctx2.textBaseline = "middle";
+          ctx2.fillText(
+            String(
+              text
+            ),
+            x,
+            y
+          );
+        }
+        addButton(id, x, y, w, h) {
+          this.buttons.push({
+            id,
+            x,
+            y,
+            w,
+            h
+          });
+        }
+        hitButton(x, y) {
+          for (let i = this.buttons.length - 1; i >= 0; i--) {
+            const item = this.buttons[i];
+            if (x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h) {
+              return item;
+            }
+          }
+          return null;
+        }
+        drawHeader(ctx2, insight) {
+          ctx2.fillStyle = COLORS.navy2;
+          ctx2.fillRect(
+            0,
+            0,
+            DESIGN_W,
+            67
+          );
+          this.roundedRect(
+            ctx2,
+            10,
+            13,
+            44,
+            34,
+            10,
+            "rgba(255,255,255,0.10)",
+            "rgba(255,255,255,0.15)"
+          );
+          this.text(
+            ctx2,
+            "\u2039",
+            32,
+            30,
+            22,
+            COLORS.white,
+            "700",
+            "center"
+          );
+          this.addButton(
+            "back",
+            6,
+            8,
+            54,
+            44
+          );
+          this.text(
+            ctx2,
+            insight.name,
+            68,
+            22,
+            17,
+            COLORS.white,
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u5546\u5708\u8BE6\u60C5 \xB7 \u4EBA\u53E3\u3001\u9700\u6C42\u3001\u5BA2\u7FA4\u548C\u79DF\u91D1\u5747\u4E3A\u52A8\u6001\u503C",
+            68,
+            45,
+            7.5,
+            "rgba(255,255,255,0.70)",
+            "500"
+          );
+          this.roundedRect(
+            ctx2,
+            292,
+            14,
+            86,
+            34,
+            10,
+            COLORS.gold,
+            "#D49434"
+          );
+          this.text(
+            ctx2,
+            "\u67E5\u770B\u623F\u6E90 \u203A",
+            335,
+            31,
+            8.5,
+            "#26343B",
+            "700",
+            "center"
+          );
+          this.addButton(
+            "find-property",
+            288,
+            9,
+            94,
+            44
+          );
+        }
+        drawMetric(ctx2, x, y, w, label, value, sub, color) {
+          this.roundedRect(
+            ctx2,
+            x,
+            y,
+            w,
+            66,
+            12,
+            COLORS.panel,
+            COLORS.line
+          );
+          this.text(
+            ctx2,
+            label,
+            x + 12,
+            y + 16,
+            7,
+            COLORS.muted,
+            "600"
+          );
+          this.text(
+            ctx2,
+            value,
+            x + 12,
+            y + 37,
+            13,
+            color,
+            "700"
+          );
+          this.text(
+            ctx2,
+            sub,
+            x + 12,
+            y + 54,
+            6.5,
+            COLORS.muted,
+            "500"
+          );
+        }
+        drawCustomerPanel(ctx2, insight, y) {
+          this.roundedRect(
+            ctx2,
+            10,
+            y,
+            370,
+            156,
+            14,
+            COLORS.panel,
+            COLORS.line
+          );
+          this.text(
+            ctx2,
+            "\u6D88\u8D39\u4EBA\u7FA4",
+            22,
+            y + 20,
+            11,
+            COLORS.text,
+            "700"
+          );
+          this.text(
+            ctx2,
+            insight.customerDiversity,
+            366,
+            y + 20,
+            7,
+            COLORS.orange,
+            "700",
+            "right"
+          );
+          const groups = insight.customerGroups.slice(
+            0,
+            4
+          );
+          for (let i = 0; i < groups.length; i++) {
+            const item = groups[i];
+            const rowY = y + 47 + i * 25;
+            this.text(
+              ctx2,
+              item.name,
+              22,
+              rowY,
+              7.5,
+              COLORS.text,
+              "700"
+            );
+            this.roundedRect(
+              ctx2,
+              91,
+              rowY - 5,
+              178,
+              10,
+              5,
+              "#EEE5D8"
+            );
+            this.roundedRect(
+              ctx2,
+              91,
+              rowY - 5,
+              Math.max(
+                4,
+                178 * item.share
+              ),
+              10,
+              5,
+              i === 0 ? COLORS.gold : COLORS.blue
+            );
+            this.text(
+              ctx2,
+              percent(
+                item.share
+              ),
+              285,
+              rowY,
+              7,
+              COLORS.muted,
+              "600"
+            );
+            this.text(
+              ctx2,
+              item.demand.toLocaleString() + "\u4EBA",
+              365,
+              rowY,
+              7,
+              COLORS.navy,
+              "700",
+              "right"
+            );
+          }
+        }
+        drawMealPanel(ctx2, insight, y) {
+          this.roundedRect(
+            ctx2,
+            10,
+            y,
+            370,
+            105,
+            14,
+            COLORS.panel,
+            COLORS.line
+          );
+          this.text(
+            ctx2,
+            "\u65F6\u6BB5\u9700\u6C42\u7ED3\u6784",
+            22,
+            y + 19,
+            10,
+            COLORS.text,
+            "700"
+          );
+          const meal = insight.mealProfile;
+          const maxShare = meal.length ? meal[0].share : 1;
+          for (let i = 0; i < meal.length; i++) {
+            const item = meal[i];
+            const x = 22 + i * 69;
+            const barMax = 54;
+            const barH = Math.max(
+              5,
+              barMax * (item.share / Math.max(
+                0.01,
+                maxShare
+              ))
+            );
+            this.roundedRect(
+              ctx2,
+              x,
+              y + 75 - barH,
+              43,
+              barH,
+              6,
+              i === 0 ? COLORS.orange : "#8EB5C8"
+            );
+            this.text(
+              ctx2,
+              MEAL_NAMES[item.id] || item.id,
+              x + 21.5,
+              y + 89,
+              6.5,
+              COLORS.muted,
+              "600",
+              "center"
+            );
+          }
+        }
+        drawMarketPanel(ctx2, insight, y) {
+          this.roundedRect(
+            ctx2,
+            10,
+            y,
+            370,
+            105,
+            14,
+            COLORS.panel,
+            COLORS.line
+          );
+          this.text(
+            ctx2,
+            "\u7ECF\u8425\u73AF\u5883",
+            22,
+            y + 19,
+            10,
+            COLORS.text,
+            "700"
+          );
+          const market = insight.market;
+          const lines = [
+            [
+              "\u9910\u996E\u5E97",
+              insight.restaurantCount + "\u5BB6"
+            ],
+            [
+              "\u7ADE\u4E89",
+              insight.competitionLabel + " \xB7 " + insight.saturation + "%"
+            ],
+            [
+              "\u79DF\u91D1",
+              insight.rentLevel + " \xB7 \u6307\u6570 " + insight.rentIndex.toFixed(
+                2
+              )
+            ],
+            [
+              "\u6302\u724C",
+              market ? market.activeListingCount + "\u5957 \xB7 \u5747\u79DF" + money(
+                market.averageAskingRent
+              ) : "--"
+            ]
+          ];
+          for (let i = 0; i < lines.length; i++) {
+            const col = i % 2;
+            const row = Math.floor(
+              i / 2
+            );
+            const x = 22 + col * 184;
+            const yy = y + 47 + row * 31;
+            this.text(
+              ctx2,
+              lines[i][0],
+              x,
+              yy,
+              6.5,
+              COLORS.muted,
+              "600"
+            );
+            this.text(
+              ctx2,
+              lines[i][1],
+              x + 42,
+              yy,
+              7.5,
+              COLORS.text,
+              "700"
+            );
+          }
+        }
+        drawHintPanel(ctx2, insight, y) {
+          this.roundedRect(
+            ctx2,
+            10,
+            y,
+            370,
+            74,
+            14,
+            "#FFF0D6",
+            "#E3BD77"
+          );
+          this.text(
+            ctx2,
+            "\u7ECF\u8425\u9002\u914D",
+            22,
+            y + 18,
+            8,
+            COLORS.orange,
+            "700"
+          );
+          const hints = insight.businessHints.join(
+            " / "
+          );
+          this.text(
+            ctx2,
+            hints || "\u6682\u65E0\u660E\u663E\u54C1\u7C7B\u504F\u597D",
+            22,
+            y + 40,
+            9,
+            COLORS.text,
+            "700"
+          );
+          const event = insight.events.length ? insight.events[0] : null;
+          this.text(
+            ctx2,
+            event ? "\u5F53\u524D\u4E8B\u4EF6\uFF1A" + event.name : "\u5F53\u524D\u65E0\u5927\u578B\u5546\u5708\u4E8B\u4EF6",
+            22,
+            y + 59,
+            6.5,
+            event ? COLORS.red : COLORS.muted,
+            "600"
+          );
+        }
+        render(ctx2) {
+          if (!ctx2) {
+            return;
+          }
+          this.getLayout();
+          this.buttons = [];
+          const insight = districtInsightSystem.getInsight(
+            this.districtId
+          );
+          if (!insight) {
+            sceneManager.switchTo(
+              "city"
+            );
+            return;
+          }
+          ctx2.save();
+          ctx2.fillStyle = COLORS.paper;
+          ctx2.fillRect(
+            0,
+            0,
+            DESIGN_W,
+            this.viewH
+          );
+          this.drawHeader(
+            ctx2,
+            insight
+          );
+          const y0 = 78;
+          const gap = 8;
+          const w = (DESIGN_W - 20 - gap * 2) / 3;
+          const popTrend = insight.populationDelta > 0 ? "\u2191" : insight.populationDelta < 0 ? "\u2193" : "\u2192";
+          const demandTrend = insight.demandDeltaRatio > 5e-3 ? "\u2191" : insight.demandDeltaRatio < -5e-3 ? "\u2193" : "\u2192";
+          this.drawMetric(
+            ctx2,
+            10,
+            y0,
+            w,
+            "\u6D3B\u8DC3\u4EBA\u53E3",
+            insight.population.toLocaleString(),
+            popTrend + " \u5E38\u4F4F" + insight.residentPopulation.toLocaleString(),
+            COLORS.blue
+          );
+          this.drawMetric(
+            ctx2,
+            10 + w + gap,
+            y0,
+            w,
+            "\u5F53\u524D\u9700\u6C42",
+            insight.currentDemand.toLocaleString(),
+            demandTrend + " \u65E5\u57FA\u6570" + Math.round(
+              insight.dynamicDailyDemand
+            ).toLocaleString(),
+            COLORS.red
+          );
+          this.drawMetric(
+            ctx2,
+            10 + (w + gap) * 2,
+            y0,
+            w,
+            "\u5E73\u5747\u5BA2\u5355",
+            money(
+              insight.avgSpend
+            ),
+            insight.competitionLabel,
+            COLORS.green
+          );
+          let y = y0 + 78;
+          this.drawCustomerPanel(
+            ctx2,
+            insight,
+            y
+          );
+          y += 168;
+          this.drawMealPanel(
+            ctx2,
+            insight,
+            y
+          );
+          y += 117;
+          this.drawMarketPanel(
+            ctx2,
+            insight,
+            y
+          );
+          y += 117;
+          if (y + 74 < this.contentBottom - 6) {
+            this.drawHintPanel(
+              ctx2,
+              insight,
+              y
+            );
+          }
+          ctx2.restore();
+        }
+        handleTap(x, y) {
+          const item = this.hitButton(
+            x,
+            y
+          );
+          if (!item) {
+            return false;
+          }
+          if (item.id === "back") {
+            sceneManager.switchTo(
+              "city"
+            );
+            return true;
+          }
+          if (item.id === "find-property") {
+            sceneManager.switchTo(
+              "propertyMarket",
+              {
+                districtId: this.districtId,
+                source: "district"
+              }
+            );
+            return true;
+          }
+          return false;
+        }
+      };
+      module.exports = new DistrictScene();
     }
   });
 
@@ -11190,7 +12922,9 @@
       var demandSystem = require_demandSystem();
       var simulationSystem = require_simulationSystem();
       var simulationConfig = require_simulationConfig();
-      var shopScene = require_shopScene();
+      var propertyMarketScene = require_shopScene();
+      var storeScene = require_storeScene();
+      var districtScene = require_districtScene();
       var researchScene = require_researchScene();
       var supplyScene = require_supplyScene();
       var businessScene = require_businessScene();
@@ -12262,50 +13996,6 @@
           h
         );
       }
-      function drawGoalPill(y) {
-        const goal = simulationSystem.getGoalState();
-        const x = 208;
-        const w = 76;
-        const h = 29;
-        roundedRect(
-          x,
-          y + 10,
-          w,
-          h,
-          9,
-          "rgba(18,56,77,0.09)",
-          "rgba(18,56,77,0.18)"
-        );
-        drawText(
-          "\u76EE\u6807",
-          x + 10,
-          y + 24.5,
-          7.5,
-          COLORS.muted,
-          "700"
-        );
-        drawText(
-          fitText(
-            goal.title,
-            43,
-            8.3,
-            "700"
-          ),
-          x + w - 8,
-          y + 24.5,
-          8.3,
-          COLORS.navy,
-          "700",
-          "right"
-        );
-        addButton(
-          "tool:goal",
-          x,
-          y + 8,
-          w,
-          h + 4
-        );
-      }
       function drawToolButton(x, y, item) {
         const size = VIEW_H < 740 ? 39 : 42;
         if (!drawAtlas(
@@ -12430,9 +14120,6 @@
             1.2
           );
         }
-        drawGoalPill(
-          y
-        );
         if (!selectedDistrictId) {
           drawText(
             "\u25CF",
@@ -12523,7 +14210,7 @@
           COLORS.gold
         );
         drawText(
-          "\u8FDB\u5165\u5546\u5708 \u203A",
+          "\u67E5\u770B\u8BE6\u60C5 \u203A",
           332,
           y + 24.5,
           8.5,
@@ -12532,7 +14219,7 @@
           "center"
         );
         addButton(
-          "district:enter",
+          "district:details",
           290,
           y + 6,
           84,
@@ -12615,7 +14302,7 @@
         for (let i = 0; i < NAV_ITEMS.length; i++) {
           const item = NAV_ITEMS[i];
           const cx = i * cellW + cellW / 2;
-          const active = item.id === current;
+          const active = item.id === current || item.id === "city" && current === "district" || item.id === "shop" && current === "propertyMarket";
           if (active) {
             if (!drawAtlas(
               "navActive",
@@ -12698,7 +14385,7 @@
           }
           if (target.id.indexOf(
             "district:"
-          ) === 0 && target.id !== "district:enter") {
+          ) === 0 && target.id !== "district:details") {
             const districtId = target.id.split(":")[1];
             selectedDistrictId = districtId;
             citySystem.setCurrentDistrict(
@@ -12718,7 +14405,15 @@
       );
       sceneManager.register(
         "shop",
-        shopScene
+        storeScene
+      );
+      sceneManager.register(
+        "district",
+        districtScene
+      );
+      sceneManager.register(
+        "propertyMarket",
+        propertyMarketScene
       );
       sceneManager.register(
         "research",
@@ -12819,17 +14514,16 @@
           }
           return;
         }
-        if (target.id === "district:enter") {
+        if (target.id === "district:details") {
           const district = selectedDistrictId ? citySystem.getDistrict(
             selectedDistrictId
           ) : null;
           if (district) {
-            selectedDistrictId = district.id;
             citySystem.setCurrentDistrict(
               district.id
             );
             if (sceneManager.switchTo(
-              "shop",
+              "district",
               {
                 districtId: district.id
               }
@@ -12843,12 +14537,7 @@
           "tool:"
         ) === 0) {
           const toolId = target.id.split(":")[1];
-          if (toolId === "goal") {
-            const goal = simulationSystem.getGoalState();
-            showToast(
-              goal.title + "\uFF1A" + goal.detail
-            );
-          } else if (toolId === "news") {
+          if (toolId === "news") {
             const bulletin = simulationSystem.getBulletin();
             showToast(
               bulletin.title + "\uFF1A" + bulletin.detail
@@ -12993,7 +14682,7 @@
         gameLoop
       );
       console.log(
-        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V5 \u57CE\u5E02\u8054\u52A8\u6A21\u62DF\u7248\u542F\u52A8\u6210\u529F"
+        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V6 \u5546\u5708\u8BE6\u60C5\u4E0E\u95E8\u5E97\u5206\u6D41\u7248\u542F\u52A8\u6210\u529F"
       );
     }
   });

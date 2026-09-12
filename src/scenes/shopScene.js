@@ -16,6 +16,9 @@ const api =
 const gameState =
   require('../core/gameState.js');
 
+const sceneManager =
+  require('../core/sceneManager.js');
+
 const citySystem =
   require('../city/citySystem.js');
 
@@ -2953,10 +2956,10 @@ class ShopScene {
         .getDistrictName(
           this.districtId
         ) +
-        ' · 找铺',
+        ' · 房源市场',
 
-      '挂牌随时间、事件和NPC竞争动态变化',
-      null
+      '这里只负责找铺；已签约门店回“门店”页面管理',
+      'market:back'
     );
 
     this.drawDistrictTabs(
@@ -5888,6 +5891,22 @@ class ShopScene {
       local.id;
 
     if (
+      id ===
+      'market:back'
+    ) {
+      sceneManager
+        .switchTo(
+          'district',
+          {
+            districtId:
+              this.districtId
+          }
+        );
+
+      return true;
+    }
+
+    if (
       id.indexOf(
         'district:'
       ) ===
@@ -6309,9 +6328,6 @@ class ShopScene {
         result.message
       );
 
-      this.mode =
-        'browse';
-
       this.selectedListingKey =
         null;
 
@@ -6320,6 +6336,15 @@ class ShopScene {
       );
 
       this.refreshData();
+
+      sceneManager
+        .switchTo(
+          'shop',
+          {
+            shopId:
+              result.shop.id
+          }
+        );
 
       return true;
     }

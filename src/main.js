@@ -44,8 +44,14 @@ const simulationConfig =
    其他页面
 ========================= */
 
-const shopScene =
+const propertyMarketScene =
   require('./scenes/shopScene.js');
+
+const storeScene =
+  require('./scenes/storeScene.js');
+
+const districtScene =
+  require('./scenes/districtScene.js');
 
 const researchScene =
   require('./scenes/researchScene.js');
@@ -1989,65 +1995,6 @@ function drawNewsTicker() {
   );
 }
 
-function drawGoalPill(
-  y
-) {
-  const goal =
-    simulationSystem
-      .getGoalState();
-
-  const x =
-    208;
-
-  const w =
-    76;
-
-  const h =
-    29;
-
-  roundedRect(
-    x,
-    y + 10,
-    w,
-    h,
-    9,
-    'rgba(18,56,77,0.09)',
-    'rgba(18,56,77,0.18)'
-  );
-
-  drawText(
-    '目标',
-    x + 10,
-    y + 24.5,
-    7.5,
-    COLORS.muted,
-    '700'
-  );
-
-  drawText(
-    fitText(
-      goal.title,
-      43,
-      8.3,
-      '700'
-    ),
-    x + w - 8,
-    y + 24.5,
-    8.3,
-    COLORS.navy,
-    '700',
-    'right'
-  );
-
-  addButton(
-    'tool:goal',
-    x,
-    y + 8,
-    w,
-    h + 4
-  );
-}
-
 /* =========================
    地图侧边按钮
 ========================= */
@@ -2251,10 +2198,6 @@ function drawDistrictCard() {
     );
   }
 
-  drawGoalPill(
-    y
-  );
-
   if (
     !selectedDistrictId
   ) {
@@ -2376,7 +2319,7 @@ function drawDistrictCard() {
   );
 
   drawText(
-    '进入商圈 ›',
+    '查看详情 ›',
     332,
     y + 24.5,
     8.5,
@@ -2386,7 +2329,7 @@ function drawDistrictCard() {
   );
 
   addButton(
-    'district:enter',
+    'district:details',
     290,
     y + 6,
     84,
@@ -2553,7 +2496,19 @@ function drawBottomNav() {
 
     const active =
       item.id ===
-      current;
+        current ||
+      (
+        item.id ===
+          'city' &&
+        current ===
+          'district'
+      ) ||
+      (
+        item.id ===
+          'shop' &&
+        current ===
+          'propertyMarket'
+      );
 
     if (active) {
       if (
@@ -2709,7 +2664,7 @@ const cityScene = {
       ) ===
         0 &&
       target.id !==
-        'district:enter'
+        'district:details'
     ) {
       const districtId =
         target.id
@@ -2745,7 +2700,17 @@ sceneManager.register(
 
 sceneManager.register(
   'shop',
-  shopScene
+  storeScene
+);
+
+sceneManager.register(
+  'district',
+  districtScene
+);
+
+sceneManager.register(
+  'propertyMarket',
+  propertyMarketScene
 );
 
 sceneManager.register(
@@ -2967,7 +2932,7 @@ function handleTap(
 
   if (
     target.id ===
-    'district:enter'
+    'district:details'
   ) {
     const district =
       selectedDistrictId
@@ -2978,9 +2943,6 @@ function handleTap(
         : null;
 
     if (district) {
-      selectedDistrictId =
-        district.id;
-
       citySystem
         .setCurrentDistrict(
           district.id
@@ -2989,7 +2951,7 @@ function handleTap(
       if (
         sceneManager
           .switchTo(
-            'shop',
+            'district',
             {
               districtId:
                 district.id
@@ -3014,19 +2976,6 @@ function handleTap(
         .split(':')[1];
 
     if (
-      toolId ===
-      'goal'
-    ) {
-      const goal =
-        simulationSystem
-          .getGoalState();
-
-      showToast(
-        goal.title +
-        '：' +
-        goal.detail
-      );
-    } else if (
       toolId ===
       'news'
     ) {
@@ -3302,5 +3251,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V5 城市联动模拟版启动成功'
+  '城市餐饮经营小游戏 V6 商圈详情与门店分流版启动成功'
 );

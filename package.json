@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "node tests/core.test.js && node tests/propertyFoundation.test.js && node tests/propertyMarket.test.js && node tests/simulation.test.js && node tests/propertyDeal.test.js",
+    "test": "node tests/core.test.js && node tests/propertyFoundation.test.js && node tests/propertyMarket.test.js && node tests/simulation.test.js && node tests/propertyDeal.test.js && node tests/districtInsight.test.js",
     "build:android-js": "esbuild android/entry.js --bundle --platform=browser --format=iife --target=chrome100 --outfile=android/app/src/main/assets/game.bundle.js"
   },
   "devDependencies": {
