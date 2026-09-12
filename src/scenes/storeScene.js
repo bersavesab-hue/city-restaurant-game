@@ -32,6 +32,9 @@ const customizationSystem =
 const textInput =
   require('../ui/textInput.js');
 
+const visualAssetSystem =
+  require('../ui/visualAssetSystem.js');
+
 const DESIGN_W =
   390;
 
@@ -175,6 +178,11 @@ class StoreScene {
   enter() {
     this.selectedModule =
       null;
+
+    visualAssetSystem
+      .loadGroup(
+        'store'
+      );
   }
 
   exit() {
@@ -474,6 +482,107 @@ class StoreScene {
     );
   }
 
+  drawHeroImage(
+    ctx,
+    x,
+    y,
+    w,
+    h
+  ) {
+    const image =
+      visualAssetSystem
+        .get(
+          'visual_storefront_hero'
+        );
+
+    if (!image) {
+      return false;
+    }
+
+    ctx.save();
+
+    this.roundedPath(
+      ctx,
+      x,
+      y,
+      w,
+      h,
+      12
+    );
+
+    ctx.clip();
+
+    const iw =
+      image.naturalWidth ||
+      image.width;
+
+    const ih =
+      image.naturalHeight ||
+      image.height;
+
+    const imageRatio =
+      iw /
+      Math.max(
+        1,
+        ih
+      );
+
+    const boxRatio =
+      w /
+      Math.max(
+        1,
+        h
+      );
+
+    let sx = 0;
+    let sy = 0;
+    let sw = iw;
+    let sh = ih;
+
+    if (
+      imageRatio >
+      boxRatio
+    ) {
+      sw =
+        ih *
+        boxRatio;
+
+      sx =
+        (
+          iw -
+          sw
+        ) /
+        2;
+    } else {
+      sh =
+        iw /
+        boxRatio;
+
+      sy =
+        (
+          ih -
+          sh
+        ) /
+        2;
+    }
+
+    ctx.drawImage(
+      image,
+      sx,
+      sy,
+      sw,
+      sh,
+      x,
+      y,
+      w,
+      h
+    );
+
+    ctx.restore();
+
+    return true;
+  }
+
   drawProgress(
     ctx,
     activeIndex,
@@ -624,12 +733,30 @@ class StoreScene {
       COLORS.line
     );
 
+    this.drawHeroImage(
+      ctx,
+      220,
+      88,
+      150,
+      114
+    );
+
     this.text(
       ctx,
-      '当前还没有已签约门店',
+      '当前还没有',
       24,
-      108,
-      15,
+      106,
+      14,
+      COLORS.text,
+      '700'
+    );
+
+    this.text(
+      ctx,
+      '已签约门店',
+      24,
+      126,
+      14,
       COLORS.text,
       '700'
     );
@@ -638,7 +765,7 @@ class StoreScene {
       ctx,
       '经营目标',
       24,
-      140,
+      151,
       7,
       COLORS.orange,
       '700'
@@ -646,20 +773,20 @@ class StoreScene {
 
     this.text(
       ctx,
-      '选择合适商圈 → 看铺 → 谈判 → 签下第一家店',
+      '选择商圈 → 看铺 → 谈判',
       24,
-      162,
-      9,
+      172,
+      8.2,
       COLORS.navy,
       '700'
     );
 
     this.text(
       ctx,
-      '门店页只显示你的经营资产；商圈与房源从城市地图进入。',
+      '签下第一家店，正式开始经营。',
       24,
-      188,
-      7,
+      193,
+      6.8,
       COLORS.muted,
       '500'
     );
@@ -915,6 +1042,14 @@ class StoreScene {
       COLORS.line
     );
 
+    this.drawHeroImage(
+      ctx,
+      268,
+      86,
+      102,
+      88
+    );
+
     this.roundedRect(
       ctx,
       24,
@@ -968,7 +1103,7 @@ class StoreScene {
 
     this.roundedRect(
       ctx,
-      300,
+      194,
       129,
       62,
       28,
@@ -980,7 +1115,7 @@ class StoreScene {
     this.text(
       ctx,
       '✎ 改名',
-      331,
+      225,
       143,
       7.5,
       COLORS.orange,
@@ -990,7 +1125,7 @@ class StoreScene {
 
     this.addButton(
       'shop:rename',
-      294,
+      188,
       124,
       74,
       38

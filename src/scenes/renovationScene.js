@@ -30,6 +30,9 @@ const customizationSystem =
 const textInput =
   require('../ui/textInput.js');
 
+const visualAssetSystem =
+  require('../ui/visualAssetSystem.js');
+
 const DESIGN_W =
   390;
 
@@ -112,6 +115,11 @@ class RenovationScene {
       renovationSystem
         .ensurePlan(
           this.shopId
+        );
+
+      visualAssetSystem
+        .loadGroup(
+          'renovation'
         );
     }
 
@@ -594,6 +602,79 @@ class RenovationScene {
     }
   }
 
+  drawVisual(
+    ctx,
+    key,
+    x,
+    y,
+    w,
+    h,
+    alpha
+  ) {
+    const image =
+      visualAssetSystem
+        .get(
+          key
+        );
+
+    if (!image) {
+      return false;
+    }
+
+    const iw =
+      image.naturalWidth ||
+      image.width ||
+      1;
+
+    const ih =
+      image.naturalHeight ||
+      image.height ||
+      1;
+
+    const scale =
+      Math.min(
+        w / iw,
+        h / ih
+      );
+
+    const dw =
+      iw *
+      scale;
+
+    const dh =
+      ih *
+      scale;
+
+    ctx.save();
+
+    ctx.globalAlpha =
+      alpha == null
+        ? 1
+        : alpha;
+
+    ctx.drawImage(
+      image,
+      x +
+        (
+          w -
+          dw
+        ) /
+        2,
+      y +
+        (
+          h -
+          dh
+        ) /
+        2,
+      dw,
+      dh
+    );
+
+    ctx.restore();
+
+    return true;
+  }
+
   drawFloorPlan(
     ctx,
     metrics,
@@ -731,10 +812,108 @@ class RenovationScene {
       '700'
     );
 
+    const kitchenW =
+      innerW *
+      floor.kitchenRatio;
+
+    const storageW =
+      innerW *
+      floor.storageRatio;
+
+    const serviceW =
+      innerW *
+      floor.serviceRatio;
+
+    this.drawVisual(
+      ctx,
+      'visual_stove',
+      x + 11,
+      innerY + 28,
+      Math.max(
+        26,
+        kitchenW * 0.52
+      ),
+      50,
+      0.95
+    );
+
+    this.drawVisual(
+      ctx,
+      'visual_fridge',
+      x + 9 +
+        kitchenW * 0.48,
+      innerY + 27,
+      Math.max(
+        22,
+        kitchenW * 0.38
+      ),
+      50,
+      0.95
+    );
+
+    this.drawVisual(
+      ctx,
+      'visual_register',
+      x + 8 +
+        kitchenW +
+        storageW,
+      innerY + 35,
+      Math.max(
+        25,
+        serviceW
+      ),
+      44,
+      0.92
+    );
+
+    this.drawVisual(
+      ctx,
+      'visual_plant',
+      diningX + 4,
+      innerY +
+        innerH -
+        39,
+      30,
+      34,
+      0.95
+    );
+
+    this.drawVisual(
+      ctx,
+      'visual_light',
+      diningX +
+        Math.max(
+          38,
+          diningW *
+            0.40
+        ),
+      innerY + 16,
+      26,
+      34,
+      0.88
+    );
+
     const roomCount =
       floor
         .privateRooms
         .length;
+
+    if (
+      roomCount >
+      0
+    ) {
+      this.drawVisual(
+        ctx,
+        'visual_divider',
+        diningX +
+          diningW -
+          64,
+        innerY + 18,
+        58,
+        innerH - 23,
+        0.26
+      );
+    }
 
     for (
       let i = 0;
@@ -878,24 +1057,44 @@ class RenovationScene {
           break;
         }
 
-        this.roundedRect(
-          ctx,
-          tx,
-          ty,
+        const tableW =
           key ===
             '2'
-            ? 14
+            ? 18
             : key ===
                 '4'
-              ? 18
-              : 22,
-          11,
-          4,
-          key ===
-            '8'
-            ? '#C39A73'
-            : '#8EB5C8'
-        );
+              ? 22
+              : key ===
+                  '6'
+                ? 25
+                : 28;
+
+        const drawn =
+          this.drawVisual(
+            ctx,
+            'visual_table_' +
+              key,
+            tx,
+            ty - 4,
+            tableW,
+            18,
+            0.96
+          );
+
+        if (!drawn) {
+          this.roundedRect(
+            ctx,
+            tx,
+            ty,
+            tableW,
+            11,
+            4,
+            key ===
+              '8'
+              ? '#C39A73'
+              : '#8EB5C8'
+          );
+        }
 
         tableIndex +=
           1;

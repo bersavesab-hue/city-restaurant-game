@@ -26,6 +26,9 @@ const districtInsightSystem =
 const sceneManager =
   require('../core/sceneManager.js');
 
+const visualAssetSystem =
+  require('../ui/visualAssetSystem.js');
+
 const DESIGN_W =
   390;
 
@@ -224,6 +227,11 @@ class DistrictScene {
       citySystem
         .setCurrentDistrict(
           requested
+        );
+
+      visualAssetSystem
+        .loadGroup(
+          'district'
         );
     }
   }
@@ -439,15 +447,41 @@ class DistrictScene {
     ctx,
     insight
   ) {
-    ctx.fillStyle =
-      COLORS.navy2;
+    const banner =
+      visualAssetSystem
+        .get(
+          'visual_district_banner'
+        );
 
-    ctx.fillRect(
-      0,
-      0,
-      DESIGN_W,
-      67
-    );
+    if (banner) {
+      ctx.drawImage(
+        banner,
+        0,
+        0,
+        DESIGN_W,
+        67
+      );
+
+      ctx.fillStyle =
+        'rgba(5,35,52,0.70)';
+
+      ctx.fillRect(
+        0,
+        0,
+        DESIGN_W,
+        67
+      );
+    } else {
+      ctx.fillStyle =
+        COLORS.navy2;
+
+      ctx.fillRect(
+        0,
+        0,
+        DESIGN_W,
+        67
+      );
+    }
 
     this.roundedRect(
       ctx,

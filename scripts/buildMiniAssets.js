@@ -29,28 +29,21 @@ const OUTPUT =
     'build/minigame-assets'
   );
 
-function ensureDir(
-  dir
-) {
+function ensureDir(dir) {
   fs.mkdirSync(
     dir,
     {
-      recursive:
-        true
+      recursive: true
     }
   );
 }
 
-function removeDir(
-  dir
-) {
+function removeDir(dir) {
   fs.rmSync(
     dir,
     {
-      recursive:
-        true,
-      force:
-        true
+      recursive: true,
+      force: true
     }
   );
 }
@@ -102,8 +95,7 @@ function copyList(
   list,
   targetRoot
 ) {
-  let total =
-    0;
+  let total = 0;
 
   for (
     const item of
@@ -119,16 +111,12 @@ function copyList(
   return total;
 }
 
-function mb(
-  bytes
-) {
+function mb(bytes) {
   return (
     bytes /
     1024 /
     1024
-  ).toFixed(
-    2
-  );
+  ).toFixed(2);
 }
 
 removeDir(
@@ -155,15 +143,12 @@ if (
 ) {
   throw new Error(
     '主包资源超预算：' +
-    mb(
-      mainBytes
-    ) +
+    mb(mainBytes) +
     'MB'
   );
 }
 
-const modules =
-  {};
+const modules = {};
 
 for (
   const [
@@ -197,43 +182,31 @@ for (
       '分包 ' +
       name +
       ' 超预算：' +
-      mb(
-        bytes
-      ) +
+      mb(bytes) +
       'MB'
     );
   }
 
-  modules[
-    name
-  ] =
+  modules[name] =
     bytes;
 }
 
 const report = {
   mainBytes,
   mainMB:
-    mb(
-      mainBytes
-    ),
+    mb(mainBytes),
+
   modules:
     Object.fromEntries(
       Object.entries(
         modules
       ).map(
-        (
-          [
-            name,
-            bytes
-          ]
-        ) => [
+        ([name, bytes]) => [
           name,
           {
             bytes,
             mb:
-              mb(
-                bytes
-              )
+              mb(bytes)
           }
         ]
       )
@@ -257,7 +230,7 @@ fs.writeFileSync(
 );
 
 console.log(
-  'Mini-game assets prepared:',
+  'Mini-game runtime assets prepared:',
   JSON.stringify(
     report
   )

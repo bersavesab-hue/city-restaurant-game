@@ -26,9 +26,7 @@ const manifest =
     )
   );
 
-function sizeOf(
-  relativePath
-) {
+function sizeOf(relativePath) {
   const full =
     path.join(
       ROOT,
@@ -36,9 +34,7 @@ function sizeOf(
     );
 
   assert.ok(
-    fs.existsSync(
-      full
-    ),
+    fs.existsSync(full),
     '资源不存在：' +
       relativePath
   );
@@ -48,35 +44,24 @@ function sizeOf(
   ).size;
 }
 
-const devOnly =
-  new Set(
-    manifest.devOnly
-  );
+let coreBytes = 0;
 
 for (
   const file of
   manifest.core
 ) {
   assert.ok(
-    !devOnly.has(
-      file
-    ),
-    '主包资源不能同时标记为开发参考：' +
+    !manifest
+      .devOnly
+      .includes(
+        file
+      ),
+    '运行时资源不能同时标记为开发参考：' +
       file
   );
-}
 
-let coreBytes =
-  0;
-
-for (
-  const file of
-  manifest.core
-) {
   coreBytes +=
-    sizeOf(
-      file
-    );
+    sizeOf(file);
 }
 
 assert.ok(
@@ -96,17 +81,14 @@ for (
     manifest.modules
   )
 ) {
-  let bytes =
-    0;
+  let bytes = 0;
 
   for (
     const file of
     files
   ) {
     bytes +=
-      sizeOf(
-        file
-      );
+      sizeOf(file);
   }
 
   assert.ok(
@@ -121,37 +103,31 @@ for (
 }
 
 assert.ok(
-  manifest
-    .core
-    .some(
-      file =>
-        file.endsWith(
-          'city_base_01.webp'
-        )
-    ),
-  '主包必须使用优化后的城市地图'
+  manifest.core.some(
+    file =>
+      file.endsWith(
+        'city_base_01.webp'
+      )
+  ),
+  '主包必须使用压缩后的城市地图'
 );
 
 assert.ok(
-  !manifest
-    .core
-    .some(
-      file =>
-        file.endsWith(
-          'city_base_01.png'
-        )
-    ),
-  '4MB 原始城市地图不能进入主包'
+  !manifest.core.some(
+    file =>
+      file.endsWith(
+        'city_base_01.png'
+      )
+  ),
+  '原始大地图不能进入运行主包'
 );
 
 console.log(
-  'asset pipeline tests passed; core assets = ' +
+  'asset pipeline tests passed; core runtime assets = ' +
   (
     coreBytes /
     1024 /
     1024
-  ).toFixed(
-    2
-  ) +
+  ).toFixed(2) +
   'MB'
 );

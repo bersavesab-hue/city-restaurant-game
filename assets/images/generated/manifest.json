@@ -1,20 +1,7 @@
 {
-  "version": 1,
-  "policy": "development-reference-and-subpackage",
-  "note": "Mockups are development-only and excluded from runtime builds. Atlases are subpackage candidates and must be loaded only when their module is entered.",
-  "mockups": {
-    "storeManagement": "assets/images/generated/mockups/store_management_v1.png",
-    "districtDashboard": "assets/images/generated/mockups/district_dashboard_v1.png",
-    "renovationScreen": "assets/images/generated/mockups/renovation_screen_v1.png",
-    "storePreparation": "assets/images/generated/mockups/store_preparation_v1.png",
-    "districtDashboardAlt": "assets/images/generated/mockups/district_dashboard_alt_v1.png"
-  },
-  "atlases": {
-    "uiComponents": "assets/images/generated/atlases/ui_components_v1.png",
-    "renovationAssets": "assets/images/generated/atlases/renovation_assets_v1.png"
-  },
-  "runtime": {
-    "mockups": false,
-    "atlases": "subpackage"
-  }
+  "version": 2,
+  "policy": "design-reference-only",
+  "note": "Large generated mockups and source atlases stay in the repository for design/cropping. V10 runtime loads only assets/images/runtime/ crops.",
+  "runtime": false,
+  "runtimeDirectory": "assets/images/runtime/"
 }

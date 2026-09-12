@@ -12183,6 +12183,156 @@
     }
   });
 
+  // src/ui/visualAssetSystem.js
+  var require_visualAssetSystem = __commonJS({
+    "src/ui/visualAssetSystem.js"(exports, module) {
+      "use strict";
+      var runtime = globalThis.GameRuntime || {};
+      var resourceManager = require_resourceManager();
+      var GROUPS = {
+        store: [
+          {
+            key: "visual_storefront_hero",
+            path: "assets/images/runtime/store/storefront_hero.webp"
+          }
+        ],
+        district: [
+          {
+            key: "visual_district_banner",
+            path: "assets/images/runtime/district/district_banner.webp"
+          }
+        ],
+        renovation: [
+          {
+            key: "visual_table_2",
+            path: "assets/images/runtime/renovation/table_2.webp"
+          },
+          {
+            key: "visual_table_4",
+            path: "assets/images/runtime/renovation/table_4.webp"
+          },
+          {
+            key: "visual_table_6",
+            path: "assets/images/runtime/renovation/table_6.webp"
+          },
+          {
+            key: "visual_table_8",
+            path: "assets/images/runtime/renovation/table_8.webp"
+          },
+          {
+            key: "visual_register",
+            path: "assets/images/runtime/renovation/register.webp"
+          },
+          {
+            key: "visual_stove",
+            path: "assets/images/runtime/renovation/stove.webp"
+          },
+          {
+            key: "visual_fridge",
+            path: "assets/images/runtime/renovation/fridge.webp"
+          },
+          {
+            key: "visual_plant",
+            path: "assets/images/runtime/renovation/plant.webp"
+          },
+          {
+            key: "visual_light",
+            path: "assets/images/runtime/renovation/light.webp"
+          },
+          {
+            key: "visual_divider",
+            path: "assets/images/runtime/renovation/divider.webp"
+          },
+          {
+            key: "visual_style_wood",
+            path: "assets/images/runtime/renovation/style_wood.webp"
+          },
+          {
+            key: "visual_style_chinese",
+            path: "assets/images/runtime/renovation/style_chinese.webp"
+          },
+          {
+            key: "visual_style_modern",
+            path: "assets/images/runtime/renovation/style_modern.webp"
+          },
+          {
+            key: "visual_style_night",
+            path: "assets/images/runtime/renovation/style_night.webp"
+          },
+          {
+            key: "visual_style_business",
+            path: "assets/images/runtime/renovation/style_business.webp"
+          }
+        ]
+      };
+      var loadingGroups = /* @__PURE__ */ new Map();
+      function requestRender() {
+        if (runtime && typeof runtime.requestRender === "function") {
+          runtime.requestRender();
+        }
+      }
+      function loadGroup(name) {
+        if (!GROUPS[name]) {
+          return Promise.resolve(
+            []
+          );
+        }
+        if (loadingGroups.has(
+          name
+        )) {
+          return loadingGroups.get(
+            name
+          );
+        }
+        const promise = resourceManager.loadImages(
+          GROUPS[name],
+          "visual:" + name
+        ).then(
+          (images) => {
+            requestRender();
+            return images;
+          }
+        ).catch(
+          (error) => {
+            console.warn(
+              "\u89C6\u89C9\u8D44\u6E90\u52A0\u8F7D\u5931\u8D25\uFF1A" + name,
+              error
+            );
+            requestRender();
+            return [];
+          }
+        ).finally(
+          () => {
+            loadingGroups.delete(
+              name
+            );
+          }
+        );
+        loadingGroups.set(
+          name,
+          promise
+        );
+        return promise;
+      }
+      function get(key) {
+        return resourceManager.getImage(
+          key
+        );
+      }
+      function releaseGroup(name) {
+        resourceManager.releaseGroup(
+          "visual:" + name
+        );
+      }
+      module.exports = {
+        GROUPS,
+        loadGroup,
+        get,
+        releaseGroup
+      };
+    }
+  });
+
   // src/scenes/storeScene.js
   var require_storeScene = __commonJS({
     "src/scenes/storeScene.js"(exports, module) {
@@ -12200,6 +12350,7 @@
       var renovationSystem = require_renovationSystem();
       var customizationSystem = require_customizationSystem();
       var textInput = require_textInput();
+      var visualAssetSystem = require_visualAssetSystem();
       var DESIGN_W = 390;
       var COLORS = {
         navy: "#12384D",
@@ -12261,6 +12412,9 @@
         }
         enter() {
           this.selectedModule = null;
+          visualAssetSystem.loadGroup(
+            "store"
+          );
         }
         exit() {
           this.buttons = [];
@@ -12416,6 +12570,58 @@
             "right"
           );
         }
+        drawHeroImage(ctx2, x, y, w, h) {
+          const image = visualAssetSystem.get(
+            "visual_storefront_hero"
+          );
+          if (!image) {
+            return false;
+          }
+          ctx2.save();
+          this.roundedPath(
+            ctx2,
+            x,
+            y,
+            w,
+            h,
+            12
+          );
+          ctx2.clip();
+          const iw = image.naturalWidth || image.width;
+          const ih = image.naturalHeight || image.height;
+          const imageRatio = iw / Math.max(
+            1,
+            ih
+          );
+          const boxRatio = w / Math.max(
+            1,
+            h
+          );
+          let sx = 0;
+          let sy = 0;
+          let sw = iw;
+          let sh = ih;
+          if (imageRatio > boxRatio) {
+            sw = ih * boxRatio;
+            sx = (iw - sw) / 2;
+          } else {
+            sh = iw / boxRatio;
+            sy = (ih - sh) / 2;
+          }
+          ctx2.drawImage(
+            image,
+            sx,
+            sy,
+            sw,
+            sh,
+            x,
+            y,
+            w,
+            h
+          );
+          ctx2.restore();
+          return true;
+        }
         drawProgress(ctx2, activeIndex, y) {
           const steps = [
             "\u9009\u5740",
@@ -12499,12 +12705,28 @@
             COLORS.panel,
             COLORS.line
           );
+          this.drawHeroImage(
+            ctx2,
+            220,
+            88,
+            150,
+            114
+          );
           this.text(
             ctx2,
-            "\u5F53\u524D\u8FD8\u6CA1\u6709\u5DF2\u7B7E\u7EA6\u95E8\u5E97",
+            "\u5F53\u524D\u8FD8\u6CA1\u6709",
             24,
-            108,
-            15,
+            106,
+            14,
+            COLORS.text,
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u5DF2\u7B7E\u7EA6\u95E8\u5E97",
+            24,
+            126,
+            14,
             COLORS.text,
             "700"
           );
@@ -12512,26 +12734,26 @@
             ctx2,
             "\u7ECF\u8425\u76EE\u6807",
             24,
-            140,
+            151,
             7,
             COLORS.orange,
             "700"
           );
           this.text(
             ctx2,
-            "\u9009\u62E9\u5408\u9002\u5546\u5708 \u2192 \u770B\u94FA \u2192 \u8C08\u5224 \u2192 \u7B7E\u4E0B\u7B2C\u4E00\u5BB6\u5E97",
+            "\u9009\u62E9\u5546\u5708 \u2192 \u770B\u94FA \u2192 \u8C08\u5224",
             24,
-            162,
-            9,
+            172,
+            8.2,
             COLORS.navy,
             "700"
           );
           this.text(
             ctx2,
-            "\u95E8\u5E97\u9875\u53EA\u663E\u793A\u4F60\u7684\u7ECF\u8425\u8D44\u4EA7\uFF1B\u5546\u5708\u4E0E\u623F\u6E90\u4ECE\u57CE\u5E02\u5730\u56FE\u8FDB\u5165\u3002",
+            "\u7B7E\u4E0B\u7B2C\u4E00\u5BB6\u5E97\uFF0C\u6B63\u5F0F\u5F00\u59CB\u7ECF\u8425\u3002",
             24,
-            188,
-            7,
+            193,
+            6.8,
             COLORS.muted,
             "500"
           );
@@ -12709,6 +12931,13 @@
             COLORS.panel,
             COLORS.line
           );
+          this.drawHeroImage(
+            ctx2,
+            268,
+            86,
+            102,
+            88
+          );
           this.roundedRect(
             ctx2,
             24,
@@ -12744,7 +12973,7 @@
           );
           this.roundedRect(
             ctx2,
-            300,
+            194,
             129,
             62,
             28,
@@ -12755,7 +12984,7 @@
           this.text(
             ctx2,
             "\u270E \u6539\u540D",
-            331,
+            225,
             143,
             7.5,
             COLORS.orange,
@@ -12764,7 +12993,7 @@
           );
           this.addButton(
             "shop:rename",
-            294,
+            188,
             124,
             74,
             38
@@ -13294,6 +13523,7 @@
       var citySystem = require_citySystem();
       var districtInsightSystem = require_districtInsightSystem();
       var sceneManager = require_sceneManager();
+      var visualAssetSystem = require_visualAssetSystem();
       var DESIGN_W = 390;
       var COLORS = {
         navy: "#12384D",
@@ -13377,6 +13607,9 @@
             this.districtId = requested;
             citySystem.setCurrentDistrict(
               requested
+            );
+            visualAssetSystem.loadGroup(
+              "district"
             );
           }
         }
@@ -13477,13 +13710,33 @@
           return null;
         }
         drawHeader(ctx2, insight) {
-          ctx2.fillStyle = COLORS.navy2;
-          ctx2.fillRect(
-            0,
-            0,
-            DESIGN_W,
-            67
+          const banner = visualAssetSystem.get(
+            "visual_district_banner"
           );
+          if (banner) {
+            ctx2.drawImage(
+              banner,
+              0,
+              0,
+              DESIGN_W,
+              67
+            );
+            ctx2.fillStyle = "rgba(5,35,52,0.70)";
+            ctx2.fillRect(
+              0,
+              0,
+              DESIGN_W,
+              67
+            );
+          } else {
+            ctx2.fillStyle = COLORS.navy2;
+            ctx2.fillRect(
+              0,
+              0,
+              DESIGN_W,
+              67
+            );
+          }
           this.roundedRect(
             ctx2,
             10,
@@ -13995,6 +14248,7 @@
       var renovationConfig = require_renovationConfig();
       var customizationSystem = require_customizationSystem();
       var textInput = require_textInput();
+      var visualAssetSystem = require_visualAssetSystem();
       var DESIGN_W = 390;
       var COLORS = {
         navy: "#12384D",
@@ -14042,6 +14296,9 @@
           if (this.shopId) {
             renovationSystem.ensurePlan(
               this.shopId
+            );
+            visualAssetSystem.loadGroup(
+              "renovation"
             );
           }
           this.page = "layout";
@@ -14333,6 +14590,33 @@
             );
           }
         }
+        drawVisual(ctx2, key, x, y, w, h, alpha) {
+          const image = visualAssetSystem.get(
+            key
+          );
+          if (!image) {
+            return false;
+          }
+          const iw = image.naturalWidth || image.width || 1;
+          const ih = image.naturalHeight || image.height || 1;
+          const scale = Math.min(
+            w / iw,
+            h / ih
+          );
+          const dw = iw * scale;
+          const dh = ih * scale;
+          ctx2.save();
+          ctx2.globalAlpha = alpha == null ? 1 : alpha;
+          ctx2.drawImage(
+            image,
+            x + (w - dw) / 2,
+            y + (h - dh) / 2,
+            dw,
+            dh
+          );
+          ctx2.restore();
+          return true;
+        }
         drawFloorPlan(ctx2, metrics, floor) {
           const x = 10;
           const y = 108;
@@ -14416,7 +14700,78 @@
             COLORS.green,
             "700"
           );
+          const kitchenW = innerW * floor.kitchenRatio;
+          const storageW = innerW * floor.storageRatio;
+          const serviceW = innerW * floor.serviceRatio;
+          this.drawVisual(
+            ctx2,
+            "visual_stove",
+            x + 11,
+            innerY + 28,
+            Math.max(
+              26,
+              kitchenW * 0.52
+            ),
+            50,
+            0.95
+          );
+          this.drawVisual(
+            ctx2,
+            "visual_fridge",
+            x + 9 + kitchenW * 0.48,
+            innerY + 27,
+            Math.max(
+              22,
+              kitchenW * 0.38
+            ),
+            50,
+            0.95
+          );
+          this.drawVisual(
+            ctx2,
+            "visual_register",
+            x + 8 + kitchenW + storageW,
+            innerY + 35,
+            Math.max(
+              25,
+              serviceW
+            ),
+            44,
+            0.92
+          );
+          this.drawVisual(
+            ctx2,
+            "visual_plant",
+            diningX + 4,
+            innerY + innerH - 39,
+            30,
+            34,
+            0.95
+          );
+          this.drawVisual(
+            ctx2,
+            "visual_light",
+            diningX + Math.max(
+              38,
+              diningW * 0.4
+            ),
+            innerY + 16,
+            26,
+            34,
+            0.88
+          );
           const roomCount = floor.privateRooms.length;
+          if (roomCount > 0) {
+            this.drawVisual(
+              ctx2,
+              "visual_divider",
+              diningX + diningW - 64,
+              innerY + 18,
+              58,
+              innerH - 23,
+              0.26
+            );
+          }
           for (let i = 0; i < Math.min(
             roomCount,
             4
@@ -14485,15 +14840,27 @@
               if (ty > innerY + innerH - 15) {
                 break;
               }
-              this.roundedRect(
+              const tableW = key === "2" ? 18 : key === "4" ? 22 : key === "6" ? 25 : 28;
+              const drawn = this.drawVisual(
                 ctx2,
+                "visual_table_" + key,
                 tx,
-                ty,
-                key === "2" ? 14 : key === "4" ? 18 : 22,
-                11,
-                4,
-                key === "8" ? "#C39A73" : "#8EB5C8"
+                ty - 4,
+                tableW,
+                18,
+                0.96
               );
+              if (!drawn) {
+                this.roundedRect(
+                  ctx2,
+                  tx,
+                  ty,
+                  tableW,
+                  11,
+                  4,
+                  key === "8" ? "#C39A73" : "#8EB5C8"
+                );
+              }
               tableIndex += 1;
             }
           }
@@ -18061,7 +18428,7 @@
         gameLoop
       );
       console.log(
-        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V9 \u8D44\u6E90\u5206\u5305\u4E0E\u8F7B\u91CF\u6784\u5EFA\u7248\u542F\u52A8\u6210\u529F"
+        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V10 \u56FE\u7247\u8FD0\u884C\u65F6\u63A5\u5165\u7248\u542F\u52A8\u6210\u529F"
       );
     }
   });
