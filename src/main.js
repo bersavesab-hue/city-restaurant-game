@@ -1,14 +1,45 @@
 'use strict';
 
-const runtime = globalThis.GameRuntime;
+const runtime =
+  globalThis.GameRuntime;
 
 if (!runtime) {
-  throw new Error('GameRuntime 未初始化，请先从 game.js 启动');
+  throw new Error(
+    'GameRuntime 未初始化'
+  );
 }
 
-const api = runtime.api;
-const canvas = runtime.canvas;
-const ctx = runtime.ctx;
+const api =
+  runtime.api;
+
+const canvas =
+  runtime.canvas;
+
+const ctx =
+  runtime.ctx;
+
+/* =========================
+   页面系统
+========================= */
+
+const sceneManager =
+  require('./core/sceneManager.js');
+
+const shopScene =
+  require('./scenes/shopScene.js');
+
+const researchScene =
+  require('./scenes/researchScene.js');
+
+const supplyScene =
+  require('./scenes/supplyScene.js');
+
+const businessScene =
+  require('./scenes/businessScene.js');
+
+/* =========================
+   基础尺寸
+========================= */
 
 const DESIGN_W = 390;
 const DESIGN_H = 844;
@@ -32,16 +63,29 @@ const COLORS = {
   white: '#FFFDF9'
 };
 
+/* =========================
+   城市页面数据
+========================= */
+
 const state = {
-  selectedDistrict: 'university'
+  selectedDistrict:
+    'university'
 };
 
 const city = {
   name: '云州市',
-  date: '第1年 4月12日',
-  time: '10:20',
-  weather: '晴 23℃',
-  cash: 50000
+
+  date:
+    '第1年 4月12日',
+
+  time:
+    '10:20',
+
+  weather:
+    '晴 23℃',
+
+  cash:
+    50000
 };
 
 const districts = [
@@ -57,6 +101,7 @@ const districts = [
     restaurants: 89,
     saturation: 67
   },
+
   {
     id: 'cbd',
     name: '商业中心',
@@ -69,6 +114,7 @@ const districts = [
     restaurants: 152,
     saturation: 91
   },
+
   {
     id: 'university',
     name: '大学城',
@@ -81,6 +127,7 @@ const districts = [
     restaurants: 126,
     saturation: 84
   },
+
   {
     id: 'market',
     name: '东门市场',
@@ -93,6 +140,7 @@ const districts = [
     restaurants: 74,
     saturation: 64
   },
+
   {
     id: 'village',
     name: '城中村',
@@ -105,6 +153,7 @@ const districts = [
     restaurants: 103,
     saturation: 72
   },
+
   {
     id: 'industry',
     name: '工业园',
@@ -117,6 +166,7 @@ const districts = [
     restaurants: 81,
     saturation: 61
   },
+
   {
     id: 'hightech',
     name: '高新区',
@@ -131,18 +181,24 @@ const districts = [
   }
 ];
 
+/* =========================
+   Canvas适配
+========================= */
+
 let scale = 1;
 let offsetX = 0;
 let offsetY = 0;
 let pixelRatio = 1;
-let screenW = DESIGN_W;
-let screenH = DESIGN_H;
 
 const buttons = [];
 
 function getSystemInfo() {
-  if (api.getSystemInfoSync) {
-    return api.getSystemInfoSync();
+  if (
+    api.getSystemInfoSync
+  ) {
+    return (
+      api.getSystemInfoSync()
+    );
   }
 
   return {
@@ -153,22 +209,54 @@ function getSystemInfo() {
 }
 
 function resizeCanvas() {
-  const info = getSystemInfo();
+  const info =
+    getSystemInfo();
 
-  screenW = info.windowWidth || DESIGN_W;
-  screenH = info.windowHeight || DESIGN_H;
-  pixelRatio = info.pixelRatio || 1;
+  const screenW =
+    info.windowWidth ||
+    DESIGN_W;
 
-  canvas.width = Math.floor(screenW * pixelRatio);
-  canvas.height = Math.floor(screenH * pixelRatio);
+  const screenH =
+    info.windowHeight ||
+    DESIGN_H;
 
-  scale = Math.min(
-    screenW / DESIGN_W,
-    screenH / DESIGN_H
-  );
+  pixelRatio =
+    info.pixelRatio || 1;
 
-  offsetX = (screenW - DESIGN_W * scale) / 2;
-  offsetY = (screenH - DESIGN_H * scale) / 2;
+  canvas.width =
+    Math.floor(
+      screenW *
+      pixelRatio
+    );
+
+  canvas.height =
+    Math.floor(
+      screenH *
+      pixelRatio
+    );
+
+  scale =
+    Math.min(
+      screenW /
+        DESIGN_W,
+
+      screenH /
+        DESIGN_H
+    );
+
+  offsetX =
+    (
+      screenW -
+      DESIGN_W *
+        scale
+    ) / 2;
+
+  offsetY =
+    (
+      screenH -
+      DESIGN_H *
+        scale
+    ) / 2;
 
   ctx.setTransform(
     pixelRatio * scale,
@@ -180,43 +268,128 @@ function resizeCanvas() {
   );
 }
 
-function roundedRect(x, y, w, h, r, fill, stroke) {
-  const radius = Math.min(r, w / 2, h / 2);
+/* =========================
+   基础绘图
+========================= */
+
+function roundedRect(
+  x,
+  y,
+  w,
+  h,
+  r,
+  fill,
+  stroke
+) {
+  const radius =
+    Math.min(
+      r,
+      w / 2,
+      h / 2
+    );
 
   ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.arcTo(x + w, y, x + w, y + h, radius);
-  ctx.arcTo(x + w, y + h, x, y + h, radius);
-  ctx.arcTo(x, y + h, x, y, radius);
-  ctx.arcTo(x, y, x + w, y, radius);
+
+  ctx.moveTo(
+    x + radius,
+    y
+  );
+
+  ctx.arcTo(
+    x + w,
+    y,
+    x + w,
+    y + h,
+    radius
+  );
+
+  ctx.arcTo(
+    x + w,
+    y + h,
+    x,
+    y + h,
+    radius
+  );
+
+  ctx.arcTo(
+    x,
+    y + h,
+    x,
+    y,
+    radius
+  );
+
+  ctx.arcTo(
+    x,
+    y,
+    x + w,
+    y,
+    radius
+  );
+
   ctx.closePath();
 
   if (fill) {
-    ctx.fillStyle = fill;
+    ctx.fillStyle =
+      fill;
+
     ctx.fill();
   }
 
   if (stroke) {
-    ctx.strokeStyle = stroke;
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle =
+      stroke;
+
+    ctx.lineWidth =
+      1.5;
+
     ctx.stroke();
   }
 }
 
-function drawText(text, x, y, size, color, weight, align) {
-  ctx.fillStyle = color || COLORS.text;
+function drawText(
+  text,
+  x,
+  y,
+  size,
+  color,
+  weight,
+  align
+) {
+  ctx.fillStyle =
+    color ||
+    COLORS.text;
+
   ctx.font =
-    (weight || '500') +
+    (
+      weight ||
+      '500'
+    ) +
     ' ' +
     size +
     'px sans-serif';
 
-  ctx.textAlign = align || 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, x, y);
+  ctx.textAlign =
+    align ||
+    'left';
+
+  ctx.textBaseline =
+    'middle';
+
+  ctx.fillText(
+    text,
+    x,
+    y
+  );
 }
 
-function addButton(id, x, y, w, h) {
+function addButton(
+  id,
+  x,
+  y,
+  w,
+  h
+) {
   buttons.push({
     id,
     x,
@@ -226,9 +399,20 @@ function addButton(id, x, y, w, h) {
   });
 }
 
+/* =========================
+   城市页
+========================= */
+
 function drawTopBar() {
-  ctx.fillStyle = COLORS.top;
-  ctx.fillRect(0, 0, DESIGN_W, 72);
+  ctx.fillStyle =
+    COLORS.top;
+
+  ctx.fillRect(
+    0,
+    0,
+    DESIGN_W,
+    72
+  );
 
   drawText(
     city.name,
@@ -240,12 +424,14 @@ function drawTopBar() {
   );
 
   drawText(
-    city.date + '  ' + city.time,
+    city.date +
+      '  ' +
+      city.time,
+
     16,
     48,
     12,
-    '#EBD8CD',
-    '500'
+    '#EBD8CD'
   );
 
   drawText(
@@ -259,7 +445,10 @@ function drawTopBar() {
   );
 
   drawText(
-    '¥' + city.cash.toLocaleString(),
+    '¥' +
+      city.cash
+        .toLocaleString(),
+
     374,
     49,
     17,
@@ -269,37 +458,80 @@ function drawTopBar() {
   );
 }
 
-function drawRoad(x1, y1, x2, y2) {
+function drawRoad(
+  x1,
+  y1,
+  x2,
+  y2
+) {
   ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
 
-  ctx.strokeStyle = COLORS.road;
-  ctx.lineWidth = 7;
-  ctx.lineCap = 'round';
+  ctx.moveTo(
+    x1,
+    y1
+  );
+
+  ctx.lineTo(
+    x2,
+    y2
+  );
+
+  ctx.strokeStyle =
+    COLORS.road;
+
+  ctx.lineWidth =
+    7;
+
+  ctx.lineCap =
+    'round';
+
   ctx.stroke();
 }
 
 function drawMap() {
-  const x = 10;
-  const y = 82;
-  const w = 370;
-  const h = 435;
-
   roundedRect(
-    x,
-    y,
-    w,
-    h,
+    10,
+    82,
+    370,
+    435,
     22,
     COLORS.map
   );
 
-  drawRoad(45, 190, 348, 220);
-  drawRoad(90, 120, 118, 475);
-  drawRoad(182, 110, 230, 485);
-  drawRoad(310, 120, 285, 470);
-  drawRoad(40, 390, 342, 420);
+  drawRoad(
+    45,
+    190,
+    348,
+    220
+  );
+
+  drawRoad(
+    90,
+    120,
+    118,
+    475
+  );
+
+  drawRoad(
+    182,
+    110,
+    230,
+    485
+  );
+
+  drawRoad(
+    310,
+    120,
+    285,
+    470
+  );
+
+  drawRoad(
+    40,
+    390,
+    342,
+    420
+  );
 
   const blocks = [
     [35, 115, 60, 40],
@@ -318,8 +550,14 @@ function drawMap() {
     [305, 395, 42, 38]
   ];
 
-  for (let i = 0; i < blocks.length; i++) {
-    const b = blocks[i];
+  for (
+    let i = 0;
+    i <
+    blocks.length;
+    i++
+  ) {
+    const b =
+      blocks[i];
 
     roundedRect(
       b[0],
@@ -332,7 +570,11 @@ function drawMap() {
   }
 
   ctx.beginPath();
-  ctx.moveTo(30, 430);
+
+  ctx.moveTo(
+    30,
+    430
+  );
 
   ctx.bezierCurveTo(
     100,
@@ -352,24 +594,40 @@ function drawMap() {
     235
   );
 
-  ctx.strokeStyle = COLORS.river;
-  ctx.lineWidth = 22;
+  ctx.strokeStyle =
+    COLORS.river;
+
+  ctx.lineWidth =
+    22;
+
   ctx.stroke();
 
-  ctx.strokeStyle = COLORS.riverLight;
-  ctx.lineWidth = 5;
+  ctx.strokeStyle =
+    COLORS.riverLight;
+
+  ctx.lineWidth =
+    5;
+
   ctx.stroke();
 }
 
-function drawDistrict(d) {
+function drawDistrict(
+  district
+) {
   const selected =
-    d.id === state.selectedDistrict;
+    district.id ===
+    state.selectedDistrict;
 
   const cardW = 88;
   const cardH = 50;
 
-  const x = d.x - cardW / 2;
-  const y = d.y - cardH / 2;
+  const x =
+    district.x -
+    cardW / 2;
+
+  const y =
+    district.y -
+    cardH / 2;
 
   roundedRect(
     x,
@@ -377,17 +635,19 @@ function drawDistrict(d) {
     cardW,
     cardH,
     14,
+
     selected
       ? COLORS.panel
       : '#FFFDF8',
+
     selected
       ? COLORS.accent
       : null
   );
 
   drawText(
-    d.name,
-    d.x,
+    district.name,
+    district.x,
     y + 17,
     12,
     COLORS.text,
@@ -396,8 +656,10 @@ function drawDistrict(d) {
   );
 
   drawText(
-    '热度 ' + d.heat,
-    d.x,
+    '热度 ' +
+      district.heat,
+
+    district.x,
     y + 35,
     10,
     COLORS.muted,
@@ -406,7 +668,9 @@ function drawDistrict(d) {
   );
 
   addButton(
-    'district:' + d.id,
+    'district:' +
+      district.id,
+
     x,
     y,
     cardW,
@@ -415,12 +679,19 @@ function drawDistrict(d) {
 }
 
 function getSelectedDistrict() {
-  for (let i = 0; i < districts.length; i++) {
+  for (
+    let i = 0;
+    i <
+    districts.length;
+    i++
+  ) {
     if (
       districts[i].id ===
       state.selectedDistrict
     ) {
-      return districts[i];
+      return (
+        districts[i]
+      );
     }
   }
 
@@ -428,24 +699,22 @@ function getSelectedDistrict() {
 }
 
 function drawDistrictPanel() {
-  const d = getSelectedDistrict();
-
-  const x = 10;
-  const y = 530;
-  const w = 370;
-  const h = 225;
+  const d =
+    getSelectedDistrict();
 
   roundedRect(
-    x,
-    y,
-    w,
-    h,
+    10,
+    530,
+    370,
+    225,
     20,
     COLORS.panel
   );
 
   drawText(
-    d.name + '商圈',
+    d.name +
+      '商圈',
+
     25,
     556,
     18,
@@ -457,6 +726,7 @@ function drawDistrictPanel() {
     d.heat >= 90
       ? '🔥 当前热门商圈'
       : '餐饮需求稳定',
+
     365,
     556,
     11,
@@ -466,26 +736,47 @@ function drawDistrictPanel() {
   );
 
   const cols = [
-    ['人口', d.population.toLocaleString()],
-    ['日需求', d.demand.toLocaleString()],
-    ['客单', '¥' + d.avgSpend],
-    ['餐饮店', d.restaurants + '家']
+    [
+      '人口',
+      d.population
+        .toLocaleString()
+    ],
+
+    [
+      '日需求',
+      d.demand
+        .toLocaleString()
+    ],
+
+    [
+      '客单',
+      '¥' +
+        d.avgSpend
+    ],
+
+    [
+      '餐饮店',
+      d.restaurants +
+        '家'
+    ]
   ];
 
-  const startX = 25;
-  const colW = 85;
-
-  for (let i = 0; i < cols.length; i++) {
+  for (
+    let i = 0;
+    i <
+    cols.length;
+    i++
+  ) {
     const cx =
-      startX + i * colW;
+      25 +
+      i * 85;
 
     drawText(
       cols[i][0],
       cx,
       594,
       10,
-      COLORS.muted,
-      '500'
+      COLORS.muted
     );
 
     drawText(
@@ -502,11 +793,11 @@ function drawDistrictPanel() {
     '市场饱和度 ' +
       d.saturation +
       '%',
+
     25,
     650,
     11,
-    COLORS.muted,
-    '500'
+    COLORS.muted
   );
 
   roundedRect(
@@ -521,9 +812,16 @@ function drawDistrictPanel() {
   roundedRect(
     25,
     665,
-    340 * (d.saturation / 100),
+
+    340 *
+      (
+        d.saturation /
+        100
+      ),
+
     8,
     4,
+
     d.saturation >= 85
       ? COLORS.danger
       : COLORS.gold
@@ -531,11 +829,11 @@ function drawDistrictPanel() {
 
   drawText(
     '同一商圈顾客有限，所有餐厅争抢同一批真实需求。',
+
     25,
     693,
     11,
-    COLORS.muted,
-    '500'
+    COLORS.muted
   );
 
   roundedRect(
@@ -566,11 +864,49 @@ function drawDistrictPanel() {
   );
 }
 
+/* =========================
+   底部导航
+========================= */
+
+const NAV_ITEMS = [
+  {
+    id: 'city',
+    name: '城市',
+    icon: '城'
+  },
+
+  {
+    id: 'shop',
+    name: '门店',
+    icon: '店'
+  },
+
+  {
+    id: 'research',
+    name: '研发',
+    icon: '研'
+  },
+
+  {
+    id: 'supply',
+    name: '供应链',
+    icon: '供'
+  },
+
+  {
+    id: 'business',
+    name: '经营',
+    icon: '营'
+  }
+];
+
 function drawBottomNav() {
   const y = 766;
   const h = 78;
 
-  ctx.fillStyle = COLORS.nav;
+  ctx.fillStyle =
+    COLORS.nav;
+
   ctx.fillRect(
     0,
     y,
@@ -578,26 +914,32 @@ function drawBottomNav() {
     h
   );
 
-  const navs = [
-    ['城市', '城'],
-    ['门店', '店'],
-    ['研发', '研'],
-    ['供应链', '供'],
-    ['经营', '营']
-  ];
+  const currentId =
+    sceneManager
+      .getCurrentId();
 
-  const cellW = DESIGN_W / navs.length;
+  const cellW =
+    DESIGN_W /
+    NAV_ITEMS.length;
 
   for (
     let i = 0;
-    i < navs.length;
+    i <
+    NAV_ITEMS.length;
     i++
   ) {
+    const item =
+      NAV_ITEMS[i];
+
+    const active =
+      currentId ===
+      item.id;
+
     const cx =
       cellW * i +
       cellW / 2;
 
-    if (i === 0) {
+    if (active) {
       roundedRect(
         cx - 29,
         y + 8,
@@ -609,7 +951,7 @@ function drawBottomNav() {
     }
 
     drawText(
-      navs[i][1],
+      item.icon,
       cx,
       y + 25,
       18,
@@ -619,21 +961,26 @@ function drawBottomNav() {
     );
 
     drawText(
-      navs[i][0],
+      item.name,
       cx,
       y + 51,
       10,
-      i === 0
+
+      active
         ? '#FFD692'
         : '#E7D6CA',
-      i === 0
+
+      active
         ? '700'
         : '500',
+
       'center'
     );
 
     addButton(
-      'nav:' + navs[i][0],
+      'nav:' +
+        item.id,
+
       cellW * i,
       y,
       cellW,
@@ -641,6 +988,128 @@ function drawBottomNav() {
     );
   }
 }
+
+/* =========================
+   城市场景
+========================= */
+
+const cityScene = {
+  id: 'city',
+
+  enter() {
+  },
+
+  exit() {
+  },
+
+  update() {
+  },
+
+  render() {
+    ctx.fillStyle =
+      COLORS.bg;
+
+    ctx.fillRect(
+      0,
+      0,
+      DESIGN_W,
+      DESIGN_H
+    );
+
+    drawTopBar();
+
+    drawMap();
+
+    for (
+      let i = 0;
+      i <
+      districts.length;
+      i++
+    ) {
+      drawDistrict(
+        districts[i]
+      );
+    }
+
+    drawDistrictPanel();
+  },
+
+  handleTap(
+    x,
+    y,
+    target
+  ) {
+    if (!target) {
+      return false;
+    }
+
+    if (
+      target.id
+        .indexOf(
+          'district:'
+        ) === 0
+    ) {
+      state.selectedDistrict =
+        target.id
+          .split(':')[1];
+
+      return true;
+    }
+
+    if (
+      target.id ===
+      'enterDistrict'
+    ) {
+      if (
+        api.showToast
+      ) {
+        api.showToast({
+          title:
+            '商圈页面下一阶段接入',
+          icon:
+            'none'
+        });
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+};
+
+/* =========================
+   注册页面
+========================= */
+
+sceneManager.register(
+  'city',
+  cityScene
+);
+
+sceneManager.register(
+  'shop',
+  shopScene
+);
+
+sceneManager.register(
+  'research',
+  researchScene
+);
+
+sceneManager.register(
+  'supply',
+  supplyScene
+);
+
+sceneManager.register(
+  'business',
+  businessScene
+);
+
+/* =========================
+   总渲染
+========================= */
 
 function render() {
   resizeCanvas();
@@ -654,49 +1123,61 @@ function render() {
     DESIGN_H
   );
 
-  ctx.fillStyle = COLORS.bg;
-  ctx.fillRect(
-    0,
-    0,
-    DESIGN_W,
-    DESIGN_H
+  sceneManager.render(
+    ctx
   );
 
-  drawTopBar();
-  drawMap();
-
-  for (
-    let i = 0;
-    i < districts.length;
-    i++
-  ) {
-    drawDistrict(districts[i]);
-  }
-
-  drawDistrictPanel();
   drawBottomNav();
 }
 
-function screenToDesign(x, y) {
+/* =========================
+   点击处理
+========================= */
+
+function screenToDesign(
+  x,
+  y
+) {
   return {
-    x: (x - offsetX) / scale,
-    y: (y - offsetY) / scale
+    x:
+      (
+        x -
+        offsetX
+      ) /
+      scale,
+
+    y:
+      (
+        y -
+        offsetY
+      ) /
+      scale
   };
 }
 
-function hitTest(x, y) {
+function hitTest(
+  x,
+  y
+) {
   for (
-    let i = buttons.length - 1;
+    let i =
+      buttons.length - 1;
+
     i >= 0;
+
     i--
   ) {
-    const b = buttons[i];
+    const b =
+      buttons[i];
 
     if (
       x >= b.x &&
-      x <= b.x + b.w &&
+      x <=
+        b.x + b.w &&
+
       y >= b.y &&
-      y <= b.y + b.h
+      y <=
+        b.y + b.h
     ) {
       return b;
     }
@@ -705,58 +1186,101 @@ function hitTest(x, y) {
   return null;
 }
 
-function handleTap(x, y) {
+function handleTap(
+  screenX,
+  screenY
+) {
   const p =
-    screenToDesign(x, y);
+    screenToDesign(
+      screenX,
+      screenY
+    );
 
   const target =
-    hitTest(p.x, p.y);
-
-  if (!target) {
-    return;
-  }
+    hitTest(
+      p.x,
+      p.y
+    );
 
   if (
-    target.id.indexOf(
-      'district:'
-    ) === 0
+    target &&
+    target.id
+      .indexOf(
+        'nav:'
+      ) === 0
   ) {
-    state.selectedDistrict =
-      target.id.split(':')[1];
+    const sceneId =
+      target.id
+        .split(':')[1];
+
+    sceneManager.switchTo(
+      sceneId
+    );
 
     render();
+
     return;
   }
 
+  const currentScene =
+    sceneManager
+      .getCurrentScene();
+
   if (
-    target.id ===
-    'enterDistrict'
+    currentScene &&
+    typeof
+      currentScene
+        .handleTap ===
+      'function'
   ) {
-    if (api.showToast) {
-      api.showToast({
-        title: '下一步制作商圈地图',
-        icon: 'none'
-      });
+    const changed =
+      currentScene
+        .handleTap(
+          p.x,
+          p.y,
+          target
+        );
+
+    if (changed) {
+      render();
     }
   }
 }
 
-if (api.onTouchEnd) {
-  api.onTouchEnd(function (event) {
-    const touch =
-      event.changedTouches &&
-      event.changedTouches[0];
+/* =========================
+   触摸监听
+========================= */
 
-    if (!touch) {
-      return;
+if (
+  api.onTouchEnd
+) {
+  api.onTouchEnd(
+    function (event) {
+      const touch =
+        event
+          .changedTouches &&
+        event
+          .changedTouches[0];
+
+      if (!touch) {
+        return;
+      }
+
+      handleTap(
+        touch.clientX,
+        touch.clientY
+      );
     }
-
-    handleTap(
-      touch.clientX,
-      touch.clientY
-    );
-  });
+  );
 }
+
+/* =========================
+   启动
+========================= */
+
+sceneManager.switchTo(
+  'city'
+);
 
 render();
 
