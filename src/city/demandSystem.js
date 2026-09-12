@@ -181,4 +181,150 @@ const DISTRICT_CUSTOMER_MIX = {
   market: {
     resident: 0.42,
     vendor: 0.32,
-   
+    worker: 0.26
+  },
+
+  village: {
+    worker: 0.46,
+    tenant: 0.38,
+    student: 0.16
+  },
+
+  industry: {
+    worker: 0.68,
+    driver: 0.14,
+    staff: 0.18
+  },
+
+  hightech: {
+    office: 0.54,
+    tech: 0.34,
+    business: 0.12
+  }
+};
+
+/**
+ * 天气对整体餐饮需求的影响
+ */
+
+const WEATHER_MODIFIERS = {
+  sunny: 1.00,
+  cloudy: 0.98,
+  rain: 0.90,
+  heavyRain: 0.76,
+  hot: 0.93,
+  cold: 1.04
+};
+
+class DemandSystem {
+  getCustomerType(id) {
+    return CUSTOMER_TYPES[id] || null;
+  }
+
+  getCustomerMix(districtId) {
+    return (
+      DISTRICT_CUSTOMER_MIX[
+        districtId
+      ] || {}
+    );
+  }
+
+  /**
+   * 当前天气修正
+   */
+  getWeatherModifier() {
+    const world =
+      gameState.getWorld();
+
+    return (
+      WEATHER_MODIFIERS[
+        world.weather
+      ] || 1
+    );
+  }
+
+  /**
+   * 当前时段基础需求
+   */
+  getBaseDemand(
+    districtId
+  ) {
+    const mealPeriod =
+      timeSystem.getMealPeriod();
+
+    return citySystem.getMealDemand(
+      districtId,
+      mealPeriod
+    );
+  }
+
+  /**
+   * 获取某商圈当前时段
+   * 真实总需求
+   */
+  getTotalDemand(
+    districtId
+  ) {
+    const base =
+      this.getBaseDemand(
+        districtId
+      );
+
+    const weather =
+      this.getWeatherModifier();
+
+    return Math.max(
+      0,
+      Math.floor(
+        base * weather
+      )
+    );
+  }
+
+  /**
+   * 将总需求分配给不同客群
+   */
+  getDemandByCustomerType(
+    districtId
+  ) {
+    const total =
+      this.getTotalDemand(
+        districtId
+      );
+
+    const mix =
+      this.getCustomerMix(
+        districtId
+      );
+
+    const result = {};
+
+    let assigned = 0;
+
+    const keys =
+      Object.keys(mix);
+
+    for (
+      let i = 0;
+      i < keys.length;
+      i++
+    ) {
+      const typeId =
+        keys[i];
+
+      let amount;
+
+      if (
+        i ===
+        keys.length - 1
+      ) {
+        amount =
+          total - assigned;
+      } else {
+        amount =
+          Math.floor(
+            total *
+            mix[typeId]
+          );
+
+        ass
