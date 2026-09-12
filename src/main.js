@@ -19,11 +19,27 @@ const ctx =
   runtime.ctx;
 
 /* =========================
-   页面系统
+   核心系统
 ========================= */
+
+const gameState =
+  require('./core/gameState.js');
+
+const timeSystem =
+  require('./core/timeSystem.js');
 
 const sceneManager =
   require('./core/sceneManager.js');
+
+const citySystem =
+  require('./city/citySystem.js');
+
+const demandSystem =
+  require('./city/demandSystem.js');
+
+/* =========================
+   页面
+========================= */
 
 const shopScene =
   require('./scenes/shopScene.js');
@@ -46,149 +62,119 @@ const DESIGN_H = 844;
 
 const COLORS = {
   bg: '#F3EBDD',
-  top: '#4B2D24',
-  nav: '#5A372A',
+
+  top: '#203B50',
+
+  nav: '#2C2927',
+
   panel: '#FFF8EE',
+
   map: '#E7D4B7',
+
   road: '#C7AC88',
-  river: '#8EBBC8',
-  riverLight: '#CDE3E8',
-  block: '#D8C19F',
+
+  river: '#79B7C8',
+
+  riverLight: '#D4EDF2',
+
+  block: '#D7C09E',
+
   text: '#2F211C',
+
   muted: '#846E63',
-  accent: '#D18342',
+
+  accent: '#E7A43A',
+
   accentDark: '#A45F2F',
-  danger: '#B75B50',
-  gold: '#C89B54',
-  white: '#FFFDF9'
+
+  danger: '#D85745',
+
+  gold: '#D69A31',
+
+  white: '#FFFDF9',
+
+  blue: '#4AA4D8'
 };
 
 /* =========================
-   城市页面数据
+   商圈地图位置
+
+   这里只负责UI坐标，
+   不负责商圈真实数据。
 ========================= */
 
-const state = {
-  selectedDistrict:
-    'university'
-};
-
-const city = {
-  name: '云州市',
-
-  date:
-    '第1年 4月12日',
-
-  time:
-    '10:20',
-
-  weather:
-    '晴 23℃',
-
-  cash:
-    50000
-};
-
-const districts = [
-  {
-    id: 'oldtown',
-    name: '老城区',
-    x: 85,
-    y: 205,
-    heat: 68,
-    population: 30240,
-    demand: 7200,
-    avgSpend: 22.4,
-    restaurants: 89,
-    saturation: 67
+const DISTRICT_LAYOUT = {
+  oldtown: {
+    x: 78,
+    y: 228
   },
 
-  {
-    id: 'cbd',
-    name: '商业中心',
+  cbd: {
     x: 205,
-    y: 165,
-    heat: 91,
-    population: 48700,
-    demand: 13800,
-    avgSpend: 48.6,
-    restaurants: 152,
-    saturation: 91
+    y: 180
   },
 
-  {
-    id: 'university',
-    name: '大学城',
-    x: 280,
-    y: 305,
-    heat: 95,
-    population: 36300,
-    demand: 14820,
-    avgSpend: 21.6,
-    restaurants: 126,
-    saturation: 84
+  university: {
+    x: 278,
+    y: 305
   },
 
-  {
-    id: 'market',
-    name: '东门市场',
-    x: 130,
-    y: 340,
-    heat: 76,
-    population: 27400,
-    demand: 8600,
-    avgSpend: 18.3,
-    restaurants: 74,
-    saturation: 64
+  market: {
+    x: 128,
+    y: 356
   },
 
-  {
-    id: 'village',
-    name: '城中村',
-    x: 65,
-    y: 430,
-    heat: 83,
-    population: 41800,
-    demand: 10200,
-    avgSpend: 16.8,
-    restaurants: 103,
-    saturation: 72
+  village: {
+    x: 67,
+    y: 440
   },
 
-  {
-    id: 'industry',
-    name: '工业园',
+  industry: {
     x: 225,
-    y: 455,
-    heat: 73,
-    population: 32900,
-    demand: 9200,
-    avgSpend: 19.5,
-    restaurants: 81,
-    saturation: 61
+    y: 457
   },
 
-  {
-    id: 'hightech',
-    name: '高新区',
-    x: 325,
-    y: 205,
-    heat: 79,
-    population: 38100,
-    demand: 9800,
-    avgSpend: 36.2,
-    restaurants: 97,
-    saturation: 75
+  hightech: {
+    x: 321,
+    y: 220
   }
-];
+};
+
+/* =========================
+   文本映射
+========================= */
+
+const WEATHER_NAMES = {
+  sunny: '晴',
+  cloudy: '多云',
+  rain: '小雨',
+  heavyRain: '暴雨',
+  hot: '炎热',
+  cold: '寒冷'
+};
+
+const MEAL_NAMES = {
+  breakfast: '早餐',
+  lunch: '午餐',
+  afternoon: '下午',
+  dinner: '晚餐',
+  night: '夜宵'
+};
 
 /* =========================
    Canvas适配
 ========================= */
 
 let scale = 1;
+
 let offsetX = 0;
+
 let offsetY = 0;
+
 let pixelRatio = 1;
+
+let lastFrameTime =
+  null;
 
 const buttons = [];
 
@@ -202,9 +188,14 @@ function getSystemInfo() {
   }
 
   return {
-    windowWidth: 390,
-    windowHeight: 844,
-    pixelRatio: 1
+    windowWidth:
+      DESIGN_W,
+
+    windowHeight:
+      DESIGN_H,
+
+    pixelRatio:
+      1
   };
 }
 
@@ -221,7 +212,8 @@ function resizeCanvas() {
     DESIGN_H;
 
   pixelRatio =
-    info.pixelRatio || 1;
+    info.pixelRatio ||
+    1;
 
   canvas.width =
     Math.floor(
@@ -259,12 +251,21 @@ function resizeCanvas() {
     ) / 2;
 
   ctx.setTransform(
-    pixelRatio * scale,
+    pixelRatio *
+      scale,
+
     0,
+
     0,
-    pixelRatio * scale,
-    offsetX * pixelRatio,
-    offsetY * pixelRatio
+
+    pixelRatio *
+      scale,
+
+    offsetX *
+      pixelRatio,
+
+    offsetY *
+      pixelRatio
   );
 }
 
@@ -377,7 +378,7 @@ function drawText(
     'middle';
 
   ctx.fillText(
-    text,
+    String(text),
     x,
     y
   );
@@ -400,10 +401,75 @@ function addButton(
 }
 
 /* =========================
-   城市页
+   时间按钮
+========================= */
+
+function drawSpeedButton(
+  id,
+  label,
+  x,
+  active
+) {
+  roundedRect(
+    x,
+    66,
+    42,
+    24,
+    8,
+
+    active
+      ? '#F0A93A'
+      : '#39566A',
+
+    active
+      ? '#FFD98A'
+      : '#587286'
+  );
+
+  drawText(
+    label,
+    x + 21,
+    78,
+    10,
+    COLORS.white,
+
+    active
+      ? '700'
+      : '600',
+
+    'center'
+  );
+
+  addButton(
+    id,
+    x,
+    66,
+    42,
+    24
+  );
+}
+
+/* =========================
+   顶部状态栏
 ========================= */
 
 function drawTopBar() {
+  const world =
+    gameState.getWorld();
+
+  const player =
+    gameState.getPlayer();
+
+  const display =
+    timeSystem
+      .getDisplayState();
+
+  const weatherName =
+    WEATHER_NAMES[
+      world.weather
+    ] ||
+    world.weather;
+
   ctx.fillStyle =
     COLORS.top;
 
@@ -411,52 +477,178 @@ function drawTopBar() {
     0,
     0,
     DESIGN_W,
-    72
+    100
   );
 
+  /* 城市名 */
+
   drawText(
-    city.name,
+    gameState
+      .getCityName(),
+
     16,
-    20,
     19,
+    18,
     COLORS.white,
     '700'
   );
 
-  drawText(
-    city.date +
-      '  ' +
-      city.time,
-
-    16,
-    48,
-    12,
-    '#EBD8CD'
-  );
-
-  drawText(
-    city.weather,
-    374,
-    20,
-    12,
-    '#F4E2D8',
-    '600',
-    'right'
-  );
+  /* 资金 */
 
   drawText(
     '¥' +
-      city.cash
+      player.cash
         .toLocaleString(),
 
     374,
-    49,
+    19,
     17,
     '#FFD692',
     '700',
     'right'
   );
+
+  /* 日期 */
+
+  drawText(
+    display.date,
+    16,
+    46,
+    10,
+    '#DCE7EC',
+    '500'
+  );
+
+  /* 时间 */
+
+  drawText(
+    display.time,
+    170,
+    46,
+    17,
+    COLORS.white,
+    '700',
+    'center'
+  );
+
+  /* 天气 */
+
+  drawText(
+    weatherName +
+      ' ' +
+      world.temperature +
+      '℃',
+
+    374,
+    46,
+    11,
+    '#DCE7EC',
+    '600',
+    'right'
+  );
+
+  drawText(
+    '时间',
+    16,
+    78,
+    10,
+    '#DCE7EC',
+    '600'
+  );
+
+  const paused =
+    timeSystem
+      .isPaused();
+
+  const speed =
+    timeSystem
+      .getSpeed();
+
+  /* 暂停 */
+
+  drawSpeedButton(
+    'time:pause',
+
+    paused
+      ? '▶'
+      : 'Ⅱ',
+
+    62,
+
+    paused
+  );
+
+  /* 1倍 */
+
+  drawSpeedButton(
+    'time:speed:1',
+    '1×',
+    108,
+
+    !paused &&
+    speed === 1
+  );
+
+  /* 2倍 */
+
+  drawSpeedButton(
+    'time:speed:2',
+    '2×',
+    154,
+
+    !paused &&
+    speed === 2
+  );
+
+  /* 5倍 */
+
+  drawSpeedButton(
+    'time:speed:5',
+    '5×',
+    200,
+
+    !paused &&
+    speed === 5
+  );
+
+  /* 10倍 */
+
+  drawSpeedButton(
+    'time:speed:10',
+    '10×',
+    246,
+
+    !paused &&
+    speed === 10
+  );
+
+  /* 当前餐饮时段 */
+
+  drawText(
+    paused
+      ? '已暂停'
+      : MEAL_NAMES[
+          display.mealPeriod
+        ],
+
+    374,
+    78,
+    11,
+
+    paused
+      ? '#FFD692'
+      : '#DCE7EC',
+
+    '700',
+    'right'
+  );
 }
+
+/* =========================
+   临时城市地图
+
+   后面这里换正式图片底图
+========================= */
 
 function drawRoad(
   x1,
@@ -491,63 +683,132 @@ function drawRoad(
 function drawMap() {
   roundedRect(
     10,
-    82,
+    110,
     370,
-    435,
+    407,
     22,
     COLORS.map
   );
 
   drawRoad(
     45,
-    190,
+    205,
     348,
-    220
+    232
   );
 
   drawRoad(
     90,
-    120,
+    130,
     118,
-    475
+    480
   );
 
   drawRoad(
     182,
-    110,
+    122,
     230,
-    485
+    487
   );
 
   drawRoad(
     310,
-    120,
+    130,
     285,
-    470
+    472
   );
 
   drawRoad(
     40,
-    390,
+    400,
     342,
-    420
+    430
   );
 
   const blocks = [
-    [35, 115, 60, 40],
-    [120, 125, 50, 48],
-    [205, 110, 60, 42],
-    [285, 130, 50, 38],
+    [
+      35,
+      130,
+      60,
+      40
+    ],
 
-    [40, 250, 55, 42],
-    [125, 235, 65, 50],
-    [210, 245, 50, 42],
-    [295, 260, 48, 42],
+    [
+      120,
+      140,
+      50,
+      48
+    ],
 
-    [30, 410, 62, 36],
-    [120, 400, 55, 45],
-    [235, 420, 58, 40],
-    [305, 395, 42, 38]
+    [
+      205,
+      122,
+      60,
+      42
+    ],
+
+    [
+      285,
+      142,
+      50,
+      38
+    ],
+
+    [
+      40,
+      265,
+      55,
+      42
+    ],
+
+    [
+      125,
+      250,
+      65,
+      50
+    ],
+
+    [
+      210,
+      260,
+      50,
+      42
+    ],
+
+    [
+      295,
+      275,
+      48,
+      42
+    ],
+
+    [
+      30,
+      420,
+      62,
+      36
+    ],
+
+    [
+      120,
+      410,
+      55,
+      45
+    ],
+
+    [
+      235,
+      430,
+      58,
+      40
+    ],
+
+    [
+      305,
+      405,
+      42,
+      38
+    ]
   ];
 
   for (
@@ -573,25 +834,25 @@ function drawMap() {
 
   ctx.moveTo(
     30,
-    430
+    440
   );
 
   ctx.bezierCurveTo(
     100,
-    350,
+    360,
     155,
-    485,
+    495,
     220,
-    380
+    390
   );
 
   ctx.bezierCurveTo(
     275,
-    305,
+    315,
     310,
-    350,
+    360,
     365,
-    235
+    245
   );
 
   ctx.strokeStyle =
@@ -611,22 +872,49 @@ function drawMap() {
   ctx.stroke();
 }
 
+/* =========================
+   商圈
+========================= */
+
+function getDistricts() {
+  const world =
+    gameState.getWorld();
+
+  return (
+    citySystem
+      .getDistrictsByCity(
+        world.currentCityId
+      )
+  );
+}
+
 function drawDistrict(
   district
 ) {
+  const layout =
+    DISTRICT_LAYOUT[
+      district.id
+    ];
+
+  if (!layout) {
+    return;
+  }
+
   const selected =
-    district.id ===
-    state.selectedDistrict;
+    gameState
+      .getWorld()
+      .currentDistrictId ===
+    district.id;
 
   const cardW = 88;
   const cardH = 50;
 
   const x =
-    district.x -
+    layout.x -
     cardW / 2;
 
   const y =
-    district.y -
+    layout.y -
     cardH / 2;
 
   roundedRect(
@@ -641,13 +929,13 @@ function drawDistrict(
       : '#FFFDF8',
 
     selected
-      ? COLORS.accent
+      ? COLORS.blue
       : null
   );
 
   drawText(
     district.name,
-    district.x,
+    layout.x,
     y + 17,
     12,
     COLORS.text,
@@ -656,14 +944,20 @@ function drawDistrict(
   );
 
   drawText(
-    '热度 ' +
-      district.heat,
+    '饱和 ' +
+      district.saturation +
+      '%',
 
-    district.x,
+    layout.x,
     y + 35,
     10,
-    COLORS.muted,
-    '500',
+
+    district.saturation >=
+      85
+      ? COLORS.danger
+      : COLORS.muted,
+
+    '600',
     'center'
   );
 
@@ -678,29 +972,31 @@ function drawDistrict(
   );
 }
 
-function getSelectedDistrict() {
-  for (
-    let i = 0;
-    i <
-    districts.length;
-    i++
-  ) {
-    if (
-      districts[i].id ===
-      state.selectedDistrict
-    ) {
-      return (
-        districts[i]
-      );
-    }
-  }
-
-  return districts[0];
-}
+/* =========================
+   商圈信息卡
+========================= */
 
 function drawDistrictPanel() {
   const d =
-    getSelectedDistrict();
+    citySystem
+      .getCurrentDistrict();
+
+  if (!d) {
+    return;
+  }
+
+  const currentDemand =
+    demandSystem
+      .getTotalDemand(
+        d.id
+      );
+
+  const mealName =
+    MEAL_NAMES[
+      timeSystem
+        .getMealPeriod()
+    ] ||
+    '当前';
 
   roundedRect(
     10,
@@ -723,40 +1019,48 @@ function drawDistrictPanel() {
   );
 
   drawText(
-    d.heat >= 90
-      ? '🔥 当前热门商圈'
-      : '餐饮需求稳定',
+    d.saturation >= 85
+      ? '竞争激烈'
+      : '仍有机会',
 
     365,
     556,
     11,
-    COLORS.accentDark,
-    '600',
+
+    d.saturation >= 85
+      ? COLORS.danger
+      : COLORS.accentDark,
+
+    '700',
     'right'
   );
 
   const cols = [
     [
       '人口',
+
       d.population
         .toLocaleString()
     ],
 
     [
       '日需求',
-      d.demand
+
+      d.baseDemand
         .toLocaleString()
     ],
 
     [
       '客单',
+
       '¥' +
         d.avgSpend
     ],
 
     [
       '餐饮店',
-      d.restaurants +
+
+      d.restaurantCount +
         '家'
     ]
   ];
@@ -776,7 +1080,8 @@ function drawDistrictPanel() {
       cx,
       594,
       10,
-      COLORS.muted
+      COLORS.muted,
+      '500'
     );
 
     drawText(
@@ -789,20 +1094,40 @@ function drawDistrictPanel() {
     );
   }
 
+  /*
+   * 这个数据会随着
+   * 早餐/午餐/晚餐和天气变化
+   */
+
+  drawText(
+    mealName +
+      '实时需求 ' +
+      currentDemand
+        .toLocaleString() +
+      ' 人次',
+
+    25,
+    646,
+    11,
+    COLORS.accentDark,
+    '700'
+  );
+
   drawText(
     '市场饱和度 ' +
       d.saturation +
       '%',
 
     25,
-    650,
+    670,
     11,
-    COLORS.muted
+    COLORS.muted,
+    '500'
   );
 
   roundedRect(
     25,
-    665,
+    684,
     340,
     8,
     4,
@@ -811,7 +1136,7 @@ function drawDistrictPanel() {
 
   roundedRect(
     25,
-    665,
+    684,
 
     340 *
       (
@@ -822,25 +1147,17 @@ function drawDistrictPanel() {
     8,
     4,
 
-    d.saturation >= 85
+    d.saturation >=
+      85
       ? COLORS.danger
       : COLORS.gold
   );
 
-  drawText(
-    '同一商圈顾客有限，所有餐厅争抢同一批真实需求。',
-
-    25,
-    693,
-    11,
-    COLORS.muted
-  );
-
   roundedRect(
     25,
-    711,
+    708,
     340,
-    36,
+    38,
     12,
     COLORS.accent
   );
@@ -848,7 +1165,7 @@ function drawDistrictPanel() {
   drawText(
     '进入商圈',
     195,
-    729,
+    727,
     14,
     COLORS.white,
     '700',
@@ -858,9 +1175,9 @@ function drawDistrictPanel() {
   addButton(
     'enterDistrict',
     25,
-    711,
+    708,
     340,
-    36
+    38
   );
 }
 
@@ -902,7 +1219,16 @@ const NAV_ITEMS = [
 
 function drawBottomNav() {
   const y = 766;
+
   const h = 78;
+
+  const currentId =
+    sceneManager
+      .getCurrentId();
+
+  const cellW =
+    DESIGN_W /
+    NAV_ITEMS.length;
 
   ctx.fillStyle =
     COLORS.nav;
@@ -913,14 +1239,6 @@ function drawBottomNav() {
     DESIGN_W,
     h
   );
-
-  const currentId =
-    sceneManager
-      .getCurrentId();
-
-  const cellW =
-    DESIGN_W /
-    NAV_ITEMS.length;
 
   for (
     let i = 0;
@@ -994,7 +1312,8 @@ function drawBottomNav() {
 ========================= */
 
 const cityScene = {
-  id: 'city',
+  id:
+    'city',
 
   enter() {
   },
@@ -1019,6 +1338,9 @@ const cityScene = {
     drawTopBar();
 
     drawMap();
+
+    const districts =
+      getDistricts();
 
     for (
       let i = 0;
@@ -1049,9 +1371,14 @@ const cityScene = {
           'district:'
         ) === 0
     ) {
-      state.selectedDistrict =
+      const districtId =
         target.id
           .split(':')[1];
+
+      citySystem
+        .setCurrentDistrict(
+          districtId
+        );
 
       return true;
     }
@@ -1066,6 +1393,7 @@ const cityScene = {
         api.showToast({
           title:
             '商圈页面下一阶段接入',
+
           icon:
             'none'
         });
@@ -1114,7 +1442,8 @@ sceneManager.register(
 function render() {
   resizeCanvas();
 
-  buttons.length = 0;
+  buttons.length =
+    0;
 
   ctx.clearRect(
     0,
@@ -1131,7 +1460,7 @@ function render() {
 }
 
 /* =========================
-   点击处理
+   点击坐标转换
 ========================= */
 
 function screenToDesign(
@@ -1186,6 +1515,55 @@ function hitTest(
   return null;
 }
 
+/* =========================
+   时间按钮处理
+========================= */
+
+function handleTimeButton(
+  id
+) {
+  if (
+    id ===
+    'time:pause'
+  ) {
+    timeSystem
+      .togglePause();
+
+    timeSystem
+      .resetAccumulator();
+
+    return true;
+  }
+
+  if (
+    id.indexOf(
+      'time:speed:'
+    ) === 0
+  ) {
+    const speed =
+      Number(
+        id
+          .split(':')[2]
+      );
+
+    if (
+      timeSystem
+        .setSpeed(speed)
+    ) {
+      timeSystem
+        .resetAccumulator();
+
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/* =========================
+   点击处理
+========================= */
+
 function handleTap(
   screenX,
   screenY
@@ -1202,6 +1580,28 @@ function handleTap(
       p.y
     );
 
+  /* 时间按钮 */
+
+  if (
+    target &&
+    target.id
+      .indexOf(
+        'time:'
+      ) === 0
+  ) {
+    if (
+      handleTimeButton(
+        target.id
+      )
+    ) {
+      render();
+    }
+
+    return;
+  }
+
+  /* 底部导航 */
+
   if (
     target &&
     target.id
@@ -1213,14 +1613,17 @@ function handleTap(
       target.id
         .split(':')[1];
 
-    sceneManager.switchTo(
-      sceneId
-    );
+    sceneManager
+      .switchTo(
+        sceneId
+      );
 
     render();
 
     return;
   }
+
+  /* 当前页面点击 */
 
   const currentScene =
     sceneManager
@@ -1275,6 +1678,97 @@ if (
 }
 
 /* =========================
+   游戏主循环
+========================= */
+
+function scheduleNextFrame(
+  callback
+) {
+  if (
+    typeof
+      requestAnimationFrame ===
+    'function'
+  ) {
+    requestAnimationFrame(
+      callback
+    );
+
+    return;
+  }
+
+  setTimeout(
+    function () {
+      callback(
+        Date.now()
+      );
+    },
+
+    33
+  );
+}
+
+function gameLoop(
+  timestamp
+) {
+  const now =
+    typeof timestamp ===
+      'number'
+      ? timestamp
+      : Date.now();
+
+  if (
+    lastFrameTime ===
+    null
+  ) {
+    lastFrameTime =
+      now;
+  }
+
+  const deltaMs =
+    Math.max(
+      0,
+      now -
+      lastFrameTime
+    );
+
+  lastFrameTime =
+    now;
+
+  /*
+   * 页面自身更新
+   */
+
+  sceneManager.update(
+    deltaMs
+  );
+
+  /*
+   * 推进游戏时间
+   */
+
+  const advancedMinutes =
+    timeSystem.update(
+      deltaMs
+    );
+
+  /*
+   * 时间变化时才重绘，
+   * 避免手机无意义高耗电。
+   */
+
+  if (
+    advancedMinutes >
+    0
+  ) {
+    render();
+  }
+
+  scheduleNextFrame(
+    gameLoop
+  );
+}
+
+/* =========================
    启动
 ========================= */
 
@@ -1283,6 +1777,10 @@ sceneManager.switchTo(
 );
 
 render();
+
+scheduleNextFrame(
+  gameLoop
+);
 
 console.log(
   '城市餐饮经营小游戏启动成功'
