@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "budgets": {
+    "mainAssetsBytes": 2500000,
+    "subpackageBytes": 6000000
+  },
+  "core": [
+    "assets/images/map/city_base_01.webp",
+    "assets/images/ui/ui_atlas_01_fixed.png",
+    "assets/images/ui/property_icons_01.png"
+  ],
+  "modules": {
+    "renovation": [
+      "assets/images/generated/atlases/renovation_assets_v1.png"
+    ],
+    "uiExtended": [
+      "assets/images/generated/atlases/ui_components_v1.png"
+    ]
+  },
+  "devOnly": [
+    "assets/images/map/city_base_01.png",
+    "assets/images/generated/mockups/store_management_v1.png",
+    "assets/images/generated/mockups/district_dashboard_v1.png",
+    "assets/images/generated/mockups/renovation_screen_v1.png",
+    "assets/images/generated/mockups/store_preparation_v1.png",
+    "assets/images/generated/mockups/district_dashboard_alt_v1.png"
+  ],
+  "android": {
+    "includeCoreOnly": true,
+    "excludeDirectories": [
+      "assets/images/generated"
+    ],
+    "excludeFiles": [
+      "assets/images/map/city_base_01.png"
+    ]
+  }
+}

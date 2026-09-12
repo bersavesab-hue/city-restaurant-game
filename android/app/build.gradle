@@ -34,3 +34,28 @@ android {
 
 dependencies {
 }
+
+
+/**
+ * The GitHub one-click workflow currently copies the whole repository assets tree
+ * into Android assets. Before packaging, keep only runtime assets.
+ *
+ * The large generated mockups/atlases stay in the repository for design and future
+ * mini-game subpackages, but they do not enter the APK by default.
+ */
+def prepareRuntimeAssetsTask = tasks.register('prepareRuntimeAssets') {
+    doLast {
+        def runtimeRoot = file('src/main/assets/assets')
+
+        delete file("${runtimeRoot}/images/generated")
+        delete file("${runtimeRoot}/images/map/city_base_01.png")
+
+        println "Runtime asset filter applied: generated references and original PNG map removed."
+    }
+}
+
+tasks.matching { task ->
+    task.name == 'preBuild'
+}.configureEach {
+    dependsOn prepareRuntimeAssetsTask
+}

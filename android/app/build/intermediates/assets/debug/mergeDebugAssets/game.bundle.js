@@ -18023,7 +18023,7 @@
         return Promise.all([
           resourceManager.loadImage(
             "city_base_01",
-            "assets/images/map/city_base_01.png",
+            "assets/images/map/city_base_01.webp",
             "city"
           ),
           resourceManager.loadImage(
@@ -18061,7 +18061,7 @@
         gameLoop
       );
       console.log(
-        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V8 \u7D20\u6750\u6574\u5408\u4E0E\u81EA\u5B9A\u4E49\u6A21\u677F\u7248\u542F\u52A8\u6210\u529F"
+        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V9 \u8D44\u6E90\u5206\u5305\u4E0E\u8F7B\u91CF\u6784\u5EFA\u7248\u542F\u52A8\u6210\u529F"
       );
     }
   });

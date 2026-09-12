@@ -3206,7 +3206,7 @@ function loadResources() {
     resourceManager
       .loadImage(
         'city_base_01',
-        'assets/images/map/city_base_01.png',
+        'assets/images/map/city_base_01.webp',
         'city'
       ),
 
@@ -3266,5 +3266,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V8 素材整合与自定义模板版启动成功'
+  '城市餐饮经营小游戏 V9 资源分包与轻量构建版启动成功'
 );
