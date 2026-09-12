@@ -77,7 +77,7 @@ module.exports = {
     maxServiceRatio: 0.20
   },
 
-  baseConstructionCostPerSqm: 760,
+  baseConstructionCostPerSqm: 520,
 
   templateRules: {
     maxTemplates: 30,

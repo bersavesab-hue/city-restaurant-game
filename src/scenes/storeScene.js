@@ -1,8 +1,7 @@
 'use strict';
 
 const runtime =
-  globalThis
-    .GameRuntime;
+  globalThis.GameRuntime;
 
 if (!runtime) {
   throw new Error(
@@ -11,8 +10,7 @@ if (!runtime) {
 }
 
 const api =
-  runtime.api ||
-  {};
+  runtime.api || {};
 
 const gameState =
   require('../core/gameState.js');
@@ -26,6 +24,12 @@ const sceneManager =
 const renovationSystem =
   require('../renovation/renovationSystem.js');
 
+const openingPrepSystem =
+  require('../opening/openingPrepSystem.js');
+
+const openingFinanceSystem =
+  require('../finance/openingFinanceSystem.js');
+
 const customizationSystem =
   require('../ui/customizationSystem.js');
 
@@ -35,64 +39,46 @@ const textInput =
 const visualAssetSystem =
   require('../ui/visualAssetSystem.js');
 
+const ui =
+  require('../ui/premiumUi.js');
+
 const DESIGN_W =
   390;
 
 const COLORS = {
   navy:
-    '#12384D',
-
+    '#07344B',
   navy2:
-    '#0A2A3B',
-
+    '#082A3D',
   paper:
-    '#F4EBDD',
-
+    '#F7EEDD',
   panel:
-    '#FFF9EF',
-
-  panel2:
-    '#F8F0E4',
-
+    'rgba(255,252,246,0.96)',
   text:
-    '#24323A',
-
+    '#14334A',
   muted:
-    '#718087',
-
+    '#6A7B82',
   gold:
-    '#E4AA48',
-
+    '#F3B12B',
   orange:
-    '#D9853E',
-
+    '#E98827',
   red:
-    '#BF584A',
-
+    '#D04D45',
   green:
-    '#4B9567',
-
+    '#269D67',
   blue:
-    '#4C86A6',
-
-  line:
-    '#DED1C1',
-
+    '#2D8EB6',
   white:
     '#FFFFFF'
 };
 
-function money(
-  value
-) {
+function money(value) {
   return (
     '¥' +
     Math.max(
       0,
       Math.round(
-        Number(
-          value
-        ) ||
+        Number(value) ||
         0
       )
     ).toLocaleString()
@@ -115,9 +101,6 @@ class StoreScene {
 
     this.buttons =
       [];
-
-    this.selectedModule =
-      null;
   }
 
   getLayout() {
@@ -134,7 +117,7 @@ class StoreScene {
         api
           .getSystemInfoSync();
 
-      const screenW =
+      const w =
         Math.max(
           1,
           Number(
@@ -143,7 +126,7 @@ class StoreScene {
           DESIGN_W
         );
 
-      const screenH =
+      const h =
         Math.max(
           1,
           Number(
@@ -152,13 +135,12 @@ class StoreScene {
           780
         );
 
-      const scale =
-        screenW /
-        DESIGN_W;
-
       height =
-        screenH /
-        scale;
+        h /
+        (
+          w /
+          DESIGN_W
+        );
     }
 
     this.viewH =
@@ -176,12 +158,19 @@ class StoreScene {
   }
 
   enter() {
-    this.selectedModule =
-      null;
-
     visualAssetSystem
       .loadGroup(
         'store'
+      );
+
+    visualAssetSystem
+      .loadGroup(
+        'premiumStore'
+      );
+
+    visualAssetSystem
+      .loadGroup(
+        'renovation'
       );
   }
 
@@ -191,152 +180,20 @@ class StoreScene {
   }
 
   update() {
-  }
+    const shop =
+      this.getCurrentShop();
 
-  roundedPath(
-    ctx,
-    x,
-    y,
-    w,
-    h,
-    r
-  ) {
-    const radius =
-      Math.min(
-        r,
-        w /
-          2,
-        h /
-          2
-      );
+    if (shop) {
+      renovationSystem
+        .updateShop(
+          shop.id
+        );
 
-    ctx.beginPath();
-
-    ctx.moveTo(
-      x +
-        radius,
-      y
-    );
-
-    ctx.arcTo(
-      x +
-        w,
-      y,
-      x +
-        w,
-      y +
-        h,
-      radius
-    );
-
-    ctx.arcTo(
-      x +
-        w,
-      y +
-        h,
-      x,
-      y +
-        h,
-      radius
-    );
-
-    ctx.arcTo(
-      x,
-      y +
-        h,
-      x,
-      y,
-      radius
-    );
-
-    ctx.arcTo(
-      x,
-      y,
-      x +
-        w,
-      y,
-      radius
-    );
-
-    ctx.closePath();
-  }
-
-  roundedRect(
-    ctx,
-    x,
-    y,
-    w,
-    h,
-    r,
-    fill,
-    stroke,
-    width
-  ) {
-    this.roundedPath(
-      ctx,
-      x,
-      y,
-      w,
-      h,
-      r
-    );
-
-    if (fill) {
-      ctx.fillStyle =
-        fill;
-
-      ctx.fill();
+      openingPrepSystem
+        .updateShop(
+          shop.id
+        );
     }
-
-    if (stroke) {
-      ctx.strokeStyle =
-        stroke;
-
-      ctx.lineWidth =
-        width ||
-        1;
-
-      ctx.stroke();
-    }
-  }
-
-  text(
-    ctx,
-    text,
-    x,
-    y,
-    size,
-    color,
-    weight,
-    align
-  ) {
-    ctx.fillStyle =
-      color ||
-      COLORS.text;
-
-    ctx.font =
-      (
-        weight ||
-        '500'
-      ) +
-      ' ' +
-      size +
-      'px sans-serif';
-
-    ctx.textAlign =
-      align ||
-      'left';
-
-    ctx.textBaseline =
-      'middle';
-
-    ctx.fillText(
-      String(
-        text
-      ),
-      x,
-      y
-    );
   }
 
   addButton(
@@ -346,14 +203,45 @@ class StoreScene {
     w,
     h
   ) {
-    this.buttons
-      .push({
-        id,
-        x,
-        y,
-        w,
+    const minW =
+      40;
+
+    const minH =
+      36;
+
+    const hitW =
+      Math.max(
+        minW,
+        w
+      );
+
+    const hitH =
+      Math.max(
+        minH,
         h
-      });
+      );
+
+    this.buttons.push({
+      id,
+      x:
+        x -
+        (
+          hitW -
+          w
+        ) /
+        2,
+      y:
+        y -
+        (
+          hitH -
+          h
+        ) /
+        2,
+      w:
+        hitW,
+      h:
+        hitH
+    });
   }
 
   hitButton(
@@ -364,28 +252,19 @@ class StoreScene {
       let i =
         this.buttons.length -
         1;
-      i >=
-        0;
+      i >= 0;
       i--
     ) {
-      const item =
-        this.buttons[
-          i
-        ];
+      const b =
+        this.buttons[i];
 
       if (
-        x >=
-          item.x &&
-        x <=
-          item.x +
-            item.w &&
-        y >=
-          item.y &&
-        y <=
-          item.y +
-            item.h
+        x >= b.x &&
+        x <= b.x + b.w &&
+        y >= b.y &&
+        y <= b.y + b.h
       ) {
-        return item;
+        return b;
       }
     }
 
@@ -399,63 +278,125 @@ class StoreScene {
 
     if (
       !business.hasShop ||
-      !business
-        .shops
-        .length
+      !business.shops.length
     ) {
       return null;
     }
 
     return (
-      business
-        .shops
-        .find(
-          item =>
-            item.id ===
-            business
-              .currentShopId
-        ) ||
-      business
-        .shops[0]
+      business.shops.find(
+        item =>
+          item.id ===
+          business.currentShopId
+      ) ||
+      business.shops[0]
     );
+  }
+
+  getRooms(shopId) {
+    const plan =
+      renovationSystem
+        .ensurePlan(
+          shopId
+        );
+
+    if (!plan) {
+      return [];
+    }
+
+    const rooms =
+      [];
+
+    for (
+      const floor of
+      plan.floors
+    ) {
+      for (
+        const room of
+        floor.privateRooms
+      ) {
+        rooms.push(room);
+      }
+    }
+
+    return rooms;
   }
 
   drawHeader(
     ctx,
-    title,
-    subtitle
+    shop
   ) {
+    const district =
+      shop
+        ? citySystem
+            .getDistrict(
+              shop.districtId
+            )
+        : null;
+
+    const gradient =
+      ctx.createLinearGradient(
+        0,
+        0,
+        390,
+        0
+      );
+
+    gradient.addColorStop(
+      0,
+      COLORS.navy2
+    );
+    gradient.addColorStop(
+      1,
+      '#0E526D'
+    );
+
     ctx.fillStyle =
-      COLORS.navy2;
+      gradient;
 
     ctx.fillRect(
       0,
       0,
-      DESIGN_W,
-      67
+      390,
+      73
     );
 
-    this.text(
+    ui.text(
       ctx,
-      title,
+      shop
+        ? (
+            shop.name ||
+            '我的酒楼'
+          )
+        : '门店筹备',
       15,
-      22,
-      17,
+      21,
+      16,
       COLORS.white,
-      '700'
+      '800'
     );
 
-    this.text(
+    ui.text(
       ctx,
-      subtitle,
+      shop
+        ? (
+            (
+              district
+                ? district.name
+                : '经营区域'
+            ) +
+            ' · ' +
+            shop.address
+          )
+        : '从选址到开业，打造自己的餐饮品牌',
       15,
-      45,
-      8,
-      'rgba(255,255,255,0.70)',
+      47,
+      7.2,
+      '#CFE0E7',
       '500'
     );
 
-    this.text(
+    ui.text(
       ctx,
       money(
         gameState
@@ -463,132 +404,52 @@ class StoreScene {
           .cash
       ),
       376,
-      22,
+      21,
       13,
-      '#FFE8AE',
-      '700',
+      '#FFE6A3',
+      '800',
       'right'
     );
 
-    this.text(
+    ui.text(
       ctx,
       '可用资金',
       376,
-      45,
-      7,
-      '#D8E5EB',
+      46,
+      6.5,
+      '#CFE0E7',
       '500',
       'right'
     );
   }
 
-  drawHeroImage(
-    ctx,
-    x,
-    y,
-    w,
-    h
-  ) {
-    const image =
-      visualAssetSystem
-        .get(
-          'visual_storefront_hero'
-        );
-
-    if (!image) {
-      return false;
-    }
-
-    ctx.save();
-
-    this.roundedPath(
-      ctx,
-      x,
-      y,
-      w,
-      h,
-      12
-    );
-
-    ctx.clip();
-
-    const iw =
-      image.naturalWidth ||
-      image.width;
-
-    const ih =
-      image.naturalHeight ||
-      image.height;
-
-    const imageRatio =
-      iw /
-      Math.max(
-        1,
-        ih
-      );
-
-    const boxRatio =
-      w /
-      Math.max(
-        1,
-        h
-      );
-
-    let sx = 0;
-    let sy = 0;
-    let sw = iw;
-    let sh = ih;
-
-    if (
-      imageRatio >
-      boxRatio
-    ) {
-      sw =
-        ih *
-        boxRatio;
-
-      sx =
-        (
-          iw -
-          sw
-        ) /
-        2;
-    } else {
-      sh =
-        iw /
-        boxRatio;
-
-      sy =
-        (
-          ih -
-          sh
-        ) /
-        2;
-    }
-
-    ctx.drawImage(
-      image,
-      sx,
-      sy,
-      sw,
-      sh,
-      x,
-      y,
-      w,
-      h
-    );
-
-    ctx.restore();
-
-    return true;
-  }
-
   drawProgress(
     ctx,
-    activeIndex,
-    y
+    active
   ) {
-    const steps = [
+    ui.card(
+      ctx,
+      9,
+      362,
+      372,
+      91,
+      {
+        radius:
+          14
+      }
+    );
+
+    ui.text(
+      ctx,
+      '开店进度',
+      21,
+      382,
+      10,
+      COLORS.text,
+      '800'
+    );
+
+    const labels = [
       '选址',
       '签约',
       '装修',
@@ -597,120 +458,224 @@ class StoreScene {
       '开业'
     ];
 
-    this.text(
-      ctx,
-      '开店进度',
-      17,
-      y,
-      8,
-      COLORS.muted,
-      '700'
-    );
+    const startX =
+      36;
+
+    const gap =
+      62;
 
     for (
       let i = 0;
-      i <
-      steps.length;
+      i < 6;
       i++
     ) {
       const x =
-        24 +
+        startX +
         i *
-          67;
+        gap;
 
       if (
         i <
-        steps.length -
-          1
+        5
       ) {
-        ctx.strokeStyle =
+        ctx.fillStyle =
           i <
-          activeIndex
-            ? COLORS.green
-            : '#D8CEC1';
+            active - 1
+            ? '#38A56F'
+            : '#D7D0C5';
 
-        ctx.lineWidth =
-          3;
-
-        ctx.beginPath();
-
-        ctx.moveTo(
-          x +
-            14,
-          y +
-            28
+        ctx.fillRect(
+          x + 14,
+          412,
+          gap - 28,
+          3
         );
-
-        ctx.lineTo(
-          x +
-            53,
-          y +
-            28
-        );
-
-        ctx.stroke();
       }
 
-      this.roundedRect(
-        ctx,
+      const done =
+        i <
+        active - 1;
+
+      const current =
+        i ===
+        active - 1;
+
+      ctx.beginPath();
+      ctx.arc(
         x,
-        y +
-          17,
-        22,
-        22,
-        11,
-        i <=
-          activeIndex
-          ? (
-              i ===
-                activeIndex
-                ? COLORS.gold
-                : COLORS.green
-            )
-          : '#E7DED2'
+        413,
+        12,
+        0,
+        Math.PI *
+        2
       );
 
-      this.text(
+      ctx.fillStyle =
+        done
+          ? '#38A56F'
+          : current
+            ? COLORS.gold
+            : '#E4DED4';
+
+      ctx.fill();
+
+      ui.text(
         ctx,
-        i <
-          activeIndex
+        done
           ? '✓'
           : String(
-              i +
-              1
+              i + 1
             ),
-        x +
-          11,
-        y +
-          28,
-        7.5,
-        i <=
-          activeIndex
+        x,
+        413,
+        8,
+        done
           ? COLORS.white
-          : COLORS.muted,
+          : COLORS.text,
+        '800',
+        'center'
+      );
+
+      ui.text(
+        ctx,
+        labels[i],
+        x,
+        440,
+        6.5,
+        COLORS.text,
         '700',
         'center'
       );
+    }
+  }
 
-      this.text(
+  drawRoomStrip(
+    ctx,
+    shop
+  ) {
+    const rooms =
+      this.getRooms(
+        shop.id
+      );
+
+    ui.card(
+      ctx,
+      9,
+      230,
+      372,
+      120,
+      {
+        radius:
+          14
+      }
+    );
+
+    ui.text(
+      ctx,
+      '包厢',
+      20,
+      249,
+      10,
+      COLORS.text,
+      '800'
+    );
+
+    ui.text(
+      ctx,
+      rooms.length
+        ? '名称和风格均可在装修页自定义'
+        : '新增包厢后会在这里展示',
+      59,
+      249,
+      6.5,
+      COLORS.muted,
+      '500'
+    );
+
+    const images = [
+      'premium_room_1',
+      'premium_room_2',
+      'premium_room_3'
+    ];
+
+    for (
+      let i = 0;
+      i < 3;
+      i++
+    ) {
+      const x =
+        18 +
+        i *
+        112;
+
+      ui.card(
         ctx,
-        steps[i],
-        x +
-          11,
-        y +
-          51,
-        6.5,
-        i ===
-          activeIndex
-          ? COLORS.navy
+        x,
+        263,
+        104,
+        72,
+        {
+          radius:
+            10,
+          fill:
+            '#F6F1E8',
+          shadow:
+            false
+        }
+      );
+
+      ui.coverImage(
+        ctx,
+        visualAssetSystem
+          .get(
+            images[i]
+          ),
+        x,
+        263,
+        104,
+        51,
+        9,
+        null
+      );
+
+      const name =
+        rooms[i]
+          ? (
+              rooms[i].name ||
+              (
+                '包厢' +
+                (
+                  i + 1
+                )
+              )
+            )
+          : (
+              i <
+              2
+                ? '待规划'
+                : '+ 新增包厢'
+            );
+
+      ui.text(
+        ctx,
+        name,
+        x + 7,
+        325,
+        6.8,
+        rooms[i]
+          ? COLORS.text
           : COLORS.muted,
-        i ===
-          activeIndex
-          ? '700'
-          : '500',
-        'center'
+        '700'
       );
     }
+
+    this.addButton(
+      'module:renovation',
+      14,
+      258,
+      344,
+      82
+    );
   }
 
   renderNoShop(
@@ -718,646 +683,709 @@ class StoreScene {
   ) {
     this.drawHeader(
       ctx,
-      '门店筹备',
-      '这里管理自己的门店，不再把“门店”和“找铺市场”混在一起'
+      null
     );
 
-    this.roundedRect(
+    ui.card(
       ctx,
-      12,
-      82,
-      366,
-      126,
-      15,
-      COLORS.panel,
-      COLORS.line
-    );
-
-    this.drawHeroImage(
-      ctx,
-      220,
+      10,
       88,
-      150,
-      114
+      370,
+      246,
+      {
+        radius:
+          18
+      }
     );
 
-    this.text(
+    ui.coverImage(
       ctx,
-      '当前还没有',
-      24,
-      106,
+      visualAssetSystem
+        .get(
+          'premium_explore_banner'
+        ),
+      20,
+      99,
+      350,
+      118,
       14,
+      'rgba(4,31,46,0.22)'
+    );
+
+    ui.text(
+      ctx,
+      '还没有自己的门店',
+      28,
+      239,
+      15,
       COLORS.text,
-      '700'
+      '800'
     );
 
-    this.text(
+    ui.text(
       ctx,
-      '已签约门店',
-      24,
-      126,
-      14,
-      COLORS.text,
-      '700'
-    );
-
-    this.text(
-      ctx,
-      '经营目标',
-      24,
-      151,
-      7,
-      COLORS.orange,
-      '700'
-    );
-
-    this.text(
-      ctx,
-      '选择商圈 → 看铺 → 谈判',
-      24,
-      172,
-      8.2,
-      COLORS.navy,
-      '700'
-    );
-
-    this.text(
-      ctx,
-      '签下第一家店，正式开始经营。',
-      24,
-      193,
-      6.8,
+      '先选商圈，再看铺、谈判、签约。',
+      28,
+      268,
+      8,
       COLORS.muted,
-      '500'
+      '600'
     );
 
-    this.drawProgress(
+    ui.card(
       ctx,
-      0,
-      242
+      28,
+      286,
+      334,
+      37,
+      {
+        radius:
+          18,
+        fill:
+          '#F6B428',
+        stroke:
+          '#E6A01B',
+        shadow:
+          false
+      }
     );
 
-    this.roundedRect(
+    ui.text(
       ctx,
-      12,
-      335,
-      366,
-      156,
-      14,
-      COLORS.panel,
-      COLORS.line
-    );
-
-    this.text(
-      ctx,
-      '正确流程',
-      24,
-      357,
-      10,
-      COLORS.text,
-      '700'
-    );
-
-    const lines = [
-      '① 城市地图选择商圈',
-      '② 查看商圈人口、消费人群、需求与竞争',
-      '③ 从商圈详情进入房源市场',
-      '④ 实地看铺、谈判并签约'
-    ];
-
-    for (
-      let i = 0;
-      i <
-      lines.length;
-      i++
-    ) {
-      this.text(
-        ctx,
-        lines[i],
-        24,
-        389 +
-          i *
-            24,
-        8,
-        i ===
-          1
-          ? COLORS.orange
-          : COLORS.text,
-        i ===
-          1
-          ? '700'
-          : '600'
-      );
-    }
-
-    const actionY =
-      this.contentBottom -
-      54;
-
-    this.roundedRect(
-      ctx,
-      12,
-      actionY,
-      366,
-      42,
-      12,
-      COLORS.gold,
-      '#D49434'
-    );
-
-    this.text(
-      ctx,
-      '回城市选择经营区域',
+      '去城市地图选择经营区域  ›',
       195,
-      actionY +
-        21,
-      10,
-      '#26343B',
-      '700',
+      304.5,
+      8.5,
+      COLORS.text,
+      '800',
       'center'
     );
 
     this.addButton(
       'go-city',
-      12,
-      actionY,
-      366,
-      42
-    );
-  }
-
-  drawShopMetric(
-    ctx,
-    x,
-    y,
-    w,
-    label,
-    value,
-    sub,
-    color
-  ) {
-    this.roundedRect(
-      ctx,
-      x,
-      y,
-      w,
-      64,
-      11,
-      COLORS.panel2
+      24,
+      282,
+      342,
+      45
     );
 
-    this.text(
+    ui.card(
       ctx,
-      label,
-      x +
-        11,
-      y +
-        15,
-      6.8,
-      COLORS.muted,
-      '600'
+      10,
+      350,
+      370,
+      152,
+      {
+        radius:
+          16
+      }
     );
 
-    this.text(
+    ui.text(
       ctx,
-      value,
-      x +
-        11,
-      y +
-        37,
-      11,
-      color,
-      '700'
-    );
-
-    this.text(
-      ctx,
-      sub,
-      x +
-        11,
-      y +
-        53,
-      6.2,
-      COLORS.muted,
-      '500'
-    );
-  }
-
-  drawModule(
-    ctx,
-    id,
-    title,
-    sub,
-    x,
-    y,
-    w
-  ) {
-    this.roundedRect(
-      ctx,
-      x,
-      y,
-      w,
-      69,
-      12,
-      COLORS.panel,
-      COLORS.line
-    );
-
-    this.text(
-      ctx,
-      title,
-      x +
-        12,
-      y +
-        22,
-      9,
+      '开店流程',
+      22,
+      373,
+      10,
       COLORS.text,
-      '700'
+      '800'
     );
 
-    this.text(
-      ctx,
-      sub,
-      x +
-        12,
-      y +
-        46,
-      6.5,
-      COLORS.muted,
-      '500'
-    );
+    const steps = [
+      '① 查看商圈人口、消费人群和需求',
+      '② 进入房源市场并实地看铺',
+      '③ 谈判租金、转让费和免租期',
+      '④ 签约后进入装修与开业筹备'
+    ];
 
-    this.text(
-      ctx,
-      '›',
-      x +
-        w -
-        15,
-      y +
-        22,
-      13,
-      COLORS.orange,
-      '700',
-      'center'
-    );
-
-    this.addButton(
-      'module:' +
-        id,
-      x,
-      y,
-      w,
-      69
-    );
+    for (
+      let i = 0;
+      i < steps.length;
+      i++
+    ) {
+      ui.text(
+        ctx,
+        steps[i],
+        24,
+        405 +
+          i *
+          25,
+        7.2,
+        i === 0
+          ? COLORS.orange
+          : COLORS.text,
+        i === 0
+          ? '700'
+          : '600'
+      );
+    }
   }
 
   renderShop(
     ctx,
     shop
   ) {
-    const district =
-      citySystem
-        .getDistrict(
-          shop.districtId
-        );
-
     this.drawHeader(
       ctx,
-      '我的门店',
-      district
-        ? district.name +
-          ' · ' +
-          shop.address
-        : shop.address
+      shop
     );
 
-    this.roundedRect(
-      ctx,
-      12,
-      80,
-      366,
-      100,
-      15,
-      COLORS.panel,
-      COLORS.line
-    );
-
-    this.drawHeroImage(
-      ctx,
-      268,
-      86,
-      102,
-      88
-    );
-
-    this.roundedRect(
-      ctx,
-      24,
-      94,
-      76,
-      26,
-      9,
-      '#FFF0D6',
-      '#E4B564'
-    );
-
-    const renovation =
+    const plan =
       renovationSystem
         .ensurePlan(
           shop.id
         );
 
-    const statusLabel =
-      shop.status ===
-        'renovating'
-        ? '装修中'
-        : shop.status ===
-            'renovated_pending_license'
-          ? '装修完成'
-          : '待装修';
+    const readiness =
+      openingPrepSystem
+        .getReadiness(
+          shop.id
+        );
 
-    this.text(
+    const finance =
+      openingFinanceSystem
+        .getRecoveryStatus(
+          shop.id
+        );
+
+    ui.card(
       ctx,
-      statusLabel,
-      62,
-      107,
-      8,
-      shop.status ===
-        'renovated_pending_license'
-        ? COLORS.green
-        : COLORS.orange,
-      '700',
+      9,
+      87,
+      372,
+      132,
+      {
+        radius:
+          17
+      }
+    );
+
+    ui.coverImage(
+      ctx,
+      visualAssetSystem
+        .get(
+          'premium_store_hero'
+        ) ||
+      visualAssetSystem
+        .get(
+          'visual_storefront_hero'
+        ),
+      217,
+      95,
+      154,
+      116,
+      13,
+      null
+    );
+
+    ctx.fillStyle =
+      'rgba(34,24,18,0.62)';
+    ctx.fillRect(
+      265,
+      108,
+      92,
+      26
+    );
+
+    ui.text(
+      ctx,
+      shop.name ||
+        '我的酒楼',
+      311,
+      121,
+      7.2,
+      '#FFE8B0',
+      '800',
       'center'
     );
 
-    this.text(
+    const status =
+      shop.status ===
+        'open'
+        ? '营业中'
+        : readiness &&
+            readiness.ready
+          ? '可试营业'
+          : shop.status ===
+              'renovating'
+          ? '装修中'
+          : readiness &&
+              readiness.renovationReady
+            ? '开业筹备'
+            : '已签约';
+
+    ui.pill(
+      ctx,
+      '✓ ' +
+        status,
+      20,
+      101,
+      72,
+      25,
+      '#FFF0C1',
+      '#B36B1E'
+    );
+
+    ui.text(
       ctx,
       shop.name ||
         shop.address,
-      24,
-      143,
-      14,
+      20,
+      151,
+      17,
       COLORS.text,
-      '700'
+      '800'
     );
 
-    this.roundedRect(
+    ui.text(
       ctx,
-      194,
-      129,
-      62,
-      28,
-      8,
-      '#FFF0D6',
-      '#E4B564'
-    );
-
-    this.text(
-      ctx,
-      '✎ 改名',
-      225,
-      143,
-      7.5,
-      COLORS.orange,
-      '700',
-      'center'
-    );
-
-    this.addButton(
-      'shop:rename',
-      188,
-      124,
-      74,
-      38
-    );
-
-    this.text(
-      ctx,
-      shop.status ===
-        'renovating'
-        ? '施工进行中 · 时间推进会更新工程进度'
-        : shop.status ===
-            'renovated_pending_license'
-          ? '装修完成 · 下一步采购设备、办证与招聘'
-          : '已签约 · 可自由规划楼层、桌椅、包厢与风格',
-      24,
-      165,
-      7.5,
-      COLORS.muted,
-      '600'
-    );
-
-    this.text(
-      ctx,
-      '签约前投入 ' +
-        money(
-          shop
-            .upfrontPaid
-        ),
-      365,
-      108,
-      8,
-      COLORS.red,
-      '700',
-      'right'
-    );
-
-    const metricY =
-      194;
-
-    const gap =
-      7;
-
-    const w =
-      (
-        DESIGN_W -
-        24 -
-        gap *
-          2
-      ) /
-      3;
-
-    this.drawShopMetric(
-      ctx,
-      12,
-      metricY,
-      w,
-      '面积',
-      shop.grossArea +
-        '㎡',
-      '可用 ' +
-        shop.usableArea +
-        '㎡',
-      COLORS.blue
-    );
-
-    this.drawShopMetric(
-      ctx,
-      12 +
-        w +
-        gap,
-      metricY,
-      w,
-      '座位预估',
-      shop.seatEstimate +
-        '席',
-      '装修后可调整',
-      COLORS.green
-    );
-
-    this.drawShopMetric(
-      ctx,
-      12 +
-        (
-          w +
-          gap
-        ) *
-          2,
-      metricY,
-      w,
-      '月租',
-      money(
-        shop.monthlyRent
-      ),
-      shop
-        .freeRentDays +
-        '天免租',
-      COLORS.red
-    );
-
-    this.drawProgress(
-      ctx,
-      2,
-      284
-    );
-
-    this.roundedRect(
-      ctx,
-      12,
-      365,
-      366,
-      82,
-      13,
-      COLORS.panel,
-      COLORS.line
-    );
-
-    this.text(
-      ctx,
-      '租约摘要',
-      24,
-      385,
-      9,
-      COLORS.text,
-      '700'
-    );
-
-    this.text(
-      ctx,
-      '押' +
-        shop.depositMonths +
-        ' · 付' +
-        shop.paymentMonths +
-        ' · 租期' +
-        shop.leaseYears +
-        '年',
-      24,
-      413,
-      8,
-      COLORS.navy,
-      '700'
-    );
-
-    this.text(
-      ctx,
-      '转让费 ' +
-        money(
-          shop.transferFee
-        ) +
-        ' · 中介费 ' +
-        money(
-          shop.brokerFee
-        ),
-      24,
-      436,
+      shop.address,
+      20,
+      177,
       7,
       COLORS.muted,
       '600'
     );
 
-    const modulesY =
-      463;
-
-    this.text(
+    ui.card(
       ctx,
-      '开业筹备',
-      17,
-      modulesY,
-      8,
-      COLORS.muted,
-      '700'
+      20,
+      189,
+      78,
+      24,
+      {
+        radius:
+          12,
+        fill:
+          '#FFF5D8',
+        stroke:
+          '#E8C36C',
+        shadow:
+          false
+      }
     );
 
-    const moduleW =
-      177;
-
-    this.drawModule(
+    ui.text(
       ctx,
-      'renovation',
-      shop.status ===
-        'renovated_pending_license'
-        ? '装修成果'
-        : shop.status ===
-            'renovating'
-          ? '施工进度'
-          : '自定义装修',
-      shop.status ===
-        'renovated_pending_license'
-        ? '查看完工布局与经营参数'
-        : '楼层、桌椅、包厢、风格、施工',
-      12,
-      modulesY +
-        15,
-      moduleW
-    );
-
-    this.drawModule(
-      ctx,
-      'equipment',
-      '设备采购',
-      '后厨、冷链、收银设备',
+      '✎ 改名',
+      59,
       201,
-      modulesY +
-        15,
-      moduleW
+      7,
+      COLORS.orange,
+      '800',
+      'center'
     );
 
-    this.drawModule(
-      ctx,
-      'license',
-      '证照办理',
-      '经营、消防、食品许可',
-      12,
-      modulesY +
-        94,
-      moduleW
+    this.addButton(
+      'shop:rename',
+      16,
+      185,
+      86,
+      32
     );
 
-    this.drawModule(
+    this.drawRoomStrip(
       ctx,
-      'staff',
-      '招聘团队',
-      '店长、厨师、服务人员',
-      201,
-      modulesY +
-        94,
-      moduleW
+      shop
     );
+
+    let active =
+      2;
+
+    if (
+      readiness &&
+      readiness.renovationReady
+    ) {
+      active =
+        4;
+    } else if (
+      shop.status ===
+      'renovating'
+    ) {
+      active =
+        3;
+    }
+
+    if (
+      readiness &&
+      readiness.permitsReady
+    ) {
+      active =
+        5;
+    }
+
+    if (
+      readiness &&
+      readiness.ready
+    ) {
+      active =
+        6;
+    }
+
+    this.drawProgress(
+      ctx,
+      active
+    );
+
+    ui.card(
+      ctx,
+      9,
+      466,
+      372,
+      152,
+      {
+        radius:
+          15
+      }
+    );
+
+    ui.text(
+      ctx,
+      '下一步建议',
+      20,
+      486,
+      11,
+      COLORS.text,
+      '800'
+    );
+
+    const cards = [
+      {
+        id:
+          readiness &&
+          readiness.ready &&
+          shop.status !==
+            'open'
+            ? 'trial'
+            : 'renovation',
+        key:
+          'premium_advice_renovation',
+        title:
+          readiness &&
+          readiness.ready &&
+          shop.status !==
+            'open'
+            ? '开始试营业'
+            : readiness &&
+                readiness.renovationReady
+              ? '装修成果'
+              : '店面装修',
+        sub:
+          readiness &&
+          readiness.ready &&
+          shop.status !==
+            'open'
+            ? '开门迎客并进入经营'
+            : readiness &&
+                readiness.renovationReady
+              ? '查看空间与座位'
+              : '布局、包厢、风格',
+        action:
+          readiness &&
+          readiness.ready &&
+          shop.status !==
+            'open'
+            ? '开业'
+            : readiness &&
+                readiness.renovationReady
+              ? '查看'
+              : '装修'
+      },
+      {
+        id:
+          'equipment',
+        key:
+          'visual_stove',
+        title:
+          readiness &&
+          readiness.equipmentReady
+            ? '设备已安装'
+            : '设备采购',
+        sub:
+          readiness &&
+          readiness.equipment &&
+          readiness.equipment.status ===
+            'ordered'
+            ? '运输安装进行中'
+            : '后厨、冷链、收银',
+        action:
+          readiness &&
+          readiness.equipmentReady
+            ? '查看'
+            : '采购'
+      },
+      {
+        id:
+          'license',
+        key:
+          'premium_advice_permit',
+        title:
+          readiness &&
+          readiness.permitsReady
+            ? '证照已齐'
+            : '证照办理',
+        sub:
+          readiness &&
+          readiness.permits
+            ? (
+                readiness.permits.approved +
+                '/' +
+                readiness.permits.total +
+                ' 已完成'
+              )
+            : '经营、消防、食品',
+        action:
+          '办证'
+      },
+      {
+        id:
+          'staff',
+        key:
+          'premium_advice_staff',
+        title:
+          readiness &&
+          readiness.staffingReady
+            ? '班组已齐'
+            : '招聘团队',
+        sub:
+          readiness &&
+          readiness.staffing
+            ? (
+                '覆盖率 ' +
+                Math.round(
+                  readiness.staffing.coverage *
+                  100
+                ) +
+                '%'
+              )
+            : '店长、厨师、服务',
+        action:
+          '招聘'
+      }
+    ];
+
+    for (
+      let i = 0;
+      i <
+      cards.length;
+      i++
+    ) {
+      const item =
+        cards[i];
+
+      const col =
+        i %
+        2;
+
+      const row =
+        Math.floor(
+          i /
+          2
+        );
+
+      const x =
+        18 +
+        col *
+        181;
+
+      const y =
+        501 +
+        row *
+        56;
+
+      ui.card(
+        ctx,
+        x,
+        y,
+        173,
+        50,
+        {
+          radius:
+            11,
+          fill:
+            '#FFFBF4',
+          shadow:
+            false
+        }
+      );
+
+      ui.coverImage(
+        ctx,
+        visualAssetSystem
+          .get(
+            item.key
+          ),
+        x + 5,
+        y + 5,
+        42,
+        40,
+        8,
+        null
+      );
+
+      ui.text(
+        ctx,
+        item.title,
+        x + 54,
+        y + 14,
+        8,
+        COLORS.text,
+        '800'
+      );
+
+      ui.text(
+        ctx,
+        item.sub,
+        x + 54,
+        y + 31,
+        7,
+        COLORS.muted,
+        '600'
+      );
+
+      ui.text(
+        ctx,
+        item.action +
+          ' ›',
+        x + 160,
+        y + 39,
+        7,
+        COLORS.orange,
+        '800',
+        'right'
+      );
+
+      this.addButton(
+        'module:' +
+          item.id,
+        x,
+        y,
+        173,
+        50
+      );
+    }
+
+    if (
+      finance &&
+      finance.gap >
+        0 &&
+      finance.offer &&
+      !finance.offer.existing
+    ) {
+      ui.pill(
+        ctx,
+        '周转金可补足开店缺口 ' +
+          money(
+            Math.min(
+              finance.gap,
+              finance
+                .offer
+                .creditLimit
+            )
+          ),
+        168,
+        473,
+        202,
+        24,
+        '#FFF0D6',
+        COLORS.orange,
+        '#E9C174'
+      );
+
+      this.addButton(
+        'module:finance',
+        164,
+        469,
+        210,
+        32
+      );
+    }
+
+    if (
+      this.contentBottom >
+      684
+    ) {
+      const bannerY =
+        Math.min(
+          628,
+          this.contentBottom -
+            71
+        );
+
+      ui.coverImage(
+        ctx,
+        visualAssetSystem
+          .get(
+            'premium_explore_banner'
+        ),
+        10,
+        bannerY,
+        370,
+        60,
+        13,
+        'rgba(4,32,48,0.45)'
+      );
+
+      ui.text(
+        ctx,
+        '探索更多优质商圈',
+        28,
+        bannerY + 21,
+        10,
+        COLORS.white,
+        '800'
+      );
+
+      ui.text(
+        ctx,
+        '为下一家门店寻找黄金地段',
+        28,
+        bannerY + 42,
+        6.5,
+        '#E6F0F4',
+        '500'
+      );
+
+      ui.card(
+        ctx,
+        283,
+        bannerY + 14,
+        78,
+        32,
+        {
+          radius:
+            16,
+          fill:
+            '#F7B628',
+          stroke:
+            '#E3A21B',
+          shadow:
+            false
+        }
+      );
+
+      ui.text(
+        ctx,
+        '去拓展 ›',
+        322,
+        bannerY + 30,
+        7,
+        COLORS.text,
+        '800',
+        'center'
+      );
+
+      this.addButton(
+        'go-city',
+        278,
+        bannerY + 8,
+        90,
+        44
+      );
+    }
   }
 
-  render(
-    ctx
-  ) {
+  render(ctx) {
     if (!ctx) {
       return;
     }
@@ -1383,11 +1411,6 @@ class StoreScene {
       this.getCurrentShop();
 
     if (shop) {
-      renovationSystem
-        .updateShop(
-          shop.id
-        );
-
       this.renderShop(
         ctx,
         shop
@@ -1417,73 +1440,54 @@ class StoreScene {
 
     if (
       item.id ===
-      'shop:rename'
+      'go-city'
     ) {
-      const shop =
-        this.getCurrentShop();
-
-      if (shop) {
-        textInput
-          .requestText({
-            title:
-              '修改酒楼名称',
-
-            value:
-              shop.name ||
-              '',
-
-            placeholder:
-              '请输入酒楼名称',
-
-            maxLength:
-              12
-          })
-          .then(
-            value => {
-              if (!value) {
-                return;
-              }
-
-              const result =
-                customizationSystem
-                  .renameShop(
-                    shop.id,
-                    value
-                  );
-
-              if (
-                api &&
-                typeof api
-                  .showToast ===
-                  'function'
-              ) {
-                api.showToast({
-                  title:
-                    result.ok
-                      ? '酒楼名称已更新'
-                      : result.message,
-
-                  icon:
-                    'none'
-                });
-              }
-
-              textInput
-                .requestRender();
-            }
-          );
-      }
+      sceneManager
+        .switchTo(
+          'city'
+        );
 
       return true;
     }
 
     if (
       item.id ===
-      'go-city'
+      'shop:rename'
     ) {
-      sceneManager
-        .switchTo(
-          'city'
+      const shop =
+        this.getCurrentShop();
+
+      if (!shop) {
+        return true;
+      }
+
+      textInput
+        .requestText({
+          title:
+            '修改酒楼名称',
+          value:
+            shop.name ||
+            '',
+          placeholder:
+            '请输入酒楼名称',
+          maxLength:
+            12
+        })
+        .then(
+          value => {
+            if (!value) {
+              return;
+            }
+
+            customizationSystem
+              .renameShop(
+                shop.id,
+                value
+              );
+
+            textInput
+              .requestRender();
+          }
         );
 
       return true;
@@ -1496,63 +1500,163 @@ class StoreScene {
       0
     ) {
       const moduleId =
-        item.id
-          .split(':')[1];
+        item.id.split(
+          ':'
+        )[1];
+
+      const shop =
+        this.getCurrentShop();
+
+      if (!shop) {
+        return true;
+      }
+
+      const sceneMap = {
+        renovation:
+          'renovation',
+        equipment:
+          'equipment',
+        license:
+          'license',
+        staff:
+          'staff'
+      };
 
       if (
-        moduleId ===
-        'renovation'
+        sceneMap[
+          moduleId
+        ]
       ) {
-        const shop =
-          this.getCurrentShop();
-
-        if (shop) {
-          sceneManager
-            .switchTo(
-              'renovation',
-              {
-                shopId:
-                  shop.id
-              }
-            );
-        }
+        sceneManager
+          .switchTo(
+            sceneMap[
+              moduleId
+            ],
+            {
+              shopId:
+                shop.id
+            }
+          );
 
         return true;
       }
 
-      const names = {
-        renovation:
-          '装修方案',
+      if (
+        moduleId ===
+        'trial'
+      ) {
+        const result =
+          openingPrepSystem
+            .startTrialOpening(
+              shop.id
+            );
 
-        equipment:
-          '设备采购',
+        if (
+          api &&
+          typeof api.showToast ===
+            'function'
+        ) {
+          api.showToast({
+            title:
+              result.ok
+                ? '试营业开始！'
+                : result.message,
+            icon:
+              'none'
+          });
+        }
 
-        license:
-          '证照办理',
+        textInput
+          .requestRender();
 
-        staff:
-          '招聘团队'
-      };
+        return true;
+      }
 
       if (
-        api &&
-        typeof api
-          .showToast ===
-          'function'
+        moduleId ===
+        'finance'
       ) {
-        api.showToast({
-          title:
-            (
-              names[
-                moduleId
-              ] ||
-              '筹备模块'
-            ) +
-            '将在下一阶段接入',
+        const offer =
+          openingFinanceSystem
+            .getOffer(
+              shop.id
+            );
 
-          icon:
-            'none'
-        });
+        const accept =
+          () => {
+            const result =
+              openingFinanceSystem
+                .acceptOffer(
+                  shop.id
+                );
+
+            if (
+              api &&
+              typeof api.showToast ===
+                'function'
+            ) {
+              api.showToast({
+                title:
+                  result.ok
+                    ? (
+                        '已到账 ' +
+                        money(
+                          result
+                            .loan
+                            .principal
+                        )
+                      )
+                    : result.message,
+                icon:
+                  'none'
+              });
+            }
+
+            textInput
+              .requestRender();
+          };
+
+        if (
+          offer &&
+          offer.available &&
+          api &&
+          typeof api.showModal ===
+            'function'
+        ) {
+          api.showModal({
+            title:
+              '开店周转金',
+            content:
+              '可借 ' +
+              money(
+                offer.principal
+              ) +
+              '，期限 ' +
+              offer.termMonths +
+              ' 个月，预计月还 ' +
+              money(
+                offer.monthlyPayment
+              ) +
+              '。确认申请？',
+            confirmText:
+              '申请',
+            cancelText:
+              '取消',
+            success:
+              result => {
+                if (
+                  result &&
+                  result.confirm
+                ) {
+                  accept();
+                }
+              }
+          });
+        } else {
+          accept();
+        }
+
+        return true;
       }
 
       return true;

@@ -28,6 +28,9 @@ const animationManager =
 const resourceManager =
   require('./core/resourceManager.js');
 
+const safeArea =
+  require('./ui/safeArea.js');
+
 const citySystem =
   require('./city/citySystem.js');
 
@@ -55,6 +58,15 @@ const districtScene =
 
 const renovationScene =
   require('./scenes/renovationScene.js');
+
+const equipmentScene =
+  require('./scenes/equipmentScene.js');
+
+const licenseScene =
+  require('./scenes/licenseScene.js');
+
+const staffScene =
+  require('./scenes/staffScene.js');
 
 const researchScene =
   require('./scenes/researchScene.js');
@@ -84,6 +96,9 @@ let VIEW_H = 780;
 
 let TOP_H = 90;
 let NAV_H = 64;
+
+let SAFE_TOP = 0;
+let SAFE_BOTTOM = 0;
 
 let MAP_X = 0;
 let MAP_Y = 90;
@@ -343,14 +358,20 @@ function getSystemInfo() {
 
 function updateLayout() {
   TOP_H =
-    VIEW_H < 740
-      ? 84
-      : 90;
+    (
+      VIEW_H < 740
+        ? 84
+        : 90
+    ) +
+    SAFE_TOP;
 
   NAV_H =
-    VIEW_H < 740
-      ? 60
-      : 64;
+    (
+      VIEW_H < 740
+        ? 60
+        : 64
+    ) +
+    SAFE_BOTTOM;
 
   MAP_X = 0;
   MAP_Y = TOP_H;
@@ -427,6 +448,19 @@ function resizeCanvas() {
   scale =
     screenWidth /
     VIEW_W;
+
+  const safeInsets =
+    safeArea
+      .getLogicalInsets(
+        info,
+        scale
+      );
+
+  SAFE_TOP =
+    safeInsets.top;
+
+  SAFE_BOTTOM =
+    safeInsets.bottom;
 
   VIEW_H =
     screenHeight /
@@ -632,13 +666,22 @@ function drawText(
     color ||
     COLORS.text;
 
+  const readableSize =
+    Math.max(
+      7.3,
+      Number(
+        size
+      ) ||
+      7.3
+    );
+
   ctx.font =
     (
       weight ||
       '500'
     ) +
     ' ' +
-    size +
+    readableSize +
     'px sans-serif';
 
   ctx.textAlign =
@@ -675,13 +718,22 @@ function fitText(
     return value;
   }
 
+  const readableSize =
+    Math.max(
+      7.3,
+      Number(
+        size
+      ) ||
+      7.3
+    );
+
   ctx.font =
     (
       weight ||
       '500'
     ) +
     ' ' +
-    size +
+    readableSize +
     'px sans-serif';
 
   if (
@@ -725,12 +777,38 @@ function addButton(
   w,
   h
 ) {
+  const hitW =
+    Math.max(
+      40,
+      w
+    );
+
+  const hitH =
+    Math.max(
+      36,
+      h
+    );
+
   buttons.push({
     id,
-    x,
-    y,
-    w,
-    h
+    x:
+      x -
+      (
+        hitW -
+        w
+      ) /
+      2,
+    y:
+      y -
+      (
+        hitH -
+        h
+      ) /
+      2,
+    w:
+      hitW,
+    h:
+      hitH
   });
 }
 
@@ -2513,7 +2591,13 @@ function drawBottomNav() {
           current ===
             'propertyMarket' ||
           current ===
-            'renovation'
+            'renovation' ||
+          current ===
+            'equipment' ||
+          current ===
+            'license' ||
+          current ===
+            'staff'
         )
       );
 
@@ -2723,6 +2807,21 @@ sceneManager.register(
 sceneManager.register(
   'renovation',
   renovationScene
+);
+
+sceneManager.register(
+  'equipment',
+  equipmentScene
+);
+
+sceneManager.register(
+  'license',
+  licenseScene
+);
+
+sceneManager.register(
+  'staff',
+  staffScene
 );
 
 sceneManager.register(
@@ -3266,5 +3365,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V10 图片运行时接入版启动成功'
+  '城市餐饮经营小游戏 V12 玩家报告优化与高保真UI版启动成功'
 );

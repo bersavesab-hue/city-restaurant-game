@@ -1,0 +1,137 @@
+{
+  "generatedAt": "2026-09-12T18:23:54.948Z",
+  "personaCount": 100,
+  "issueCount": 4,
+  "personaRisk": {
+    "极高": 0,
+    "高": 0,
+    "中": 7,
+    "低": 93
+  },
+  "topIssues": [
+    {
+      "id": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+      "priority": "P2",
+      "dimension": "gameplay",
+      "title": "菜品/供应链等侧系统深度不足",
+      "affected": 100,
+      "affectedRate": 1,
+      "highConcern": 0,
+      "averageScore": 51.43,
+      "remediation": "每个底部一级入口至少提供一个能独立形成决策循环的玩法，而不是展示页。"
+    },
+    {
+      "id": "ACCESS_FONT_SCALE",
+      "priority": "P2",
+      "dimension": "accessibility",
+      "title": "没有字体缩放/高可读设置",
+      "affected": 31,
+      "affectedRate": 0.31,
+      "highConcern": 0,
+      "averageScore": 47.064516129032256,
+      "remediation": "系统设置加入标准/大字两档，重点页面动态适配。"
+    },
+    {
+      "id": "META_ACHIEVEMENT",
+      "priority": "P3",
+      "dimension": "content",
+      "title": "缺少明显的长期收集/成就反馈",
+      "affected": 36,
+      "affectedRate": 0.36,
+      "highConcern": 0,
+      "averageScore": 43.02777777777778,
+      "remediation": "后续增加经营成就、菜系图鉴、商圈收藏、门店里程碑等长期目标。"
+    },
+    {
+      "id": "ACCESS_COLOR",
+      "priority": "P3",
+      "dimension": "accessibility",
+      "title": "状态信息依赖颜色且缺少辅助模式",
+      "affected": 4,
+      "affectedRate": 0.04,
+      "highConcern": 0,
+      "averageScore": 39.5,
+      "remediation": "关键状态同时使用图标/文字，不只靠颜色；后续增加高对比模式。"
+    }
+  ],
+  "dimensions": {
+    "gameplay": {
+      "issueCount": 1,
+      "affectedTotal": 100,
+      "highConcern": 0,
+      "maxPriority": "P2"
+    },
+    "accessibility": {
+      "issueCount": 2,
+      "affectedTotal": 35,
+      "highConcern": 0,
+      "maxPriority": "P2"
+    },
+    "content": {
+      "issueCount": 1,
+      "affectedTotal": 36,
+      "highConcern": 0,
+      "maxPriority": "P3"
+    }
+  },
+  "platforms": {
+    "douyin": {
+      "total": 24,
+      "extreme": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 24
+    },
+    "taptap": {
+      "total": 24,
+      "extreme": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 24
+    },
+    "cross": {
+      "total": 52,
+      "extreme": 0,
+      "high": 0,
+      "medium": 7,
+      "low": 45
+    }
+  },
+  "devices": {
+    "mid_android": {
+      "total": 18,
+      "extreme": 0,
+      "high": 0,
+      "medium": 1,
+      "low": 17
+    },
+    "small_android": {
+      "total": 29,
+      "extreme": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 29
+    },
+    "low_android": {
+      "total": 27,
+      "extreme": 0,
+      "high": 0,
+      "medium": 4,
+      "low": 23
+    },
+    "high_android": {
+      "total": 18,
+      "extreme": 0,
+      "high": 0,
+      "medium": 2,
+      "low": 16
+    },
+    "tablet": {
+      "total": 8,
+      "extreme": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 8
+    }
+  }
+}

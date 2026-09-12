@@ -65,7 +65,17 @@ const INITIAL_STATE = {
 
     renovations: {},
 
-    renovationTemplates: []
+    renovationTemplates: [],
+
+    openingPrep: {
+      equipment: {},
+      permits: {},
+      staffing: {}
+    },
+
+    finance: {
+      openingLoans: {}
+    }
   },
 
   progress: {
@@ -215,6 +225,49 @@ class GameState {
 
     return business
       .renovationTemplates;
+  }
+
+  getOpeningPrep() {
+    const business =
+      this.data.business;
+
+    if (
+      !business.openingPrep
+    ) {
+      business.openingPrep = {
+        equipment: {},
+        permits: {},
+        staffing: {}
+      };
+    }
+
+    return business.openingPrep;
+  }
+
+  getFinance() {
+    const business =
+      this.data.business;
+
+    if (
+      !business.finance
+    ) {
+      business.finance = {
+        openingLoans: {}
+      };
+    }
+
+    if (
+      !business
+        .finance
+        .openingLoans
+    ) {
+      business
+        .finance
+        .openingLoans =
+        {};
+    }
+
+    return business.finance;
   }
 
   getSimulation() {

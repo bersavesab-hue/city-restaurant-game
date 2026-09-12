@@ -1571,13 +1571,22 @@ class ShopScene {
       color ||
       COLORS.text;
 
+    const readableSize =
+      Math.max(
+        7.3,
+        Number(
+          size
+        ) ||
+        7.3
+      );
+
     ctx.font =
       (
         weight ||
         '500'
       ) +
       ' ' +
-      size +
+      readableSize +
       'px sans-serif';
 
     ctx.textAlign =

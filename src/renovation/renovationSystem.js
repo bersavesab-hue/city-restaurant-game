@@ -35,6 +35,30 @@ function hashFloat(text) {
 }
 
 class RenovationSystem {
+  constructor() {
+    this.history =
+      {};
+  }
+
+  getHistory(shopId) {
+    if (
+      !this.history[
+        shopId
+      ]
+    ) {
+      this.history[
+        shopId
+      ] = {
+        undo: [],
+        redo: []
+      };
+    }
+
+    return this.history[
+      shopId
+    ];
+  }
+
   getShop(shopId) {
     const business =
       gameState.getBusiness();
@@ -177,13 +201,13 @@ class RenovationSystem {
           0,
 
         hallStyle:
-          'wood',
+          'simple',
 
         materialGrade:
-          'standard',
+          'budget',
 
         lightingLevel:
-          'warm',
+          'basic',
 
         floors,
 
@@ -202,16 +226,170 @@ class RenovationSystem {
 
   mutatePlan(
     shopId,
-    callback
+    callback,
+    options
   ) {
     this.ensurePlan(shopId);
 
     const plan =
       this.getStore()[shopId];
 
+    const opts =
+      options ||
+      {};
+
+    if (
+      !opts.skipHistory &&
+      plan.status !==
+        'constructing' &&
+      plan.status !==
+        'completed'
+    ) {
+      const history =
+        this.getHistory(
+          shopId
+        );
+
+      history.undo.push(
+        clone(
+          plan
+        )
+      );
+
+      if (
+        history.undo.length >
+        20
+      ) {
+        history.undo.shift();
+      }
+
+      history.redo =
+        [];
+    }
+
     callback(plan);
 
     return clone(plan);
+  }
+
+  canUndo(shopId) {
+    return (
+      this.getHistory(
+        shopId
+      ).undo.length >
+      0
+    );
+  }
+
+  canRedo(shopId) {
+    return (
+      this.getHistory(
+        shopId
+      ).redo.length >
+      0
+    );
+  }
+
+  undo(shopId) {
+    const store =
+      this.getStore();
+
+    const current =
+      store[
+        shopId
+      ];
+
+    if (
+      !current ||
+      current.status ===
+        'constructing' ||
+      current.status ===
+        'completed'
+    ) {
+      return null;
+    }
+
+    const history =
+      this.getHistory(
+        shopId
+      );
+
+    const previous =
+      history.undo.pop();
+
+    if (!previous) {
+      return null;
+    }
+
+    history.redo.push(
+      clone(
+        current
+      )
+    );
+
+    store[
+      shopId
+    ] =
+      clone(
+        previous
+      );
+
+    return clone(
+      store[
+        shopId
+      ]
+    );
+  }
+
+  redo(shopId) {
+    const store =
+      this.getStore();
+
+    const current =
+      store[
+        shopId
+      ];
+
+    if (
+      !current ||
+      current.status ===
+        'constructing' ||
+      current.status ===
+        'completed'
+    ) {
+      return null;
+    }
+
+    const history =
+      this.getHistory(
+        shopId
+      );
+
+    const next =
+      history.redo.pop();
+
+    if (!next) {
+      return null;
+    }
+
+    history.undo.push(
+      clone(
+        current
+      )
+    );
+
+    store[
+      shopId
+    ] =
+      clone(
+        next
+      );
+
+    return clone(
+      store[
+        shopId
+      ]
+    );
   }
 
   setActiveFloor(

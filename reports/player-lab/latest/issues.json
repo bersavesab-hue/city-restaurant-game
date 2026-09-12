@@ -1,0 +1,190 @@
+[
+  {
+    "id": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+    "priority": "P2",
+    "dimension": "gameplay",
+    "title": "菜品/供应链等侧系统深度不足",
+    "detail": "底部导航已经承诺多个经营系统，但部分页面内容量较少，玩家会感到“按钮很多、真正能玩的少”。",
+    "evidence": {
+      "supplySourceBytes": 439,
+      "researchSourceBytes": 453
+    },
+    "remediation": "每个底部一级入口至少提供一个能独立形成决策循环的玩法，而不是展示页。",
+    "affected": 100,
+    "highConcern": 0,
+    "totalScore": 5143,
+    "platforms": {
+      "douyin": 24,
+      "taptap": 24,
+      "cross": 52
+    },
+    "examples": [
+      {
+        "personaId": "P001",
+        "label": "抖音3分钟新客·A",
+        "score": 53
+      },
+      {
+        "personaId": "P002",
+        "label": "抖音3分钟新客·B",
+        "score": 49
+      },
+      {
+        "personaId": "P003",
+        "label": "抖音3分钟新客·C",
+        "score": 47
+      },
+      {
+        "personaId": "P004",
+        "label": "抖音3分钟新客·D",
+        "score": 51
+      },
+      {
+        "personaId": "P005",
+        "label": "抖音广告敏感玩家·A",
+        "score": 48
+      }
+    ],
+    "affectedRate": 1,
+    "averageScore": 51.43
+  },
+  {
+    "id": "ACCESS_FONT_SCALE",
+    "priority": "P2",
+    "dimension": "accessibility",
+    "title": "没有字体缩放/高可读设置",
+    "detail": "对视力较弱、老年玩家和小屏设备缺少可读性兜底。",
+    "evidence": {
+      "sourceScan": "未发现字体缩放设置"
+    },
+    "remediation": "系统设置加入标准/大字两档，重点页面动态适配。",
+    "affected": 31,
+    "highConcern": 0,
+    "totalScore": 1459,
+    "platforms": {
+      "douyin": 15,
+      "taptap": 8,
+      "cross": 8
+    },
+    "examples": [
+      {
+        "personaId": "P001",
+        "label": "抖音3分钟新客·A",
+        "score": 40
+      },
+      {
+        "personaId": "P004",
+        "label": "抖音3分钟新客·D",
+        "score": 38
+      },
+      {
+        "personaId": "P005",
+        "label": "抖音广告敏感玩家·A",
+        "score": 39
+      },
+      {
+        "personaId": "P009",
+        "label": "碎片化通勤玩家·A",
+        "score": 46
+      },
+      {
+        "personaId": "P010",
+        "label": "碎片化通勤玩家·B",
+        "score": 43
+      }
+    ],
+    "affectedRate": 0.31,
+    "averageScore": 47.064516129032256
+  },
+  {
+    "id": "META_ACHIEVEMENT",
+    "priority": "P3",
+    "dimension": "content",
+    "title": "缺少明显的长期收集/成就反馈",
+    "detail": "当前经营核心较强，但收藏党缺少跨局目标和里程碑展示。",
+    "evidence": {
+      "sourceScan": "未发现成就/收藏系统"
+    },
+    "remediation": "后续增加经营成就、菜系图鉴、商圈收藏、门店里程碑等长期目标。",
+    "affected": 36,
+    "highConcern": 0,
+    "totalScore": 1549,
+    "platforms": {
+      "douyin": 0,
+      "taptap": 16,
+      "cross": 20
+    },
+    "examples": [
+      {
+        "personaId": "P017",
+        "label": "TapTap经营模拟核心玩家·A",
+        "score": 40
+      },
+      {
+        "personaId": "P018",
+        "label": "TapTap经营模拟核心玩家·B",
+        "score": 38
+      },
+      {
+        "personaId": "P019",
+        "label": "TapTap经营模拟核心玩家·C",
+        "score": 43
+      },
+      {
+        "personaId": "P020",
+        "label": "TapTap经营模拟核心玩家·D",
+        "score": 39
+      },
+      {
+        "personaId": "P025",
+        "label": "TapTap数值硬核玩家·A",
+        "score": 45
+      }
+    ],
+    "affectedRate": 0.36,
+    "averageScore": 43.02777777777778
+  },
+  {
+    "id": "ACCESS_COLOR",
+    "priority": "P3",
+    "dimension": "accessibility",
+    "title": "状态信息依赖颜色且缺少辅助模式",
+    "detail": "大量绿色/橙色/红色表达状态，但没有发现色盲/高对比设置。",
+    "evidence": {
+      "sourceScan": "未发现高对比或色盲模式"
+    },
+    "remediation": "关键状态同时使用图标/文字，不只靠颜色；后续增加高对比模式。",
+    "affected": 4,
+    "highConcern": 0,
+    "totalScore": 158,
+    "platforms": {
+      "douyin": 0,
+      "taptap": 0,
+      "cross": 4
+    },
+    "examples": [
+      {
+        "personaId": "P061",
+        "label": "大字体需求玩家·A",
+        "score": 40
+      },
+      {
+        "personaId": "P062",
+        "label": "大字体需求玩家·B",
+        "score": 40
+      },
+      {
+        "personaId": "P063",
+        "label": "大字体需求玩家·C",
+        "score": 38
+      },
+      {
+        "personaId": "P064",
+        "label": "大字体需求玩家·D",
+        "score": 40
+      }
+    ],
+    "affectedRate": 0.04,
+    "averageScore": 39.5
+  }
+]

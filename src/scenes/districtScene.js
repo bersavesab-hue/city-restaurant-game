@@ -1,8 +1,7 @@
 'use strict';
 
 const runtime =
-  globalThis
-    .GameRuntime;
+  globalThis.GameRuntime;
 
 if (!runtime) {
   throw new Error(
@@ -11,8 +10,7 @@ if (!runtime) {
 }
 
 const api =
-  runtime.api ||
-  {};
+  runtime.api || {};
 
 const gameState =
   require('../core/gameState.js');
@@ -29,49 +27,33 @@ const sceneManager =
 const visualAssetSystem =
   require('../ui/visualAssetSystem.js');
 
+const ui =
+  require('../ui/premiumUi.js');
+
 const DESIGN_W =
   390;
 
 const COLORS = {
   navy:
-    '#12384D',
-
+    '#07344B',
   navy2:
-    '#0A2A3B',
-
+    '#082A3D',
   paper:
-    '#F4EBDD',
-
-  panel:
-    '#FFF9EF',
-
-  panel2:
-    '#F8F0E4',
-
+    '#F7EEDD',
   text:
-    '#24323A',
-
+    '#14334A',
   muted:
-    '#718087',
-
+    '#6A7B82',
   gold:
-    '#E4AA48',
-
+    '#F2B12A',
   orange:
-    '#D9853E',
-
+    '#F17732',
   red:
-    '#BF584A',
-
+    '#D64A42',
   green:
-    '#4B9567',
-
+    '#158D70',
   blue:
-    '#4C86A6',
-
-  line:
-    '#DED1C1',
-
+    '#3A9CC4',
   white:
     '#FFFFFF'
 };
@@ -79,45 +61,33 @@ const COLORS = {
 const MEAL_NAMES = {
   breakfast:
     '早餐',
-
   lunch:
     '午餐',
-
   afternoon:
     '下午茶',
-
   dinner:
     '晚餐',
-
   night:
     '夜宵'
 };
 
-function money(
-  value
-) {
+function money(value) {
   return (
     '¥' +
     Math.max(
       0,
       Math.round(
-        Number(
-          value
-        ) ||
+        Number(value) ||
         0
       )
     ).toLocaleString()
   );
 }
 
-function percent(
-  value
-) {
+function pct(value) {
   return (
     Math.round(
-      Number(
-        value
-      ) *
+      Number(value) *
       100
     ) +
     '%'
@@ -159,7 +129,7 @@ class DistrictScene {
         api
           .getSystemInfoSync();
 
-      const screenW =
+      const w =
         Math.max(
           1,
           Number(
@@ -168,7 +138,7 @@ class DistrictScene {
           DESIGN_W
         );
 
-      const screenH =
+      const h =
         Math.max(
           1,
           Number(
@@ -177,13 +147,12 @@ class DistrictScene {
           780
         );
 
-      const scale =
-        screenW /
-        DESIGN_W;
-
       height =
-        screenH /
-        scale;
+        h /
+        (
+          w /
+          DESIGN_W
+        );
     }
 
     this.viewH =
@@ -200,9 +169,7 @@ class DistrictScene {
       this.navH;
   }
 
-  enter(
-    payload
-  ) {
+  enter(payload) {
     const data =
       payload ||
       {};
@@ -214,13 +181,12 @@ class DistrictScene {
         .currentDistrictId ||
       'university';
 
-    const district =
+    if (
       citySystem
         .getDistrict(
           requested
-        );
-
-    if (district) {
+        )
+    ) {
       this.districtId =
         requested;
 
@@ -228,12 +194,17 @@ class DistrictScene {
         .setCurrentDistrict(
           requested
         );
+    }
 
-      visualAssetSystem
-        .loadGroup(
+    visualAssetSystem
+      .loadGroup(
           'district'
         );
-    }
+
+    visualAssetSystem
+      .loadGroup(
+        'premiumDistrict'
+      );
   }
 
   exit() {
@@ -244,152 +215,6 @@ class DistrictScene {
   update() {
   }
 
-  roundedPath(
-    ctx,
-    x,
-    y,
-    w,
-    h,
-    r
-  ) {
-    const radius =
-      Math.min(
-        r,
-        w /
-          2,
-        h /
-          2
-      );
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-      x +
-        radius,
-      y
-    );
-
-    ctx.arcTo(
-      x +
-        w,
-      y,
-      x +
-        w,
-      y +
-        h,
-      radius
-    );
-
-    ctx.arcTo(
-      x +
-        w,
-      y +
-        h,
-      x,
-      y +
-        h,
-      radius
-    );
-
-    ctx.arcTo(
-      x,
-      y +
-        h,
-      x,
-      y,
-      radius
-    );
-
-    ctx.arcTo(
-      x,
-      y,
-      x +
-        w,
-      y,
-      radius
-    );
-
-    ctx.closePath();
-  }
-
-  roundedRect(
-    ctx,
-    x,
-    y,
-    w,
-    h,
-    r,
-    fill,
-    stroke,
-    lineWidth
-  ) {
-    this.roundedPath(
-      ctx,
-      x,
-      y,
-      w,
-      h,
-      r
-    );
-
-    if (fill) {
-      ctx.fillStyle =
-        fill;
-
-      ctx.fill();
-    }
-
-    if (stroke) {
-      ctx.strokeStyle =
-        stroke;
-
-      ctx.lineWidth =
-        lineWidth ||
-        1;
-
-      ctx.stroke();
-    }
-  }
-
-  text(
-    ctx,
-    text,
-    x,
-    y,
-    size,
-    color,
-    weight,
-    align
-  ) {
-    ctx.fillStyle =
-      color ||
-      COLORS.text;
-
-    ctx.font =
-      (
-        weight ||
-        '500'
-      ) +
-      ' ' +
-      size +
-      'px sans-serif';
-
-    ctx.textAlign =
-      align ||
-      'left';
-
-    ctx.textBaseline =
-      'middle';
-
-    ctx.fillText(
-      String(
-        text
-      ),
-      x,
-      y
-    );
-  }
-
   addButton(
     id,
     x,
@@ -397,14 +222,39 @@ class DistrictScene {
     w,
     h
   ) {
-    this.buttons
-      .push({
-        id,
-        x,
-        y,
-        w,
+    const hitW =
+      Math.max(
+        40,
+        w
+      );
+
+    const hitH =
+      Math.max(
+        36,
         h
-      });
+      );
+
+    this.buttons.push({
+      id,
+      x:
+        x -
+        (
+          hitW -
+          w
+        ) /
+        2,
+      y:
+        y -
+        (
+          hitH -
+          h
+        ) /
+        2,
+      w:
+        hitW,
+      h:
+        hitH
+    });
   }
 
   hitButton(
@@ -415,28 +265,19 @@ class DistrictScene {
       let i =
         this.buttons.length -
         1;
-      i >=
-        0;
+      i >= 0;
       i--
     ) {
-      const item =
-        this.buttons[
-          i
-        ];
+      const b =
+        this.buttons[i];
 
       if (
-        x >=
-          item.x &&
-        x <=
-          item.x +
-            item.w &&
-        y >=
-          item.y &&
-        y <=
-          item.y +
-            item.h
+        x >= b.x &&
+        x <= b.x + b.w &&
+        y >= b.y &&
+        y <= b.y + b.h
       ) {
-        return item;
+        return b;
       }
     }
 
@@ -447,214 +288,358 @@ class DistrictScene {
     ctx,
     insight
   ) {
-    const banner =
+    ui.coverImage(
+      ctx,
+      visualAssetSystem
+        .get(
+          'premium_district_header'
+        ) ||
       visualAssetSystem
         .get(
           'visual_district_banner'
-        );
-
-    if (banner) {
-      ctx.drawImage(
-        banner,
-        0,
-        0,
-        DESIGN_W,
-        67
-      );
-
-      ctx.fillStyle =
-        'rgba(5,35,52,0.70)';
-
-      ctx.fillRect(
-        0,
-        0,
-        DESIGN_W,
-        67
-      );
-    } else {
-      ctx.fillStyle =
-        COLORS.navy2;
-
-      ctx.fillRect(
-        0,
-        0,
-        DESIGN_W,
-        67
-      );
-    }
-
-    this.roundedRect(
-      ctx,
-      10,
-      13,
-      44,
-      34,
-      10,
-      'rgba(255,255,255,0.10)',
-      'rgba(255,255,255,0.15)'
+        ),
+      0,
+      0,
+      DESIGN_W,
+      92,
+      0,
+      'rgba(4,34,51,0.50)'
     );
 
-    this.text(
+    ctx.fillStyle =
+      'rgba(2,31,47,0.72)';
+
+    ctx.fillRect(
+      0,
+      65,
+      DESIGN_W,
+      27
+    );
+
+    ui.card(
+      ctx,
+      11,
+      14,
+      39,
+      39,
+      {
+        radius:
+          11,
+        fill:
+          'rgba(5,46,67,0.86)',
+        stroke:
+          'rgba(255,255,255,0.32)',
+        shadow:
+          false
+      }
+    );
+
+    ui.text(
       ctx,
       '‹',
-      32,
-      30,
+      30.5,
+      33.5,
       22,
-      COLORS.white,
-      '700',
+      '#FFE8A4',
+      '800',
       'center'
     );
 
     this.addButton(
       'back',
-      6,
-      8,
-      54,
-      44
+      7,
+      10,
+      47,
+      47
     );
 
-    this.text(
+    ui.text(
       ctx,
       insight.name,
-      68,
-      22,
+      61,
+      25,
       17,
       COLORS.white,
-      '700'
+      '800'
     );
 
-    this.text(
+    ui.text(
       ctx,
-      '商圈详情 · 人口、需求、客群和租金均为动态值',
-      68,
-      45,
-      7.5,
-      'rgba(255,255,255,0.70)',
+      '核心商圈 · 人气、消费与租金实时变化',
+      61,
+      49,
+      7,
+      '#D8E7EC',
       '500'
     );
 
-    this.roundedRect(
+    ui.card(
       ctx,
-      292,
-      14,
-      86,
-      34,
-      10,
-      COLORS.gold,
-      '#D49434'
+      295,
+      15,
+      82,
+      38,
+      {
+        radius:
+          19,
+        fill:
+          '#F7B72D',
+        stroke:
+          '#FFE4A5',
+        shadow:
+          false
+      }
     );
 
-    this.text(
+    ui.text(
       ctx,
       '查看房源 ›',
-      335,
-      31,
-      8.5,
-      '#26343B',
-      '700',
+      336,
+      34,
+      7.2,
+      COLORS.text,
+      '800',
       'center'
     );
 
     this.addButton(
-      'find-property',
-      288,
+      'market',
+      289,
       9,
+      92,
+      50
+    );
+
+    const event =
+      insight.events &&
+      insight.events[0];
+
+    ui.text(
+      ctx,
+      '📣 城市动态',
+      15,
+      78.5,
+      7.2,
+      '#FFE6A7',
+      '800'
+    );
+
+    ui.text(
+      ctx,
+      event
+        ? (
+            event.name ||
+            '商圈事件变化'
+          )
+        : (
+            insight
+              .trendScore >
+              0
+              ? '区域客流与消费需求正在上升'
+              : '当前商圈运行平稳'
+          ),
       94,
-      44
-    );
-  }
-
-  drawMetric(
-    ctx,
-    x,
-    y,
-    w,
-    label,
-    value,
-    sub,
-    color
-  ) {
-    this.roundedRect(
-      ctx,
-      x,
-      y,
-      w,
-      66,
-      12,
-      COLORS.panel,
-      COLORS.line
-    );
-
-    this.text(
-      ctx,
-      label,
-      x +
-        12,
-      y +
-        16,
-      7,
-      COLORS.muted,
+      78.5,
+      6.5,
+      COLORS.white,
       '600'
     );
-
-    this.text(
-      ctx,
-      value,
-      x +
-        12,
-      y +
-        37,
-      13,
-      color,
-      '700'
-    );
-
-    this.text(
-      ctx,
-      sub,
-      x +
-        12,
-      y +
-        54,
-      6.5,
-      COLORS.muted,
-      '500'
-    );
   }
 
-  drawCustomerPanel(
+  drawMetrics(
     ctx,
-    insight,
-    y
+    insight
   ) {
-    this.roundedRect(
+    const cards = [
+      {
+        label:
+          '活跃人口',
+        value:
+          insight
+            .population
+            .toLocaleString(),
+        trend:
+          insight
+            .populationDelta >=
+            0
+            ? (
+                '↑ +' +
+                Math.abs(
+                  insight
+                    .populationDelta
+                ).toLocaleString()
+              )
+            : (
+                '↓ ' +
+                Math.abs(
+                  insight
+                    .populationDelta
+                ).toLocaleString()
+              ),
+        color:
+          COLORS.blue,
+        icon:
+          '👥'
+      },
+      {
+        label:
+          '当前需求',
+        value:
+          insight
+            .currentDemand
+            .toLocaleString(),
+        trend:
+          (
+            insight
+              .demandDeltaRatio >=
+              0
+              ? '↑ +'
+              : '↓ '
+          ) +
+          Math.abs(
+            Math.round(
+              insight
+                .demandDeltaRatio *
+              100
+            )
+          ) +
+          '%',
+        color:
+          COLORS.red,
+        icon:
+          '▥'
+      },
+      {
+        label:
+          '平均客单',
+        value:
+          money(
+            insight.avgSpend
+          ),
+        trend:
+          insight
+            .competitionLabel,
+        color:
+          COLORS.green,
+        icon:
+          '◉'
+      }
+    ];
+
+    const gap =
+      6;
+
+    const w =
+      (
+        370 -
+        gap *
+          2
+      ) /
+      3;
+
+    for (
+      let i = 0;
+      i <
+      cards.length;
+      i++
+    ) {
+      const item =
+        cards[i];
+
+      const x =
+        10 +
+        i *
+        (
+          w +
+          gap
+        );
+
+      ui.card(
+        ctx,
+        x,
+        103,
+        w,
+        84,
+        {
+          radius:
+            13
+        }
+      );
+
+      ui.text(
+        ctx,
+        item.icon,
+        x + 13,
+        120,
+        13,
+        item.color,
+        '800'
+      );
+
+      ui.text(
+        ctx,
+        item.label,
+        x + 34,
+        119,
+        7.2,
+        COLORS.text,
+        '800'
+      );
+
+      ui.text(
+        ctx,
+        item.value,
+        x + 12,
+        148,
+        15,
+        item.color,
+        '800'
+      );
+
+      ui.text(
+        ctx,
+        item.trend,
+        x + 12,
+        174,
+        6.3,
+        item.color,
+        '700'
+      );
+    }
+  }
+
+  drawCustomers(
+    ctx,
+    insight
+  ) {
+    ui.card(
       ctx,
       10,
-      y,
+      198,
       370,
-      156,
-      14,
-      COLORS.panel,
-      COLORS.line
+      159,
+      {
+        radius:
+          15
+      }
     );
 
-    this.text(
+    ui.text(
       ctx,
-      '消费人群',
+      '消费人群结构',
       22,
-      y +
-        20,
+      220,
       11,
       COLORS.text,
-      '700'
+      '800'
     );
 
-    this.text(
+    ui.text(
       ctx,
-      insight.customerDiversity,
-      366,
-      y +
-        20,
+      insight
+        .customerDiversity,
+      364,
+      220,
       7,
       COLORS.orange,
       '700',
@@ -669,393 +654,463 @@ class DistrictScene {
           4
         );
 
+    const avatars = [
+      'premium_avatar_1',
+      'premium_avatar_2',
+      'premium_avatar_3',
+      'premium_avatar_4'
+    ];
+
     for (
       let i = 0;
       i <
       groups.length;
       i++
     ) {
-      const item =
+      const g =
         groups[i];
 
-      const rowY =
-        y +
-        47 +
+      const y =
+        247 +
         i *
-          25;
+        27;
 
-      this.text(
+      ui.coverImage(
         ctx,
-        item.name,
-        22,
-        rowY,
-        7.5,
+        visualAssetSystem
+          .get(
+            avatars[i]
+          ),
+        23,
+        y - 11,
+        25,
+        25,
+        13,
+        null
+      );
+
+      ui.text(
+        ctx,
+        g.name,
+        57,
+        y,
+        7.8,
         COLORS.text,
-        '700'
+        '800'
       );
 
-      this.roundedRect(
+      const barX =
+        128;
+
+      const barW =
+        151;
+
+      ui.card(
         ctx,
-        91,
-        rowY -
-          5,
-        178,
-        10,
-        5,
-        '#EEE5D8'
+        barX,
+        y - 6,
+        barW,
+        12,
+        {
+          radius:
+            6,
+          fill:
+            '#EEE5D7',
+          stroke:
+            false,
+          shadow:
+            false
+        }
       );
 
-      this.roundedRect(
+      ui.card(
         ctx,
-        91,
-        rowY -
-          5,
+        barX,
+        y - 6,
         Math.max(
-          4,
-          178 *
-            item.share
+          7,
+          barW *
+          Math.min(
+            1,
+            g.share
+          )
         ),
-        10,
-        5,
-        i ===
-          0
-          ? COLORS.gold
-          : COLORS.blue
+        12,
+        {
+          radius:
+            6,
+          fill:
+            i ===
+              0
+              ? '#F4B52C'
+              : '#52ABD0',
+          stroke:
+            false,
+          shadow:
+            false
+        }
       );
 
-      this.text(
+      ui.text(
         ctx,
-        percent(
-          item.share
+        pct(
+          g.share
         ),
-        285,
-        rowY,
-        7,
-        COLORS.muted,
-        '600'
-      );
-
-      this.text(
-        ctx,
-        item.demand
-          .toLocaleString() +
-          '人',
-        365,
-        rowY,
-        7,
-        COLORS.navy,
+        307,
+        y,
+        6.7,
+        COLORS.text,
         '700',
+        'right'
+      );
+
+      ui.text(
+        ctx,
+        Math.round(
+          g.demand
+        ) +
+          '人',
+        362,
+        y,
+        6.7,
+        COLORS.text,
+        '800',
         'right'
       );
     }
   }
 
-  drawMealPanel(
+  drawMeals(
     ctx,
-    insight,
-    y
+    insight
   ) {
-    this.roundedRect(
+    ui.card(
       ctx,
       10,
-      y,
+      368,
       370,
-      105,
-      14,
-      COLORS.panel,
-      COLORS.line
+      129,
+      {
+        radius:
+          15
+      }
     );
 
-    this.text(
+    ui.coverImage(
+      ctx,
+      visualAssetSystem
+        .get(
+          'premium_demand_ambience'
+        ),
+      11,
+      369,
+      368,
+      127,
+      14,
+      'rgba(255,250,241,0.73)'
+    );
+
+    ui.text(
       ctx,
       '时段需求结构',
       22,
-      y +
-        19,
-      10,
+      389,
+      11,
       COLORS.text,
-      '700'
+      '800'
     );
 
-    const meal =
+    const meals =
       insight
-        .mealProfile;
+        .mealProfile
+        .slice(
+          0,
+          5
+        );
 
-    const maxShare =
-      meal.length
-        ? meal[0]
-            .share
-        : 1;
+    const max =
+      Math.max(
+        0.01,
+        ...meals.map(
+          item =>
+            item.share
+        )
+      );
 
     for (
       let i = 0;
       i <
-      meal.length;
+      meals.length;
       i++
     ) {
-      const item =
-        meal[i];
+      const m =
+        meals[i];
 
       const x =
-        22 +
+        43 +
         i *
-          69;
+        69;
 
-      const barMax =
-        54;
-
-      const barH =
-        Math.max(
-          5,
-          barMax *
-          (
-            item.share /
-            Math.max(
-              0.01,
-              maxShare
-            )
-          )
+      const h =
+        13 +
+        42 *
+        (
+          m.share /
+          max
         );
 
-      this.roundedRect(
+      const y =
+        461 -
+        h;
+
+      ui.card(
         ctx,
         x,
-        y +
-          75 -
-          barH,
-        43,
-        barH,
-        6,
-        i ===
-          0
-          ? COLORS.orange
-          : '#8EB5C8'
+        y,
+        36,
+        h,
+        {
+          radius:
+            7,
+          fill:
+            i ===
+              1 ||
+            i ===
+              3
+              ? '#EF7B38'
+              : '#4AA8D0',
+          stroke:
+            false,
+          shadow:
+            false
+        }
       );
 
-      this.text(
+      ui.text(
+        ctx,
+        pct(
+          m.share
+        ),
+        x + 18,
+        y - 9,
+        6.8,
+        i ===
+          1 ||
+        i ===
+          3
+          ? '#B34E21'
+          : COLORS.text,
+        '800',
+        'center'
+      );
+
+      ui.text(
         ctx,
         MEAL_NAMES[
-          item.id
+          m.id
         ] ||
-          item.id,
-        x +
-          21.5,
-        y +
-          89,
-        6.5,
-        COLORS.muted,
-        '600',
+        m.id,
+        x + 18,
+        480,
+        6.3,
+        COLORS.text,
+        '700',
         'center'
       );
     }
   }
 
-  drawMarketPanel(
+  drawMarket(
     ctx,
-    insight,
-    y
+    insight
   ) {
-    this.roundedRect(
+    ui.card(
       ctx,
       10,
-      y,
+      508,
       370,
-      105,
-      14,
-      COLORS.panel,
-      COLORS.line
+      103,
+      {
+        radius:
+          15
+      }
     );
 
-    this.text(
+    ui.text(
       ctx,
       '经营环境',
       22,
-      y +
-        19,
-      10,
+      529,
+      11,
       COLORS.text,
-      '700'
+      '800'
     );
 
     const market =
-      insight.market;
+      insight.market ||
+      {};
 
-    const lines = [
+    const values = [
       [
         '餐饮店',
         insight
           .restaurantCount +
           '家'
       ],
-
       [
         '竞争',
         insight
-          .competitionLabel +
-          ' · ' +
-          insight
-            .saturation +
-          '%'
+          .competitionLabel
       ],
-
       [
         '租金',
         insight
           .rentLevel +
-          ' · 指数 ' +
+          '·' +
           insight
             .rentIndex
             .toFixed(
               2
             )
       ],
-
       [
         '挂牌',
-        market
-          ? market
-              .activeListingCount +
-            '套 · 均租' +
-            money(
-              market
-                .averageAskingRent
-            )
-          : '--'
+        (
+          market
+            .activeListingCount ||
+          0
+        ) +
+          '套'
       ]
     ];
 
     for (
       let i = 0;
       i <
-      lines.length;
+      values.length;
       i++
     ) {
-      const col =
-        i %
-        2;
-
-      const row =
-        Math.floor(
-          i /
-          2
-        );
-
       const x =
-        22 +
-        col *
-          184;
+        23 +
+        i *
+        88;
 
-      const yy =
-        y +
-        47 +
-        row *
-          31;
-
-      this.text(
+      ui.text(
         ctx,
-        lines[i][0],
+        values[i][0],
         x,
-        yy,
+        558,
         6.5,
         COLORS.muted,
         '600'
       );
 
-      this.text(
+      ui.text(
         ctx,
-        lines[i][1],
-        x +
-          42,
-        yy,
-        7.5,
-        COLORS.text,
-        '700'
+        values[i][1],
+        x,
+        581,
+        8.5,
+        i ===
+          1
+          ? COLORS.red
+          : i ===
+              3
+            ? COLORS.blue
+            : COLORS.text,
+        '800'
       );
     }
   }
 
-  drawHintPanel(
+  drawFit(
     ctx,
-    insight,
-    y
+    insight
   ) {
-    this.roundedRect(
+    const y =
+      622;
+
+    if (
+      y + 74 >
+      this.contentBottom
+    ) {
+      return;
+    }
+
+    ui.card(
       ctx,
       10,
       y,
       370,
-      74,
-      14,
-      '#FFF0D6',
-      '#E3BD77'
+      67,
+      {
+        radius:
+          15,
+        fill:
+          '#FFF6DC',
+        stroke:
+          '#EBC873'
+      }
     );
 
-    this.text(
+    ui.text(
       ctx,
       '经营适配',
       22,
-      y +
-        18,
-      8,
+      y + 19,
+      9,
       COLORS.orange,
-      '700'
+      '800'
     );
 
     const hints =
       insight
         .businessHints
+        .slice(
+          0,
+          5
+        )
         .join(
           ' / '
         );
 
-    this.text(
+    ui.text(
       ctx,
       hints ||
-        '暂无明显品类偏好',
+        '等待更多消费数据',
       22,
-      y +
-        40,
-      9,
+      y + 43,
+      7.2,
       COLORS.text,
       '700'
     );
 
-    const event =
-      insight
-        .events
-        .length
-        ? insight
-            .events[0]
-        : null;
-
-    this.text(
+    ui.text(
       ctx,
-      event
-        ? '当前事件：' +
-          event.name
-        : '当前无大型商圈事件',
-      22,
-      y +
-        59,
-      6.5,
-      event
-        ? COLORS.red
-        : COLORS.muted,
-      '600'
+      '查看房源 ›',
+      358,
+      y + 44,
+      7,
+      COLORS.navy,
+      '800',
+      'right'
+    );
+
+    this.addButton(
+      'market',
+      274,
+      y + 25,
+      95,
+      35
     );
   }
 
-  render(
-    ctx
-  ) {
+  render(ctx) {
     if (!ctx) {
       return;
     }
 
     this.getLayout();
-
-    this.buttons =
-      [];
 
     const insight =
       districtInsightSystem
@@ -1068,9 +1123,11 @@ class DistrictScene {
         .switchTo(
           'city'
         );
-
       return;
     }
+
+    this.buttons =
+      [];
 
     ctx.save();
 
@@ -1089,143 +1146,30 @@ class DistrictScene {
       insight
     );
 
-    const y0 =
-      78;
-
-    const gap =
-      8;
-
-    const w =
-      (
-        DESIGN_W -
-        20 -
-        gap *
-          2
-      ) /
-      3;
-
-    const popTrend =
+    this.drawMetrics(
+      ctx,
       insight
-        .populationDelta >
-        0
-        ? '↑'
-        : insight
-            .populationDelta <
-            0
-          ? '↓'
-          : '→';
+    );
 
-    const demandTrend =
+    this.drawCustomers(
+      ctx,
       insight
-        .demandDeltaRatio >
-        0.005
-        ? '↑'
-        : insight
-            .demandDeltaRatio <
-            -0.005
-          ? '↓'
-          : '→';
+    );
 
-    this.drawMetric(
+    this.drawMeals(
       ctx,
-      10,
-      y0,
-      w,
-      '活跃人口',
       insight
-        .population
-        .toLocaleString(),
-      popTrend +
-        ' 常住' +
-        insight
-          .residentPopulation
-          .toLocaleString(),
-      COLORS.blue
     );
 
-    this.drawMetric(
+    this.drawMarket(
       ctx,
-      10 +
-        w +
-        gap,
-      y0,
-      w,
-      '当前需求',
       insight
-        .currentDemand
-        .toLocaleString(),
-      demandTrend +
-        ' 日基数' +
-        Math.round(
-          insight
-            .dynamicDailyDemand
-        ).toLocaleString(),
-      COLORS.red
     );
 
-    this.drawMetric(
+    this.drawFit(
       ctx,
-      10 +
-        (
-          w +
-          gap
-        ) *
-          2,
-      y0,
-      w,
-      '平均客单',
-      money(
-        insight
-          .avgSpend
-      ),
       insight
-        .competitionLabel,
-      COLORS.green
     );
-
-    let y =
-      y0 +
-      78;
-
-    this.drawCustomerPanel(
-      ctx,
-      insight,
-      y
-    );
-
-    y +=
-      168;
-
-    this.drawMealPanel(
-      ctx,
-      insight,
-      y
-    );
-
-    y +=
-      117;
-
-    this.drawMarketPanel(
-      ctx,
-      insight,
-      y
-    );
-
-    y +=
-      117;
-
-    if (
-      y +
-        74 <
-      this.contentBottom -
-        6
-    ) {
-      this.drawHintPanel(
-        ctx,
-        insight,
-        y
-      );
-    }
 
     ctx.restore();
   }
@@ -1258,7 +1202,7 @@ class DistrictScene {
 
     if (
       item.id ===
-      'find-property'
+      'market'
     ) {
       sceneManager
         .switchTo(
@@ -1266,7 +1210,6 @@ class DistrictScene {
           {
             districtId:
               this.districtId,
-
             source:
               'district'
           }

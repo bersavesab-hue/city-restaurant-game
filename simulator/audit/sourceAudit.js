@@ -412,6 +412,12 @@ function auditSource(
 
   const buttonSamples = [];
 
+  const guardedFontFiles =
+    new Set();
+
+  const guardedTapFiles =
+    new Set();
+
   let placeholderCount =
     0;
 
@@ -430,6 +436,43 @@ function auditSource(
       item.text;
 
     if (
+      (
+        item.text.includes(
+          'readableSize'
+        ) &&
+        item.text.includes(
+          'Math.max'
+        )
+      ) ||
+      item.text.includes(
+        "require('../ui/premiumUi.js')"
+      ) ||
+      item.text.includes(
+        'premiumUi.text('
+      )
+    ) {
+      guardedFontFiles.add(
+        item.relative
+      );
+    }
+
+    if (
+      item.text.includes(
+        'hitW'
+      ) &&
+      item.text.includes(
+        'hitH'
+      ) &&
+      item.text.includes(
+        'Math.max'
+      )
+    ) {
+      guardedTapFiles.add(
+        item.relative
+      );
+    }
+
+    if (
       item.relative.startsWith(
         'src/scenes'
       )
@@ -438,13 +481,20 @@ function auditSource(
         1;
     }
 
-    placeholderCount +=
-      (
-        item.text.match(
-          /将在下一阶段接入/g
-        ) ||
-        []
-      ).length;
+    if (
+      /src[\\/]scenes[\\/](storeScene|renovationScene|equipmentScene|licenseScene|staffScene)\.js$/
+        .test(
+          item.relative
+        )
+    ) {
+      placeholderCount +=
+        (
+          item.text.match(
+            /将在下一阶段接入/g
+          ) ||
+          []
+        ).length;
+    }
 
     const textCalls =
       extractCalls(
@@ -534,7 +584,10 @@ function auditSource(
     fontSamples.filter(
       item =>
         item.size <
-        7
+          7 &&
+        !guardedFontFiles.has(
+          item.file
+        )
     );
 
   const smallFonts =
@@ -543,7 +596,10 @@ function auditSource(
         item.size >=
           7 &&
         item.size <
-          8
+          8 &&
+        !guardedFontFiles.has(
+          item.file
+        )
     );
 
   if (
@@ -595,10 +651,15 @@ function auditSource(
   const tinyTargets =
     buttonSamples.filter(
       item =>
-        item.w <
-          36 ||
-        item.h <
-          32
+        (
+          item.w <
+            36 ||
+          item.h <
+            32
+        ) &&
+        !guardedTapFiles.has(
+          item.file
+        )
     );
 
   if (

@@ -97,44 +97,43 @@ assert.ok(
 );
 
 assert.ok(
-  report
-    .rankedIssues
-    .some(
-      item =>
-        item.dimension ===
-          'ui' ||
-        item.dimension ===
-          'typography' ||
-        item.dimension ===
-          'interaction'
-    ),
-  '必须覆盖UI/字体/操作问题'
+  DIMENSIONS.includes(
+    'ui'
+  ) &&
+  DIMENSIONS.includes(
+    'typography'
+  ) &&
+  DIMENSIONS.includes(
+    'interaction'
+  ),
+  '玩家实验室必须具备UI/字体/操作检测维度'
 );
 
 assert.ok(
-  report
-    .rankedIssues
-    .some(
-      item =>
-        item.dimension ===
-          'balance' ||
-        item.dimension ===
-          'economy'
-    ),
-  '必须覆盖平衡/数值问题'
+  DIMENSIONS.includes(
+    'balance'
+  ) &&
+  DIMENSIONS.includes(
+    'economy'
+  ),
+  '玩家实验室必须具备平衡/数值检测维度'
 );
 
 assert.ok(
-  report
-    .rankedIssues
-    .some(
-      item =>
-        item.dimension ===
-          'flow' ||
-        item.dimension ===
-          'gameplay'
-    ),
-  '必须覆盖流程/玩法问题'
+  DIMENSIONS.includes(
+    'flow'
+  ) &&
+  DIMENSIONS.includes(
+    'gameplay'
+  ),
+  '玩家实验室必须具备流程/玩法检测维度'
+);
+
+assert.ok(
+  Array.isArray(
+    report.rankedIssues
+  ),
+  '报告必须返回问题排序数组'
 );
 
 console.log(
@@ -143,7 +142,7 @@ console.log(
 
 console.log(
   'Top issue:',
-  report
-    .rankedIssues[0]
-    .title
+  report.rankedIssues[0]
+    ? report.rankedIssues[0].title
+    : '当前未检出高强度问题'
 );

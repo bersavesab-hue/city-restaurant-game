@@ -1,0 +1,2199 @@
+[
+  {
+    "personaId": "P001",
+    "nickname": "小夏",
+    "label": "抖音3分钟新客·A",
+    "platform": "douyin",
+    "device": "mid_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 53,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 40,
+        "title": "没有字体缩放/高可读设置"
+      }
+    ]
+  },
+  {
+    "personaId": "P002",
+    "nickname": "阿诚",
+    "label": "抖音3分钟新客·B",
+    "platform": "douyin",
+    "device": "mid_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 49,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P003",
+    "nickname": "柚子",
+    "label": "抖音3分钟新客·C",
+    "platform": "douyin",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 47,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P004",
+    "nickname": "老周",
+    "label": "抖音3分钟新客·D",
+    "platform": "douyin",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 51,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 38,
+        "title": "没有字体缩放/高可读设置"
+      }
+    ]
+  },
+  {
+    "personaId": "P005",
+    "nickname": "米粒",
+    "label": "抖音广告敏感玩家·A",
+    "platform": "douyin",
+    "device": "mid_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 48,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 39,
+        "title": "没有字体缩放/高可读设置"
+      }
+    ]
+  },
+  {
+    "personaId": "P006",
+    "nickname": "阿岚",
+    "label": "抖音广告敏感玩家·B",
+    "platform": "douyin",
+    "device": "mid_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 45,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P007",
+    "nickname": "北北",
+    "label": "抖音广告敏感玩家·C",
+    "platform": "douyin",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 43,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P008",
+    "nickname": "青禾",
+    "label": "抖音广告敏感玩家·D",
+    "platform": "douyin",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 46,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P009",
+    "nickname": "小林",
+    "label": "碎片化通勤玩家·A",
+    "platform": "douyin",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 46,
+        "title": "没有字体缩放/高可读设置"
+      },
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 46,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P010",
+    "nickname": "大海",
+    "label": "碎片化通勤玩家·B",
+    "platform": "douyin",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 43,
+        "title": "没有字体缩放/高可读设置"
+      },
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 43,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P011",
+    "nickname": "七七",
+    "label": "碎片化通勤玩家·C",
+    "platform": "douyin",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 41,
+        "title": "没有字体缩放/高可读设置"
+      },
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 41,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P012",
+    "nickname": "木木",
+    "label": "碎片化通勤玩家·D",
+    "platform": "douyin",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 44,
+        "title": "没有字体缩放/高可读设置"
+      },
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 44,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P013",
+    "nickname": "阿哲",
+    "label": "抖音回流玩家·A",
+    "platform": "douyin",
+    "device": "mid_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 50,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P014",
+    "nickname": "麦子",
+    "label": "抖音回流玩家·B",
+    "platform": "douyin",
+    "device": "mid_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 47,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P015",
+    "nickname": "晓南",
+    "label": "抖音回流玩家·C",
+    "platform": "douyin",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 45,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P016",
+    "nickname": "阿婧",
+    "label": "抖音回流玩家·D",
+    "platform": "douyin",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 48,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P017",
+    "nickname": "石头",
+    "label": "TapTap经营模拟核心玩家·A",
+    "platform": "taptap",
+    "device": "high_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 60,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 40,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P018",
+    "nickname": "沐风",
+    "label": "TapTap经营模拟核心玩家·B",
+    "platform": "taptap",
+    "device": "high_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 60,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 38,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P019",
+    "nickname": "思思",
+    "label": "TapTap经营模拟核心玩家·C",
+    "platform": "taptap",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 58,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 43,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P020",
+    "nickname": "川川",
+    "label": "TapTap经营模拟核心玩家·D",
+    "platform": "taptap",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 60,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 39,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P021",
+    "nickname": "可乐",
+    "label": "TapTap画面与UI党·A",
+    "platform": "taptap",
+    "device": "high_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 46,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 45,
+        "title": "没有字体缩放/高可读设置"
+      }
+    ]
+  },
+  {
+    "personaId": "P022",
+    "nickname": "小顾",
+    "label": "TapTap画面与UI党·B",
+    "platform": "taptap",
+    "device": "high_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 43,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 42,
+        "title": "没有字体缩放/高可读设置"
+      }
+    ]
+  },
+  {
+    "personaId": "P023",
+    "nickname": "阿坤",
+    "label": "TapTap画面与UI党·C",
+    "platform": "taptap",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 41,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 40,
+        "title": "没有字体缩放/高可读设置"
+      }
+    ]
+  },
+  {
+    "personaId": "P024",
+    "nickname": "明月",
+    "label": "TapTap画面与UI党·D",
+    "platform": "taptap",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 44,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 43,
+        "title": "没有字体缩放/高可读设置"
+      }
+    ]
+  },
+  {
+    "personaId": "P025",
+    "nickname": "小贺",
+    "label": "TapTap数值硬核玩家·A",
+    "platform": "taptap",
+    "device": "high_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 60,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 45,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P026",
+    "nickname": "安安",
+    "label": "TapTap数值硬核玩家·B",
+    "platform": "taptap",
+    "device": "high_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 58,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 42,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P027",
+    "nickname": "老陈",
+    "label": "TapTap数值硬核玩家·C",
+    "platform": "taptap",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 55,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 41,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P028",
+    "nickname": "晓晓",
+    "label": "TapTap数值硬核玩家·D",
+    "platform": "taptap",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 59,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 44,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P029",
+    "nickname": "阿文",
+    "label": "TapTap养老休闲玩家·A",
+    "platform": "taptap",
+    "device": "mid_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 48,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 45,
+        "title": "没有字体缩放/高可读设置"
+      }
+    ]
+  },
+  {
+    "personaId": "P030",
+    "nickname": "乐乐",
+    "label": "TapTap养老休闲玩家·B",
+    "platform": "taptap",
+    "device": "mid_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 44,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 42,
+        "title": "没有字体缩放/高可读设置"
+      }
+    ]
+  },
+  {
+    "personaId": "P031",
+    "nickname": "小唐",
+    "label": "TapTap养老休闲玩家·C",
+    "platform": "taptap",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 43,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 40,
+        "title": "没有字体缩放/高可读设置"
+      }
+    ]
+  },
+  {
+    "personaId": "P032",
+    "nickname": "子墨",
+    "label": "TapTap养老休闲玩家·D",
+    "platform": "taptap",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 46,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 43,
+        "title": "没有字体缩放/高可读设置"
+      }
+    ]
+  },
+  {
+    "personaId": "P033",
+    "nickname": "阿霖",
+    "label": "零氪长期玩家·A",
+    "platform": "cross",
+    "device": "mid_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 58,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 39,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P034",
+    "nickname": "小宋",
+    "label": "零氪长期玩家·B",
+    "platform": "cross",
+    "device": "mid_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 54,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P035",
+    "nickname": "阿远",
+    "label": "零氪长期玩家·C",
+    "platform": "cross",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 52,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P036",
+    "nickname": "然然",
+    "label": "零氪长期玩家·D",
+    "platform": "cross",
+    "device": "low_android",
+    "churnRisk": "中",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 56,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P037",
+    "nickname": "大白",
+    "label": "轻氪效率玩家·A",
+    "platform": "cross",
+    "device": "high_android",
+    "churnRisk": "中",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 56,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P038",
+    "nickname": "小季",
+    "label": "轻氪效率玩家·B",
+    "platform": "cross",
+    "device": "high_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 53,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P039",
+    "nickname": "浅浅",
+    "label": "轻氪效率玩家·C",
+    "platform": "cross",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 51,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P040",
+    "nickname": "阿川",
+    "label": "轻氪效率玩家·D",
+    "platform": "cross",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 54,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P041",
+    "nickname": "鹿鹿",
+    "label": "付费效率型玩家·A",
+    "platform": "cross",
+    "device": "high_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 58,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 39,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P042",
+    "nickname": "小夏2",
+    "label": "付费效率型玩家·B",
+    "platform": "cross",
+    "device": "high_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 54,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P043",
+    "nickname": "阿策",
+    "label": "付费效率型玩家·C",
+    "platform": "cross",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 52,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P044",
+    "nickname": "洛洛",
+    "label": "付费效率型玩家·D",
+    "platform": "cross",
+    "device": "low_android",
+    "churnRisk": "中",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 56,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P045",
+    "nickname": "小韩",
+    "label": "装修审美党·A",
+    "platform": "cross",
+    "device": "high_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 48,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P046",
+    "nickname": "小郑",
+    "label": "装修审美党·B",
+    "platform": "cross",
+    "device": "high_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 44,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 42,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P047",
+    "nickname": "南风",
+    "label": "装修审美党·C",
+    "platform": "cross",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 43,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 40,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P048",
+    "nickname": "小谢",
+    "label": "装修审美党·D",
+    "platform": "cross",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 46,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 43,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P049",
+    "nickname": "果果",
+    "label": "沙盒自由建造党·A",
+    "platform": "cross",
+    "device": "tablet",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 60,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 45,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P050",
+    "nickname": "阿墨",
+    "label": "沙盒自由建造党·B",
+    "platform": "cross",
+    "device": "tablet",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 56,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 42,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P051",
+    "nickname": "小许",
+    "label": "沙盒自由建造党·C",
+    "platform": "cross",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 54,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 41,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P052",
+    "nickname": "小乔",
+    "label": "沙盒自由建造党·D",
+    "platform": "cross",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 58,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 44,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P053",
+    "nickname": "阿宇",
+    "label": "餐饮经营深度党·A",
+    "platform": "cross",
+    "device": "tablet",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 60,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 47,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P054",
+    "nickname": "然子",
+    "label": "餐饮经营深度党·B",
+    "platform": "cross",
+    "device": "tablet",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 60,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 47,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P055",
+    "nickname": "琪琪",
+    "label": "餐饮经营深度党·C",
+    "platform": "cross",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 58,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 45,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P056",
+    "nickname": "老高",
+    "label": "餐饮经营深度党·D",
+    "platform": "cross",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 60,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 47,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P057",
+    "nickname": "小温",
+    "label": "完全新手游盲·A",
+    "platform": "cross",
+    "device": "mid_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 55,
+        "title": "没有字体缩放/高可读设置"
+      },
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 51,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P058",
+    "nickname": "阿峰",
+    "label": "完全新手游盲·B",
+    "platform": "cross",
+    "device": "mid_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 52,
+        "title": "没有字体缩放/高可读设置"
+      },
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 48,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P059",
+    "nickname": "小雨",
+    "label": "完全新手游盲·C",
+    "platform": "cross",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 50,
+        "title": "没有字体缩放/高可读设置"
+      },
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 46,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P060",
+    "nickname": "阿睿",
+    "label": "完全新手游盲·D",
+    "platform": "cross",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 53,
+        "title": "没有字体缩放/高可读设置"
+      },
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 49,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P061",
+    "nickname": "阿洛",
+    "label": "大字体需求玩家·A",
+    "platform": "cross",
+    "device": "mid_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 60,
+        "title": "没有字体缩放/高可读设置"
+      },
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 46,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_COLOR",
+        "priority": "P3",
+        "dimension": "accessibility",
+        "score": 40,
+        "title": "状态信息依赖颜色且缺少辅助模式"
+      }
+    ]
+  },
+  {
+    "personaId": "P062",
+    "nickname": "小武",
+    "label": "大字体需求玩家·B",
+    "platform": "cross",
+    "device": "mid_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 60,
+        "title": "没有字体缩放/高可读设置"
+      },
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 43,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_COLOR",
+        "priority": "P3",
+        "dimension": "accessibility",
+        "score": 40,
+        "title": "状态信息依赖颜色且缺少辅助模式"
+      }
+    ]
+  },
+  {
+    "personaId": "P063",
+    "nickname": "苗苗",
+    "label": "大字体需求玩家·C",
+    "platform": "cross",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 58,
+        "title": "没有字体缩放/高可读设置"
+      },
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 41,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_COLOR",
+        "priority": "P3",
+        "dimension": "accessibility",
+        "score": 38,
+        "title": "状态信息依赖颜色且缺少辅助模式"
+      }
+    ]
+  },
+  {
+    "personaId": "P064",
+    "nickname": "阿成",
+    "label": "大字体需求玩家·D",
+    "platform": "cross",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 60,
+        "title": "没有字体缩放/高可读设置"
+      },
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 44,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_COLOR",
+        "priority": "P3",
+        "dimension": "accessibility",
+        "score": 40,
+        "title": "状态信息依赖颜色且缺少辅助模式"
+      }
+    ]
+  },
+  {
+    "personaId": "P065",
+    "nickname": "小曹",
+    "label": "小屏单手玩家·A",
+    "platform": "douyin",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 56,
+        "title": "没有字体缩放/高可读设置"
+      },
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 46,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P066",
+    "nickname": "团子",
+    "label": "小屏单手玩家·B",
+    "platform": "douyin",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 53,
+        "title": "没有字体缩放/高可读设置"
+      },
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 43,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P067",
+    "nickname": "小叶",
+    "label": "小屏单手玩家·C",
+    "platform": "douyin",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 51,
+        "title": "没有字体缩放/高可读设置"
+      },
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 41,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P068",
+    "nickname": "阿豪",
+    "label": "小屏单手玩家·D",
+    "platform": "douyin",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 54,
+        "title": "没有字体缩放/高可读设置"
+      },
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 44,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P069",
+    "nickname": "小杜",
+    "label": "低端机玩家·A",
+    "platform": "douyin",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 45,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 44,
+        "title": "没有字体缩放/高可读设置"
+      }
+    ]
+  },
+  {
+    "personaId": "P070",
+    "nickname": "小鱼",
+    "label": "低端机玩家·B",
+    "platform": "douyin",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 42,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 41,
+        "title": "没有字体缩放/高可读设置"
+      }
+    ]
+  },
+  {
+    "personaId": "P071",
+    "nickname": "晨晨",
+    "label": "低端机玩家·C",
+    "platform": "douyin",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 40,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 39,
+        "title": "没有字体缩放/高可读设置"
+      }
+    ]
+  },
+  {
+    "personaId": "P072",
+    "nickname": "阿彬",
+    "label": "低端机玩家·D",
+    "platform": "douyin",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 43,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "ACCESS_FONT_SCALE",
+        "priority": "P2",
+        "dimension": "accessibility",
+        "score": 42,
+        "title": "没有字体缩放/高可读设置"
+      }
+    ]
+  },
+  {
+    "personaId": "P073",
+    "nickname": "小秦",
+    "label": "高端机视觉玩家·A",
+    "platform": "cross",
+    "device": "high_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 53,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P074",
+    "nickname": "橙子",
+    "label": "高端机视觉玩家·B",
+    "platform": "cross",
+    "device": "high_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 49,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P075",
+    "nickname": "老胡",
+    "label": "高端机视觉玩家·C",
+    "platform": "cross",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 47,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P076",
+    "nickname": "小冯",
+    "label": "高端机视觉玩家·D",
+    "platform": "cross",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 51,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P077",
+    "nickname": "阿宁",
+    "label": "平板经营策略玩家·A",
+    "platform": "taptap",
+    "device": "tablet",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 60,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 47,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P078",
+    "nickname": "小苏",
+    "label": "平板经营策略玩家·B",
+    "platform": "taptap",
+    "device": "tablet",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 60,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 45,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P079",
+    "nickname": "小邹",
+    "label": "平板经营策略玩家·C",
+    "platform": "taptap",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 58,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 43,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P080",
+    "nickname": "小彤",
+    "label": "平板经营策略玩家·D",
+    "platform": "taptap",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 60,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 47,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P081",
+    "nickname": "阿凯",
+    "label": "反复重开试错玩家·A",
+    "platform": "cross",
+    "device": "mid_android",
+    "churnRisk": "中",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 58,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P082",
+    "nickname": "小赵",
+    "label": "反复重开试错玩家·B",
+    "platform": "cross",
+    "device": "mid_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 54,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P083",
+    "nickname": "小马",
+    "label": "反复重开试错玩家·C",
+    "platform": "cross",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 52,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P084",
+    "nickname": "安子",
+    "label": "反复重开试错玩家·D",
+    "platform": "cross",
+    "device": "low_android",
+    "churnRisk": "中",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 56,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P085",
+    "nickname": "阿杰",
+    "label": "收集成就党·A",
+    "platform": "cross",
+    "device": "mid_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 54,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 40,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P086",
+    "nickname": "小何",
+    "label": "收集成就党·B",
+    "platform": "cross",
+    "device": "mid_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 50,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 39,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P087",
+    "nickname": "小伍",
+    "label": "收集成就党·C",
+    "platform": "cross",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 48,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P088",
+    "nickname": "阿新",
+    "label": "收集成就党·D",
+    "platform": "cross",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 52,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 40,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P089",
+    "nickname": "小吴",
+    "label": "速通效率玩家·A",
+    "platform": "cross",
+    "device": "high_android",
+    "churnRisk": "中",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 59,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P090",
+    "nickname": "小梁",
+    "label": "速通效率玩家·B",
+    "platform": "cross",
+    "device": "high_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 55,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P091",
+    "nickname": "阿东",
+    "label": "速通效率玩家·C",
+    "platform": "cross",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 53,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P092",
+    "nickname": "小姜",
+    "label": "速通效率玩家·D",
+    "platform": "cross",
+    "device": "low_android",
+    "churnRisk": "中",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 57,
+        "title": "菜品/供应链等侧系统深度不足"
+      }
+    ]
+  },
+  {
+    "personaId": "P093",
+    "nickname": "阿白",
+    "label": "数值套利/漏洞猎人·A",
+    "platform": "taptap",
+    "device": "high_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 60,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 44,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P094",
+    "nickname": "小段",
+    "label": "数值套利/漏洞猎人·B",
+    "platform": "taptap",
+    "device": "high_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 59,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 42,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P095",
+    "nickname": "小潘",
+    "label": "数值套利/漏洞猎人·C",
+    "platform": "taptap",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 56,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 40,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P096",
+    "nickname": "阿许",
+    "label": "数值套利/漏洞猎人·D",
+    "platform": "taptap",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 60,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 43,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P097",
+    "nickname": "小袁",
+    "label": "长线连锁经营玩家·A",
+    "platform": "cross",
+    "device": "tablet",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 60,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 47,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P098",
+    "nickname": "阿罗",
+    "label": "长线连锁经营玩家·B",
+    "platform": "cross",
+    "device": "tablet",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 60,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 47,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P099",
+    "nickname": "小施",
+    "label": "长线连锁经营玩家·C",
+    "platform": "cross",
+    "device": "small_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 58,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 45,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  },
+  {
+    "personaId": "P100",
+    "nickname": "阿钟",
+    "label": "长线连锁经营玩家·D",
+    "platform": "cross",
+    "device": "low_android",
+    "churnRisk": "低",
+    "complaints": [
+      {
+        "issueId": "GAMEPLAY_SIDE_SYSTEM_SHALLOW",
+        "priority": "P2",
+        "dimension": "gameplay",
+        "score": 60,
+        "title": "菜品/供应链等侧系统深度不足"
+      },
+      {
+        "issueId": "META_ACHIEVEMENT",
+        "priority": "P3",
+        "dimension": "content",
+        "score": 47,
+        "title": "缺少明显的长期收集/成就反馈"
+      }
+    ]
+  }
+]

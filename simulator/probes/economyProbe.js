@@ -6,6 +6,9 @@ const gameState =
 const renovationSystem =
   require('../../src/renovation/renovationSystem.js');
 
+const openingFinanceSystem =
+  require('../../src/finance/openingFinanceSystem.js');
+
 function makeShop(
   id,
   usableArea,
@@ -166,6 +169,16 @@ function runEconomyProbe() {
           remaining
         : null;
 
+    gameState.setCash(
+      remaining
+    );
+
+    const recovery =
+      openingFinanceSystem
+        .getRecoveryStatus(
+          shop.id
+        );
+
     results.push({
       ...scenario,
       startingCash,
@@ -175,7 +188,24 @@ function runEconomyProbe() {
         renovation
           ? renovation.totalCost
           : null,
-      renovationGap
+      renovationGap,
+      openingNeed:
+        recovery
+          ? recovery.totalNeed
+          : null,
+      financingGap:
+        recovery
+          ? recovery.gap
+          : null,
+      creditLimit:
+        recovery &&
+        recovery.offer
+          ? recovery.offer.creditLimit
+          : 0,
+      canRecover:
+        recovery
+          ? recovery.canRecover
+          : false
     });
   }
 
@@ -185,7 +215,8 @@ function runEconomyProbe() {
         item.renovationGap !==
           null &&
         item.renovationGap >
-          0
+          0 &&
+        !item.canRecover
     );
 
   if (
@@ -198,13 +229,13 @@ function runEconomyProbe() {
         'P0',
         'economy',
         '签约后存在较高的资金软锁风险',
-        '以当前初始资金和默认装修成本估算，多种常见面积门店签约后剩余现金不足以完成基础装修，玩家可能“成功租店却无法继续”。',
+        '以当前初始资金和默认装修成本估算，多种常见面积门店在签约、基础装修、设备与周转金合计后仍缺少可恢复路径。',
         {
           startingCash,
           scenarios:
             results
         },
-        '签约前显示“完整开店资金预算”；允许更低成本的基础装修、融资/分期、撤退转租，避免不可恢复的死局。'
+        '继续扩充融资/分期与退出机制，并确保签约前显示完整开店预算。'
       )
     );
   }

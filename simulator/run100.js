@@ -1,5 +1,8 @@
 'use strict';
 
+const fs =
+  require('fs');
+
 const path =
   require('path');
 
@@ -29,7 +32,8 @@ const {
   require('./audit/personaEvaluator.js');
 
 const {
-  writeReport
+  writeReport,
+  buildGithubSummary
 } =
   require('./audit/report.js');
 
@@ -106,7 +110,9 @@ function runLab(
         issues.length,
       generatedAt:
         new Date()
-          .toISOString()
+          .toISOString(),
+      methodology:
+        '100 simulated player personas'
     },
 
     personaRisk:
@@ -144,10 +150,12 @@ function runLab(
   if (
     opts.writeReport
   ) {
-    writeReport(
-      root,
-      report
-    );
+    report.output =
+      writeReport(
+        root,
+        report,
+        opts.outputDir
+      );
   }
 
   return report;
@@ -219,9 +227,104 @@ function printSummary(
     );
   }
 
+  if (
+    report.output
+  ) {
+    console.log(
+      '\n完整报告目录:',
+      report.output.dir
+    );
+  }
+
   console.log(
     '=========================\n'
   );
+}
+
+function appendGithubSummary(
+  report
+) {
+  const summaryFile =
+    process.env
+      .GITHUB_STEP_SUMMARY;
+
+  if (
+    !summaryFile
+  ) {
+    return;
+  }
+
+  try {
+    fs.appendFileSync(
+      summaryFile,
+      buildGithubSummary(
+        report
+      ) +
+        '\n'
+    );
+  } catch (
+    error
+  ) {
+    console.warn(
+      '无法写入GitHub Step Summary:',
+      error.message
+    );
+  }
+}
+
+function parseArgs(
+  argv
+) {
+  const result = {
+    ci:
+      false,
+    report:
+      false,
+    outputDir:
+      null
+  };
+
+  for (
+    let i = 0;
+    i <
+    argv.length;
+    i++
+  ) {
+    const arg =
+      argv[i];
+
+    if (
+      arg ===
+      '--ci'
+    ) {
+      result.ci =
+        true;
+    } else if (
+      arg ===
+      '--report'
+    ) {
+      result.report =
+        true;
+    } else if (
+      arg ===
+      '--output' &&
+      argv[
+        i + 1
+      ]
+    ) {
+      result.outputDir =
+        path.resolve(
+          argv[
+            i + 1
+          ]
+        );
+
+      i +=
+        1;
+    }
+  }
+
+  return result;
 }
 
 if (
@@ -234,9 +337,11 @@ if (
       '..'
     );
 
-  const ci =
-    process.argv.includes(
-      '--ci'
+  const args =
+    parseArgs(
+      process.argv.slice(
+        2
+      )
     );
 
   const report =
@@ -244,16 +349,24 @@ if (
       ROOT,
       {
         writeReport:
-          !ci
+          args.report,
+        outputDir:
+          args.outputDir
       }
     );
 
   printSummary(
     report
   );
+
+  appendGithubSummary(
+    report
+  );
 }
 
 module.exports = {
   runLab,
-  printSummary
+  printSummary,
+  appendGithubSummary,
+  parseArgs
 };

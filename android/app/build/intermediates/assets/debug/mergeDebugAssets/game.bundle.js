@@ -154,7 +154,15 @@
             leases: {}
           },
           renovations: {},
-          renovationTemplates: []
+          renovationTemplates: [],
+          openingPrep: {
+            equipment: {},
+            permits: {},
+            staffing: {}
+          },
+          finance: {
+            openingLoans: {}
+          }
         },
         progress: {
           firstLaunch: true,
@@ -236,6 +244,29 @@
             business.renovationTemplates = [];
           }
           return business.renovationTemplates;
+        }
+        getOpeningPrep() {
+          const business = this.data.business;
+          if (!business.openingPrep) {
+            business.openingPrep = {
+              equipment: {},
+              permits: {},
+              staffing: {}
+            };
+          }
+          return business.openingPrep;
+        }
+        getFinance() {
+          const business = this.data.business;
+          if (!business.finance) {
+            business.finance = {
+              openingLoans: {}
+            };
+          }
+          if (!business.finance.openingLoans) {
+            business.finance.openingLoans = {};
+          }
+          return business.finance;
         }
         getSimulation() {
           const world = this.data.world;
@@ -1291,6 +1322,68 @@
       };
       var resourceManager = new ResourceManager();
       module.exports = resourceManager;
+    }
+  });
+
+  // src/ui/safeArea.js
+  var require_safeArea = __commonJS({
+    "src/ui/safeArea.js"(exports, module) {
+      "use strict";
+      function clamp(value, min, max) {
+        return Math.max(
+          min,
+          Math.min(
+            max,
+            value
+          )
+        );
+      }
+      function getLogicalInsets(info, scale) {
+        const source = info || {};
+        const safeArea = source.safeArea || null;
+        const windowHeight = Number(
+          source.windowHeight
+        ) || 0;
+        const logicalScale = Math.max(
+          0.01,
+          Number(
+            scale
+          ) || 1
+        );
+        if (!safeArea || !windowHeight) {
+          return {
+            top: 0,
+            bottom: 0
+          };
+        }
+        const top = Math.max(
+          0,
+          Number(
+            safeArea.top
+          ) || 0
+        ) / logicalScale;
+        const bottomPixels = Math.max(
+          0,
+          windowHeight - (Number(
+            safeArea.bottom
+          ) || windowHeight)
+        );
+        return {
+          top: clamp(
+            top,
+            0,
+            24
+          ),
+          bottom: clamp(
+            bottomPixels / logicalScale,
+            0,
+            24
+          )
+        };
+      }
+      module.exports = {
+        getLogicalInsets
+      };
     }
   });
 
@@ -7820,7 +7913,13 @@
         }
         text(ctx2, text, x, y, size, color, weight, align) {
           ctx2.fillStyle = color || COLORS.text;
-          ctx2.font = (weight || "500") + " " + size + "px sans-serif";
+          const readableSize = Math.max(
+            7.3,
+            Number(
+              size
+            ) || 7.3
+          );
+          ctx2.font = (weight || "500") + " " + readableSize + "px sans-serif";
           ctx2.textAlign = align || "left";
           ctx2.textBaseline = "middle";
           ctx2.fillText(
@@ -11029,7 +11128,7 @@
           minServiceRatio: 0.08,
           maxServiceRatio: 0.2
         },
-        baseConstructionCostPerSqm: 760,
+        baseConstructionCostPerSqm: 520,
         templateRules: {
           maxTemplates: 30,
           defaultNamePrefix: "\u88C5\u4FEE\u6A21\u677F"
@@ -11075,6 +11174,18 @@
         return (h >>> 0) % 1e5 / 1e5;
       }
       var RenovationSystem = class {
+        constructor() {
+          this.history = {};
+        }
+        getHistory(shopId) {
+          if (!this.history[shopId]) {
+            this.history[shopId] = {
+              undo: [],
+              redo: []
+            };
+          }
+          return this.history[shopId];
+        }
         getShop(shopId) {
           const business = gameState.getBusiness();
           return business.shops.find(
@@ -11151,9 +11262,9 @@
               shopId,
               status: "draft",
               activeFloor: 0,
-              hallStyle: "wood",
-              materialGrade: "standard",
-              lightingLevel: "warm",
+              hallStyle: "simple",
+              materialGrade: "budget",
+              lightingLevel: "basic",
               floors,
               selectedContractorId: null,
               construction: null
@@ -11163,11 +11274,86 @@
             store[shopId]
           );
         }
-        mutatePlan(shopId, callback) {
+        mutatePlan(shopId, callback, options) {
           this.ensurePlan(shopId);
           const plan = this.getStore()[shopId];
+          const opts = options || {};
+          if (!opts.skipHistory && plan.status !== "constructing" && plan.status !== "completed") {
+            const history = this.getHistory(
+              shopId
+            );
+            history.undo.push(
+              clone(
+                plan
+              )
+            );
+            if (history.undo.length > 20) {
+              history.undo.shift();
+            }
+            history.redo = [];
+          }
           callback(plan);
           return clone(plan);
+        }
+        canUndo(shopId) {
+          return this.getHistory(
+            shopId
+          ).undo.length > 0;
+        }
+        canRedo(shopId) {
+          return this.getHistory(
+            shopId
+          ).redo.length > 0;
+        }
+        undo(shopId) {
+          const store = this.getStore();
+          const current = store[shopId];
+          if (!current || current.status === "constructing" || current.status === "completed") {
+            return null;
+          }
+          const history = this.getHistory(
+            shopId
+          );
+          const previous = history.undo.pop();
+          if (!previous) {
+            return null;
+          }
+          history.redo.push(
+            clone(
+              current
+            )
+          );
+          store[shopId] = clone(
+            previous
+          );
+          return clone(
+            store[shopId]
+          );
+        }
+        redo(shopId) {
+          const store = this.getStore();
+          const current = store[shopId];
+          if (!current || current.status === "constructing" || current.status === "completed") {
+            return null;
+          }
+          const history = this.getHistory(
+            shopId
+          );
+          const next = history.redo.pop();
+          if (!next) {
+            return null;
+          }
+          history.undo.push(
+            clone(
+              current
+            )
+          );
+          store[shopId] = clone(
+            next
+          );
+          return clone(
+            store[shopId]
+          );
         }
         setActiveFloor(shopId, index) {
           return this.mutatePlan(
@@ -11700,6 +11886,1339 @@
     }
   });
 
+  // src/opening/openingConfig.js
+  var require_openingConfig = __commonJS({
+    "src/opening/openingConfig.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        equipment: [
+          {
+            id: "cooking",
+            name: "\u70F9\u996A\u8BBE\u5907",
+            iconKey: "visual_stove",
+            basePrice: 13800,
+            capacityPerUnit: 34,
+            powerKw: 8,
+            gasPreferred: true,
+            installDays: 2
+          },
+          {
+            id: "cold",
+            name: "\u51B7\u85CF\u8BBE\u5907",
+            iconKey: "visual_fridge",
+            basePrice: 9800,
+            capacityPerUnit: 52,
+            powerKw: 2.6,
+            gasPreferred: false,
+            installDays: 1
+          },
+          {
+            id: "prep",
+            name: "\u5907\u9910\u64CD\u4F5C\u53F0",
+            iconKey: "visual_register",
+            basePrice: 4200,
+            capacityPerUnit: 42,
+            powerKw: 0.3,
+            gasPreferred: false,
+            installDays: 1
+          },
+          {
+            id: "dishwash",
+            name: "\u6D17\u6D88\u8BBE\u5907",
+            iconKey: "visual_fridge",
+            basePrice: 7600,
+            capacityPerUnit: 46,
+            powerKw: 5.5,
+            gasPreferred: false,
+            installDays: 2
+          },
+          {
+            id: "pos",
+            name: "\u6536\u94F6\u8BBE\u5907",
+            iconKey: "visual_register",
+            basePrice: 3200,
+            capacityPerUnit: 85,
+            powerKw: 0.5,
+            gasPreferred: false,
+            installDays: 1
+          }
+        ],
+        qualityGrades: [
+          {
+            id: "budget",
+            name: "\u7ECF\u6D4E",
+            priceFactor: 0.82,
+            reliability: 0.86,
+            efficiency: 0.92
+          },
+          {
+            id: "standard",
+            name: "\u6807\u51C6",
+            priceFactor: 1,
+            reliability: 1,
+            efficiency: 1
+          },
+          {
+            id: "premium",
+            name: "\u9AD8\u914D",
+            priceFactor: 1.28,
+            reliability: 1.12,
+            efficiency: 1.09
+          }
+        ],
+        permits: [
+          {
+            id: "business",
+            name: "\u4E3B\u4F53\u767B\u8BB0",
+            baseFee: 380,
+            baseDays: 2
+          },
+          {
+            id: "food",
+            name: "\u98DF\u54C1\u7ECF\u8425\u8BB8\u53EF",
+            baseFee: 680,
+            baseDays: 5
+          },
+          {
+            id: "fire",
+            name: "\u6D88\u9632\u68C0\u67E5/\u5907\u6848",
+            baseFee: 460,
+            baseDays: 4
+          },
+          {
+            id: "sign",
+            name: "\u95E8\u5934\u62DB\u724C\u5907\u6848",
+            baseFee: 160,
+            baseDays: 2
+          }
+        ],
+        roles: [
+          {
+            id: "manager",
+            name: "\u5E97\u957F",
+            baseWage: 7200,
+            seatsPerWorker: 999
+          },
+          {
+            id: "chef",
+            name: "\u53A8\u5E08",
+            baseWage: 6800,
+            seatsPerWorker: 38
+          },
+          {
+            id: "server",
+            name: "\u670D\u52A1\u5458",
+            baseWage: 4200,
+            seatsPerWorker: 22
+          },
+          {
+            id: "cashier",
+            name: "\u6536\u94F6/\u524D\u53F0",
+            baseWage: 4300,
+            seatsPerWorker: 70
+          }
+        ],
+        surnames: [
+          "\u9648",
+          "\u738B",
+          "\u674E",
+          "\u5F20",
+          "\u5218",
+          "\u5468",
+          "\u8D75",
+          "\u5B59",
+          "\u9A6C",
+          "\u6731",
+          "\u80E1",
+          "\u90ED",
+          "\u4F55",
+          "\u9AD8",
+          "\u6797",
+          "\u90D1",
+          "\u6881",
+          "\u8BB8",
+          "\u5B8B",
+          "\u8C22"
+        ],
+        givenNames: [
+          "\u542F\u660E",
+          "\u5A49\u5B81",
+          "\u5FD7\u5F3A",
+          "\u8FDC\u822A",
+          "\u96C5\u7434",
+          "\u56FD\u6881",
+          "\u6668\u66E6",
+          "\u96E8\u6850",
+          "\u5609\u5B81",
+          "\u535A\u6587",
+          "\u6D69\u7136",
+          "\u601D\u8FDC",
+          "\u5B50\u6DB5",
+          "\u660E\u8F69",
+          "\u82E5\u6EAA",
+          "\u4FCA\u6770",
+          "\u96EA\u6674",
+          "\u4F73\u6021",
+          "\u6587\u6D9B",
+          "\u6653\u5CF0"
+        ]
+      };
+    }
+  });
+
+  // src/opening/openingPrepSystem.js
+  var require_openingPrepSystem = __commonJS({
+    "src/opening/openingPrepSystem.js"(exports, module) {
+      "use strict";
+      var gameState = require_gameState();
+      var simulationSystem = require_simulationSystem();
+      var renovationSystem = require_renovationSystem();
+      var config = require_openingConfig();
+      function clone(value) {
+        return JSON.parse(
+          JSON.stringify(value)
+        );
+      }
+      function clamp(value, min, max) {
+        return Math.max(
+          min,
+          Math.min(
+            max,
+            value
+          )
+        );
+      }
+      function hashFloat(text) {
+        let h = 2166136261;
+        const source = String(text);
+        for (let i = 0; i < source.length; i++) {
+          h ^= source.charCodeAt(
+            i
+          );
+          h = Math.imul(
+            h,
+            16777619
+          );
+        }
+        return (h >>> 0) % 1e5 / 1e5;
+      }
+      function featureOkay(value) {
+        if (value === void 0 || value === null) {
+          return true;
+        }
+        if (typeof value === "boolean") {
+          return value;
+        }
+        const text = String(value);
+        return !(text.indexOf(
+          "\u65E0"
+        ) >= 0 || text.indexOf(
+          "\u4E0D"
+        ) >= 0 || text.indexOf(
+          "\u5426"
+        ) >= 0 || text.indexOf(
+          "\u4E0D\u8DB3"
+        ) >= 0);
+      }
+      var OpeningPrepSystem = class {
+        getShop(shopId) {
+          return gameState.getBusiness().shops.find(
+            (item) => item.id === shopId
+          ) || null;
+        }
+        getStore() {
+          return gameState.getOpeningPrep();
+        }
+        getCurrentDay() {
+          return simulationSystem.getDayOrdinal(
+            gameState.getTime()
+          );
+        }
+        getSeats(shopId) {
+          const shop = this.getShop(
+            shopId
+          );
+          if (!shop) {
+            return 0;
+          }
+          const metrics = renovationSystem.getMetrics(
+            shopId
+          );
+          if (metrics && Number.isFinite(
+            Number(
+              metrics.totalSeats
+            )
+          )) {
+            return Math.max(
+              1,
+              Number(
+                metrics.totalSeats
+              )
+            );
+          }
+          return Math.max(
+            1,
+            Number(
+              shop.seatEstimate
+            ) || 30
+          );
+        }
+        ensureEquipment(shopId) {
+          const prep = this.getStore();
+          if (!prep.equipment[shopId]) {
+            const seats = this.getSeats(
+              shopId
+            );
+            const items = {};
+            for (const item of config.equipment) {
+              items[item.id] = {
+                id: item.id,
+                quantity: Math.max(
+                  1,
+                  Math.ceil(
+                    seats / item.capacityPerUnit
+                  )
+                ),
+                grade: "standard"
+              };
+            }
+            prep.equipment[shopId] = {
+              status: "planning",
+              items,
+              orderDay: null,
+              deliveryDay: null,
+              paid: 0
+            };
+          }
+          return prep.equipment[shopId];
+        }
+        getEquipmentState(shopId) {
+          return clone(
+            this.ensureEquipment(
+              shopId
+            )
+          );
+        }
+        getEquipmentQuote(shopId) {
+          const shop = this.getShop(
+            shopId
+          );
+          if (!shop) {
+            return null;
+          }
+          const state = this.ensureEquipment(
+            shopId
+          );
+          const day = this.getCurrentDay();
+          const marketFactor = 0.94 + hashFloat(
+            shopId + ":equipment-market:" + day
+          ) * 0.14;
+          const lines = [];
+          let total = 0;
+          let totalPower = 0;
+          let cookingCapacity = 0;
+          let serviceCapacity = Infinity;
+          let maxInstallDays = 1;
+          for (const item of config.equipment) {
+            const plan = state.items[item.id];
+            const grade = config.qualityGrades.find(
+              (entry) => entry.id === plan.grade
+            ) || config.qualityGrades[1];
+            const price = Math.round(
+              item.basePrice * plan.quantity * grade.priceFactor * marketFactor
+            );
+            const capacity2 = item.capacityPerUnit * plan.quantity * grade.efficiency;
+            const power = item.powerKw * plan.quantity;
+            total += price;
+            totalPower += power;
+            maxInstallDays = Math.max(
+              maxInstallDays,
+              item.installDays
+            );
+            if (item.id === "cooking") {
+              cookingCapacity = capacity2;
+            } else {
+              serviceCapacity = Math.min(
+                serviceCapacity,
+                capacity2
+              );
+            }
+            lines.push({
+              ...item,
+              quantity: plan.quantity,
+              grade: grade.id,
+              gradeName: grade.name,
+              price,
+              capacity: Math.round(
+                capacity2
+              ),
+              powerKw: Number(
+                power.toFixed(
+                  1
+                )
+              ),
+              reliability: grade.reliability
+            });
+          }
+          if (serviceCapacity === Infinity) {
+            serviceCapacity = 0;
+          }
+          const seats = this.getSeats(
+            shopId
+          );
+          const capacity = Math.min(
+            cookingCapacity,
+            serviceCapacity
+          );
+          const capacityRatio = capacity / Math.max(
+            1,
+            seats
+          );
+          const electricLimit = Number(
+            shop.electricCapacityKw
+          );
+          const issues = [];
+          let infrastructureUpgradeCost = 0;
+          if (Number.isFinite(
+            electricLimit
+          ) && electricLimit > 0 && totalPower > electricLimit) {
+            infrastructureUpgradeCost = Math.round(
+              (totalPower - electricLimit) * 850
+            );
+          }
+          const shortage = Math.max(
+            0,
+            1 - capacityRatio
+          );
+          const marketDelay = Math.floor(
+            hashFloat(
+              shopId + ":equipment-delay:" + day
+            ) * 3
+          );
+          return {
+            shopId,
+            lines,
+            total: total + infrastructureUpgradeCost,
+            equipmentCost: total,
+            infrastructureUpgradeCost,
+            totalPowerKw: Number(
+              totalPower.toFixed(
+                1
+              )
+            ),
+            seats,
+            capacity: Math.round(
+              capacity
+            ),
+            capacityRatio,
+            shortage,
+            issues,
+            valid: capacityRatio >= 0.9,
+            installDays: maxInstallDays + marketDelay,
+            marketFactor
+          };
+        }
+        adjustEquipment(shopId, itemId, delta) {
+          const state = this.ensureEquipment(
+            shopId
+          );
+          if (state.status !== "planning") {
+            return false;
+          }
+          const item = state.items[itemId];
+          if (!item) {
+            return false;
+          }
+          item.quantity = clamp(
+            item.quantity + delta,
+            0,
+            20
+          );
+          return true;
+        }
+        cycleEquipmentGrade(shopId, itemId) {
+          const state = this.ensureEquipment(
+            shopId
+          );
+          if (state.status !== "planning") {
+            return false;
+          }
+          const item = state.items[itemId];
+          if (!item) {
+            return false;
+          }
+          const ids = config.qualityGrades.map(
+            (entry) => entry.id
+          );
+          const current = ids.indexOf(
+            item.grade
+          );
+          item.grade = ids[(current + 1) % ids.length];
+          return true;
+        }
+        orderEquipment(shopId) {
+          const state = this.ensureEquipment(
+            shopId
+          );
+          if (state.status !== "planning") {
+            return {
+              ok: false,
+              message: "\u8BBE\u5907\u8BA2\u5355\u5DF2\u7ECF\u63D0\u4EA4"
+            };
+          }
+          const quote = this.getEquipmentQuote(
+            shopId
+          );
+          if (!quote) {
+            return {
+              ok: false,
+              message: "\u95E8\u5E97\u4E0D\u5B58\u5728"
+            };
+          }
+          if (!quote.valid) {
+            return {
+              ok: false,
+              message: quote.issues[0] || "\u5F53\u524D\u8BBE\u5907\u914D\u7F6E\u65E0\u6CD5\u6EE1\u8DB3\u8425\u4E1A\u9700\u6C42"
+            };
+          }
+          if (!gameState.spendCash(
+            quote.total
+          )) {
+            return {
+              ok: false,
+              message: "\u8BBE\u5907\u91C7\u8D2D\u8D44\u91D1\u4E0D\u8DB3"
+            };
+          }
+          const day = this.getCurrentDay();
+          state.status = "ordered";
+          state.orderDay = day;
+          state.deliveryDay = day + quote.installDays;
+          state.paid = quote.total;
+          state.quote = clone(
+            quote
+          );
+          return {
+            ok: true,
+            deliveryDay: state.deliveryDay,
+            total: quote.total
+          };
+        }
+        updateEquipment(shopId) {
+          const state = this.ensureEquipment(
+            shopId
+          );
+          if (state.status !== "ordered") {
+            return false;
+          }
+          if (this.getCurrentDay() < state.deliveryDay) {
+            return false;
+          }
+          state.status = "installed";
+          return true;
+        }
+        getPermitState(shopId) {
+          const prep = this.getStore();
+          if (!prep.permits[shopId]) {
+            const items = {};
+            for (const permit of config.permits) {
+              items[permit.id] = {
+                id: permit.id,
+                status: "not_applied",
+                appliedDay: null,
+                finishDay: null,
+                paid: 0,
+                issue: null
+              };
+            }
+            prep.permits[shopId] = {
+              items,
+              remediated: {}
+            };
+          }
+          return prep.permits[shopId];
+        }
+        getPermitRequirements(shopId, permitId) {
+          const shop = this.getShop(
+            shopId
+          );
+          const equipment = this.ensureEquipment(
+            shopId
+          );
+          const permitState = this.getPermitState(
+            shopId
+          );
+          const renovation = renovationSystem.ensurePlan(
+            shopId
+          );
+          const reasons = [];
+          if (permitId === "food") {
+            if (!renovation || renovation.status !== "completed") {
+              reasons.push(
+                "\u88C5\u4FEE\u5C1A\u672A\u5B8C\u6210"
+              );
+            }
+            if (equipment.status !== "installed") {
+              reasons.push(
+                "\u4E3B\u8981\u8BBE\u5907\u5C1A\u672A\u5B89\u88C5"
+              );
+            }
+            if (shop && !featureOkay(
+              shop.greaseTrap
+            ) && !permitState.remediated.food) {
+              reasons.push(
+                "\u9694\u6CB9\u8BBE\u65BD\u9700\u6574\u6539"
+              );
+            }
+          }
+          if (permitId === "fire") {
+            if (!renovation || renovation.status !== "completed") {
+              reasons.push(
+                "\u88C5\u4FEE\u5C1A\u672A\u5B8C\u6210"
+              );
+            }
+            if (shop && !featureOkay(
+              shop.fireSprinkler
+            ) && !permitState.remediated.fire) {
+              reasons.push(
+                "\u6D88\u9632\u55B7\u6DCB\u9700\u6574\u6539"
+              );
+            }
+          }
+          return {
+            ready: reasons.length === 0,
+            reasons
+          };
+        }
+        getPermitOverview(shopId) {
+          const shop = this.getShop(
+            shopId
+          );
+          if (!shop) {
+            return null;
+          }
+          const state = this.getPermitState(
+            shopId
+          );
+          const day = this.getCurrentDay();
+          const rows = [];
+          for (const permit of config.permits) {
+            const item = state.items[permit.id];
+            const req = this.getPermitRequirements(
+              shopId,
+              permit.id
+            );
+            const volatility = 0.92 + hashFloat(
+              shopId + ":permit:" + permit.id + ":" + day
+            ) * 0.22;
+            const fee = Math.round(
+              permit.baseFee * volatility
+            );
+            const days = Math.max(
+              1,
+              Math.round(
+                permit.baseDays * (0.85 + volatility * 0.18)
+              )
+            );
+            const remediableReason = req.reasons.find(
+              (reason) => reason.indexOf(
+                "\u6574\u6539"
+              ) >= 0
+            ) || null;
+            const remediationCost = Math.round(
+              (permit.id === "fire" ? 6800 : permit.id === "food" ? 4200 : 1800) * (0.88 + hashFloat(
+                shopId + ":remediation:" + permit.id + ":" + day
+              ) * 0.28)
+            );
+            rows.push({
+              ...permit,
+              fee,
+              days,
+              ready: req.ready,
+              reasons: req.reasons,
+              status: item.status,
+              finishDay: item.finishDay,
+              issue: item.issue,
+              remediable: !!remediableReason || item.status === "needs_fix",
+              remediationCost
+            });
+          }
+          return {
+            shopId,
+            rows,
+            approved: rows.filter(
+              (item) => item.status === "approved"
+            ).length,
+            total: rows.length
+          };
+        }
+        applyPermit(shopId, permitId) {
+          const state = this.getPermitState(
+            shopId
+          );
+          const item = state.items[permitId];
+          if (!item) {
+            return {
+              ok: false,
+              message: "\u8BC1\u7167\u9879\u76EE\u4E0D\u5B58\u5728"
+            };
+          }
+          if (item.status === "applying" || item.status === "approved") {
+            return {
+              ok: false,
+              message: "\u8BE5\u9879\u76EE\u5DF2\u63D0\u4EA4"
+            };
+          }
+          const overview = this.getPermitOverview(
+            shopId
+          );
+          const row = overview.rows.find(
+            (permit) => permit.id === permitId
+          );
+          if (!row.ready) {
+            return {
+              ok: false,
+              message: row.reasons[0] || "\u5F53\u524D\u6761\u4EF6\u4E0D\u6EE1\u8DB3"
+            };
+          }
+          if (!gameState.spendCash(
+            row.fee
+          )) {
+            return {
+              ok: false,
+              message: "\u529E\u7406\u8D39\u7528\u4E0D\u8DB3"
+            };
+          }
+          const day = this.getCurrentDay();
+          item.status = "applying";
+          item.appliedDay = day;
+          item.finishDay = day + row.days;
+          item.paid += row.fee;
+          item.issue = null;
+          return {
+            ok: true,
+            finishDay: item.finishDay,
+            fee: row.fee
+          };
+        }
+        remediatePermit(shopId, permitId) {
+          const state = this.getPermitState(
+            shopId
+          );
+          const item = state.items[permitId];
+          if (!item) {
+            return {
+              ok: false,
+              message: "\u8BC1\u7167\u9879\u76EE\u4E0D\u5B58\u5728"
+            };
+          }
+          const overview = this.getPermitOverview(
+            shopId
+          );
+          const row = overview.rows.find(
+            (entry) => entry.id === permitId
+          );
+          if (!row || !row.remediable) {
+            return {
+              ok: false,
+              message: "\u5F53\u524D\u6CA1\u6709\u53EF\u6267\u884C\u7684\u6574\u6539\u9879\u76EE"
+            };
+          }
+          if (!gameState.spendCash(
+            row.remediationCost
+          )) {
+            return {
+              ok: false,
+              message: "\u6574\u6539\u8D44\u91D1\u4E0D\u8DB3"
+            };
+          }
+          state.remediated[permitId] = true;
+          item.status = "not_applied";
+          item.issue = null;
+          item.finishDay = null;
+          return {
+            ok: true,
+            cost: row.remediationCost
+          };
+        }
+        updatePermits(shopId) {
+          const shop = this.getShop(
+            shopId
+          );
+          if (!shop) {
+            return false;
+          }
+          const state = this.getPermitState(
+            shopId
+          );
+          const day = this.getCurrentDay();
+          let changed = false;
+          for (const permit of config.permits) {
+            const item = state.items[permit.id];
+            if (item.status !== "applying" || day < item.finishDay) {
+              continue;
+            }
+            const req = this.getPermitRequirements(
+              shopId,
+              permit.id
+            );
+            if (!req.ready) {
+              item.status = "needs_fix";
+              item.issue = req.reasons[0];
+              changed = true;
+              continue;
+            }
+            const inspection = hashFloat(
+              shopId + ":inspection:" + permit.id + ":" + item.appliedDay
+            );
+            const failRisk = permit.id === "food" ? 0.1 : permit.id === "fire" ? 0.08 : 0.035;
+            if (inspection < failRisk) {
+              item.status = "needs_fix";
+              item.issue = permit.id === "food" ? "\u73B0\u573A\u536B\u751F\u7EC6\u8282\u9700\u8865\u5145\u6574\u6539" : permit.id === "fire" ? "\u6D88\u9632\u6807\u8BC6\u4E0E\u901A\u9053\u7EC6\u8282\u9700\u8865\u5145" : "\u8D44\u6599\u5B58\u5728\u7F3A\u9879";
+            } else {
+              item.status = "approved";
+              item.issue = null;
+            }
+            changed = true;
+          }
+          return changed;
+        }
+        getStaffState(shopId) {
+          const prep = this.getStore();
+          if (!prep.staffing[shopId]) {
+            prep.staffing[shopId] = {
+              hired: [],
+              candidateDay: null,
+              candidates: []
+            };
+          }
+          return prep.staffing[shopId];
+        }
+        getRequiredStaff(shopId) {
+          const seats = this.getSeats(
+            shopId
+          );
+          const result = {};
+          for (const role of config.roles) {
+            result[role.id] = role.id === "manager" ? 1 : Math.max(
+              1,
+              Math.ceil(
+                seats / role.seatsPerWorker
+              )
+            );
+          }
+          return result;
+        }
+        generateCandidate(shopId, role, index, day) {
+          const seed = gameState.getSimulation().seed || 1;
+          const base = shopId + ":" + role.id + ":" + day + ":" + index + ":" + seed;
+          const r1 = hashFloat(
+            base + ":a"
+          );
+          const r2 = hashFloat(
+            base + ":b"
+          );
+          const r3 = hashFloat(
+            base + ":c"
+          );
+          const surname = config.surnames[Math.floor(
+            r1 * config.surnames.length
+          ) % config.surnames.length];
+          const given = config.givenNames[Math.floor(
+            r2 * config.givenNames.length
+          ) % config.givenNames.length];
+          const skill = Math.round(
+            48 + r1 * 48
+          );
+          const stability = Math.round(
+            45 + r2 * 52
+          );
+          const experience = Math.round(
+            r3 * 10
+          );
+          const wage = Math.round(
+            role.baseWage * (0.84 + skill / 250 + experience / 100) / 100
+          ) * 100;
+          return {
+            id: "candidate_" + role.id + "_" + day + "_" + index,
+            roleId: role.id,
+            roleName: role.name,
+            name: surname + given,
+            age: 20 + Math.floor(
+              r3 * 25
+            ),
+            skill,
+            stability,
+            experience,
+            wage,
+            score: Math.round(
+              skill * 0.55 + stability * 0.3 + Math.min(
+                100,
+                experience * 10
+              ) * 0.15
+            )
+          };
+        }
+        refreshCandidates(shopId) {
+          const state = this.getStaffState(
+            shopId
+          );
+          const day = this.getCurrentDay();
+          if (state.candidateDay === day && state.candidates.length) {
+            return;
+          }
+          const candidates = [];
+          for (const role of config.roles) {
+            for (let i = 0; i < 3; i++) {
+              candidates.push(
+                this.generateCandidate(
+                  shopId,
+                  role,
+                  i,
+                  day
+                )
+              );
+            }
+          }
+          state.candidateDay = day;
+          state.candidates = candidates;
+        }
+        getStaffOverview(shopId) {
+          this.refreshCandidates(
+            shopId
+          );
+          const state = this.getStaffState(
+            shopId
+          );
+          const required = this.getRequiredStaff(
+            shopId
+          );
+          const current = {};
+          for (const role of config.roles) {
+            current[role.id] = state.hired.filter(
+              (staff) => staff.roleId === role.id
+            ).length;
+          }
+          let requiredTotal = 0;
+          let currentTotal = 0;
+          for (const role of config.roles) {
+            requiredTotal += required[role.id];
+            currentTotal += Math.min(
+              required[role.id],
+              current[role.id]
+            );
+          }
+          const payroll = state.hired.reduce(
+            (total, staff) => total + staff.wage,
+            0
+          );
+          return {
+            required,
+            current,
+            hired: clone(
+              state.hired
+            ),
+            candidates: clone(
+              state.candidates
+            ),
+            payroll,
+            coverage: currentTotal / Math.max(
+              1,
+              requiredTotal
+            )
+          };
+        }
+        hireCandidate(shopId, candidateId) {
+          this.refreshCandidates(
+            shopId
+          );
+          const state = this.getStaffState(
+            shopId
+          );
+          const candidate = state.candidates.find(
+            (item) => item.id === candidateId
+          );
+          if (!candidate) {
+            return {
+              ok: false,
+              message: "\u5019\u9009\u4EBA\u5DF2\u5931\u6548"
+            };
+          }
+          const signOnCost = Math.round(
+            candidate.wage * 0.18
+          );
+          if (!gameState.spendCash(
+            signOnCost
+          )) {
+            return {
+              ok: false,
+              message: "\u62DB\u8058\u5165\u804C\u6210\u672C\u4E0D\u8DB3"
+            };
+          }
+          state.hired.push({
+            id: "staff_" + candidate.id,
+            ...clone(
+              candidate
+            ),
+            hiredDay: this.getCurrentDay(),
+            signOnCost
+          });
+          state.candidates = state.candidates.filter(
+            (item) => item.id !== candidateId
+          );
+          return {
+            ok: true,
+            staff: clone(
+              state.hired[state.hired.length - 1]
+            ),
+            signOnCost
+          };
+        }
+        dismissStaff(shopId, staffId) {
+          const state = this.getStaffState(
+            shopId
+          );
+          const index = state.hired.findIndex(
+            (item) => item.id === staffId
+          );
+          if (index < 0) {
+            return false;
+          }
+          state.hired.splice(
+            index,
+            1
+          );
+          return true;
+        }
+        getReadiness(shopId) {
+          this.updateEquipment(
+            shopId
+          );
+          this.updatePermits(
+            shopId
+          );
+          const renovation = renovationSystem.ensurePlan(
+            shopId
+          );
+          const equipment = this.ensureEquipment(
+            shopId
+          );
+          const permits = this.getPermitOverview(
+            shopId
+          );
+          const staffing = this.getStaffOverview(
+            shopId
+          );
+          const renovationReady = !!renovation && renovation.status === "completed";
+          const equipmentReady = equipment.status === "installed";
+          const permitsReady = permits.approved === permits.total;
+          const staffingReady = staffing.coverage >= 0.9;
+          const score = (renovationReady ? 25 : 0) + (equipmentReady ? 25 : 0) + (permitsReady ? 25 : 0) + Math.round(
+            clamp(
+              staffing.coverage,
+              0,
+              1
+            ) * 25
+          );
+          const ready = renovationReady && equipmentReady && permitsReady && staffingReady;
+          const shop = this.getShop(
+            shopId
+          );
+          if (shop && ready && shop.status !== "open") {
+            shop.status = "ready_for_trial";
+          }
+          return {
+            renovationReady,
+            equipmentReady,
+            permitsReady,
+            staffingReady,
+            score,
+            ready,
+            equipment,
+            permits,
+            staffing
+          };
+        }
+        startTrialOpening(shopId) {
+          const shop = this.getShop(
+            shopId
+          );
+          if (!shop) {
+            return {
+              ok: false,
+              message: "\u95E8\u5E97\u4E0D\u5B58\u5728"
+            };
+          }
+          const readiness = this.getReadiness(
+            shopId
+          );
+          if (!readiness.ready) {
+            return {
+              ok: false,
+              message: "\u88C5\u4FEE\u3001\u8BBE\u5907\u3001\u8BC1\u7167\u548C\u57FA\u7840\u73ED\u7EC4\u5C1A\u672A\u5168\u90E8\u5B8C\u6210"
+            };
+          }
+          shop.status = "open";
+          shop.trialOpenedDay = this.getCurrentDay();
+          return {
+            ok: true,
+            day: shop.trialOpenedDay
+          };
+        }
+        updateShop(shopId) {
+          this.updateEquipment(
+            shopId
+          );
+          this.updatePermits(
+            shopId
+          );
+          return this.getReadiness(
+            shopId
+          );
+        }
+      };
+      module.exports = new OpeningPrepSystem();
+    }
+  });
+
+  // src/finance/openingFinanceSystem.js
+  var require_openingFinanceSystem = __commonJS({
+    "src/finance/openingFinanceSystem.js"(exports, module) {
+      "use strict";
+      var gameState = require_gameState();
+      var renovationSystem = require_renovationSystem();
+      var openingPrepSystem = require_openingPrepSystem();
+      function clamp(value, min, max) {
+        return Math.max(
+          min,
+          Math.min(
+            max,
+            value
+          )
+        );
+      }
+      function hashFloat(text) {
+        let h = 2166136261;
+        const source = String(text);
+        for (let i = 0; i < source.length; i++) {
+          h ^= source.charCodeAt(i);
+          h = Math.imul(
+            h,
+            16777619
+          );
+        }
+        return (h >>> 0) % 1e5 / 1e5;
+      }
+      var OpeningFinanceSystem = class {
+        getShop(shopId) {
+          return gameState.getBusiness().shops.find(
+            (item) => item.id === shopId
+          ) || null;
+        }
+        getLoanStore() {
+          return gameState.getFinance().openingLoans;
+        }
+        getExistingLoan(shopId) {
+          return this.getLoanStore()[shopId] || null;
+        }
+        getCreditLimit(shopId) {
+          const shop = this.getShop(
+            shopId
+          );
+          if (!shop) {
+            return 0;
+          }
+          const area = Math.max(
+            20,
+            Number(
+              shop.usableArea || shop.grossArea || 60
+            )
+          );
+          const rent = Math.max(
+            0,
+            Number(
+              shop.monthlyRent
+            ) || 0
+          );
+          return Math.round(
+            clamp(
+              area * 900 + rent * 3,
+              3e4,
+              16e4
+            )
+          );
+        }
+        estimateOpeningNeed(shopId) {
+          const shop = this.getShop(
+            shopId
+          );
+          if (!shop) {
+            return null;
+          }
+          const renovation = renovationSystem.getMetrics(
+            shopId
+          );
+          const equipment = openingPrepSystem.getEquipmentQuote(
+            shopId
+          );
+          const renovationCost = renovation ? renovation.totalCost : Math.round(
+            (Number(
+              shop.usableArea
+            ) || 60) * 520
+          );
+          const equipmentCost = equipment ? equipment.total : 18e3;
+          const reserve = Math.max(
+            5e3,
+            Math.round(
+              (Number(
+                shop.monthlyRent
+              ) || 0) * 0.75
+            )
+          );
+          const totalNeed = renovationCost + equipmentCost + reserve;
+          const cash = gameState.getPlayer().cash;
+          const gap = Math.max(
+            0,
+            totalNeed - cash
+          );
+          return {
+            renovationCost,
+            equipmentCost,
+            reserve,
+            totalNeed,
+            cash,
+            gap
+          };
+        }
+        getOffer(shopId) {
+          const shop = this.getShop(
+            shopId
+          );
+          if (!shop) {
+            return null;
+          }
+          const existing = this.getExistingLoan(
+            shopId
+          );
+          if (existing) {
+            return {
+              existing: true,
+              loan: existing
+            };
+          }
+          const need = this.estimateOpeningNeed(
+            shopId
+          );
+          const creditLimit = this.getCreditLimit(
+            shopId
+          );
+          const seed = gameState.getSimulation().seed || 1;
+          const rate = Number(
+            (0.085 + hashFloat(
+              shopId + ":credit:" + seed
+            ) * 0.035).toFixed(
+              3
+            )
+          );
+          const suggested = Math.min(
+            creditLimit,
+            Math.max(
+              0,
+              need.gap + 5e3
+            )
+          );
+          const principal = suggested > 0 ? Math.max(
+            1e4,
+            Math.ceil(
+              suggested / 5e3
+            ) * 5e3
+          ) : 0;
+          const termMonths = principal > 8e4 ? 24 : 18;
+          const totalInterest = Math.round(
+            principal * rate * (termMonths / 12)
+          );
+          const monthlyPayment = principal > 0 ? Math.ceil(
+            (principal + totalInterest) / termMonths
+          ) : 0;
+          return {
+            existing: false,
+            shopId,
+            creditLimit,
+            principal: Math.min(
+              principal,
+              creditLimit
+            ),
+            rate,
+            termMonths,
+            totalInterest,
+            monthlyPayment,
+            need,
+            available: principal > 0
+          };
+        }
+        acceptOffer(shopId) {
+          const existing = this.getExistingLoan(
+            shopId
+          );
+          if (existing) {
+            return {
+              ok: false,
+              message: "\u8BE5\u95E8\u5E97\u5DF2\u6709\u5F00\u5E97\u5468\u8F6C\u91D1"
+            };
+          }
+          const offer = this.getOffer(
+            shopId
+          );
+          if (!offer || !offer.available || offer.principal <= 0) {
+            return {
+              ok: false,
+              message: "\u5F53\u524D\u8D44\u91D1\u5145\u8DB3\uFF0C\u65E0\u9700\u7533\u8BF7\u5468\u8F6C\u91D1"
+            };
+          }
+          const loan = {
+            shopId,
+            principal: offer.principal,
+            outstanding: offer.principal + offer.totalInterest,
+            annualRate: offer.rate,
+            termMonths: offer.termMonths,
+            monthlyPayment: offer.monthlyPayment,
+            status: "grace_before_opening",
+            paidMonths: 0
+          };
+          this.getLoanStore()[shopId] = loan;
+          gameState.addCash(
+            offer.principal
+          );
+          return {
+            ok: true,
+            loan: JSON.parse(
+              JSON.stringify(
+                loan
+              )
+            )
+          };
+        }
+        getRecoveryStatus(shopId) {
+          const need = this.estimateOpeningNeed(
+            shopId
+          );
+          const offer = this.getOffer(
+            shopId
+          );
+          if (!need) {
+            return null;
+          }
+          const canRecover = need.gap <= 0 || !!(offer && (offer.existing || offer.principal >= need.gap));
+          return {
+            ...need,
+            canRecover,
+            offer
+          };
+        }
+      };
+      module.exports = new OpeningFinanceSystem();
+    }
+  });
+
   // src/ui/customizationSystem.js
   var require_customizationSystem = __commonJS({
     "src/ui/customizationSystem.js"(exports, module) {
@@ -12203,66 +13722,50 @@
           }
         ],
         renovation: [
-          {
-            key: "visual_table_2",
-            path: "assets/images/runtime/renovation/table_2.webp"
-          },
-          {
-            key: "visual_table_4",
-            path: "assets/images/runtime/renovation/table_4.webp"
-          },
-          {
-            key: "visual_table_6",
-            path: "assets/images/runtime/renovation/table_6.webp"
-          },
-          {
-            key: "visual_table_8",
-            path: "assets/images/runtime/renovation/table_8.webp"
-          },
-          {
-            key: "visual_register",
-            path: "assets/images/runtime/renovation/register.webp"
-          },
-          {
-            key: "visual_stove",
-            path: "assets/images/runtime/renovation/stove.webp"
-          },
-          {
-            key: "visual_fridge",
-            path: "assets/images/runtime/renovation/fridge.webp"
-          },
-          {
-            key: "visual_plant",
-            path: "assets/images/runtime/renovation/plant.webp"
-          },
-          {
-            key: "visual_light",
-            path: "assets/images/runtime/renovation/light.webp"
-          },
-          {
-            key: "visual_divider",
-            path: "assets/images/runtime/renovation/divider.webp"
-          },
-          {
-            key: "visual_style_wood",
-            path: "assets/images/runtime/renovation/style_wood.webp"
-          },
-          {
-            key: "visual_style_chinese",
-            path: "assets/images/runtime/renovation/style_chinese.webp"
-          },
-          {
-            key: "visual_style_modern",
-            path: "assets/images/runtime/renovation/style_modern.webp"
-          },
-          {
-            key: "visual_style_night",
-            path: "assets/images/runtime/renovation/style_night.webp"
-          },
-          {
-            key: "visual_style_business",
-            path: "assets/images/runtime/renovation/style_business.webp"
-          }
+          { key: "visual_table_2", path: "assets/images/runtime/renovation/table_2.webp" },
+          { key: "visual_table_4", path: "assets/images/runtime/renovation/table_4.webp" },
+          { key: "visual_table_6", path: "assets/images/runtime/renovation/table_6.webp" },
+          { key: "visual_table_8", path: "assets/images/runtime/renovation/table_8.webp" },
+          { key: "visual_register", path: "assets/images/runtime/renovation/register.webp" },
+          { key: "visual_stove", path: "assets/images/runtime/renovation/stove.webp" },
+          { key: "visual_fridge", path: "assets/images/runtime/renovation/fridge.webp" },
+          { key: "visual_plant", path: "assets/images/runtime/renovation/plant.webp" },
+          { key: "visual_light", path: "assets/images/runtime/renovation/light.webp" },
+          { key: "visual_divider", path: "assets/images/runtime/renovation/divider.webp" },
+          { key: "visual_style_wood", path: "assets/images/runtime/renovation/style_wood.webp" },
+          { key: "visual_style_chinese", path: "assets/images/runtime/renovation/style_chinese.webp" },
+          { key: "visual_style_modern", path: "assets/images/runtime/renovation/style_modern.webp" },
+          { key: "visual_style_night", path: "assets/images/runtime/renovation/style_night.webp" },
+          { key: "visual_style_business", path: "assets/images/runtime/renovation/style_business.webp" }
+        ],
+        premiumStore: [
+          { key: "premium_store_hero", path: "assets/images/premium/store/store_hero.jpg" },
+          { key: "premium_room_1", path: "assets/images/premium/store/room_1.jpg" },
+          { key: "premium_room_2", path: "assets/images/premium/store/room_2.jpg" },
+          { key: "premium_room_3", path: "assets/images/premium/store/room_3.jpg" },
+          { key: "premium_advice_renovation", path: "assets/images/premium/store/advice_renovation.jpg" },
+          { key: "premium_advice_permit", path: "assets/images/premium/store/advice_permit.jpg" },
+          { key: "premium_advice_staff", path: "assets/images/premium/store/advice_staff.jpg" },
+          { key: "premium_explore_banner", path: "assets/images/premium/store/explore_banner.jpg" }
+        ],
+        premiumDistrict: [
+          { key: "premium_district_header", path: "assets/images/premium/district/header_city.jpg" },
+          { key: "premium_avatar_1", path: "assets/images/premium/district/avatar_1.jpg" },
+          { key: "premium_avatar_2", path: "assets/images/premium/district/avatar_2.jpg" },
+          { key: "premium_avatar_3", path: "assets/images/premium/district/avatar_3.jpg" },
+          { key: "premium_avatar_4", path: "assets/images/premium/district/avatar_4.jpg" },
+          { key: "premium_demand_ambience", path: "assets/images/premium/district/demand_ambience.jpg" }
+        ],
+        premiumRenovation: [
+          { key: "premium_reno_header", path: "assets/images/premium/renovation/header_interior.jpg" },
+          { key: "premium_template_1", path: "assets/images/premium/renovation/template_1.jpg" },
+          { key: "premium_template_2", path: "assets/images/premium/renovation/template_2.jpg" },
+          { key: "premium_template_3", path: "assets/images/premium/renovation/template_3.jpg" },
+          { key: "premium_table_2", path: "assets/images/premium/renovation/table2.jpg" },
+          { key: "premium_table_4", path: "assets/images/premium/renovation/table4.jpg" },
+          { key: "premium_table_6", path: "assets/images/premium/renovation/table6.jpg" },
+          { key: "premium_table_8", path: "assets/images/premium/renovation/table8.jpg" },
+          { key: "premium_floor_texture", path: "assets/images/premium/renovation/floor_texture.jpg" }
         ]
       };
       var loadingGroups = /* @__PURE__ */ new Map();
@@ -12273,16 +13776,10 @@
       }
       function loadGroup(name) {
         if (!GROUPS[name]) {
-          return Promise.resolve(
-            []
-          );
+          return Promise.resolve([]);
         }
-        if (loadingGroups.has(
-          name
-        )) {
-          return loadingGroups.get(
-            name
-          );
+        if (loadingGroups.has(name)) {
+          return loadingGroups.get(name);
         }
         const promise = resourceManager.loadImages(
           GROUPS[name],
@@ -12303,9 +13800,7 @@
           }
         ).finally(
           () => {
-            loadingGroups.delete(
-              name
-            );
+            loadingGroups.delete(name);
           }
         );
         loadingGroups.set(
@@ -12315,9 +13810,7 @@
         return promise;
       }
       function get(key) {
-        return resourceManager.getImage(
-          key
-        );
+        return resourceManager.getImage(key);
       }
       function releaseGroup(name) {
         resourceManager.releaseGroup(
@@ -12329,6 +13822,216 @@
         loadGroup,
         get,
         releaseGroup
+      };
+    }
+  });
+
+  // src/ui/premiumUi.js
+  var require_premiumUi = __commonJS({
+    "src/ui/premiumUi.js"(exports, module) {
+      "use strict";
+      function roundedPath(ctx2, x, y, w, h, r) {
+        const radius = Math.min(
+          r,
+          w / 2,
+          h / 2
+        );
+        ctx2.beginPath();
+        ctx2.moveTo(
+          x + radius,
+          y
+        );
+        ctx2.arcTo(
+          x + w,
+          y,
+          x + w,
+          y + h,
+          radius
+        );
+        ctx2.arcTo(
+          x + w,
+          y + h,
+          x,
+          y + h,
+          radius
+        );
+        ctx2.arcTo(
+          x,
+          y + h,
+          x,
+          y,
+          radius
+        );
+        ctx2.arcTo(
+          x,
+          y,
+          x + w,
+          y,
+          radius
+        );
+        ctx2.closePath();
+      }
+      function card(ctx2, x, y, w, h, options) {
+        const opts = options || {};
+        ctx2.save();
+        if (opts.shadow !== false) {
+          ctx2.shadowColor = opts.shadowColor || "rgba(38,49,57,0.12)";
+          ctx2.shadowBlur = opts.shadowBlur || 9;
+          ctx2.shadowOffsetY = opts.shadowOffsetY || 3;
+        }
+        roundedPath(
+          ctx2,
+          x,
+          y,
+          w,
+          h,
+          opts.radius || 14
+        );
+        ctx2.fillStyle = opts.fill || "rgba(255,252,246,0.96)";
+        ctx2.fill();
+        ctx2.shadowColor = "transparent";
+        if (opts.stroke !== false) {
+          ctx2.strokeStyle = opts.stroke || "rgba(204,188,166,0.72)";
+          ctx2.lineWidth = opts.lineWidth || 1;
+          ctx2.stroke();
+        }
+        ctx2.restore();
+      }
+      function text(ctx2, value, x, y, size, color, weight, align) {
+        ctx2.fillStyle = color || "#153044";
+        const readableSize = Math.max(
+          7.3,
+          Number(
+            size
+          ) || 7.3
+        );
+        ctx2.font = (weight || "500") + " " + readableSize + "px sans-serif";
+        ctx2.textAlign = align || "left";
+        ctx2.textBaseline = "middle";
+        ctx2.fillText(
+          String(
+            value
+          ),
+          x,
+          y
+        );
+      }
+      function coverImage(ctx2, image, x, y, w, h, radius, overlay) {
+        if (!image) {
+          return false;
+        }
+        const iw = image.naturalWidth || image.width || 1;
+        const ih = image.naturalHeight || image.height || 1;
+        const boxRatio = w / Math.max(
+          1,
+          h
+        );
+        const imageRatio = iw / Math.max(
+          1,
+          ih
+        );
+        let sx = 0;
+        let sy = 0;
+        let sw = iw;
+        let sh = ih;
+        if (imageRatio > boxRatio) {
+          sw = ih * boxRatio;
+          sx = (iw - sw) / 2;
+        } else {
+          sh = iw / boxRatio;
+          sy = (ih - sh) / 2;
+        }
+        ctx2.save();
+        if (radius) {
+          roundedPath(
+            ctx2,
+            x,
+            y,
+            w,
+            h,
+            radius
+          );
+          ctx2.clip();
+        }
+        ctx2.drawImage(
+          image,
+          sx,
+          sy,
+          sw,
+          sh,
+          x,
+          y,
+          w,
+          h
+        );
+        if (overlay) {
+          ctx2.fillStyle = overlay;
+          ctx2.fillRect(
+            x,
+            y,
+            w,
+            h
+          );
+        }
+        ctx2.restore();
+        return true;
+      }
+      function containImage(ctx2, image, x, y, w, h, alpha) {
+        if (!image) {
+          return false;
+        }
+        const iw = image.naturalWidth || image.width || 1;
+        const ih = image.naturalHeight || image.height || 1;
+        const scale = Math.min(
+          w / iw,
+          h / ih
+        );
+        const dw = iw * scale;
+        const dh = ih * scale;
+        ctx2.save();
+        ctx2.globalAlpha = alpha == null ? 1 : alpha;
+        ctx2.drawImage(
+          image,
+          x + (w - dw) / 2,
+          y + (h - dh) / 2,
+          dw,
+          dh
+        );
+        ctx2.restore();
+        return true;
+      }
+      function pill(ctx2, label, x, y, w, h, fill, color, stroke) {
+        card(
+          ctx2,
+          x,
+          y,
+          w,
+          h,
+          {
+            radius: h / 2,
+            fill,
+            stroke: stroke || false,
+            shadow: false
+          }
+        );
+        text(
+          ctx2,
+          label,
+          x + w / 2,
+          y + h / 2,
+          7,
+          color || "#153044",
+          "700",
+          "center"
+        );
+      }
+      module.exports = {
+        roundedPath,
+        card,
+        text,
+        coverImage,
+        containImage,
+        pill
       };
     }
   });
@@ -12348,33 +14051,32 @@
       var citySystem = require_citySystem();
       var sceneManager = require_sceneManager();
       var renovationSystem = require_renovationSystem();
+      var openingPrepSystem = require_openingPrepSystem();
+      var openingFinanceSystem = require_openingFinanceSystem();
       var customizationSystem = require_customizationSystem();
       var textInput = require_textInput();
       var visualAssetSystem = require_visualAssetSystem();
+      var ui = require_premiumUi();
       var DESIGN_W = 390;
       var COLORS = {
-        navy: "#12384D",
-        navy2: "#0A2A3B",
-        paper: "#F4EBDD",
-        panel: "#FFF9EF",
-        panel2: "#F8F0E4",
-        text: "#24323A",
-        muted: "#718087",
-        gold: "#E4AA48",
-        orange: "#D9853E",
-        red: "#BF584A",
-        green: "#4B9567",
-        blue: "#4C86A6",
-        line: "#DED1C1",
+        navy: "#07344B",
+        navy2: "#082A3D",
+        paper: "#F7EEDD",
+        panel: "rgba(255,252,246,0.96)",
+        text: "#14334A",
+        muted: "#6A7B82",
+        gold: "#F3B12B",
+        orange: "#E98827",
+        red: "#D04D45",
+        green: "#269D67",
+        blue: "#2D8EB6",
         white: "#FFFFFF"
       };
       function money(value) {
         return "\xA5" + Math.max(
           0,
           Math.round(
-            Number(
-              value
-            ) || 0
+            Number(value) || 0
           )
         ).toLocaleString();
       }
@@ -12385,129 +14087,78 @@
           this.navH = 64;
           this.contentBottom = 716;
           this.buttons = [];
-          this.selectedModule = null;
         }
         getLayout() {
           let height = 780;
           if (api && typeof api.getSystemInfoSync === "function") {
             const info = api.getSystemInfoSync();
-            const screenW = Math.max(
+            const w = Math.max(
               1,
               Number(
                 info.windowWidth
               ) || DESIGN_W
             );
-            const screenH = Math.max(
+            const h = Math.max(
               1,
               Number(
                 info.windowHeight
               ) || 780
             );
-            const scale = screenW / DESIGN_W;
-            height = screenH / scale;
+            height = h / (w / DESIGN_W);
           }
           this.viewH = height;
           this.navH = height < 740 ? 60 : 64;
           this.contentBottom = height - this.navH;
         }
         enter() {
-          this.selectedModule = null;
           visualAssetSystem.loadGroup(
             "store"
+          );
+          visualAssetSystem.loadGroup(
+            "premiumStore"
+          );
+          visualAssetSystem.loadGroup(
+            "renovation"
           );
         }
         exit() {
           this.buttons = [];
         }
         update() {
-        }
-        roundedPath(ctx2, x, y, w, h, r) {
-          const radius = Math.min(
-            r,
-            w / 2,
-            h / 2
-          );
-          ctx2.beginPath();
-          ctx2.moveTo(
-            x + radius,
-            y
-          );
-          ctx2.arcTo(
-            x + w,
-            y,
-            x + w,
-            y + h,
-            radius
-          );
-          ctx2.arcTo(
-            x + w,
-            y + h,
-            x,
-            y + h,
-            radius
-          );
-          ctx2.arcTo(
-            x,
-            y + h,
-            x,
-            y,
-            radius
-          );
-          ctx2.arcTo(
-            x,
-            y,
-            x + w,
-            y,
-            radius
-          );
-          ctx2.closePath();
-        }
-        roundedRect(ctx2, x, y, w, h, r, fill, stroke, width) {
-          this.roundedPath(
-            ctx2,
-            x,
-            y,
-            w,
-            h,
-            r
-          );
-          if (fill) {
-            ctx2.fillStyle = fill;
-            ctx2.fill();
+          const shop = this.getCurrentShop();
+          if (shop) {
+            renovationSystem.updateShop(
+              shop.id
+            );
+            openingPrepSystem.updateShop(
+              shop.id
+            );
           }
-          if (stroke) {
-            ctx2.strokeStyle = stroke;
-            ctx2.lineWidth = width || 1;
-            ctx2.stroke();
-          }
-        }
-        text(ctx2, text, x, y, size, color, weight, align) {
-          ctx2.fillStyle = color || COLORS.text;
-          ctx2.font = (weight || "500") + " " + size + "px sans-serif";
-          ctx2.textAlign = align || "left";
-          ctx2.textBaseline = "middle";
-          ctx2.fillText(
-            String(
-              text
-            ),
-            x,
-            y
-          );
         }
         addButton(id, x, y, w, h) {
+          const minW = 40;
+          const minH = 36;
+          const hitW = Math.max(
+            minW,
+            w
+          );
+          const hitH = Math.max(
+            minH,
+            h
+          );
           this.buttons.push({
             id,
-            x,
-            y,
-            w,
-            h
+            x: x - (hitW - w) / 2,
+            y: y - (hitH - h) / 2,
+            w: hitW,
+            h: hitH
           });
         }
         hitButton(x, y) {
           for (let i = this.buttons.length - 1; i >= 0; i--) {
-            const item = this.buttons[i];
-            if (x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h) {
-              return item;
+            const b = this.buttons[i];
+            if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+              return b;
             }
           }
           return null;
@@ -12521,109 +14172,108 @@
             (item) => item.id === business.currentShopId
           ) || business.shops[0];
         }
-        drawHeader(ctx2, title, subtitle) {
-          ctx2.fillStyle = COLORS.navy2;
+        getRooms(shopId) {
+          const plan = renovationSystem.ensurePlan(
+            shopId
+          );
+          if (!plan) {
+            return [];
+          }
+          const rooms = [];
+          for (const floor of plan.floors) {
+            for (const room of floor.privateRooms) {
+              rooms.push(room);
+            }
+          }
+          return rooms;
+        }
+        drawHeader(ctx2, shop) {
+          const district = shop ? citySystem.getDistrict(
+            shop.districtId
+          ) : null;
+          const gradient = ctx2.createLinearGradient(
+            0,
+            0,
+            390,
+            0
+          );
+          gradient.addColorStop(
+            0,
+            COLORS.navy2
+          );
+          gradient.addColorStop(
+            1,
+            "#0E526D"
+          );
+          ctx2.fillStyle = gradient;
           ctx2.fillRect(
             0,
             0,
-            DESIGN_W,
-            67
+            390,
+            73
           );
-          this.text(
+          ui.text(
             ctx2,
-            title,
+            shop ? shop.name || "\u6211\u7684\u9152\u697C" : "\u95E8\u5E97\u7B79\u5907",
             15,
-            22,
-            17,
+            21,
+            16,
             COLORS.white,
-            "700"
+            "800"
           );
-          this.text(
+          ui.text(
             ctx2,
-            subtitle,
+            shop ? (district ? district.name : "\u7ECF\u8425\u533A\u57DF") + " \xB7 " + shop.address : "\u4ECE\u9009\u5740\u5230\u5F00\u4E1A\uFF0C\u6253\u9020\u81EA\u5DF1\u7684\u9910\u996E\u54C1\u724C",
             15,
-            45,
-            8,
-            "rgba(255,255,255,0.70)",
+            47,
+            7.2,
+            "#CFE0E7",
             "500"
           );
-          this.text(
+          ui.text(
             ctx2,
             money(
               gameState.getPlayer().cash
             ),
             376,
-            22,
+            21,
             13,
-            "#FFE8AE",
-            "700",
+            "#FFE6A3",
+            "800",
             "right"
           );
-          this.text(
+          ui.text(
             ctx2,
             "\u53EF\u7528\u8D44\u91D1",
             376,
-            45,
-            7,
-            "#D8E5EB",
+            46,
+            6.5,
+            "#CFE0E7",
             "500",
             "right"
           );
         }
-        drawHeroImage(ctx2, x, y, w, h) {
-          const image = visualAssetSystem.get(
-            "visual_storefront_hero"
-          );
-          if (!image) {
-            return false;
-          }
-          ctx2.save();
-          this.roundedPath(
+        drawProgress(ctx2, active) {
+          ui.card(
             ctx2,
-            x,
-            y,
-            w,
-            h,
-            12
+            9,
+            362,
+            372,
+            91,
+            {
+              radius: 14
+            }
           );
-          ctx2.clip();
-          const iw = image.naturalWidth || image.width;
-          const ih = image.naturalHeight || image.height;
-          const imageRatio = iw / Math.max(
-            1,
-            ih
+          ui.text(
+            ctx2,
+            "\u5F00\u5E97\u8FDB\u5EA6",
+            21,
+            382,
+            10,
+            COLORS.text,
+            "800"
           );
-          const boxRatio = w / Math.max(
-            1,
-            h
-          );
-          let sx = 0;
-          let sy = 0;
-          let sw = iw;
-          let sh = ih;
-          if (imageRatio > boxRatio) {
-            sw = ih * boxRatio;
-            sx = (iw - sw) / 2;
-          } else {
-            sh = iw / boxRatio;
-            sy = (ih - sh) / 2;
-          }
-          ctx2.drawImage(
-            image,
-            sx,
-            sy,
-            sw,
-            sh,
-            x,
-            y,
-            w,
-            h
-          );
-          ctx2.restore();
-          return true;
-        }
-        drawProgress(ctx2, activeIndex, y) {
-          const steps = [
+          const labels = [
             "\u9009\u5740",
             "\u7B7E\u7EA6",
             "\u88C5\u4FEE",
@@ -12631,522 +14281,593 @@
             "\u62DB\u8058",
             "\u5F00\u4E1A"
           ];
-          this.text(
-            ctx2,
-            "\u5F00\u5E97\u8FDB\u5EA6",
-            17,
-            y,
-            8,
-            COLORS.muted,
-            "700"
-          );
-          for (let i = 0; i < steps.length; i++) {
-            const x = 24 + i * 67;
-            if (i < steps.length - 1) {
-              ctx2.strokeStyle = i < activeIndex ? COLORS.green : "#D8CEC1";
-              ctx2.lineWidth = 3;
-              ctx2.beginPath();
-              ctx2.moveTo(
+          const startX = 36;
+          const gap = 62;
+          for (let i = 0; i < 6; i++) {
+            const x = startX + i * gap;
+            if (i < 5) {
+              ctx2.fillStyle = i < active - 1 ? "#38A56F" : "#D7D0C5";
+              ctx2.fillRect(
                 x + 14,
-                y + 28
+                412,
+                gap - 28,
+                3
               );
-              ctx2.lineTo(
-                x + 53,
-                y + 28
-              );
-              ctx2.stroke();
             }
-            this.roundedRect(
-              ctx2,
+            const done = i < active - 1;
+            const current = i === active - 1;
+            ctx2.beginPath();
+            ctx2.arc(
               x,
-              y + 17,
-              22,
-              22,
-              11,
-              i <= activeIndex ? i === activeIndex ? COLORS.gold : COLORS.green : "#E7DED2"
+              413,
+              12,
+              0,
+              Math.PI * 2
             );
-            this.text(
+            ctx2.fillStyle = done ? "#38A56F" : current ? COLORS.gold : "#E4DED4";
+            ctx2.fill();
+            ui.text(
               ctx2,
-              i < activeIndex ? "\u2713" : String(
+              done ? "\u2713" : String(
                 i + 1
               ),
-              x + 11,
-              y + 28,
-              7.5,
-              i <= activeIndex ? COLORS.white : COLORS.muted,
+              x,
+              413,
+              8,
+              done ? COLORS.white : COLORS.text,
+              "800",
+              "center"
+            );
+            ui.text(
+              ctx2,
+              labels[i],
+              x,
+              440,
+              6.5,
+              COLORS.text,
               "700",
               "center"
             );
-            this.text(
-              ctx2,
-              steps[i],
-              x + 11,
-              y + 51,
-              6.5,
-              i === activeIndex ? COLORS.navy : COLORS.muted,
-              i === activeIndex ? "700" : "500",
-              "center"
-            );
           }
         }
-        renderNoShop(ctx2) {
-          this.drawHeader(
-            ctx2,
-            "\u95E8\u5E97\u7B79\u5907",
-            "\u8FD9\u91CC\u7BA1\u7406\u81EA\u5DF1\u7684\u95E8\u5E97\uFF0C\u4E0D\u518D\u628A\u201C\u95E8\u5E97\u201D\u548C\u201C\u627E\u94FA\u5E02\u573A\u201D\u6DF7\u5728\u4E00\u8D77"
+        drawRoomStrip(ctx2, shop) {
+          const rooms = this.getRooms(
+            shop.id
           );
-          this.roundedRect(
+          ui.card(
             ctx2,
-            12,
-            82,
-            366,
-            126,
-            15,
-            COLORS.panel,
-            COLORS.line
-          );
-          this.drawHeroImage(
-            ctx2,
-            220,
-            88,
-            150,
-            114
-          );
-          this.text(
-            ctx2,
-            "\u5F53\u524D\u8FD8\u6CA1\u6709",
-            24,
-            106,
-            14,
-            COLORS.text,
-            "700"
-          );
-          this.text(
-            ctx2,
-            "\u5DF2\u7B7E\u7EA6\u95E8\u5E97",
-            24,
-            126,
-            14,
-            COLORS.text,
-            "700"
-          );
-          this.text(
-            ctx2,
-            "\u7ECF\u8425\u76EE\u6807",
-            24,
-            151,
-            7,
-            COLORS.orange,
-            "700"
-          );
-          this.text(
-            ctx2,
-            "\u9009\u62E9\u5546\u5708 \u2192 \u770B\u94FA \u2192 \u8C08\u5224",
-            24,
-            172,
-            8.2,
-            COLORS.navy,
-            "700"
-          );
-          this.text(
-            ctx2,
-            "\u7B7E\u4E0B\u7B2C\u4E00\u5BB6\u5E97\uFF0C\u6B63\u5F0F\u5F00\u59CB\u7ECF\u8425\u3002",
-            24,
-            193,
-            6.8,
-            COLORS.muted,
-            "500"
-          );
-          this.drawProgress(
-            ctx2,
-            0,
-            242
-          );
-          this.roundedRect(
-            ctx2,
-            12,
-            335,
-            366,
-            156,
-            14,
-            COLORS.panel,
-            COLORS.line
-          );
-          this.text(
-            ctx2,
-            "\u6B63\u786E\u6D41\u7A0B",
-            24,
-            357,
-            10,
-            COLORS.text,
-            "700"
-          );
-          const lines = [
-            "\u2460 \u57CE\u5E02\u5730\u56FE\u9009\u62E9\u5546\u5708",
-            "\u2461 \u67E5\u770B\u5546\u5708\u4EBA\u53E3\u3001\u6D88\u8D39\u4EBA\u7FA4\u3001\u9700\u6C42\u4E0E\u7ADE\u4E89",
-            "\u2462 \u4ECE\u5546\u5708\u8BE6\u60C5\u8FDB\u5165\u623F\u6E90\u5E02\u573A",
-            "\u2463 \u5B9E\u5730\u770B\u94FA\u3001\u8C08\u5224\u5E76\u7B7E\u7EA6"
-          ];
-          for (let i = 0; i < lines.length; i++) {
-            this.text(
-              ctx2,
-              lines[i],
-              24,
-              389 + i * 24,
-              8,
-              i === 1 ? COLORS.orange : COLORS.text,
-              i === 1 ? "700" : "600"
-            );
-          }
-          const actionY = this.contentBottom - 54;
-          this.roundedRect(
-            ctx2,
-            12,
-            actionY,
-            366,
-            42,
-            12,
-            COLORS.gold,
-            "#D49434"
-          );
-          this.text(
-            ctx2,
-            "\u56DE\u57CE\u5E02\u9009\u62E9\u7ECF\u8425\u533A\u57DF",
-            195,
-            actionY + 21,
-            10,
-            "#26343B",
-            "700",
-            "center"
-          );
-          this.addButton(
-            "go-city",
-            12,
-            actionY,
-            366,
-            42
-          );
-        }
-        drawShopMetric(ctx2, x, y, w, label, value, sub, color) {
-          this.roundedRect(
-            ctx2,
-            x,
-            y,
-            w,
-            64,
-            11,
-            COLORS.panel2
-          );
-          this.text(
-            ctx2,
-            label,
-            x + 11,
-            y + 15,
-            6.8,
-            COLORS.muted,
-            "600"
-          );
-          this.text(
-            ctx2,
-            value,
-            x + 11,
-            y + 37,
-            11,
-            color,
-            "700"
-          );
-          this.text(
-            ctx2,
-            sub,
-            x + 11,
-            y + 53,
-            6.2,
-            COLORS.muted,
-            "500"
-          );
-        }
-        drawModule(ctx2, id, title, sub, x, y, w) {
-          this.roundedRect(
-            ctx2,
-            x,
-            y,
-            w,
-            69,
-            12,
-            COLORS.panel,
-            COLORS.line
-          );
-          this.text(
-            ctx2,
-            title,
-            x + 12,
-            y + 22,
             9,
-            COLORS.text,
-            "700"
+            230,
+            372,
+            120,
+            {
+              radius: 14
+            }
           );
-          this.text(
+          ui.text(
             ctx2,
-            sub,
-            x + 12,
-            y + 46,
+            "\u5305\u53A2",
+            20,
+            249,
+            10,
+            COLORS.text,
+            "800"
+          );
+          ui.text(
+            ctx2,
+            rooms.length ? "\u540D\u79F0\u548C\u98CE\u683C\u5747\u53EF\u5728\u88C5\u4FEE\u9875\u81EA\u5B9A\u4E49" : "\u65B0\u589E\u5305\u53A2\u540E\u4F1A\u5728\u8FD9\u91CC\u5C55\u793A",
+            59,
+            249,
             6.5,
             COLORS.muted,
             "500"
           );
-          this.text(
-            ctx2,
-            "\u203A",
-            x + w - 15,
-            y + 22,
-            13,
-            COLORS.orange,
-            "700",
-            "center"
-          );
+          const images = [
+            "premium_room_1",
+            "premium_room_2",
+            "premium_room_3"
+          ];
+          for (let i = 0; i < 3; i++) {
+            const x = 18 + i * 112;
+            ui.card(
+              ctx2,
+              x,
+              263,
+              104,
+              72,
+              {
+                radius: 10,
+                fill: "#F6F1E8",
+                shadow: false
+              }
+            );
+            ui.coverImage(
+              ctx2,
+              visualAssetSystem.get(
+                images[i]
+              ),
+              x,
+              263,
+              104,
+              51,
+              9,
+              null
+            );
+            const name = rooms[i] ? rooms[i].name || "\u5305\u53A2" + (i + 1) : i < 2 ? "\u5F85\u89C4\u5212" : "+ \u65B0\u589E\u5305\u53A2";
+            ui.text(
+              ctx2,
+              name,
+              x + 7,
+              325,
+              6.8,
+              rooms[i] ? COLORS.text : COLORS.muted,
+              "700"
+            );
+          }
           this.addButton(
-            "module:" + id,
-            x,
-            y,
-            w,
-            69
+            "module:renovation",
+            14,
+            258,
+            344,
+            82
           );
         }
-        renderShop(ctx2, shop) {
-          const district = citySystem.getDistrict(
-            shop.districtId
-          );
+        renderNoShop(ctx2) {
           this.drawHeader(
             ctx2,
-            "\u6211\u7684\u95E8\u5E97",
-            district ? district.name + " \xB7 " + shop.address : shop.address
+            null
           );
-          this.roundedRect(
+          ui.card(
             ctx2,
-            12,
-            80,
-            366,
-            100,
-            15,
-            COLORS.panel,
-            COLORS.line
+            10,
+            88,
+            370,
+            246,
+            {
+              radius: 18
+            }
           );
-          this.drawHeroImage(
+          ui.coverImage(
             ctx2,
-            268,
-            86,
-            102,
-            88
-          );
-          this.roundedRect(
-            ctx2,
-            24,
-            94,
-            76,
-            26,
-            9,
-            "#FFF0D6",
-            "#E4B564"
-          );
-          const renovation = renovationSystem.ensurePlan(
-            shop.id
-          );
-          const statusLabel = shop.status === "renovating" ? "\u88C5\u4FEE\u4E2D" : shop.status === "renovated_pending_license" ? "\u88C5\u4FEE\u5B8C\u6210" : "\u5F85\u88C5\u4FEE";
-          this.text(
-            ctx2,
-            statusLabel,
-            62,
-            107,
-            8,
-            shop.status === "renovated_pending_license" ? COLORS.green : COLORS.orange,
-            "700",
-            "center"
-          );
-          this.text(
-            ctx2,
-            shop.name || shop.address,
-            24,
-            143,
+            visualAssetSystem.get(
+              "premium_explore_banner"
+            ),
+            20,
+            99,
+            350,
+            118,
             14,
-            COLORS.text,
-            "700"
+            "rgba(4,31,46,0.22)"
           );
-          this.roundedRect(
+          ui.text(
             ctx2,
-            194,
-            129,
-            62,
+            "\u8FD8\u6CA1\u6709\u81EA\u5DF1\u7684\u95E8\u5E97",
             28,
+            239,
+            15,
+            COLORS.text,
+            "800"
+          );
+          ui.text(
+            ctx2,
+            "\u5148\u9009\u5546\u5708\uFF0C\u518D\u770B\u94FA\u3001\u8C08\u5224\u3001\u7B7E\u7EA6\u3002",
+            28,
+            268,
             8,
-            "#FFF0D6",
-            "#E4B564"
-          );
-          this.text(
-            ctx2,
-            "\u270E \u6539\u540D",
-            225,
-            143,
-            7.5,
-            COLORS.orange,
-            "700",
-            "center"
-          );
-          this.addButton(
-            "shop:rename",
-            188,
-            124,
-            74,
-            38
-          );
-          this.text(
-            ctx2,
-            shop.status === "renovating" ? "\u65BD\u5DE5\u8FDB\u884C\u4E2D \xB7 \u65F6\u95F4\u63A8\u8FDB\u4F1A\u66F4\u65B0\u5DE5\u7A0B\u8FDB\u5EA6" : shop.status === "renovated_pending_license" ? "\u88C5\u4FEE\u5B8C\u6210 \xB7 \u4E0B\u4E00\u6B65\u91C7\u8D2D\u8BBE\u5907\u3001\u529E\u8BC1\u4E0E\u62DB\u8058" : "\u5DF2\u7B7E\u7EA6 \xB7 \u53EF\u81EA\u7531\u89C4\u5212\u697C\u5C42\u3001\u684C\u6905\u3001\u5305\u53A2\u4E0E\u98CE\u683C",
-            24,
-            165,
-            7.5,
             COLORS.muted,
             "600"
           );
-          this.text(
+          ui.card(
             ctx2,
-            "\u7B7E\u7EA6\u524D\u6295\u5165 " + money(
-              shop.upfrontPaid
-            ),
-            365,
-            108,
-            8,
-            COLORS.red,
-            "700",
-            "right"
+            28,
+            286,
+            334,
+            37,
+            {
+              radius: 18,
+              fill: "#F6B428",
+              stroke: "#E6A01B",
+              shadow: false
+            }
           );
-          const metricY = 194;
-          const gap = 7;
-          const w = (DESIGN_W - 24 - gap * 2) / 3;
-          this.drawShopMetric(
+          ui.text(
             ctx2,
-            12,
-            metricY,
-            w,
-            "\u9762\u79EF",
-            shop.grossArea + "\u33A1",
-            "\u53EF\u7528 " + shop.usableArea + "\u33A1",
-            COLORS.blue
-          );
-          this.drawShopMetric(
-            ctx2,
-            12 + w + gap,
-            metricY,
-            w,
-            "\u5EA7\u4F4D\u9884\u4F30",
-            shop.seatEstimate + "\u5E2D",
-            "\u88C5\u4FEE\u540E\u53EF\u8C03\u6574",
-            COLORS.green
-          );
-          this.drawShopMetric(
-            ctx2,
-            12 + (w + gap) * 2,
-            metricY,
-            w,
-            "\u6708\u79DF",
-            money(
-              shop.monthlyRent
-            ),
-            shop.freeRentDays + "\u5929\u514D\u79DF",
-            COLORS.red
-          );
-          this.drawProgress(
-            ctx2,
-            2,
-            284
-          );
-          this.roundedRect(
-            ctx2,
-            12,
-            365,
-            366,
-            82,
-            13,
-            COLORS.panel,
-            COLORS.line
-          );
-          this.text(
-            ctx2,
-            "\u79DF\u7EA6\u6458\u8981",
-            24,
-            385,
-            9,
+            "\u53BB\u57CE\u5E02\u5730\u56FE\u9009\u62E9\u7ECF\u8425\u533A\u57DF  \u203A",
+            195,
+            304.5,
+            8.5,
             COLORS.text,
-            "700"
+            "800",
+            "center"
           );
-          this.text(
-            ctx2,
-            "\u62BC" + shop.depositMonths + " \xB7 \u4ED8" + shop.paymentMonths + " \xB7 \u79DF\u671F" + shop.leaseYears + "\u5E74",
+          this.addButton(
+            "go-city",
             24,
-            413,
-            8,
-            COLORS.navy,
-            "700"
+            282,
+            342,
+            45
           );
-          this.text(
+          ui.card(
             ctx2,
-            "\u8F6C\u8BA9\u8D39 " + money(
-              shop.transferFee
-            ) + " \xB7 \u4E2D\u4ECB\u8D39 " + money(
-              shop.brokerFee
+            10,
+            350,
+            370,
+            152,
+            {
+              radius: 16
+            }
+          );
+          ui.text(
+            ctx2,
+            "\u5F00\u5E97\u6D41\u7A0B",
+            22,
+            373,
+            10,
+            COLORS.text,
+            "800"
+          );
+          const steps = [
+            "\u2460 \u67E5\u770B\u5546\u5708\u4EBA\u53E3\u3001\u6D88\u8D39\u4EBA\u7FA4\u548C\u9700\u6C42",
+            "\u2461 \u8FDB\u5165\u623F\u6E90\u5E02\u573A\u5E76\u5B9E\u5730\u770B\u94FA",
+            "\u2462 \u8C08\u5224\u79DF\u91D1\u3001\u8F6C\u8BA9\u8D39\u548C\u514D\u79DF\u671F",
+            "\u2463 \u7B7E\u7EA6\u540E\u8FDB\u5165\u88C5\u4FEE\u4E0E\u5F00\u4E1A\u7B79\u5907"
+          ];
+          for (let i = 0; i < steps.length; i++) {
+            ui.text(
+              ctx2,
+              steps[i],
+              24,
+              405 + i * 25,
+              7.2,
+              i === 0 ? COLORS.orange : COLORS.text,
+              i === 0 ? "700" : "600"
+            );
+          }
+        }
+        renderShop(ctx2, shop) {
+          this.drawHeader(
+            ctx2,
+            shop
+          );
+          const plan = renovationSystem.ensurePlan(
+            shop.id
+          );
+          const readiness = openingPrepSystem.getReadiness(
+            shop.id
+          );
+          const finance = openingFinanceSystem.getRecoveryStatus(
+            shop.id
+          );
+          ui.card(
+            ctx2,
+            9,
+            87,
+            372,
+            132,
+            {
+              radius: 17
+            }
+          );
+          ui.coverImage(
+            ctx2,
+            visualAssetSystem.get(
+              "premium_store_hero"
+            ) || visualAssetSystem.get(
+              "visual_storefront_hero"
             ),
-            24,
-            436,
+            217,
+            95,
+            154,
+            116,
+            13,
+            null
+          );
+          ctx2.fillStyle = "rgba(34,24,18,0.62)";
+          ctx2.fillRect(
+            265,
+            108,
+            92,
+            26
+          );
+          ui.text(
+            ctx2,
+            shop.name || "\u6211\u7684\u9152\u697C",
+            311,
+            121,
+            7.2,
+            "#FFE8B0",
+            "800",
+            "center"
+          );
+          const status = shop.status === "open" ? "\u8425\u4E1A\u4E2D" : readiness && readiness.ready ? "\u53EF\u8BD5\u8425\u4E1A" : shop.status === "renovating" ? "\u88C5\u4FEE\u4E2D" : readiness && readiness.renovationReady ? "\u5F00\u4E1A\u7B79\u5907" : "\u5DF2\u7B7E\u7EA6";
+          ui.pill(
+            ctx2,
+            "\u2713 " + status,
+            20,
+            101,
+            72,
+            25,
+            "#FFF0C1",
+            "#B36B1E"
+          );
+          ui.text(
+            ctx2,
+            shop.name || shop.address,
+            20,
+            151,
+            17,
+            COLORS.text,
+            "800"
+          );
+          ui.text(
+            ctx2,
+            shop.address,
+            20,
+            177,
             7,
             COLORS.muted,
             "600"
           );
-          const modulesY = 463;
-          this.text(
+          ui.card(
             ctx2,
-            "\u5F00\u4E1A\u7B79\u5907",
-            17,
-            modulesY,
-            8,
-            COLORS.muted,
-            "700"
+            20,
+            189,
+            78,
+            24,
+            {
+              radius: 12,
+              fill: "#FFF5D8",
+              stroke: "#E8C36C",
+              shadow: false
+            }
           );
-          const moduleW = 177;
-          this.drawModule(
+          ui.text(
             ctx2,
-            "renovation",
-            shop.status === "renovated_pending_license" ? "\u88C5\u4FEE\u6210\u679C" : shop.status === "renovating" ? "\u65BD\u5DE5\u8FDB\u5EA6" : "\u81EA\u5B9A\u4E49\u88C5\u4FEE",
-            shop.status === "renovated_pending_license" ? "\u67E5\u770B\u5B8C\u5DE5\u5E03\u5C40\u4E0E\u7ECF\u8425\u53C2\u6570" : "\u697C\u5C42\u3001\u684C\u6905\u3001\u5305\u53A2\u3001\u98CE\u683C\u3001\u65BD\u5DE5",
-            12,
-            modulesY + 15,
-            moduleW
-          );
-          this.drawModule(
-            ctx2,
-            "equipment",
-            "\u8BBE\u5907\u91C7\u8D2D",
-            "\u540E\u53A8\u3001\u51B7\u94FE\u3001\u6536\u94F6\u8BBE\u5907",
+            "\u270E \u6539\u540D",
+            59,
             201,
-            modulesY + 15,
-            moduleW
+            7,
+            COLORS.orange,
+            "800",
+            "center"
           );
-          this.drawModule(
+          this.addButton(
+            "shop:rename",
+            16,
+            185,
+            86,
+            32
+          );
+          this.drawRoomStrip(
             ctx2,
-            "license",
-            "\u8BC1\u7167\u529E\u7406",
-            "\u7ECF\u8425\u3001\u6D88\u9632\u3001\u98DF\u54C1\u8BB8\u53EF",
-            12,
-            modulesY + 94,
-            moduleW
+            shop
           );
-          this.drawModule(
+          let active = 2;
+          if (readiness && readiness.renovationReady) {
+            active = 4;
+          } else if (shop.status === "renovating") {
+            active = 3;
+          }
+          if (readiness && readiness.permitsReady) {
+            active = 5;
+          }
+          if (readiness && readiness.ready) {
+            active = 6;
+          }
+          this.drawProgress(
             ctx2,
-            "staff",
-            "\u62DB\u8058\u56E2\u961F",
-            "\u5E97\u957F\u3001\u53A8\u5E08\u3001\u670D\u52A1\u4EBA\u5458",
-            201,
-            modulesY + 94,
-            moduleW
+            active
           );
+          ui.card(
+            ctx2,
+            9,
+            466,
+            372,
+            152,
+            {
+              radius: 15
+            }
+          );
+          ui.text(
+            ctx2,
+            "\u4E0B\u4E00\u6B65\u5EFA\u8BAE",
+            20,
+            486,
+            11,
+            COLORS.text,
+            "800"
+          );
+          const cards = [
+            {
+              id: readiness && readiness.ready && shop.status !== "open" ? "trial" : "renovation",
+              key: "premium_advice_renovation",
+              title: readiness && readiness.ready && shop.status !== "open" ? "\u5F00\u59CB\u8BD5\u8425\u4E1A" : readiness && readiness.renovationReady ? "\u88C5\u4FEE\u6210\u679C" : "\u5E97\u9762\u88C5\u4FEE",
+              sub: readiness && readiness.ready && shop.status !== "open" ? "\u5F00\u95E8\u8FCE\u5BA2\u5E76\u8FDB\u5165\u7ECF\u8425" : readiness && readiness.renovationReady ? "\u67E5\u770B\u7A7A\u95F4\u4E0E\u5EA7\u4F4D" : "\u5E03\u5C40\u3001\u5305\u53A2\u3001\u98CE\u683C",
+              action: readiness && readiness.ready && shop.status !== "open" ? "\u5F00\u4E1A" : readiness && readiness.renovationReady ? "\u67E5\u770B" : "\u88C5\u4FEE"
+            },
+            {
+              id: "equipment",
+              key: "visual_stove",
+              title: readiness && readiness.equipmentReady ? "\u8BBE\u5907\u5DF2\u5B89\u88C5" : "\u8BBE\u5907\u91C7\u8D2D",
+              sub: readiness && readiness.equipment && readiness.equipment.status === "ordered" ? "\u8FD0\u8F93\u5B89\u88C5\u8FDB\u884C\u4E2D" : "\u540E\u53A8\u3001\u51B7\u94FE\u3001\u6536\u94F6",
+              action: readiness && readiness.equipmentReady ? "\u67E5\u770B" : "\u91C7\u8D2D"
+            },
+            {
+              id: "license",
+              key: "premium_advice_permit",
+              title: readiness && readiness.permitsReady ? "\u8BC1\u7167\u5DF2\u9F50" : "\u8BC1\u7167\u529E\u7406",
+              sub: readiness && readiness.permits ? readiness.permits.approved + "/" + readiness.permits.total + " \u5DF2\u5B8C\u6210" : "\u7ECF\u8425\u3001\u6D88\u9632\u3001\u98DF\u54C1",
+              action: "\u529E\u8BC1"
+            },
+            {
+              id: "staff",
+              key: "premium_advice_staff",
+              title: readiness && readiness.staffingReady ? "\u73ED\u7EC4\u5DF2\u9F50" : "\u62DB\u8058\u56E2\u961F",
+              sub: readiness && readiness.staffing ? "\u8986\u76D6\u7387 " + Math.round(
+                readiness.staffing.coverage * 100
+              ) + "%" : "\u5E97\u957F\u3001\u53A8\u5E08\u3001\u670D\u52A1",
+              action: "\u62DB\u8058"
+            }
+          ];
+          for (let i = 0; i < cards.length; i++) {
+            const item = cards[i];
+            const col = i % 2;
+            const row = Math.floor(
+              i / 2
+            );
+            const x = 18 + col * 181;
+            const y = 501 + row * 56;
+            ui.card(
+              ctx2,
+              x,
+              y,
+              173,
+              50,
+              {
+                radius: 11,
+                fill: "#FFFBF4",
+                shadow: false
+              }
+            );
+            ui.coverImage(
+              ctx2,
+              visualAssetSystem.get(
+                item.key
+              ),
+              x + 5,
+              y + 5,
+              42,
+              40,
+              8,
+              null
+            );
+            ui.text(
+              ctx2,
+              item.title,
+              x + 54,
+              y + 14,
+              8,
+              COLORS.text,
+              "800"
+            );
+            ui.text(
+              ctx2,
+              item.sub,
+              x + 54,
+              y + 31,
+              7,
+              COLORS.muted,
+              "600"
+            );
+            ui.text(
+              ctx2,
+              item.action + " \u203A",
+              x + 160,
+              y + 39,
+              7,
+              COLORS.orange,
+              "800",
+              "right"
+            );
+            this.addButton(
+              "module:" + item.id,
+              x,
+              y,
+              173,
+              50
+            );
+          }
+          if (finance && finance.gap > 0 && finance.offer && !finance.offer.existing) {
+            ui.pill(
+              ctx2,
+              "\u5468\u8F6C\u91D1\u53EF\u8865\u8DB3\u5F00\u5E97\u7F3A\u53E3 " + money(
+                Math.min(
+                  finance.gap,
+                  finance.offer.creditLimit
+                )
+              ),
+              168,
+              473,
+              202,
+              24,
+              "#FFF0D6",
+              COLORS.orange,
+              "#E9C174"
+            );
+            this.addButton(
+              "module:finance",
+              164,
+              469,
+              210,
+              32
+            );
+          }
+          if (this.contentBottom > 684) {
+            const bannerY = Math.min(
+              628,
+              this.contentBottom - 71
+            );
+            ui.coverImage(
+              ctx2,
+              visualAssetSystem.get(
+                "premium_explore_banner"
+              ),
+              10,
+              bannerY,
+              370,
+              60,
+              13,
+              "rgba(4,32,48,0.45)"
+            );
+            ui.text(
+              ctx2,
+              "\u63A2\u7D22\u66F4\u591A\u4F18\u8D28\u5546\u5708",
+              28,
+              bannerY + 21,
+              10,
+              COLORS.white,
+              "800"
+            );
+            ui.text(
+              ctx2,
+              "\u4E3A\u4E0B\u4E00\u5BB6\u95E8\u5E97\u5BFB\u627E\u9EC4\u91D1\u5730\u6BB5",
+              28,
+              bannerY + 42,
+              6.5,
+              "#E6F0F4",
+              "500"
+            );
+            ui.card(
+              ctx2,
+              283,
+              bannerY + 14,
+              78,
+              32,
+              {
+                radius: 16,
+                fill: "#F7B628",
+                stroke: "#E3A21B",
+                shadow: false
+              }
+            );
+            ui.text(
+              ctx2,
+              "\u53BB\u62D3\u5C55 \u203A",
+              322,
+              bannerY + 30,
+              7,
+              COLORS.text,
+              "800",
+              "center"
+            );
+            this.addButton(
+              "go-city",
+              278,
+              bannerY + 8,
+              90,
+              44
+            );
+          }
         }
         render(ctx2) {
           if (!ctx2) {
@@ -13164,9 +14885,6 @@
           );
           const shop = this.getCurrentShop();
           if (shop) {
-            renovationSystem.updateShop(
-              shop.id
-            );
             this.renderShop(
               ctx2,
               shop
@@ -13186,68 +14904,112 @@
           if (!item) {
             return false;
           }
-          if (item.id === "shop:rename") {
-            const shop = this.getCurrentShop();
-            if (shop) {
-              textInput.requestText({
-                title: "\u4FEE\u6539\u9152\u697C\u540D\u79F0",
-                value: shop.name || "",
-                placeholder: "\u8BF7\u8F93\u5165\u9152\u697C\u540D\u79F0",
-                maxLength: 12
-              }).then(
-                (value) => {
-                  if (!value) {
-                    return;
-                  }
-                  const result = customizationSystem.renameShop(
-                    shop.id,
-                    value
-                  );
-                  if (api && typeof api.showToast === "function") {
-                    api.showToast({
-                      title: result.ok ? "\u9152\u697C\u540D\u79F0\u5DF2\u66F4\u65B0" : result.message,
-                      icon: "none"
-                    });
-                  }
-                  textInput.requestRender();
-                }
-              );
-            }
-            return true;
-          }
           if (item.id === "go-city") {
             sceneManager.switchTo(
               "city"
             );
             return true;
           }
+          if (item.id === "shop:rename") {
+            const shop = this.getCurrentShop();
+            if (!shop) {
+              return true;
+            }
+            textInput.requestText({
+              title: "\u4FEE\u6539\u9152\u697C\u540D\u79F0",
+              value: shop.name || "",
+              placeholder: "\u8BF7\u8F93\u5165\u9152\u697C\u540D\u79F0",
+              maxLength: 12
+            }).then(
+              (value) => {
+                if (!value) {
+                  return;
+                }
+                customizationSystem.renameShop(
+                  shop.id,
+                  value
+                );
+                textInput.requestRender();
+              }
+            );
+            return true;
+          }
           if (item.id.indexOf(
             "module:"
           ) === 0) {
-            const moduleId = item.id.split(":")[1];
-            if (moduleId === "renovation") {
-              const shop = this.getCurrentShop();
-              if (shop) {
-                sceneManager.switchTo(
-                  "renovation",
-                  {
-                    shopId: shop.id
-                  }
-                );
-              }
+            const moduleId = item.id.split(
+              ":"
+            )[1];
+            const shop = this.getCurrentShop();
+            if (!shop) {
               return true;
             }
-            const names = {
-              renovation: "\u88C5\u4FEE\u65B9\u6848",
-              equipment: "\u8BBE\u5907\u91C7\u8D2D",
-              license: "\u8BC1\u7167\u529E\u7406",
-              staff: "\u62DB\u8058\u56E2\u961F"
+            const sceneMap = {
+              renovation: "renovation",
+              equipment: "equipment",
+              license: "license",
+              staff: "staff"
             };
-            if (api && typeof api.showToast === "function") {
-              api.showToast({
-                title: (names[moduleId] || "\u7B79\u5907\u6A21\u5757") + "\u5C06\u5728\u4E0B\u4E00\u9636\u6BB5\u63A5\u5165",
-                icon: "none"
-              });
+            if (sceneMap[moduleId]) {
+              sceneManager.switchTo(
+                sceneMap[moduleId],
+                {
+                  shopId: shop.id
+                }
+              );
+              return true;
+            }
+            if (moduleId === "trial") {
+              const result = openingPrepSystem.startTrialOpening(
+                shop.id
+              );
+              if (api && typeof api.showToast === "function") {
+                api.showToast({
+                  title: result.ok ? "\u8BD5\u8425\u4E1A\u5F00\u59CB\uFF01" : result.message,
+                  icon: "none"
+                });
+              }
+              textInput.requestRender();
+              return true;
+            }
+            if (moduleId === "finance") {
+              const offer = openingFinanceSystem.getOffer(
+                shop.id
+              );
+              const accept = () => {
+                const result = openingFinanceSystem.acceptOffer(
+                  shop.id
+                );
+                if (api && typeof api.showToast === "function") {
+                  api.showToast({
+                    title: result.ok ? "\u5DF2\u5230\u8D26 " + money(
+                      result.loan.principal
+                    ) : result.message,
+                    icon: "none"
+                  });
+                }
+                textInput.requestRender();
+              };
+              if (offer && offer.available && api && typeof api.showModal === "function") {
+                api.showModal({
+                  title: "\u5F00\u5E97\u5468\u8F6C\u91D1",
+                  content: "\u53EF\u501F " + money(
+                    offer.principal
+                  ) + "\uFF0C\u671F\u9650 " + offer.termMonths + " \u4E2A\u6708\uFF0C\u9884\u8BA1\u6708\u8FD8 " + money(
+                    offer.monthlyPayment
+                  ) + "\u3002\u786E\u8BA4\u7533\u8BF7\uFF1F",
+                  confirmText: "\u7533\u8BF7",
+                  cancelText: "\u53D6\u6D88",
+                  success: (result) => {
+                    if (result && result.confirm) {
+                      accept();
+                    }
+                  }
+                });
+              } else {
+                accept();
+              }
+              return true;
             }
             return true;
           }
@@ -13524,21 +15286,19 @@
       var districtInsightSystem = require_districtInsightSystem();
       var sceneManager = require_sceneManager();
       var visualAssetSystem = require_visualAssetSystem();
+      var ui = require_premiumUi();
       var DESIGN_W = 390;
       var COLORS = {
-        navy: "#12384D",
-        navy2: "#0A2A3B",
-        paper: "#F4EBDD",
-        panel: "#FFF9EF",
-        panel2: "#F8F0E4",
-        text: "#24323A",
-        muted: "#718087",
-        gold: "#E4AA48",
-        orange: "#D9853E",
-        red: "#BF584A",
-        green: "#4B9567",
-        blue: "#4C86A6",
-        line: "#DED1C1",
+        navy: "#07344B",
+        navy2: "#082A3D",
+        paper: "#F7EEDD",
+        text: "#14334A",
+        muted: "#6A7B82",
+        gold: "#F2B12A",
+        orange: "#F17732",
+        red: "#D64A42",
+        green: "#158D70",
+        blue: "#3A9CC4",
         white: "#FFFFFF"
       };
       var MEAL_NAMES = {
@@ -13552,17 +15312,13 @@
         return "\xA5" + Math.max(
           0,
           Math.round(
-            Number(
-              value
-            ) || 0
+            Number(value) || 0
           )
         ).toLocaleString();
       }
-      function percent(value) {
+      function pct(value) {
         return Math.round(
-          Number(
-            value
-          ) * 100
+          Number(value) * 100
         ) + "%";
       }
       var DistrictScene = class {
@@ -13578,20 +15334,19 @@
           let height = 780;
           if (api && typeof api.getSystemInfoSync === "function") {
             const info = api.getSystemInfoSync();
-            const screenW = Math.max(
+            const w = Math.max(
               1,
               Number(
                 info.windowWidth
               ) || DESIGN_W
             );
-            const screenH = Math.max(
+            const h = Math.max(
               1,
               Number(
                 info.windowHeight
               ) || 780
             );
-            const scale = screenW / DESIGN_W;
-            height = screenH / scale;
+            height = h / (w / DESIGN_W);
           }
           this.viewH = height;
           this.navH = height < 740 ? 60 : 64;
@@ -13600,280 +15355,284 @@
         enter(payload) {
           const data = payload || {};
           const requested = data.districtId || gameState.getWorld().currentDistrictId || "university";
-          const district = citySystem.getDistrict(
+          if (citySystem.getDistrict(
             requested
-          );
-          if (district) {
+          )) {
             this.districtId = requested;
             citySystem.setCurrentDistrict(
               requested
             );
-            visualAssetSystem.loadGroup(
-              "district"
-            );
           }
+          visualAssetSystem.loadGroup(
+            "district"
+          );
+          visualAssetSystem.loadGroup(
+            "premiumDistrict"
+          );
         }
         exit() {
           this.buttons = [];
         }
         update() {
         }
-        roundedPath(ctx2, x, y, w, h, r) {
-          const radius = Math.min(
-            r,
-            w / 2,
-            h / 2
-          );
-          ctx2.beginPath();
-          ctx2.moveTo(
-            x + radius,
-            y
-          );
-          ctx2.arcTo(
-            x + w,
-            y,
-            x + w,
-            y + h,
-            radius
-          );
-          ctx2.arcTo(
-            x + w,
-            y + h,
-            x,
-            y + h,
-            radius
-          );
-          ctx2.arcTo(
-            x,
-            y + h,
-            x,
-            y,
-            radius
-          );
-          ctx2.arcTo(
-            x,
-            y,
-            x + w,
-            y,
-            radius
-          );
-          ctx2.closePath();
-        }
-        roundedRect(ctx2, x, y, w, h, r, fill, stroke, lineWidth) {
-          this.roundedPath(
-            ctx2,
-            x,
-            y,
-            w,
-            h,
-            r
-          );
-          if (fill) {
-            ctx2.fillStyle = fill;
-            ctx2.fill();
-          }
-          if (stroke) {
-            ctx2.strokeStyle = stroke;
-            ctx2.lineWidth = lineWidth || 1;
-            ctx2.stroke();
-          }
-        }
-        text(ctx2, text, x, y, size, color, weight, align) {
-          ctx2.fillStyle = color || COLORS.text;
-          ctx2.font = (weight || "500") + " " + size + "px sans-serif";
-          ctx2.textAlign = align || "left";
-          ctx2.textBaseline = "middle";
-          ctx2.fillText(
-            String(
-              text
-            ),
-            x,
-            y
-          );
-        }
         addButton(id, x, y, w, h) {
+          const hitW = Math.max(
+            40,
+            w
+          );
+          const hitH = Math.max(
+            36,
+            h
+          );
           this.buttons.push({
             id,
-            x,
-            y,
-            w,
-            h
+            x: x - (hitW - w) / 2,
+            y: y - (hitH - h) / 2,
+            w: hitW,
+            h: hitH
           });
         }
         hitButton(x, y) {
           for (let i = this.buttons.length - 1; i >= 0; i--) {
-            const item = this.buttons[i];
-            if (x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h) {
-              return item;
+            const b = this.buttons[i];
+            if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+              return b;
             }
           }
           return null;
         }
         drawHeader(ctx2, insight) {
-          const banner = visualAssetSystem.get(
-            "visual_district_banner"
-          );
-          if (banner) {
-            ctx2.drawImage(
-              banner,
-              0,
-              0,
-              DESIGN_W,
-              67
-            );
-            ctx2.fillStyle = "rgba(5,35,52,0.70)";
-            ctx2.fillRect(
-              0,
-              0,
-              DESIGN_W,
-              67
-            );
-          } else {
-            ctx2.fillStyle = COLORS.navy2;
-            ctx2.fillRect(
-              0,
-              0,
-              DESIGN_W,
-              67
-            );
-          }
-          this.roundedRect(
+          ui.coverImage(
             ctx2,
-            10,
-            13,
-            44,
-            34,
-            10,
-            "rgba(255,255,255,0.10)",
-            "rgba(255,255,255,0.15)"
+            visualAssetSystem.get(
+              "premium_district_header"
+            ) || visualAssetSystem.get(
+              "visual_district_banner"
+            ),
+            0,
+            0,
+            DESIGN_W,
+            92,
+            0,
+            "rgba(4,34,51,0.50)"
           );
-          this.text(
+          ctx2.fillStyle = "rgba(2,31,47,0.72)";
+          ctx2.fillRect(
+            0,
+            65,
+            DESIGN_W,
+            27
+          );
+          ui.card(
+            ctx2,
+            11,
+            14,
+            39,
+            39,
+            {
+              radius: 11,
+              fill: "rgba(5,46,67,0.86)",
+              stroke: "rgba(255,255,255,0.32)",
+              shadow: false
+            }
+          );
+          ui.text(
             ctx2,
             "\u2039",
-            32,
-            30,
+            30.5,
+            33.5,
             22,
-            COLORS.white,
-            "700",
+            "#FFE8A4",
+            "800",
             "center"
           );
           this.addButton(
             "back",
-            6,
-            8,
-            54,
-            44
+            7,
+            10,
+            47,
+            47
           );
-          this.text(
+          ui.text(
             ctx2,
             insight.name,
-            68,
-            22,
+            61,
+            25,
             17,
             COLORS.white,
-            "700"
+            "800"
           );
-          this.text(
+          ui.text(
             ctx2,
-            "\u5546\u5708\u8BE6\u60C5 \xB7 \u4EBA\u53E3\u3001\u9700\u6C42\u3001\u5BA2\u7FA4\u548C\u79DF\u91D1\u5747\u4E3A\u52A8\u6001\u503C",
-            68,
-            45,
-            7.5,
-            "rgba(255,255,255,0.70)",
+            "\u6838\u5FC3\u5546\u5708 \xB7 \u4EBA\u6C14\u3001\u6D88\u8D39\u4E0E\u79DF\u91D1\u5B9E\u65F6\u53D8\u5316",
+            61,
+            49,
+            7,
+            "#D8E7EC",
             "500"
           );
-          this.roundedRect(
+          ui.card(
             ctx2,
-            292,
-            14,
-            86,
-            34,
-            10,
-            COLORS.gold,
-            "#D49434"
+            295,
+            15,
+            82,
+            38,
+            {
+              radius: 19,
+              fill: "#F7B72D",
+              stroke: "#FFE4A5",
+              shadow: false
+            }
           );
-          this.text(
+          ui.text(
             ctx2,
             "\u67E5\u770B\u623F\u6E90 \u203A",
-            335,
-            31,
-            8.5,
-            "#26343B",
-            "700",
+            336,
+            34,
+            7.2,
+            COLORS.text,
+            "800",
             "center"
           );
           this.addButton(
-            "find-property",
-            288,
+            "market",
+            289,
             9,
+            92,
+            50
+          );
+          const event = insight.events && insight.events[0];
+          ui.text(
+            ctx2,
+            "\u{1F4E3} \u57CE\u5E02\u52A8\u6001",
+            15,
+            78.5,
+            7.2,
+            "#FFE6A7",
+            "800"
+          );
+          ui.text(
+            ctx2,
+            event ? event.name || "\u5546\u5708\u4E8B\u4EF6\u53D8\u5316" : insight.trendScore > 0 ? "\u533A\u57DF\u5BA2\u6D41\u4E0E\u6D88\u8D39\u9700\u6C42\u6B63\u5728\u4E0A\u5347" : "\u5F53\u524D\u5546\u5708\u8FD0\u884C\u5E73\u7A33",
             94,
-            44
-          );
-        }
-        drawMetric(ctx2, x, y, w, label, value, sub, color) {
-          this.roundedRect(
-            ctx2,
-            x,
-            y,
-            w,
-            66,
-            12,
-            COLORS.panel,
-            COLORS.line
-          );
-          this.text(
-            ctx2,
-            label,
-            x + 12,
-            y + 16,
-            7,
-            COLORS.muted,
+            78.5,
+            6.5,
+            COLORS.white,
             "600"
           );
-          this.text(
-            ctx2,
-            value,
-            x + 12,
-            y + 37,
-            13,
-            color,
-            "700"
-          );
-          this.text(
-            ctx2,
-            sub,
-            x + 12,
-            y + 54,
-            6.5,
-            COLORS.muted,
-            "500"
-          );
         }
-        drawCustomerPanel(ctx2, insight, y) {
-          this.roundedRect(
+        drawMetrics(ctx2, insight) {
+          const cards = [
+            {
+              label: "\u6D3B\u8DC3\u4EBA\u53E3",
+              value: insight.population.toLocaleString(),
+              trend: insight.populationDelta >= 0 ? "\u2191 +" + Math.abs(
+                insight.populationDelta
+              ).toLocaleString() : "\u2193 " + Math.abs(
+                insight.populationDelta
+              ).toLocaleString(),
+              color: COLORS.blue,
+              icon: "\u{1F465}"
+            },
+            {
+              label: "\u5F53\u524D\u9700\u6C42",
+              value: insight.currentDemand.toLocaleString(),
+              trend: (insight.demandDeltaRatio >= 0 ? "\u2191 +" : "\u2193 ") + Math.abs(
+                Math.round(
+                  insight.demandDeltaRatio * 100
+                )
+              ) + "%",
+              color: COLORS.red,
+              icon: "\u25A5"
+            },
+            {
+              label: "\u5E73\u5747\u5BA2\u5355",
+              value: money(
+                insight.avgSpend
+              ),
+              trend: insight.competitionLabel,
+              color: COLORS.green,
+              icon: "\u25C9"
+            }
+          ];
+          const gap = 6;
+          const w = (370 - gap * 2) / 3;
+          for (let i = 0; i < cards.length; i++) {
+            const item = cards[i];
+            const x = 10 + i * (w + gap);
+            ui.card(
+              ctx2,
+              x,
+              103,
+              w,
+              84,
+              {
+                radius: 13
+              }
+            );
+            ui.text(
+              ctx2,
+              item.icon,
+              x + 13,
+              120,
+              13,
+              item.color,
+              "800"
+            );
+            ui.text(
+              ctx2,
+              item.label,
+              x + 34,
+              119,
+              7.2,
+              COLORS.text,
+              "800"
+            );
+            ui.text(
+              ctx2,
+              item.value,
+              x + 12,
+              148,
+              15,
+              item.color,
+              "800"
+            );
+            ui.text(
+              ctx2,
+              item.trend,
+              x + 12,
+              174,
+              6.3,
+              item.color,
+              "700"
+            );
+          }
+        }
+        drawCustomers(ctx2, insight) {
+          ui.card(
             ctx2,
             10,
-            y,
+            198,
             370,
-            156,
-            14,
-            COLORS.panel,
-            COLORS.line
+            159,
+            {
+              radius: 15
+            }
           );
-          this.text(
+          ui.text(
             ctx2,
-            "\u6D88\u8D39\u4EBA\u7FA4",
+            "\u6D88\u8D39\u4EBA\u7FA4\u7ED3\u6784",
             22,
-            y + 20,
+            220,
             11,
             COLORS.text,
-            "700"
+            "800"
           );
-          this.text(
+          ui.text(
             ctx2,
             insight.customerDiversity,
-            366,
-            y + 20,
+            364,
+            220,
             7,
             COLORS.orange,
             "700",
@@ -13883,227 +15642,300 @@
             0,
             4
           );
+          const avatars = [
+            "premium_avatar_1",
+            "premium_avatar_2",
+            "premium_avatar_3",
+            "premium_avatar_4"
+          ];
           for (let i = 0; i < groups.length; i++) {
-            const item = groups[i];
-            const rowY = y + 47 + i * 25;
-            this.text(
+            const g = groups[i];
+            const y = 247 + i * 27;
+            ui.coverImage(
               ctx2,
-              item.name,
-              22,
-              rowY,
-              7.5,
+              visualAssetSystem.get(
+                avatars[i]
+              ),
+              23,
+              y - 11,
+              25,
+              25,
+              13,
+              null
+            );
+            ui.text(
+              ctx2,
+              g.name,
+              57,
+              y,
+              7.8,
               COLORS.text,
-              "700"
+              "800"
             );
-            this.roundedRect(
+            const barX = 128;
+            const barW = 151;
+            ui.card(
               ctx2,
-              91,
-              rowY - 5,
-              178,
-              10,
-              5,
-              "#EEE5D8"
+              barX,
+              y - 6,
+              barW,
+              12,
+              {
+                radius: 6,
+                fill: "#EEE5D7",
+                stroke: false,
+                shadow: false
+              }
             );
-            this.roundedRect(
+            ui.card(
               ctx2,
-              91,
-              rowY - 5,
+              barX,
+              y - 6,
               Math.max(
-                4,
-                178 * item.share
+                7,
+                barW * Math.min(
+                  1,
+                  g.share
+                )
               ),
-              10,
-              5,
-              i === 0 ? COLORS.gold : COLORS.blue
+              12,
+              {
+                radius: 6,
+                fill: i === 0 ? "#F4B52C" : "#52ABD0",
+                stroke: false,
+                shadow: false
+              }
             );
-            this.text(
+            ui.text(
               ctx2,
-              percent(
-                item.share
+              pct(
+                g.share
               ),
-              285,
-              rowY,
-              7,
-              COLORS.muted,
-              "600"
-            );
-            this.text(
-              ctx2,
-              item.demand.toLocaleString() + "\u4EBA",
-              365,
-              rowY,
-              7,
-              COLORS.navy,
+              307,
+              y,
+              6.7,
+              COLORS.text,
               "700",
+              "right"
+            );
+            ui.text(
+              ctx2,
+              Math.round(
+                g.demand
+              ) + "\u4EBA",
+              362,
+              y,
+              6.7,
+              COLORS.text,
+              "800",
               "right"
             );
           }
         }
-        drawMealPanel(ctx2, insight, y) {
-          this.roundedRect(
+        drawMeals(ctx2, insight) {
+          ui.card(
             ctx2,
             10,
-            y,
+            368,
             370,
-            105,
-            14,
-            COLORS.panel,
-            COLORS.line
+            129,
+            {
+              radius: 15
+            }
           );
-          this.text(
+          ui.coverImage(
+            ctx2,
+            visualAssetSystem.get(
+              "premium_demand_ambience"
+            ),
+            11,
+            369,
+            368,
+            127,
+            14,
+            "rgba(255,250,241,0.73)"
+          );
+          ui.text(
             ctx2,
             "\u65F6\u6BB5\u9700\u6C42\u7ED3\u6784",
             22,
-            y + 19,
-            10,
+            389,
+            11,
             COLORS.text,
-            "700"
+            "800"
           );
-          const meal = insight.mealProfile;
-          const maxShare = meal.length ? meal[0].share : 1;
-          for (let i = 0; i < meal.length; i++) {
-            const item = meal[i];
-            const x = 22 + i * 69;
-            const barMax = 54;
-            const barH = Math.max(
-              5,
-              barMax * (item.share / Math.max(
-                0.01,
-                maxShare
-              ))
-            );
-            this.roundedRect(
+          const meals = insight.mealProfile.slice(
+            0,
+            5
+          );
+          const max = Math.max(
+            0.01,
+            ...meals.map(
+              (item) => item.share
+            )
+          );
+          for (let i = 0; i < meals.length; i++) {
+            const m = meals[i];
+            const x = 43 + i * 69;
+            const h = 13 + 42 * (m.share / max);
+            const y = 461 - h;
+            ui.card(
               ctx2,
               x,
-              y + 75 - barH,
-              43,
-              barH,
-              6,
-              i === 0 ? COLORS.orange : "#8EB5C8"
+              y,
+              36,
+              h,
+              {
+                radius: 7,
+                fill: i === 1 || i === 3 ? "#EF7B38" : "#4AA8D0",
+                stroke: false,
+                shadow: false
+              }
             );
-            this.text(
+            ui.text(
               ctx2,
-              MEAL_NAMES[item.id] || item.id,
-              x + 21.5,
-              y + 89,
-              6.5,
-              COLORS.muted,
-              "600",
+              pct(
+                m.share
+              ),
+              x + 18,
+              y - 9,
+              6.8,
+              i === 1 || i === 3 ? "#B34E21" : COLORS.text,
+              "800",
+              "center"
+            );
+            ui.text(
+              ctx2,
+              MEAL_NAMES[m.id] || m.id,
+              x + 18,
+              480,
+              6.3,
+              COLORS.text,
+              "700",
               "center"
             );
           }
         }
-        drawMarketPanel(ctx2, insight, y) {
-          this.roundedRect(
+        drawMarket(ctx2, insight) {
+          ui.card(
             ctx2,
             10,
-            y,
+            508,
             370,
-            105,
-            14,
-            COLORS.panel,
-            COLORS.line
+            103,
+            {
+              radius: 15
+            }
           );
-          this.text(
+          ui.text(
             ctx2,
             "\u7ECF\u8425\u73AF\u5883",
             22,
-            y + 19,
-            10,
+            529,
+            11,
             COLORS.text,
-            "700"
+            "800"
           );
-          const market = insight.market;
-          const lines = [
+          const market = insight.market || {};
+          const values = [
             [
               "\u9910\u996E\u5E97",
               insight.restaurantCount + "\u5BB6"
             ],
             [
               "\u7ADE\u4E89",
-              insight.competitionLabel + " \xB7 " + insight.saturation + "%"
+              insight.competitionLabel
             ],
             [
               "\u79DF\u91D1",
-              insight.rentLevel + " \xB7 \u6307\u6570 " + insight.rentIndex.toFixed(
+              insight.rentLevel + "\xB7" + insight.rentIndex.toFixed(
                 2
               )
             ],
             [
               "\u6302\u724C",
-              market ? market.activeListingCount + "\u5957 \xB7 \u5747\u79DF" + money(
-                market.averageAskingRent
-              ) : "--"
+              (market.activeListingCount || 0) + "\u5957"
             ]
           ];
-          for (let i = 0; i < lines.length; i++) {
-            const col = i % 2;
-            const row = Math.floor(
-              i / 2
-            );
-            const x = 22 + col * 184;
-            const yy = y + 47 + row * 31;
-            this.text(
+          for (let i = 0; i < values.length; i++) {
+            const x = 23 + i * 88;
+            ui.text(
               ctx2,
-              lines[i][0],
+              values[i][0],
               x,
-              yy,
+              558,
               6.5,
               COLORS.muted,
               "600"
             );
-            this.text(
+            ui.text(
               ctx2,
-              lines[i][1],
-              x + 42,
-              yy,
-              7.5,
-              COLORS.text,
-              "700"
+              values[i][1],
+              x,
+              581,
+              8.5,
+              i === 1 ? COLORS.red : i === 3 ? COLORS.blue : COLORS.text,
+              "800"
             );
           }
         }
-        drawHintPanel(ctx2, insight, y) {
-          this.roundedRect(
+        drawFit(ctx2, insight) {
+          const y = 622;
+          if (y + 74 > this.contentBottom) {
+            return;
+          }
+          ui.card(
             ctx2,
             10,
             y,
             370,
-            74,
-            14,
-            "#FFF0D6",
-            "#E3BD77"
+            67,
+            {
+              radius: 15,
+              fill: "#FFF6DC",
+              stroke: "#EBC873"
+            }
           );
-          this.text(
+          ui.text(
             ctx2,
             "\u7ECF\u8425\u9002\u914D",
             22,
-            y + 18,
-            8,
+            y + 19,
+            9,
             COLORS.orange,
-            "700"
+            "800"
           );
-          const hints = insight.businessHints.join(
+          const hints = insight.businessHints.slice(
+            0,
+            5
+          ).join(
             " / "
           );
-          this.text(
+          ui.text(
             ctx2,
-            hints || "\u6682\u65E0\u660E\u663E\u54C1\u7C7B\u504F\u597D",
+            hints || "\u7B49\u5F85\u66F4\u591A\u6D88\u8D39\u6570\u636E",
             22,
-            y + 40,
-            9,
+            y + 43,
+            7.2,
             COLORS.text,
             "700"
           );
-          const event = insight.events.length ? insight.events[0] : null;
-          this.text(
+          ui.text(
             ctx2,
-            event ? "\u5F53\u524D\u4E8B\u4EF6\uFF1A" + event.name : "\u5F53\u524D\u65E0\u5927\u578B\u5546\u5708\u4E8B\u4EF6",
-            22,
-            y + 59,
-            6.5,
-            event ? COLORS.red : COLORS.muted,
-            "600"
+            "\u67E5\u770B\u623F\u6E90 \u203A",
+            358,
+            y + 44,
+            7,
+            COLORS.navy,
+            "800",
+            "right"
+          );
+          this.addButton(
+            "market",
+            274,
+            y + 25,
+            95,
+            35
           );
         }
         render(ctx2) {
@@ -14111,7 +15943,6 @@
             return;
           }
           this.getLayout();
-          this.buttons = [];
           const insight = districtInsightSystem.getInsight(
             this.districtId
           );
@@ -14121,6 +15952,7 @@
             );
             return;
           }
+          this.buttons = [];
           ctx2.save();
           ctx2.fillStyle = COLORS.paper;
           ctx2.fillRect(
@@ -14133,71 +15965,26 @@
             ctx2,
             insight
           );
-          const y0 = 78;
-          const gap = 8;
-          const w = (DESIGN_W - 20 - gap * 2) / 3;
-          const popTrend = insight.populationDelta > 0 ? "\u2191" : insight.populationDelta < 0 ? "\u2193" : "\u2192";
-          const demandTrend = insight.demandDeltaRatio > 5e-3 ? "\u2191" : insight.demandDeltaRatio < -5e-3 ? "\u2193" : "\u2192";
-          this.drawMetric(
+          this.drawMetrics(
             ctx2,
-            10,
-            y0,
-            w,
-            "\u6D3B\u8DC3\u4EBA\u53E3",
-            insight.population.toLocaleString(),
-            popTrend + " \u5E38\u4F4F" + insight.residentPopulation.toLocaleString(),
-            COLORS.blue
+            insight
           );
-          this.drawMetric(
+          this.drawCustomers(
             ctx2,
-            10 + w + gap,
-            y0,
-            w,
-            "\u5F53\u524D\u9700\u6C42",
-            insight.currentDemand.toLocaleString(),
-            demandTrend + " \u65E5\u57FA\u6570" + Math.round(
-              insight.dynamicDailyDemand
-            ).toLocaleString(),
-            COLORS.red
+            insight
           );
-          this.drawMetric(
+          this.drawMeals(
             ctx2,
-            10 + (w + gap) * 2,
-            y0,
-            w,
-            "\u5E73\u5747\u5BA2\u5355",
-            money(
-              insight.avgSpend
-            ),
-            insight.competitionLabel,
-            COLORS.green
+            insight
           );
-          let y = y0 + 78;
-          this.drawCustomerPanel(
+          this.drawMarket(
             ctx2,
-            insight,
-            y
+            insight
           );
-          y += 168;
-          this.drawMealPanel(
+          this.drawFit(
             ctx2,
-            insight,
-            y
+            insight
           );
-          y += 117;
-          this.drawMarketPanel(
-            ctx2,
-            insight,
-            y
-          );
-          y += 117;
-          if (y + 74 < this.contentBottom - 6) {
-            this.drawHintPanel(
-              ctx2,
-              insight,
-              y
-            );
-          }
           ctx2.restore();
         }
         handleTap(x, y) {
@@ -14214,7 +16001,7 @@
             );
             return true;
           }
-          if (item.id === "find-property") {
+          if (item.id === "market") {
             sceneManager.switchTo(
               "propertyMarket",
               {
@@ -14249,6 +16036,7 @@
       var customizationSystem = require_customizationSystem();
       var textInput = require_textInput();
       var visualAssetSystem = require_visualAssetSystem();
+      var premiumUi = require_premiumUi();
       var DESIGN_W = 390;
       var COLORS = {
         navy: "#12384D",
@@ -14299,6 +16087,9 @@
             );
             visualAssetSystem.loadGroup(
               "renovation"
+            );
+            visualAssetSystem.loadGroup(
+              "premiumRenovation"
             );
           }
           this.page = "layout";
@@ -14405,7 +16196,13 @@
         }
         text(ctx2, text, x, y, size, color, weight, align) {
           ctx2.fillStyle = color || COLORS.text;
-          ctx2.font = (weight || "500") + " " + size + "px sans-serif";
+          const readableSize = Math.max(
+            7.3,
+            Number(
+              size
+            ) || 7.3
+          );
+          ctx2.font = (weight || "500") + " " + readableSize + "px sans-serif";
           ctx2.textAlign = align || "left";
           ctx2.textBaseline = "middle";
           ctx2.fillText(
@@ -14415,12 +16212,20 @@
           );
         }
         addButton(id, x, y, w, h) {
+          const hitW = Math.max(
+            40,
+            w
+          );
+          const hitH = Math.max(
+            36,
+            h
+          );
           this.buttons.push({
             id,
-            x,
-            y,
-            w,
-            h
+            x: x - (hitW - w) / 2,
+            y: y - (hitH - h) / 2,
+            w: hitW,
+            h: hitH
           });
         }
         hitButton(x, y) {
@@ -14448,110 +16253,230 @@
           );
         }
         drawHeader(ctx2, shop) {
-          ctx2.fillStyle = COLORS.navy2;
+          premiumUi.coverImage(
+            ctx2,
+            visualAssetSystem.get(
+              "premium_reno_header"
+            ),
+            0,
+            0,
+            DESIGN_W,
+            84,
+            0,
+            "rgba(3,31,47,0.50)"
+          );
+          ctx2.fillStyle = "rgba(4,35,51,0.32)";
           ctx2.fillRect(
             0,
             0,
             DESIGN_W,
-            66
+            84
           );
-          this.roundedRect(
+          premiumUi.card(
             ctx2,
-            10,
-            13,
-            44,
-            34,
-            10,
-            "rgba(255,255,255,0.10)",
-            "rgba(255,255,255,0.15)"
+            9,
+            15,
+            38,
+            38,
+            {
+              radius: 11,
+              fill: "rgba(5,48,68,0.86)",
+              stroke: "rgba(255,255,255,0.28)",
+              shadow: false
+            }
           );
           this.text(
             ctx2,
             "\u2039",
-            32,
-            30,
+            28,
+            34,
             22,
-            COLORS.white,
+            "#FFE6A0",
             "700",
             "center"
           );
           this.addButton(
             "back",
-            6,
-            8,
-            54,
-            44
+            5,
+            11,
+            46,
+            46
           );
           this.text(
             ctx2,
             shop.name || "\u6211\u7684\u9152\u697C",
-            68,
-            21,
+            59,
+            22,
             16,
             COLORS.white,
             "700"
           );
-          this.roundedRect(
+          this.text(
             ctx2,
-            205,
-            10,
-            52,
-            28,
-            8,
-            "rgba(255,255,255,0.10)",
-            "rgba(255,255,255,0.18)"
+            shop.address + " \xB7 \u81EA\u5B9A\u4E49\u7A7A\u95F4\u3001\u684C\u6905\u3001\u5305\u53A2\u4E0E\u98CE\u683C",
+            59,
+            47,
+            6.8,
+            "#D6E5EA",
+            "500"
+          );
+          premiumUi.card(
+            ctx2,
+            198,
+            12,
+            32,
+            29,
+            {
+              radius: 12,
+              fill: "rgba(255,255,255,0.88)",
+              stroke: "rgba(255,255,255,0.42)",
+              shadow: false
+            }
           );
           this.text(
             ctx2,
-            "\u270E \u6539\u540D",
-            231,
-            24,
-            6.8,
-            "#FFE8AE",
+            "\u21B6",
+            214,
+            26.5,
+            13,
+            COLORS.navy,
             "700",
             "center"
           );
           this.addButton(
-            "shop:rename",
-            201,
-            6,
-            60,
-            36
+            "history:undo",
+            194,
+            8,
+            40,
+            37
+          );
+          premiumUi.card(
+            ctx2,
+            236,
+            12,
+            32,
+            29,
+            {
+              radius: 12,
+              fill: "rgba(255,255,255,0.88)",
+              stroke: "rgba(255,255,255,0.42)",
+              shadow: false
+            }
           );
           this.text(
             ctx2,
-            "\u81EA\u5B9A\u4E49\u88C5\u4FEE \xB7 " + shop.address,
-            68,
-            44,
-            7.2,
-            "rgba(255,255,255,0.72)",
-            "500"
+            "\u21B7",
+            252,
+            26.5,
+            13,
+            COLORS.navy,
+            "700",
+            "center"
+          );
+          this.addButton(
+            "history:redo",
+            232,
+            8,
+            40,
+            37
+          );
+          premiumUi.card(
+            ctx2,
+            276,
+            12,
+            103,
+            29,
+            {
+              radius: 14,
+              fill: "#F6B62B",
+              stroke: "#FFE0A0",
+              shadow: false
+            }
+          );
+          this.text(
+            ctx2,
+            "\u4FDD\u5B58\u88C5\u4FEE\u6A21\u677F",
+            327.5,
+            26.5,
+            6.8,
+            COLORS.text,
+            "700",
+            "center"
+          );
+          this.addButton(
+            "page:templates",
+            272,
+            8,
+            111,
+            37
           );
           this.text(
             ctx2,
             money(
               gameState.getPlayer().cash
             ),
-            376,
-            22,
-            12,
+            377,
+            61,
+            8,
             "#FFE8AE",
             "700",
             "right"
           );
-          this.text(
-            ctx2,
-            "\u53EF\u7528\u8D44\u91D1",
-            376,
-            44,
-            6.5,
-            "#D8E5EB",
-            "500",
-            "right"
-          );
+        }
+        drawTemplateStrip(ctx2) {
+          const templates = customizationSystem.getTemplateList();
+          const keys = [
+            "premium_template_1",
+            "premium_template_2",
+            "premium_template_3"
+          ];
+          for (let i = 0; i < 3; i++) {
+            const x = 10 + i * 123;
+            premiumUi.card(
+              ctx2,
+              x,
+              91,
+              113,
+              58,
+              {
+                radius: 10,
+                fill: "#FFF9EF",
+                shadowBlur: 5
+              }
+            );
+            premiumUi.coverImage(
+              ctx2,
+              visualAssetSystem.get(
+                keys[i]
+              ),
+              x + 4,
+              95,
+              105,
+              38,
+              7,
+              null
+            );
+            const template = templates[i];
+            this.text(
+              ctx2,
+              template ? template.name : i === 0 ? "\u6696\u6728\u9910\u5385" : i === 1 ? "\u73B0\u4EE3\u8F7B\u5962" : "\u4E2D\u5F0F\u96C5\u5BB4",
+              x + 7,
+              141,
+              6.2,
+              COLORS.text,
+              "700"
+            );
+            this.addButton(
+              template ? "template:apply:" + template.id : "page:templates",
+              x,
+              91,
+              113,
+              58
+            );
+          }
         }
         drawFloorTabs(ctx2, plan) {
-          const y = 72;
+          const y = 156;
           const count = plan.floors.length;
           const gap = 5;
           const w = Math.min(
@@ -14566,7 +16491,7 @@
               x,
               y,
               w,
-              29,
+              27,
               8,
               active ? COLORS.gold : "#EEE5D8",
               active ? "#D49434" : "#D4C8BA"
@@ -14575,7 +16500,7 @@
               ctx2,
               plan.floors[i].name,
               x + w / 2,
-              y + 14.5,
+              y + 13.5,
               7.5,
               active ? "#26343B" : COLORS.muted,
               "700",
@@ -14586,7 +16511,7 @@
               x,
               y,
               w,
-              29
+              27
             );
           }
         }
@@ -14619,157 +16544,200 @@
         }
         drawFloorPlan(ctx2, metrics, floor) {
           const x = 10;
-          const y = 108;
+          const y = 190;
           const w = 370;
-          const h = 142;
-          this.roundedRect(
+          const h = 208;
+          premiumUi.card(
             ctx2,
             x,
             y,
             w,
             h,
-            14,
-            "#FDF9F1",
-            "#CFC2B3"
-          );
-          const total = Math.max(
-            1,
-            floor.area
-          );
-          const zones = [
             {
-              name: "\u540E\u53A8",
-              ratio: floor.kitchenRatio,
-              fill: "#EFC7A7"
-            },
-            {
-              name: "\u50A8\u7269",
-              ratio: floor.storageRatio,
-              fill: "#D8D0B7"
-            },
-            {
-              name: "\u670D\u52A1",
-              ratio: floor.serviceRatio,
-              fill: "#BDD8DF"
+              radius: 15,
+              fill: "#F7F1E8",
+              shadowBlur: 8
             }
-          ];
-          let cursor = x + 8;
-          const innerY = y + 29;
-          const innerH = h - 38;
-          const innerW = w - 16;
-          for (let i = 0; i < zones.length; i++) {
-            const zoneW = innerW * zones[i].ratio;
-            this.roundedRect(
-              ctx2,
-              cursor,
-              innerY,
-              zoneW,
-              innerH,
-              6,
-              zones[i].fill
-            );
-            this.text(
-              ctx2,
-              zones[i].name,
-              cursor + zoneW / 2,
-              innerY + 13,
-              6.5,
-              COLORS.text,
-              "700",
-              "center"
-            );
-            cursor += zoneW;
-          }
-          const diningX = cursor;
-          const diningW = x + w - 8 - diningX;
-          this.roundedRect(
-            ctx2,
-            diningX,
-            innerY,
-            diningW,
-            innerH,
-            6,
-            "#E7F0E8"
           );
           this.text(
             ctx2,
-            "\u5802\u98DF/\u5305\u53A2",
-            diningX + 8,
-            innerY + 13,
+            floor.name + " \xB7 " + floor.area + "\u33A1 \xB7 \u5EA7\u4F4D" + floor.seats + " \xB7 \u5269\u4F59" + floor.remainingArea + "\u33A1",
+            20,
+            y + 17,
+            7.3,
+            COLORS.text,
+            "700"
+          );
+          this.text(
+            ctx2,
+            floor.valid ? "\u5B9E\u65F6\u5E73\u9762\u9884\u89C8" : "\u9762\u79EF\u8D85\u8F7D",
+            368,
+            y + 17,
+            6.8,
+            floor.valid ? COLORS.green : COLORS.red,
+            "700",
+            "right"
+          );
+          const ix = 18;
+          const iy = y + 31;
+          const iw = 354;
+          const ih = 166;
+          premiumUi.coverImage(
+            ctx2,
+            visualAssetSystem.get(
+              "premium_floor_texture"
+            ),
+            ix,
+            iy,
+            iw,
+            ih,
+            10,
+            "rgba(255,249,240,0.50)"
+          );
+          this.roundedPath(
+            ctx2,
+            ix,
+            iy,
+            iw,
+            ih,
+            10
+          );
+          ctx2.save();
+          ctx2.clip();
+          const serviceBlockW = Math.max(
+            94,
+            Math.min(
+              142,
+              iw * (floor.kitchenRatio + floor.storageRatio + floor.serviceRatio)
+            )
+          );
+          const diningX = ix + serviceBlockW;
+          const diningW = iw - serviceBlockW;
+          const leftTotal = Math.max(
+            0.01,
+            floor.kitchenRatio + floor.storageRatio + floor.serviceRatio
+          );
+          const kitchenH = ih * floor.kitchenRatio / leftTotal;
+          const storageH = ih * floor.storageRatio / leftTotal;
+          const serviceH = ih - kitchenH - storageH;
+          ctx2.fillStyle = "rgba(239,179,137,0.72)";
+          ctx2.fillRect(
+            ix,
+            iy,
+            serviceBlockW,
+            kitchenH
+          );
+          ctx2.fillStyle = "rgba(210,196,153,0.72)";
+          ctx2.fillRect(
+            ix,
+            iy + kitchenH,
+            serviceBlockW,
+            storageH
+          );
+          ctx2.fillStyle = "rgba(133,193,208,0.68)";
+          ctx2.fillRect(
+            ix,
+            iy + kitchenH + storageH,
+            serviceBlockW,
+            serviceH
+          );
+          ctx2.fillStyle = "rgba(220,240,225,0.50)";
+          ctx2.fillRect(
+            diningX,
+            iy,
+            diningW,
+            ih
+          );
+          ctx2.restore();
+          this.text(
+            ctx2,
+            "\u540E\u53A8",
+            ix + 10,
+            iy + 12,
+            6.5,
+            "#683B2A",
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u4ED3\u50A8",
+            ix + 10,
+            iy + kitchenH + 11,
+            6.2,
+            "#655B37",
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u670D\u52A1",
+            ix + 10,
+            iy + kitchenH + storageH + 11,
+            6.2,
+            "#26586B",
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u5802\u98DF / \u5305\u53A2",
+            diningX + 10,
+            iy + 12,
             6.5,
             COLORS.green,
             "700"
           );
-          const kitchenW = innerW * floor.kitchenRatio;
-          const storageW = innerW * floor.storageRatio;
-          const serviceW = innerW * floor.serviceRatio;
           this.drawVisual(
             ctx2,
             "visual_stove",
-            x + 11,
-            innerY + 28,
+            ix + 8,
+            iy + 22,
+            serviceBlockW * 0.48,
             Math.max(
-              26,
-              kitchenW * 0.52
+              36,
+              kitchenH - 27
             ),
-            50,
-            0.95
+            0.96
           );
           this.drawVisual(
             ctx2,
             "visual_fridge",
-            x + 9 + kitchenW * 0.48,
-            innerY + 27,
+            ix + serviceBlockW * 0.5,
+            iy + 22,
+            serviceBlockW * 0.4,
             Math.max(
-              22,
-              kitchenW * 0.38
+              36,
+              kitchenH - 27
             ),
-            50,
-            0.95
+            0.96
           );
           this.drawVisual(
             ctx2,
             "visual_register",
-            x + 8 + kitchenW + storageW,
-            innerY + 35,
+            ix + 8,
+            iy + kitchenH + storageH + 14,
+            serviceBlockW - 16,
             Math.max(
-              25,
-              serviceW
+              24,
+              serviceH - 19
             ),
-            44,
-            0.92
-          );
-          this.drawVisual(
-            ctx2,
-            "visual_plant",
-            diningX + 4,
-            innerY + innerH - 39,
-            30,
-            34,
-            0.95
-          );
-          this.drawVisual(
-            ctx2,
-            "visual_light",
-            diningX + Math.max(
-              38,
-              diningW * 0.4
-            ),
-            innerY + 16,
-            26,
-            34,
-            0.88
+            0.94
           );
           const roomCount = floor.privateRooms.length;
+          const roomLaneW = roomCount ? Math.min(
+            74,
+            Math.max(
+              54,
+              diningW * 0.33
+            )
+          ) : 0;
           if (roomCount > 0) {
             this.drawVisual(
               ctx2,
               "visual_divider",
-              diningX + diningW - 64,
-              innerY + 18,
-              58,
-              innerH - 23,
-              0.26
+              diningX + diningW - roomLaneW - 2,
+              iy + 18,
+              roomLaneW,
+              ih - 22,
+              0.3
             );
           }
           for (let i = 0; i < Math.min(
@@ -14777,36 +16745,35 @@
             4
           ); i++) {
             const room = floor.privateRooms[i];
-            const rx = diningX + diningW - 57;
-            const ry = innerY + 23 + i * 20;
-            this.roundedRect(
+            const ry = iy + 23 + i * 31;
+            premiumUi.card(
               ctx2,
-              rx,
+              diningX + diningW - roomLaneW + 5,
               ry,
-              49,
-              17,
-              4,
-              "#F1DDB8",
-              "#D7B06B"
+              roomLaneW - 10,
+              25,
+              {
+                radius: 7,
+                fill: "rgba(255,236,194,0.92)",
+                stroke: "#DAB66D",
+                shadow: false
+              }
             );
             this.text(
               ctx2,
-              (room.name || "\u5305" + room.seats).slice(
+              (room.name || "\u5305\u53A2" + (i + 1)).slice(
                 0,
-                5
+                6
               ),
-              rx + 24.5,
-              ry + 8.5,
-              5.6,
+              diningX + diningW - roomLaneW / 2,
+              ry + 12.5,
+              5.8,
               COLORS.text,
               "700",
               "center"
             );
           }
-          const tableAreaW = Math.max(
-            30,
-            diningW - (roomCount ? 66 : 10)
-          );
+          const tableZoneW = diningW - (roomLaneW ? roomLaneW + 2 : 4);
           let tableIndex = 0;
           const tableKeys = [
             "2",
@@ -14819,84 +16786,70 @@
             const count = floor.tables[key] || 0;
             for (let i = 0; i < Math.min(
               count,
-              18
+              16
             ); i++) {
-              const col = tableIndex % Math.max(
+              const cols = Math.max(
                 1,
                 Math.floor(
-                  tableAreaW / 27
+                  tableZoneW / 43
                 )
               );
+              const col = tableIndex % cols;
               const row = Math.floor(
-                tableIndex / Math.max(
-                  1,
-                  Math.floor(
-                    tableAreaW / 27
-                  )
-                )
+                tableIndex / cols
               );
-              const tx = diningX + 13 + col * 27;
-              const ty = innerY + 31 + row * 23;
-              if (ty > innerY + innerH - 15) {
+              const tx = diningX + 10 + col * 43;
+              const ty = iy + 32 + row * 36;
+              if (ty > iy + ih - 25) {
                 break;
               }
-              const tableW = key === "2" ? 18 : key === "4" ? 22 : key === "6" ? 25 : 28;
-              const drawn = this.drawVisual(
+              const tableW = key === "2" ? 25 : key === "4" ? 30 : key === "6" ? 34 : 38;
+              this.drawVisual(
                 ctx2,
                 "visual_table_" + key,
                 tx,
-                ty - 4,
+                ty,
                 tableW,
-                18,
-                0.96
+                25,
+                0.98
               );
-              if (!drawn) {
-                this.roundedRect(
-                  ctx2,
-                  tx,
-                  ty,
-                  tableW,
-                  11,
-                  4,
-                  key === "8" ? "#C39A73" : "#8EB5C8"
-                );
-              }
               tableIndex += 1;
             }
           }
-          const status = floor.valid ? "\u5E03\u5C40\u53EF\u7528" : "\u9762\u79EF\u8D85\u8F7D";
-          this.text(
+          this.drawVisual(
             ctx2,
-            floor.name + " \xB7 " + floor.area + "\u33A1 \xB7 \u5EA7\u4F4D" + floor.seats + " \xB7 \u5269\u4F59" + floor.remainingArea + "\u33A1",
-            x + 10,
-            y + 16,
-            7.3,
-            COLORS.text,
-            "700"
+            "visual_plant",
+            diningX + 5,
+            iy + ih - 37,
+            29,
+            32,
+            0.95
           );
-          this.text(
+          this.drawVisual(
             ctx2,
-            status,
-            x + w - 10,
-            y + 16,
-            7.3,
-            floor.valid ? COLORS.green : COLORS.red,
-            "700",
-            "right"
+            "visual_light",
+            diningX + Math.max(
+              35,
+              tableZoneW * 0.44
+            ),
+            iy + 9,
+            24,
+            31,
+            0.8
           );
         }
         drawTopMetrics(ctx2, metrics) {
-          const y = 258;
+          const y = 407;
           const gap = 6;
           const w = (DESIGN_W - 20 - gap * 2) / 3;
           const items = [
             [
               "\u603B\u5EA7\u4F4D",
               metrics.totalSeats + "\u5E2D",
-              COLORS.blue
+              COLORS.green
             ],
             [
-              "\u9884\u7B97",
+              "\u88C5\u4FEE\u9884\u7B97",
               money(
                 metrics.totalCost
               ),
@@ -14910,37 +16863,39 @@
           ];
           for (let i = 0; i < items.length; i++) {
             const x = 10 + i * (w + gap);
-            this.roundedRect(
+            premiumUi.card(
               ctx2,
               x,
               y,
               w,
-              50,
-              10,
-              COLORS.panel2
+              46,
+              {
+                radius: 12,
+                fill: "#FFF9EF"
+              }
             );
             this.text(
               ctx2,
               items[i][0],
-              x + 10,
+              x + 9,
               y + 13,
-              6.5,
+              6.3,
               COLORS.muted,
               "600"
             );
             this.text(
               ctx2,
               items[i][1],
-              x + 10,
-              y + 34,
-              10,
+              x + 9,
+              y + 32,
+              9.4,
               items[i][2],
               "700"
             );
           }
         }
         drawPageTabs(ctx2) {
-          const y = 316;
+          const y = 462;
           const tabs = [
             [
               "layout",
@@ -15090,7 +17045,7 @@
           );
         }
         renderLayoutPage(ctx2, floor) {
-          let y = 359;
+          let y = 503;
           this.drawAdjustRow(
             ctx2,
             "zone:kitchen",
@@ -15194,25 +17149,146 @@
             6,
             8
           ];
-          let y = 359;
+          const keys = {
+            2: "premium_table_2",
+            4: "premium_table_4",
+            6: "premium_table_6",
+            8: "premium_table_8"
+          };
+          premiumUi.card(
+            ctx2,
+            10,
+            503,
+            370,
+            126,
+            {
+              radius: 13
+            }
+          );
+          this.text(
+            ctx2,
+            "\u9910\u684C\u7C7B\u578B",
+            21,
+            520,
+            9,
+            COLORS.text,
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u6570\u91CF\u53D8\u5316\u4F1A\u7ACB\u5373\u66F4\u65B0\u5EA7\u4F4D\u3001\u62E5\u6324\u5EA6\u548C\u9884\u7B97",
+            92,
+            520,
+            6.2,
+            COLORS.muted,
+            "500"
+          );
           for (let i = 0; i < options.length; i++) {
             const seats = options[i];
-            const count = floor.tables[String(seats)] || 0;
-            this.drawAdjustRow(
+            const count = floor.tables[String(
+              seats
+            )] || 0;
+            const x = 18 + i * 91;
+            premiumUi.card(
               ctx2,
-              "table:" + seats,
-              seats + "\u4EBA\u684C",
-              count + "\u5F20",
-              "\u5F53\u524D\u8D21\u732E " + count * seats + "\u4E2A\u5802\u98DF\u5EA7\u4F4D",
-              y,
-              count > 0,
-              true
+              x,
+              535,
+              82,
+              83,
+              {
+                radius: 10,
+                fill: "#FFF8ED",
+                shadow: false
+              }
             );
-            y += 58;
+            premiumUi.coverImage(
+              ctx2,
+              visualAssetSystem.get(
+                keys[seats]
+              ),
+              x + 5,
+              540,
+              72,
+              42,
+              7,
+              null
+            );
+            this.text(
+              ctx2,
+              seats + "\u4EBA\u684C",
+              x + 41,
+              590,
+              6.5,
+              COLORS.text,
+              "700",
+              "center"
+            );
+            this.roundedRect(
+              ctx2,
+              x + 5,
+              600,
+              19,
+              16,
+              7,
+              "#EAE3D8"
+            );
+            this.text(
+              ctx2,
+              "\u2212",
+              x + 14.5,
+              608,
+              8,
+              COLORS.navy,
+              "700",
+              "center"
+            );
+            this.addButton(
+              "table:" + seats + ":minus",
+              x + 2,
+              597,
+              25,
+              22
+            );
+            this.text(
+              ctx2,
+              count,
+              x + 41,
+              608,
+              6.8,
+              COLORS.text,
+              "700",
+              "center"
+            );
+            this.roundedRect(
+              ctx2,
+              x + 58,
+              600,
+              19,
+              16,
+              7,
+              COLORS.gold
+            );
+            this.text(
+              ctx2,
+              "+",
+              x + 67.5,
+              608,
+              8,
+              COLORS.text,
+              "700",
+              "center"
+            );
+            this.addButton(
+              "table:" + seats + ":plus",
+              x + 55,
+              597,
+              25,
+              22
+            );
           }
         }
         renderRoomsPage(ctx2, floor) {
-          let y = 359;
+          let y = 503;
           const rooms = floor.privateRooms;
           if (!rooms.length) {
             this.roundedRect(
@@ -15477,66 +17553,128 @@
           const lighting = renovationConfig.lightingLevels.find(
             (item) => item.id === plan.lightingLevel
           );
-          let y = 359;
-          this.drawCycleRow(
-            ctx2,
-            "style:hall",
-            "\u5927\u5385\u98CE\u683C",
-            hall.name,
-            "\u5F71\u54CD\u88C5\u4FEE\u6210\u672C\u3001\u5438\u5F15\u529B\u548C\u7EF4\u62A4\u6210\u672C",
-            y
-          );
-          y += 58;
-          this.drawCycleRow(
-            ctx2,
-            "style:material",
-            "\u6750\u6599\u6863\u6B21",
-            material.name,
-            "\u5F71\u54CD\u8D28\u91CF\u3001\u8010\u7528\u5EA6\u4E0E\u88C5\u4FEE\u9884\u7B97",
-            y
-          );
-          y += 58;
-          this.drawCycleRow(
-            ctx2,
-            "style:lighting",
-            "\u706F\u5149\u65B9\u6848",
-            lighting.name,
-            "\u5F71\u54CD\u6C1B\u56F4\u3001\u5BA2\u7FA4\u611F\u77E5\u548C\u6210\u672C",
-            y
-          );
-          y += 65;
+          const items = [
+            {
+              id: "style:hall",
+              label: "\u5927\u5385\u98CE\u683C",
+              value: hall.name,
+              icon: "\u25A3"
+            },
+            {
+              id: "style:material",
+              label: "\u6750\u6599",
+              value: material.name,
+              icon: "\u25A4"
+            },
+            {
+              id: "style:lighting",
+              label: "\u706F\u5149",
+              value: lighting.name,
+              icon: "\u263C"
+            }
+          ];
+          const gap = 6;
+          const w = (370 - gap * 2) / 3;
+          for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            const x = 10 + i * (w + gap);
+            premiumUi.card(
+              ctx2,
+              x,
+              503,
+              w,
+              73,
+              {
+                radius: 12,
+                fill: i === 0 ? "#FFF2D3" : "#FFF9EF"
+              }
+            );
+            this.text(
+              ctx2,
+              item.icon,
+              x + 13,
+              522,
+              13,
+              i === 0 ? COLORS.orange : COLORS.blue,
+              "700"
+            );
+            this.text(
+              ctx2,
+              item.label,
+              x + 34,
+              520,
+              6.5,
+              COLORS.muted,
+              "600"
+            );
+            this.text(
+              ctx2,
+              item.value,
+              x + 12,
+              551,
+              8,
+              COLORS.text,
+              "700"
+            );
+            this.text(
+              ctx2,
+              "\u70B9\u51FB\u5207\u6362 \u203A",
+              x + w - 10,
+              565,
+              5.5,
+              COLORS.navy,
+              "600",
+              "right"
+            );
+            this.addButton(
+              item.id,
+              x,
+              503,
+              w,
+              73
+            );
+          }
           this.text(
             ctx2,
             "\u65BD\u5DE5\u961F\u62A5\u4EF7",
             14,
-            y,
-            8,
+            594,
+            7,
             COLORS.muted,
             "700"
           );
-          y += 14;
           const quotes = renovationSystem.getContractorQuotes(
             this.shopId
           );
-          for (let i = 0; i < quotes.length; i++) {
+          for (let i = 0; i < Math.min(
+            3,
+            quotes.length
+          ); i++) {
             const q = quotes[i];
             const selected = q.id === plan.selectedContractorId || !plan.selectedContractorId && i === 0;
-            this.roundedRect(
+            const x = 10 + i * 123;
+            premiumUi.card(
               ctx2,
-              10,
-              y,
-              370,
-              47,
-              10,
-              selected ? "#FFF0D6" : COLORS.panel,
-              selected ? "#E0B25F" : COLORS.line
+              x,
+              604,
+              113,
+              52,
+              {
+                radius: 10,
+                fill: selected ? "#FFF0D0" : "#FFF9EF",
+                stroke: selected ? "#DFB35B" : "#DED1C1",
+                shadow: false
+              }
             );
             this.text(
               ctx2,
-              q.name,
-              20,
-              y + 14,
-              7.5,
+              q.name.slice(
+                0,
+                7
+              ),
+              x + 8,
+              618,
+              6.5,
               COLORS.text,
               "700"
             );
@@ -15544,31 +17682,30 @@
               ctx2,
               money(
                 q.price
-              ) + " \xB7 " + q.days + "\u5929 \xB7 \u53EF\u9760" + q.reliability,
-              20,
-              y + 33,
-              6.5,
+              ) + " \xB7 " + q.days + "\u5929",
+              x + 8,
+              638,
+              5.8,
               COLORS.muted,
               "600"
             );
             this.text(
               ctx2,
-              selected ? "\u5DF2\u9009" : "\u9009\u62E9",
-              363,
-              y + 23,
-              7,
+              selected ? "\u2713 \u5DF2\u9009" : "\u9009\u62E9",
+              x + 103,
+              647,
+              5.5,
               selected ? COLORS.orange : COLORS.navy,
               "700",
               "right"
             );
             this.addButton(
               "contractor:" + q.id,
-              10,
-              y,
-              370,
-              47
+              x,
+              604,
+              113,
+              52
             );
-            y += 53;
           }
           const actionY = this.contentBottom - 49;
           this.roundedRect(
@@ -15577,17 +17714,17 @@
             actionY,
             370,
             39,
-            11,
+            13,
             metrics.valid ? COLORS.gold : "#DED7CD",
             metrics.valid ? "#D49434" : "#C4BAAD"
           );
           this.text(
             ctx2,
-            metrics.valid ? "\u786E\u8BA4\u65B9\u6848\u5E76\u5F00\u59CB\u65BD\u5DE5" : "\u5F53\u524D\u5E03\u5C40\u8D85\u8F7D\uFF0C\u4E0D\u80FD\u65BD\u5DE5",
+            metrics.valid ? "\u786E\u8BA4\u65B9\u6848\u5E76\u5F00\u59CB\u65BD\u5DE5  \u203A" : "\u5F53\u524D\u5E03\u5C40\u8D85\u8F7D\uFF0C\u4E0D\u80FD\u65BD\u5DE5",
             195,
             actionY + 19.5,
-            9,
-            metrics.valid ? "#26343B" : COLORS.muted,
+            8.8,
+            metrics.valid ? COLORS.text : COLORS.muted,
             "700",
             "center"
           );
@@ -15601,205 +17738,163 @@
         }
         renderTemplatesPage(ctx2, metrics) {
           const templates = customizationSystem.getTemplateList();
-          let y = 359;
-          this.roundedRect(
+          premiumUi.card(
             ctx2,
             10,
-            y,
+            503,
             370,
-            45,
-            11,
-            COLORS.gold,
-            "#D49434"
+            42,
+            {
+              radius: 12,
+              fill: "#FFF2D3",
+              stroke: "#E5BE63"
+            }
           );
           this.text(
             ctx2,
-            "\u4FDD\u5B58\u5F53\u524D\u88C5\u4FEE\u65B9\u6848\u4E3A\u6A21\u677F",
+            "\uFF0B \u4FDD\u5B58\u5F53\u524D\u88C5\u4FEE\u65B9\u6848\u4E3A\u6A21\u677F",
             195,
-            y + 22.5,
-            8.8,
-            "#26343B",
+            524,
+            8,
+            COLORS.text,
             "700",
             "center"
           );
           this.addButton(
             "template:save",
             10,
-            y,
+            503,
             370,
-            45
+            42
           );
-          y += 55;
+          const visualKeys = [
+            "premium_template_1",
+            "premium_template_2",
+            "premium_template_3"
+          ];
+          for (let i = 0; i < 3; i++) {
+            const x = 10 + i * 123;
+            const item = templates[i];
+            premiumUi.card(
+              ctx2,
+              x,
+              556,
+              113,
+              105,
+              {
+                radius: 11,
+                fill: "#FFF9EF"
+              }
+            );
+            premiumUi.coverImage(
+              ctx2,
+              visualAssetSystem.get(
+                visualKeys[i]
+              ),
+              x + 5,
+              561,
+              103,
+              51,
+              8,
+              null
+            );
+            this.text(
+              ctx2,
+              item ? item.name : "\u7075\u611F\u6A21\u677F" + (i + 1),
+              x + 7,
+              622,
+              6.6,
+              COLORS.text,
+              "700"
+            );
+            if (item) {
+              this.roundedRect(
+                ctx2,
+                x + 5,
+                636,
+                48,
+                19,
+                7,
+                "#E5F1E8"
+              );
+              this.text(
+                ctx2,
+                "\u4F7F\u7528",
+                x + 29,
+                645.5,
+                5.8,
+                COLORS.green,
+                "700",
+                "center"
+              );
+              this.addButton(
+                "template:apply:" + item.id,
+                x + 2,
+                633,
+                54,
+                25
+              );
+              this.roundedRect(
+                ctx2,
+                x + 58,
+                636,
+                49,
+                19,
+                7,
+                "#FFF0D6"
+              );
+              this.text(
+                ctx2,
+                "\u6539\u540D",
+                x + 82.5,
+                645.5,
+                5.8,
+                COLORS.orange,
+                "700",
+                "center"
+              );
+              this.addButton(
+                "template:rename:" + item.id,
+                x + 55,
+                633,
+                55,
+                25
+              );
+            } else {
+              this.text(
+                ctx2,
+                "\u4FDD\u5B58\u540E\u53EF\u8DE8\u95E8\u5E97\u9002\u914D",
+                x + 7,
+                646,
+                5.2,
+                COLORS.muted,
+                "500"
+              );
+            }
+          }
+          if (templates.length > 3) {
+            this.text(
+              ctx2,
+              "\u8FD8\u6709 " + (templates.length - 3) + " \u4E2A\u5DF2\u4FDD\u5B58\u6A21\u677F",
+              15,
+              677,
+              6.2,
+              COLORS.muted,
+              "600"
+            );
+          }
           this.text(
             ctx2,
-            "\u5DF2\u4FDD\u5B58\u6A21\u677F " + templates.length + "/" + renovationConfig.templateRules.maxTemplates,
-            14,
-            y,
-            7,
+            "\u6A21\u677F\u4FDD\u5B58\uFF1A\u7A7A\u95F4\u6BD4\u4F8B\u3001\u684C\u6905\u5BC6\u5EA6\u3001\u5305\u53A2\u540D\u79F0/\u98CE\u683C\u3001\u6750\u6599\u4E0E\u706F\u5149\u3002",
+            15,
+            Math.min(
+              this.contentBottom - 22,
+              699
+            ),
+            6,
             COLORS.muted,
-            "700"
+            "500"
           );
-          y += 14;
-          if (templates.length === 0) {
-            this.roundedRect(
-              ctx2,
-              10,
-              y,
-              370,
-              90,
-              12,
-              COLORS.panel,
-              COLORS.line
-            );
-            this.text(
-              ctx2,
-              "\u8FD8\u6CA1\u6709\u4FDD\u5B58\u88C5\u4FEE\u6A21\u677F",
-              22,
-              y + 27,
-              10,
-              COLORS.text,
-              "700"
-            );
-            this.text(
-              ctx2,
-              "\u4FDD\u5B58\u540E\u53EF\u5728\u5176\u4ED6\u9762\u79EF\u3001\u5176\u4ED6\u697C\u5C42\u95E8\u5E97\u4E2D\u6309\u6BD4\u4F8B\u81EA\u52A8\u9002\u914D\u3002",
-              22,
-              y + 55,
-              7,
-              COLORS.muted,
-              "500"
-            );
-            return;
-          }
-          for (let i = 0; i < Math.min(
-            templates.length,
-            4
-          ); i++) {
-            const template = templates[i];
-            this.roundedRect(
-              ctx2,
-              10,
-              y,
-              370,
-              56,
-              11,
-              COLORS.panel,
-              COLORS.line
-            );
-            this.text(
-              ctx2,
-              template.name,
-              21,
-              y + 17,
-              8.5,
-              COLORS.text,
-              "700"
-            );
-            this.text(
-              ctx2,
-              Math.round(
-                template.sourceArea
-              ) + "\u33A1 \xB7 " + template.sourceFloorCount + "\u5C42 \xB7 \u53EF\u8DE8\u95E8\u5E97\u7F29\u653E\u9002\u914D",
-              21,
-              y + 38,
-              6.5,
-              COLORS.muted,
-              "500"
-            );
-            this.roundedRect(
-              ctx2,
-              211,
-              y + 9,
-              51,
-              38,
-              8,
-              "#E8F1E9",
-              "#BDD4C3"
-            );
-            this.text(
-              ctx2,
-              "\u4F7F\u7528",
-              236.5,
-              y + 28,
-              7,
-              COLORS.green,
-              "700",
-              "center"
-            );
-            this.addButton(
-              "template:apply:" + template.id,
-              207,
-              y + 5,
-              59,
-              46
-            );
-            this.roundedRect(
-              ctx2,
-              270,
-              y + 9,
-              51,
-              38,
-              8,
-              "#FFF0D6",
-              "#E4C47E"
-            );
-            this.text(
-              ctx2,
-              "\u6539\u540D",
-              295.5,
-              y + 28,
-              7,
-              COLORS.orange,
-              "700",
-              "center"
-            );
-            this.addButton(
-              "template:rename:" + template.id,
-              266,
-              y + 5,
-              59,
-              46
-            );
-            this.roundedRect(
-              ctx2,
-              329,
-              y + 9,
-              42,
-              38,
-              8,
-              "#F4E5E2",
-              "#DABAB5"
-            );
-            this.text(
-              ctx2,
-              "\u5220\u9664",
-              350,
-              y + 28,
-              6.7,
-              COLORS.red,
-              "700",
-              "center"
-            );
-            this.addButton(
-              "template:delete:" + template.id,
-              325,
-              y + 5,
-              50,
-              46
-            );
-            y += 62;
-          }
-          if (templates.length > 4) {
-            this.text(
-              ctx2,
-              "\u8FD8\u6709 " + (templates.length - 4) + " \u4E2A\u6A21\u677F\uFF0C\u540E\u7EED\u6A21\u677F\u7BA1\u7406\u9875\u7EE7\u7EED\u663E\u793A",
-              14,
-              y + 8,
-              6.5,
-              COLORS.muted,
-              "500"
-            );
-          }
         }
         renderConstruction(ctx2, shop, plan) {
           const construction = plan.construction;
@@ -16010,6 +18105,9 @@
             ctx2,
             shop
           );
+          this.drawTemplateStrip(
+            ctx2
+          );
           this.drawFloorTabs(
             ctx2,
             plan
@@ -16067,6 +18165,24 @@
           if (id === "back") {
             sceneManager.switchTo(
               "shop"
+            );
+            return true;
+          }
+          if (id === "history:undo") {
+            const result = renovationSystem.undo(
+              this.shopId
+            );
+            this.showToast(
+              result ? "\u5DF2\u64A4\u9500\u4E0A\u4E00\u6B65" : "\u6CA1\u6709\u53EF\u64A4\u9500\u64CD\u4F5C"
+            );
+            return true;
+          }
+          if (id === "history:redo") {
+            const result = renovationSystem.redo(
+              this.shopId
+            );
+            this.showToast(
+              result ? "\u5DF2\u91CD\u505A" : "\u6CA1\u6709\u53EF\u91CD\u505A\u64CD\u4F5C"
             );
             return true;
           }
@@ -16384,6 +18500,1594 @@
     }
   });
 
+  // src/scenes/equipmentScene.js
+  var require_equipmentScene = __commonJS({
+    "src/scenes/equipmentScene.js"(exports, module) {
+      "use strict";
+      var runtime = globalThis.GameRuntime;
+      if (!runtime) {
+        throw new Error(
+          "EquipmentScene\uFF1AGameRuntime \u672A\u521D\u59CB\u5316"
+        );
+      }
+      var api = runtime.api || {};
+      var gameState = require_gameState();
+      var sceneManager = require_sceneManager();
+      var openingPrepSystem = require_openingPrepSystem();
+      var visualAssetSystem = require_visualAssetSystem();
+      var DESIGN_W = 390;
+      var COLORS = {
+        navy: "#0A2A3B",
+        paper: "#F4EBDD",
+        panel: "#FFF9EF",
+        text: "#24323A",
+        muted: "#718087",
+        gold: "#E4AA48",
+        orange: "#D9853E",
+        red: "#BF584A",
+        green: "#4B9567",
+        blue: "#4C86A6",
+        line: "#DED1C1",
+        white: "#FFFFFF"
+      };
+      function money(value) {
+        return "\xA5" + Math.round(
+          Number(value) || 0
+        ).toLocaleString();
+      }
+      var EquipmentScene = class {
+        constructor() {
+          this.id = "equipment";
+          this.shopId = null;
+          this.buttons = [];
+          this.viewH = 780;
+          this.navH = 64;
+          this.contentBottom = 716;
+        }
+        enter(payload) {
+          const business = gameState.getBusiness();
+          this.shopId = payload && payload.shopId || business.currentShopId;
+          if (this.shopId) {
+            openingPrepSystem.ensureEquipment(
+              this.shopId
+            );
+            visualAssetSystem.loadGroup(
+              "renovation"
+            );
+          }
+        }
+        update() {
+          if (this.shopId) {
+            openingPrepSystem.updateEquipment(
+              this.shopId
+            );
+          }
+        }
+        exit() {
+          this.buttons = [];
+        }
+        layout() {
+          let h = 780;
+          if (api && typeof api.getSystemInfoSync === "function") {
+            const info = api.getSystemInfoSync();
+            h = (Number(
+              info.windowHeight
+            ) || 780) / ((Number(
+              info.windowWidth
+            ) || 390) / 390);
+          }
+          this.viewH = h;
+          this.navH = h < 740 ? 60 : 64;
+          this.contentBottom = h - this.navH;
+        }
+        rounded(ctx2, x, y, w, h, r, fill, stroke) {
+          const radius = Math.min(
+            r,
+            w / 2,
+            h / 2
+          );
+          ctx2.beginPath();
+          ctx2.moveTo(
+            x + radius,
+            y
+          );
+          ctx2.arcTo(
+            x + w,
+            y,
+            x + w,
+            y + h,
+            radius
+          );
+          ctx2.arcTo(
+            x + w,
+            y + h,
+            x,
+            y + h,
+            radius
+          );
+          ctx2.arcTo(
+            x,
+            y + h,
+            x,
+            y,
+            radius
+          );
+          ctx2.arcTo(
+            x,
+            y,
+            x + w,
+            y,
+            radius
+          );
+          ctx2.closePath();
+          if (fill) {
+            ctx2.fillStyle = fill;
+            ctx2.fill();
+          }
+          if (stroke) {
+            ctx2.strokeStyle = stroke;
+            ctx2.stroke();
+          }
+        }
+        text(ctx2, value, x, y, size, color, weight, align) {
+          ctx2.fillStyle = color || COLORS.text;
+          const readableSize = Math.max(
+            7.3,
+            Number(
+              size
+            ) || 7.3
+          );
+          ctx2.font = (weight || "500") + " " + readableSize + "px sans-serif";
+          ctx2.textAlign = align || "left";
+          ctx2.textBaseline = "middle";
+          ctx2.fillText(
+            String(value),
+            x,
+            y
+          );
+        }
+        button(id, x, y, w, h) {
+          const hitW = Math.max(
+            40,
+            w
+          );
+          const hitH = Math.max(
+            36,
+            h
+          );
+          this.buttons.push({
+            id,
+            x: x - (hitW - w) / 2,
+            y: y - (hitH - h) / 2,
+            w: hitW,
+            h: hitH
+          });
+        }
+        hit(x, y) {
+          for (let i = this.buttons.length - 1; i >= 0; i--) {
+            const b = this.buttons[i];
+            if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+              return b;
+            }
+          }
+          return null;
+        }
+        drawVisual(ctx2, key, x, y, w, h) {
+          const image = visualAssetSystem.get(
+            key
+          );
+          if (!image) {
+            return;
+          }
+          const iw = image.naturalWidth || image.width || 1;
+          const ih = image.naturalHeight || image.height || 1;
+          const scale = Math.min(
+            w / iw,
+            h / ih
+          );
+          const dw = iw * scale;
+          const dh = ih * scale;
+          ctx2.drawImage(
+            image,
+            x + (w - dw) / 2,
+            y + (h - dh) / 2,
+            dw,
+            dh
+          );
+        }
+        render(ctx2) {
+          if (!ctx2 || !this.shopId) {
+            return;
+          }
+          this.layout();
+          openingPrepSystem.updateEquipment(
+            this.shopId
+          );
+          const shop = openingPrepSystem.getShop(
+            this.shopId
+          );
+          const state = openingPrepSystem.getEquipmentState(
+            this.shopId
+          );
+          const quote = openingPrepSystem.getEquipmentQuote(
+            this.shopId
+          );
+          this.buttons = [];
+          ctx2.save();
+          ctx2.fillStyle = COLORS.paper;
+          ctx2.fillRect(
+            0,
+            0,
+            DESIGN_W,
+            this.viewH
+          );
+          ctx2.fillStyle = COLORS.navy;
+          ctx2.fillRect(
+            0,
+            0,
+            DESIGN_W,
+            68
+          );
+          this.text(
+            ctx2,
+            "\u2039",
+            25,
+            33,
+            24,
+            COLORS.white,
+            "700",
+            "center"
+          );
+          this.button(
+            "back",
+            4,
+            8,
+            44,
+            48
+          );
+          this.text(
+            ctx2,
+            "\u8BBE\u5907\u91C7\u8D2D",
+            58,
+            22,
+            17,
+            COLORS.white,
+            "700"
+          );
+          this.text(
+            ctx2,
+            shop.name + " \xB7 \u6570\u91CF\u3001\u6863\u6B21\u3001\u4EF7\u683C\u548C\u627F\u8F7D\u5B9E\u65F6\u8054\u52A8",
+            58,
+            47,
+            7,
+            "#D5E4EA",
+            "500"
+          );
+          this.text(
+            ctx2,
+            money(
+              gameState.getPlayer().cash
+            ),
+            374,
+            23,
+            12,
+            "#FFE8AE",
+            "700",
+            "right"
+          );
+          this.rounded(
+            ctx2,
+            10,
+            80,
+            370,
+            72,
+            13,
+            COLORS.panel,
+            COLORS.line
+          );
+          this.text(
+            ctx2,
+            "\u91C7\u8D2D\u9884\u7B97",
+            22,
+            98,
+            7,
+            COLORS.muted,
+            "600"
+          );
+          this.text(
+            ctx2,
+            money(
+              quote.total
+            ),
+            22,
+            124,
+            16,
+            COLORS.red,
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u627F\u8F7D " + quote.capacity + " / " + quote.seats + "\u5E2D",
+            188,
+            103,
+            8,
+            quote.capacityRatio >= 0.9 ? COLORS.green : COLORS.red,
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u529F\u7387 " + quote.totalPowerKw + "kW \xB7 \u9884\u8BA1" + quote.installDays + "\u5929\u5230\u8D27\u5B89\u88C5" + (quote.infrastructureUpgradeCost > 0 ? " \xB7 \u542B\u7535\u529B\u589E\u5BB9" + money(
+              quote.infrastructureUpgradeCost
+            ) : ""),
+            188,
+            128,
+            7,
+            COLORS.muted,
+            "600"
+          );
+          let y = 164;
+          for (const line of quote.lines) {
+            this.rounded(
+              ctx2,
+              10,
+              y,
+              370,
+              78,
+              12,
+              COLORS.panel,
+              COLORS.line
+            );
+            this.drawVisual(
+              ctx2,
+              line.iconKey,
+              18,
+              y + 9,
+              58,
+              58
+            );
+            this.text(
+              ctx2,
+              line.name,
+              84,
+              y + 20,
+              9,
+              COLORS.text,
+              "700"
+            );
+            this.text(
+              ctx2,
+              line.gradeName + " \xB7 " + money(
+                line.price
+              ) + " \xB7 \u627F\u8F7D" + line.capacity,
+              84,
+              y + 43,
+              6.8,
+              COLORS.muted,
+              "600"
+            );
+            if (state.status === "planning") {
+              this.rounded(
+                ctx2,
+                266,
+                y + 12,
+                29,
+                29,
+                8,
+                "#EEE6DC"
+              );
+              this.text(
+                ctx2,
+                "\u2212",
+                280.5,
+                y + 26.5,
+                13,
+                COLORS.navy,
+                "700",
+                "center"
+              );
+              this.button(
+                "minus:" + line.id,
+                262,
+                y + 8,
+                37,
+                37
+              );
+              this.text(
+                ctx2,
+                line.quantity,
+                316,
+                y + 27,
+                9,
+                COLORS.text,
+                "700",
+                "center"
+              );
+              this.rounded(
+                ctx2,
+                340,
+                y + 12,
+                29,
+                29,
+                8,
+                COLORS.gold
+              );
+              this.text(
+                ctx2,
+                "+",
+                354.5,
+                y + 26.5,
+                12,
+                COLORS.text,
+                "700",
+                "center"
+              );
+              this.button(
+                "plus:" + line.id,
+                336,
+                y + 8,
+                37,
+                37
+              );
+              this.rounded(
+                ctx2,
+                265,
+                y + 48,
+                104,
+                23,
+                7,
+                "#E8F0F2"
+              );
+              this.text(
+                ctx2,
+                "\u5207\u6362\u6863\u6B21 \u203A",
+                317,
+                y + 59.5,
+                6.5,
+                COLORS.blue,
+                "700",
+                "center"
+              );
+              this.button(
+                "grade:" + line.id,
+                261,
+                y + 45,
+                112,
+                29
+              );
+            } else {
+              this.text(
+                ctx2,
+                state.status === "installed" ? "\u5DF2\u5B89\u88C5" : "\u5DF2\u4E0B\u5355",
+                358,
+                y + 28,
+                8,
+                state.status === "installed" ? COLORS.green : COLORS.orange,
+                "700",
+                "right"
+              );
+            }
+            y += 86;
+          }
+          const actionY = this.contentBottom - 50;
+          this.rounded(
+            ctx2,
+            10,
+            actionY,
+            370,
+            40,
+            12,
+            state.status === "planning" ? quote.valid ? COLORS.gold : "#DCD5CC" : COLORS.navy
+          );
+          let actionText = "\u786E\u8BA4\u91C7\u8D2D " + money(
+            quote.total
+          );
+          if (state.status === "ordered") {
+            actionText = "\u8BBE\u5907\u8FD0\u8F93\u5B89\u88C5\u4E2D \xB7 \u7B2C" + state.deliveryDay + "\u5929\u5B8C\u6210";
+          } else if (state.status === "installed") {
+            actionText = "\u8BBE\u5907\u5DF2\u5168\u90E8\u5B89\u88C5";
+          } else if (!quote.valid) {
+            actionText = quote.issues[0] || "\u8BBE\u5907\u914D\u7F6E\u4E0D\u8DB3";
+          }
+          this.text(
+            ctx2,
+            actionText,
+            195,
+            actionY + 20,
+            8.5,
+            state.status === "planning" ? COLORS.text : COLORS.white,
+            "700",
+            "center"
+          );
+          this.button(
+            "order",
+            10,
+            actionY,
+            370,
+            40
+          );
+          ctx2.restore();
+        }
+        handleTap(x, y) {
+          const item = this.hit(
+            x,
+            y
+          );
+          if (!item) {
+            return false;
+          }
+          if (item.id === "back") {
+            sceneManager.switchTo(
+              "shop"
+            );
+            return true;
+          }
+          if (item.id.indexOf(
+            "minus:"
+          ) === 0) {
+            openingPrepSystem.adjustEquipment(
+              this.shopId,
+              item.id.slice(
+                6
+              ),
+              -1
+            );
+            return true;
+          }
+          if (item.id.indexOf(
+            "plus:"
+          ) === 0) {
+            openingPrepSystem.adjustEquipment(
+              this.shopId,
+              item.id.slice(
+                5
+              ),
+              1
+            );
+            return true;
+          }
+          if (item.id.indexOf(
+            "grade:"
+          ) === 0) {
+            openingPrepSystem.cycleEquipmentGrade(
+              this.shopId,
+              item.id.slice(
+                6
+              )
+            );
+            return true;
+          }
+          if (item.id === "order") {
+            const state = openingPrepSystem.getEquipmentState(
+              this.shopId
+            );
+            if (state.status !== "planning") {
+              return true;
+            }
+            const result = openingPrepSystem.orderEquipment(
+              this.shopId
+            );
+            if (api && typeof api.showToast === "function") {
+              api.showToast({
+                title: result.ok ? "\u8BBE\u5907\u8BA2\u5355\u5DF2\u63D0\u4EA4" : result.message,
+                icon: "none"
+              });
+            }
+            return true;
+          }
+          return false;
+        }
+      };
+      module.exports = new EquipmentScene();
+    }
+  });
+
+  // src/scenes/licenseScene.js
+  var require_licenseScene = __commonJS({
+    "src/scenes/licenseScene.js"(exports, module) {
+      "use strict";
+      var runtime = globalThis.GameRuntime;
+      if (!runtime) {
+        throw new Error(
+          "LicenseScene\uFF1AGameRuntime \u672A\u521D\u59CB\u5316"
+        );
+      }
+      var api = runtime.api || {};
+      var gameState = require_gameState();
+      var sceneManager = require_sceneManager();
+      var openingPrepSystem = require_openingPrepSystem();
+      var DESIGN_W = 390;
+      var COLORS = {
+        navy: "#0A2A3B",
+        paper: "#F4EBDD",
+        panel: "#FFF9EF",
+        text: "#24323A",
+        muted: "#718087",
+        gold: "#E4AA48",
+        orange: "#D9853E",
+        red: "#BF584A",
+        green: "#4B9567",
+        blue: "#4C86A6",
+        line: "#DED1C1",
+        white: "#FFFFFF"
+      };
+      function money(value) {
+        return "\xA5" + Math.round(
+          Number(value) || 0
+        ).toLocaleString();
+      }
+      var LicenseScene = class {
+        constructor() {
+          this.id = "license";
+          this.shopId = null;
+          this.buttons = [];
+          this.viewH = 780;
+          this.navH = 64;
+          this.contentBottom = 716;
+        }
+        enter(payload) {
+          const business = gameState.getBusiness();
+          this.shopId = payload && payload.shopId || business.currentShopId;
+          if (this.shopId) {
+            openingPrepSystem.getPermitState(
+              this.shopId
+            );
+          }
+        }
+        update() {
+          if (this.shopId) {
+            openingPrepSystem.updatePermits(
+              this.shopId
+            );
+          }
+        }
+        exit() {
+          this.buttons = [];
+        }
+        getLayout() {
+          let height = 780;
+          if (api && typeof api.getSystemInfoSync === "function") {
+            const info = api.getSystemInfoSync();
+            const screenW = Math.max(
+              1,
+              Number(
+                info.windowWidth
+              ) || 390
+            );
+            height = Math.max(
+              1,
+              Number(
+                info.windowHeight
+              ) || 780
+            ) / (screenW / 390);
+          }
+          this.viewH = height;
+          this.navH = height < 740 ? 60 : 64;
+          this.contentBottom = height - this.navH;
+        }
+        rounded(ctx2, x, y, w, h, r, fill, stroke) {
+          const radius = Math.min(
+            r,
+            w / 2,
+            h / 2
+          );
+          ctx2.beginPath();
+          ctx2.moveTo(
+            x + radius,
+            y
+          );
+          ctx2.arcTo(
+            x + w,
+            y,
+            x + w,
+            y + h,
+            radius
+          );
+          ctx2.arcTo(
+            x + w,
+            y + h,
+            x,
+            y + h,
+            radius
+          );
+          ctx2.arcTo(
+            x,
+            y + h,
+            x,
+            y,
+            radius
+          );
+          ctx2.arcTo(
+            x,
+            y,
+            x + w,
+            y,
+            radius
+          );
+          ctx2.closePath();
+          if (fill) {
+            ctx2.fillStyle = fill;
+            ctx2.fill();
+          }
+          if (stroke) {
+            ctx2.strokeStyle = stroke;
+            ctx2.stroke();
+          }
+        }
+        text(ctx2, value, x, y, size, color, weight, align) {
+          ctx2.fillStyle = color || COLORS.text;
+          const readableSize = Math.max(
+            7.3,
+            Number(
+              size
+            ) || 7.3
+          );
+          ctx2.font = (weight || "500") + " " + readableSize + "px sans-serif";
+          ctx2.textAlign = align || "left";
+          ctx2.textBaseline = "middle";
+          ctx2.fillText(
+            String(value),
+            x,
+            y
+          );
+        }
+        addButton(id, x, y, w, h) {
+          const hitW = Math.max(
+            40,
+            w
+          );
+          const hitH = Math.max(
+            36,
+            h
+          );
+          this.buttons.push({
+            id,
+            x: x - (hitW - w) / 2,
+            y: y - (hitH - h) / 2,
+            w: hitW,
+            h: hitH
+          });
+        }
+        hit(x, y) {
+          for (let i = this.buttons.length - 1; i >= 0; i--) {
+            const item = this.buttons[i];
+            if (x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h) {
+              return item;
+            }
+          }
+          return null;
+        }
+        statusText(item) {
+          if (item.status === "approved") {
+            return "\u5DF2\u901A\u8FC7";
+          }
+          if (item.status === "applying") {
+            return "\u5BA1\u6838\u4E2D";
+          }
+          if (item.status === "needs_fix") {
+            return "\u9700\u6574\u6539";
+          }
+          return item.ready ? "\u53EF\u529E\u7406" : "\u6761\u4EF6\u4E0D\u8DB3";
+        }
+        statusColor(item) {
+          if (item.status === "approved") {
+            return COLORS.green;
+          }
+          if (item.status === "applying") {
+            return COLORS.orange;
+          }
+          if (item.status === "needs_fix") {
+            return COLORS.red;
+          }
+          return item.ready ? COLORS.blue : COLORS.muted;
+        }
+        render(ctx2) {
+          if (!ctx2 || !this.shopId) {
+            return;
+          }
+          this.getLayout();
+          openingPrepSystem.updatePermits(
+            this.shopId
+          );
+          const shop = openingPrepSystem.getShop(
+            this.shopId
+          );
+          const overview = openingPrepSystem.getPermitOverview(
+            this.shopId
+          );
+          this.buttons = [];
+          ctx2.save();
+          ctx2.fillStyle = COLORS.paper;
+          ctx2.fillRect(
+            0,
+            0,
+            DESIGN_W,
+            this.viewH
+          );
+          ctx2.fillStyle = COLORS.navy;
+          ctx2.fillRect(
+            0,
+            0,
+            DESIGN_W,
+            68
+          );
+          this.text(
+            ctx2,
+            "\u2039",
+            24,
+            33,
+            24,
+            COLORS.white,
+            "700",
+            "center"
+          );
+          this.addButton(
+            "back",
+            4,
+            8,
+            44,
+            48
+          );
+          this.text(
+            ctx2,
+            "\u8BC1\u7167\u529E\u7406",
+            58,
+            22,
+            17,
+            COLORS.white,
+            "700"
+          );
+          this.text(
+            ctx2,
+            shop.name + " \xB7 \u6761\u4EF6\u4E0D\u8DB3\u4F1A\u76F4\u63A5\u963B\u6B62\u63D0\u4EA4",
+            58,
+            47,
+            7,
+            "#D5E4EA",
+            "500"
+          );
+          this.text(
+            ctx2,
+            overview.approved + "/" + overview.total + " \u5DF2\u5B8C\u6210",
+            374,
+            25,
+            9,
+            "#FFE8AE",
+            "700",
+            "right"
+          );
+          this.rounded(
+            ctx2,
+            10,
+            80,
+            370,
+            67,
+            13,
+            COLORS.panel,
+            COLORS.line
+          );
+          this.text(
+            ctx2,
+            "\u529E\u7406\u539F\u5219",
+            22,
+            99,
+            8,
+            COLORS.text,
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u88C5\u4FEE\u3001\u8BBE\u5907\u3001\u6D88\u9632\u4E0E\u536B\u751F\u6761\u4EF6\u4F1A\u5B9E\u65F6\u5F71\u54CD\u662F\u5426\u53EF\u63D0\u4EA4\u3002",
+            22,
+            123,
+            7,
+            COLORS.muted,
+            "500"
+          );
+          let y = 160;
+          for (const row of overview.rows) {
+            this.rounded(
+              ctx2,
+              10,
+              y,
+              370,
+              88,
+              12,
+              COLORS.panel,
+              COLORS.line
+            );
+            this.text(
+              ctx2,
+              row.name,
+              22,
+              y + 20,
+              9,
+              COLORS.text,
+              "700"
+            );
+            this.text(
+              ctx2,
+              this.statusText(
+                row
+              ),
+              360,
+              y + 20,
+              7.5,
+              this.statusColor(
+                row
+              ),
+              "700",
+              "right"
+            );
+            let detail = money(
+              row.fee
+            ) + " \xB7 \u9884\u8BA1" + row.days + "\u5929";
+            if (row.status === "applying") {
+              detail = "\u5BA1\u6838\u4E2D \xB7 \u7B2C" + row.finishDay + "\u5929\u51FA\u7ED3\u679C";
+            } else if (row.status === "needs_fix") {
+              detail = row.issue || "\u9700\u8981\u6574\u6539";
+            } else if (!row.ready && row.reasons.length) {
+              detail = row.reasons[0];
+            }
+            this.text(
+              ctx2,
+              detail,
+              22,
+              y + 45,
+              7,
+              row.status === "needs_fix" ? COLORS.red : COLORS.muted,
+              "600"
+            );
+            if (row.status === "not_applied" && row.ready) {
+              this.rounded(
+                ctx2,
+                270,
+                y + 55,
+                92,
+                25,
+                8,
+                COLORS.gold
+              );
+              this.text(
+                ctx2,
+                "\u63D0\u4EA4\u529E\u7406",
+                316,
+                y + 67.5,
+                7,
+                COLORS.text,
+                "700",
+                "center"
+              );
+              this.addButton(
+                "apply:" + row.id,
+                266,
+                y + 51,
+                100,
+                33
+              );
+            } else if (row.remediable && (row.status === "needs_fix" || !row.ready)) {
+              this.rounded(
+                ctx2,
+                258,
+                y + 55,
+                104,
+                25,
+                8,
+                "#F7E4DF",
+                "#D8B1A8"
+              );
+              this.text(
+                ctx2,
+                "\u6574\u6539 " + money(
+                  row.remediationCost
+                ),
+                310,
+                y + 67.5,
+                6.5,
+                COLORS.red,
+                "700",
+                "center"
+              );
+              this.addButton(
+                "fix:" + row.id,
+                254,
+                y + 51,
+                112,
+                33
+              );
+            }
+            y += 96;
+          }
+          const actionY = this.contentBottom - 49;
+          this.rounded(
+            ctx2,
+            10,
+            actionY,
+            370,
+            39,
+            11,
+            overview.approved === overview.total ? COLORS.green : COLORS.navy
+          );
+          this.text(
+            ctx2,
+            overview.approved === overview.total ? "\u8BC1\u7167\u5DF2\u5168\u90E8\u5B8C\u6210" : "\u8FD4\u56DE\u95E8\u5E97\u7EE7\u7EED\u7B79\u5907",
+            195,
+            actionY + 19.5,
+            8.5,
+            COLORS.white,
+            "700",
+            "center"
+          );
+          this.addButton(
+            "back",
+            10,
+            actionY,
+            370,
+            39
+          );
+          ctx2.restore();
+        }
+        handleTap(x, y) {
+          const item = this.hit(
+            x,
+            y
+          );
+          if (!item) {
+            return false;
+          }
+          if (item.id === "back") {
+            sceneManager.switchTo(
+              "shop"
+            );
+            return true;
+          }
+          if (item.id.indexOf(
+            "fix:"
+          ) === 0) {
+            const result = openingPrepSystem.remediatePermit(
+              this.shopId,
+              item.id.slice(
+                4
+              )
+            );
+            if (api && typeof api.showToast === "function") {
+              api.showToast({
+                title: result.ok ? "\u6574\u6539\u5DF2\u5B8C\u6210\uFF0C\u53EF\u91CD\u65B0\u529E\u7406" : result.message,
+                icon: "none"
+              });
+            }
+            return true;
+          }
+          if (item.id.indexOf(
+            "apply:"
+          ) === 0) {
+            const result = openingPrepSystem.applyPermit(
+              this.shopId,
+              item.id.slice(
+                6
+              )
+            );
+            if (api && typeof api.showToast === "function") {
+              api.showToast({
+                title: result.ok ? "\u7533\u8BF7\u5DF2\u63D0\u4EA4" : result.message,
+                icon: "none"
+              });
+            }
+            return true;
+          }
+          return false;
+        }
+      };
+      module.exports = new LicenseScene();
+    }
+  });
+
+  // src/scenes/staffScene.js
+  var require_staffScene = __commonJS({
+    "src/scenes/staffScene.js"(exports, module) {
+      "use strict";
+      var runtime = globalThis.GameRuntime;
+      if (!runtime) {
+        throw new Error(
+          "StaffScene\uFF1AGameRuntime \u672A\u521D\u59CB\u5316"
+        );
+      }
+      var api = runtime.api || {};
+      var gameState = require_gameState();
+      var sceneManager = require_sceneManager();
+      var openingPrepSystem = require_openingPrepSystem();
+      var openingConfig = require_openingConfig();
+      var DESIGN_W = 390;
+      var COLORS = {
+        navy: "#0A2A3B",
+        paper: "#F4EBDD",
+        panel: "#FFF9EF",
+        text: "#24323A",
+        muted: "#718087",
+        gold: "#E4AA48",
+        orange: "#D9853E",
+        red: "#BF584A",
+        green: "#4B9567",
+        blue: "#4C86A6",
+        line: "#DED1C1",
+        white: "#FFFFFF"
+      };
+      function money(value) {
+        return "\xA5" + Math.round(
+          Number(value) || 0
+        ).toLocaleString();
+      }
+      var StaffScene = class {
+        constructor() {
+          this.id = "staff";
+          this.shopId = null;
+          this.roleId = "manager";
+          this.buttons = [];
+          this.viewH = 780;
+          this.navH = 64;
+          this.contentBottom = 716;
+        }
+        enter(payload) {
+          const business = gameState.getBusiness();
+          this.shopId = payload && payload.shopId || business.currentShopId;
+          this.roleId = "manager";
+          if (this.shopId) {
+            openingPrepSystem.refreshCandidates(
+              this.shopId
+            );
+          }
+        }
+        update() {
+        }
+        exit() {
+          this.buttons = [];
+        }
+        getLayout() {
+          let height = 780;
+          if (api && typeof api.getSystemInfoSync === "function") {
+            const info = api.getSystemInfoSync();
+            const screenW = Math.max(
+              1,
+              Number(
+                info.windowWidth
+              ) || 390
+            );
+            height = Math.max(
+              1,
+              Number(
+                info.windowHeight
+              ) || 780
+            ) / (screenW / 390);
+          }
+          this.viewH = height;
+          this.navH = height < 740 ? 60 : 64;
+          this.contentBottom = height - this.navH;
+        }
+        rounded(ctx2, x, y, w, h, r, fill, stroke) {
+          const radius = Math.min(
+            r,
+            w / 2,
+            h / 2
+          );
+          ctx2.beginPath();
+          ctx2.moveTo(
+            x + radius,
+            y
+          );
+          ctx2.arcTo(
+            x + w,
+            y,
+            x + w,
+            y + h,
+            radius
+          );
+          ctx2.arcTo(
+            x + w,
+            y + h,
+            x,
+            y + h,
+            radius
+          );
+          ctx2.arcTo(
+            x,
+            y + h,
+            x,
+            y,
+            radius
+          );
+          ctx2.arcTo(
+            x,
+            y,
+            x + w,
+            y,
+            radius
+          );
+          ctx2.closePath();
+          if (fill) {
+            ctx2.fillStyle = fill;
+            ctx2.fill();
+          }
+          if (stroke) {
+            ctx2.strokeStyle = stroke;
+            ctx2.stroke();
+          }
+        }
+        text(ctx2, value, x, y, size, color, weight, align) {
+          ctx2.fillStyle = color || COLORS.text;
+          const readableSize = Math.max(
+            7.3,
+            Number(
+              size
+            ) || 7.3
+          );
+          ctx2.font = (weight || "500") + " " + readableSize + "px sans-serif";
+          ctx2.textAlign = align || "left";
+          ctx2.textBaseline = "middle";
+          ctx2.fillText(
+            String(value),
+            x,
+            y
+          );
+        }
+        addButton(id, x, y, w, h) {
+          const hitW = Math.max(
+            40,
+            w
+          );
+          const hitH = Math.max(
+            36,
+            h
+          );
+          this.buttons.push({
+            id,
+            x: x - (hitW - w) / 2,
+            y: y - (hitH - h) / 2,
+            w: hitW,
+            h: hitH
+          });
+        }
+        hit(x, y) {
+          for (let i = this.buttons.length - 1; i >= 0; i--) {
+            const item = this.buttons[i];
+            if (x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h) {
+              return item;
+            }
+          }
+          return null;
+        }
+        render(ctx2) {
+          if (!ctx2 || !this.shopId) {
+            return;
+          }
+          this.getLayout();
+          const shop = openingPrepSystem.getShop(
+            this.shopId
+          );
+          const overview = openingPrepSystem.getStaffOverview(
+            this.shopId
+          );
+          this.buttons = [];
+          ctx2.save();
+          ctx2.fillStyle = COLORS.paper;
+          ctx2.fillRect(
+            0,
+            0,
+            DESIGN_W,
+            this.viewH
+          );
+          ctx2.fillStyle = COLORS.navy;
+          ctx2.fillRect(
+            0,
+            0,
+            DESIGN_W,
+            68
+          );
+          this.text(
+            ctx2,
+            "\u2039",
+            24,
+            33,
+            24,
+            COLORS.white,
+            "700",
+            "center"
+          );
+          this.addButton(
+            "back",
+            4,
+            8,
+            44,
+            48
+          );
+          this.text(
+            ctx2,
+            "\u62DB\u8058\u56E2\u961F",
+            58,
+            22,
+            17,
+            COLORS.white,
+            "700"
+          );
+          this.text(
+            ctx2,
+            shop.name + " \xB7 \u5019\u9009\u4EBA\u6BCF\u65E5\u5237\u65B0\uFF0C\u85AA\u8D44\u968F\u80FD\u529B\u53D8\u5316",
+            58,
+            47,
+            7,
+            "#D5E4EA",
+            "500"
+          );
+          this.text(
+            ctx2,
+            money(
+              overview.payroll
+            ) + "/\u6708",
+            374,
+            25,
+            10,
+            "#FFE8AE",
+            "700",
+            "right"
+          );
+          this.rounded(
+            ctx2,
+            10,
+            80,
+            370,
+            82,
+            13,
+            COLORS.panel,
+            COLORS.line
+          );
+          this.text(
+            ctx2,
+            "\u4EBA\u5458\u8986\u76D6\u7387",
+            22,
+            99,
+            7,
+            COLORS.muted,
+            "600"
+          );
+          this.text(
+            ctx2,
+            Math.round(
+              overview.coverage * 100
+            ) + "%",
+            22,
+            126,
+            17,
+            overview.coverage >= 0.9 ? COLORS.green : COLORS.orange,
+            "700"
+          );
+          let summaryX = 112;
+          for (const role of openingConfig.roles) {
+            this.text(
+              ctx2,
+              role.name,
+              summaryX,
+              101,
+              6.5,
+              COLORS.muted,
+              "600",
+              "center"
+            );
+            this.text(
+              ctx2,
+              (overview.current[role.id] || 0) + "/" + overview.required[role.id],
+              summaryX,
+              128,
+              9,
+              (overview.current[role.id] || 0) >= overview.required[role.id] ? COLORS.green : COLORS.text,
+              "700",
+              "center"
+            );
+            summaryX += 65;
+          }
+          const tabsY = 176;
+          const gap = 5;
+          const tabW = (DESIGN_W - 20 - gap * 3) / 4;
+          for (let i = 0; i < openingConfig.roles.length; i++) {
+            const role = openingConfig.roles[i];
+            const active = role.id === this.roleId;
+            const x = 10 + i * (tabW + gap);
+            this.rounded(
+              ctx2,
+              x,
+              tabsY,
+              tabW,
+              33,
+              9,
+              active ? COLORS.gold : "#EAE1D5",
+              "#D5C8B9"
+            );
+            this.text(
+              ctx2,
+              role.name,
+              x + tabW / 2,
+              tabsY + 16.5,
+              7.2,
+              active ? COLORS.text : COLORS.muted,
+              "700",
+              "center"
+            );
+            this.addButton(
+              "role:" + role.id,
+              x,
+              tabsY,
+              tabW,
+              33
+            );
+          }
+          const candidates = overview.candidates.filter(
+            (item) => item.roleId === this.roleId
+          ).sort(
+            (a, b) => b.score - a.score
+          );
+          let y = 224;
+          for (let i = 0; i < candidates.length; i++) {
+            const candidate = candidates[i];
+            this.rounded(
+              ctx2,
+              10,
+              y,
+              370,
+              105,
+              12,
+              COLORS.panel,
+              COLORS.line
+            );
+            this.rounded(
+              ctx2,
+              22,
+              y + 14,
+              49,
+              49,
+              25,
+              i === 0 ? "#FFE4A4" : "#E5EEF1"
+            );
+            this.text(
+              ctx2,
+              candidate.name.slice(
+                -1
+              ),
+              46.5,
+              y + 38.5,
+              15,
+              COLORS.navy,
+              "700",
+              "center"
+            );
+            this.text(
+              ctx2,
+              candidate.name + " \xB7 " + candidate.age + "\u5C81",
+              84,
+              y + 20,
+              9.5,
+              COLORS.text,
+              "700"
+            );
+            this.text(
+              ctx2,
+              candidate.experience + "\u5E74\u7ECF\u9A8C \xB7 \u6708\u85AA" + money(
+                candidate.wage
+              ),
+              84,
+              y + 43,
+              7,
+              COLORS.muted,
+              "600"
+            );
+            this.text(
+              ctx2,
+              "\u6280\u80FD " + candidate.skill + " \xB7 \u7A33\u5B9A " + candidate.stability + " \xB7 \u7EFC\u5408 " + candidate.score,
+              22,
+              y + 76,
+              7,
+              i === 0 ? COLORS.orange : COLORS.blue,
+              "700"
+            );
+            this.rounded(
+              ctx2,
+              286,
+              y + 63,
+              78,
+              29,
+              8,
+              COLORS.gold
+            );
+            this.text(
+              ctx2,
+              "\u5F55\u7528",
+              325,
+              y + 77.5,
+              7.5,
+              COLORS.text,
+              "700",
+              "center"
+            );
+            this.addButton(
+              "hire:" + candidate.id,
+              282,
+              y + 59,
+              86,
+              37
+            );
+            y += 114;
+          }
+          const actionY = this.contentBottom - 50;
+          this.rounded(
+            ctx2,
+            10,
+            actionY,
+            370,
+            40,
+            11,
+            overview.coverage >= 0.9 ? COLORS.green : COLORS.navy
+          );
+          this.text(
+            ctx2,
+            overview.coverage >= 0.9 ? "\u57FA\u672C\u73ED\u7EC4\u5DF2\u9F50\u5907" : "\u5019\u9009\u4EBA\u6B21\u65E5\u4F1A\u81EA\u52A8\u66F4\u65B0",
+            195,
+            actionY + 20,
+            8.5,
+            COLORS.white,
+            "700",
+            "center"
+          );
+          this.addButton(
+            "back",
+            10,
+            actionY,
+            370,
+            40
+          );
+          ctx2.restore();
+        }
+        handleTap(x, y) {
+          const item = this.hit(
+            x,
+            y
+          );
+          if (!item) {
+            return false;
+          }
+          if (item.id === "back") {
+            sceneManager.switchTo(
+              "shop"
+            );
+            return true;
+          }
+          if (item.id.indexOf(
+            "role:"
+          ) === 0) {
+            this.roleId = item.id.slice(
+              5
+            );
+            return true;
+          }
+          if (item.id.indexOf(
+            "hire:"
+          ) === 0) {
+            const result = openingPrepSystem.hireCandidate(
+              this.shopId,
+              item.id.slice(
+                5
+              )
+            );
+            if (api && typeof api.showToast === "function") {
+              api.showToast({
+                title: result.ok ? result.staff.name + " \u5DF2\u5165\u804C" : result.message,
+                icon: "none"
+              });
+            }
+            return true;
+          }
+          return false;
+        }
+      };
+      module.exports = new StaffScene();
+    }
+  });
+
   // src/scenes/simpleScene.js
   var require_simpleScene = __commonJS({
     "src/scenes/simpleScene.js"(exports, module) {
@@ -16658,6 +20362,7 @@
       var sceneManager = require_sceneManager();
       var animationManager = require_animationManager();
       var resourceManager = require_resourceManager();
+      var safeArea = require_safeArea();
       var citySystem = require_citySystem();
       var demandSystem = require_demandSystem();
       var simulationSystem = require_simulationSystem();
@@ -16666,6 +20371,9 @@
       var storeScene = require_storeScene();
       var districtScene = require_districtScene();
       var renovationScene = require_renovationScene();
+      var equipmentScene = require_equipmentScene();
+      var licenseScene = require_licenseScene();
+      var staffScene = require_staffScene();
       var researchScene = require_researchScene();
       var supplyScene = require_supplyScene();
       var businessScene = require_businessScene();
@@ -16673,6 +20381,8 @@
       var VIEW_H = 780;
       var TOP_H = 90;
       var NAV_H = 64;
+      var SAFE_TOP = 0;
+      var SAFE_BOTTOM = 0;
       var MAP_X = 0;
       var MAP_Y = 90;
       var MAP_W = 390;
@@ -16841,8 +20551,8 @@
         };
       }
       function updateLayout() {
-        TOP_H = VIEW_H < 740 ? 84 : 90;
-        NAV_H = VIEW_H < 740 ? 60 : 64;
+        TOP_H = (VIEW_H < 740 ? 84 : 90) + SAFE_TOP;
+        NAV_H = (VIEW_H < 740 ? 60 : 64) + SAFE_BOTTOM;
         MAP_X = 0;
         MAP_Y = TOP_H;
         MAP_W = VIEW_W;
@@ -16877,6 +20587,12 @@
           )
         );
         scale = screenWidth / VIEW_W;
+        const safeInsets = safeArea.getLogicalInsets(
+          info,
+          scale
+        );
+        SAFE_TOP = safeInsets.top;
+        SAFE_BOTTOM = safeInsets.bottom;
         VIEW_H = screenHeight / scale;
         updateLayout();
         const targetW = Math.max(
@@ -16988,7 +20704,13 @@
       }
       function drawText(text, x, y, size, color, weight, align) {
         ctx2.fillStyle = color || COLORS.text;
-        ctx2.font = (weight || "500") + " " + size + "px sans-serif";
+        const readableSize = Math.max(
+          7.3,
+          Number(
+            size
+          ) || 7.3
+        );
+        ctx2.font = (weight || "500") + " " + readableSize + "px sans-serif";
         ctx2.textAlign = align || "left";
         ctx2.textBaseline = "middle";
         ctx2.fillText(
@@ -17004,7 +20726,13 @@
         if (!ctx2.measureText || !maxWidth) {
           return value;
         }
-        ctx2.font = (weight || "500") + " " + size + "px sans-serif";
+        const readableSize = Math.max(
+          7.3,
+          Number(
+            size
+          ) || 7.3
+        );
+        ctx2.font = (weight || "500") + " " + readableSize + "px sans-serif";
         if (ctx2.measureText(
           value
         ).width <= maxWidth) {
@@ -17022,12 +20750,20 @@
         return result + "\u2026";
       }
       function addButton(id, x, y, w, h) {
+        const hitW = Math.max(
+          40,
+          w
+        );
+        const hitH = Math.max(
+          36,
+          h
+        );
         buttons.push({
           id,
-          x,
-          y,
-          w,
-          h
+          x: x - (hitW - w) / 2,
+          y: y - (hitH - h) / 2,
+          w: hitW,
+          h: hitH
         });
       }
       function showToast(text) {
@@ -18043,7 +21779,7 @@
         for (let i = 0; i < NAV_ITEMS.length; i++) {
           const item = NAV_ITEMS[i];
           const cx = i * cellW + cellW / 2;
-          const active = item.id === current || item.id === "city" && current === "district" || item.id === "shop" && (current === "propertyMarket" || current === "renovation");
+          const active = item.id === current || item.id === "city" && current === "district" || item.id === "shop" && (current === "propertyMarket" || current === "renovation" || current === "equipment" || current === "license" || current === "staff");
           if (active) {
             if (!drawAtlas(
               "navActive",
@@ -18159,6 +21895,18 @@
       sceneManager.register(
         "renovation",
         renovationScene
+      );
+      sceneManager.register(
+        "equipment",
+        equipmentScene
+      );
+      sceneManager.register(
+        "license",
+        licenseScene
+      );
+      sceneManager.register(
+        "staff",
+        staffScene
       );
       sceneManager.register(
         "research",
@@ -18428,7 +22176,7 @@
         gameLoop
       );
       console.log(
-        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V10 \u56FE\u7247\u8FD0\u884C\u65F6\u63A5\u5165\u7248\u542F\u52A8\u6210\u529F"
+        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V12 \u73A9\u5BB6\u62A5\u544A\u4F18\u5316\u4E0E\u9AD8\u4FDD\u771FUI\u7248\u542F\u52A8\u6210\u529F"
       );
     }
   });
