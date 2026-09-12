@@ -77,37 +77,22 @@ const NAV_H = 78;
 
 const COLORS = {
   bg: '#F3EBDD',
-
   top: '#203B50',
-
   nav: '#2C2927',
-
   panel: '#FFF8EE',
-
   text: '#2F211C',
-
   muted: '#846E63',
-
   accent: '#E7A43A',
-
   accentDark: '#A45F2F',
-
   danger: '#D85745',
-
   gold: '#D69A31',
-
   white: '#FFFDF9',
-
   blue: '#4AA4D8',
-
   mask: '#101820'
 };
 
 /* =========================
    商圈地图坐标
-
-   后面正式做地图拖动/缩放后
-   会继续调整。
 ========================= */
 
 const DISTRICT_LAYOUT = {
@@ -173,17 +158,160 @@ const MEAL_NAMES = {
 ========================= */
 
 let scale = 1;
-
 let offsetX = 0;
-
 let offsetY = 0;
-
 let pixelRatio = 1;
-
 let lastFrameTime = null;
 
 const buttons = [];
 
+/* =========================
+   商圈定位针动画状态
+========================= */
+
+const districtPinState = {
+  districtId: null,
+  scale: 1,
+  pulse: 0
+};
+
+function stopDistrictPinAnimation() {
+  animationManager.cancelGroup(
+    'districtPin'
+  );
+
+  districtPinState.districtId =
+    null;
+
+  districtPinState.scale =
+    1;
+
+  districtPinState.pulse =
+    0;
+}
+
+function startDistrictPulse() {
+  if (
+    !popupManager.is(
+      'districtDetail'
+    )
+  ) {
+    return;
+  }
+
+  animationManager.start({
+    id:
+      'district_pin_pulse_up',
+
+    group:
+      'districtPin',
+
+    from:
+      0,
+
+    to:
+      1,
+
+    duration:
+      700,
+
+    easing:
+      'easeInOutQuad',
+
+    onUpdate(value) {
+      districtPinState.pulse =
+        value;
+    },
+
+    onComplete() {
+      if (
+        !popupManager.is(
+          'districtDetail'
+        )
+      ) {
+        return;
+      }
+
+      animationManager.start({
+        id:
+          'district_pin_pulse_down',
+
+        group:
+          'districtPin',
+
+        from:
+          1,
+
+        to:
+          0,
+
+        duration:
+          700,
+
+        easing:
+          'easeInOutQuad',
+
+        onUpdate(value) {
+          districtPinState.pulse =
+            value;
+        },
+
+        onComplete() {
+          startDistrictPulse();
+        }
+      });
+    }
+  });
+}
+
+function startDistrictPinAnimation(
+  districtId
+) {
+  animationManager.cancelGroup(
+    'districtPin'
+  );
+
+  districtPinState.districtId =
+    districtId;
+
+  districtPinState.scale =
+    0.84;
+
+  districtPinState.pulse =
+    0;
+
+  animationManager.start({
+    id:
+      'district_pin_press',
+
+    group:
+      'districtPin',
+
+    from:
+      0.84,
+
+    to:
+      1.08,
+
+    duration:
+      210,
+
+    easing:
+      'easeOutBack',
+
+    onUpdate(value) {
+      districtPinState.scale =
+        value;
+    },
+
+    onComplete() {
+      districtPinState.scale =
+        1.04;
+
+      startDistrictPulse();
+    }
+  });
+}
 /* =========================
    屏幕适配
 ========================= */
@@ -232,10 +360,6 @@ function resizeCanvas() {
       pixelRatio
     );
 
-  /*
-   * 只有尺寸变化时才真正调整Canvas。
-   * 动画期间不能每帧重新创建画布。
-   */
   if (
     canvas.width !== targetW ||
     canvas.height !== targetH
@@ -468,8 +592,6 @@ function clipRoundedRect(
 
 /* =========================
    Cover模式绘图
-
-   图片不会被拉伸变形。
 ========================= */
 
 function drawImageCover(
@@ -511,13 +633,6 @@ function drawImageCover(
   let sourceH =
     imageH;
 
-  /*
-   * 城市图目前本身较宽。
-   * 竖屏地图会优先显示中部城区。
-   *
-   * 后续加入地图拖动和缩放后，
-   * 玩家可以浏览整张城市图。
-   */
   if (
     imageRatio >
     boxRatio
@@ -638,10 +753,6 @@ function drawTopBar() {
     TOP_H
   );
 
-  /*
-   * 城市名字不再固定。
-   */
-
   drawText(
     gameState
       .getCityName(),
@@ -652,10 +763,6 @@ function drawTopBar() {
     COLORS.white,
     '700'
   );
-
-  /*
-   * 资金
-   */
 
   drawText(
     '¥' +
@@ -670,10 +777,6 @@ function drawTopBar() {
     'right'
   );
 
-  /*
-   * 日期
-   */
-
   drawText(
     display.date,
     16,
@@ -682,10 +785,6 @@ function drawTopBar() {
     '#DCE7EC',
     '500'
   );
-
-  /*
-   * 当前时间
-   */
 
   drawText(
     display.time,
@@ -696,10 +795,6 @@ function drawTopBar() {
     '700',
     'center'
   );
-
-  /*
-   * 天气
-   */
 
   drawText(
     weatherName +
@@ -732,10 +827,6 @@ function drawTopBar() {
     timeSystem
       .getSpeed();
 
-  /*
-   * 暂停
-   */
-
   drawSpeedButton(
     'time:pause',
 
@@ -748,10 +839,6 @@ function drawTopBar() {
     paused
   );
 
-  /*
-   * 1倍
-   */
-
   drawSpeedButton(
     'time:speed:1',
     '1×',
@@ -760,10 +847,6 @@ function drawTopBar() {
     !paused &&
     speed === 1
   );
-
-  /*
-   * 2倍
-   */
 
   drawSpeedButton(
     'time:speed:2',
@@ -774,10 +857,6 @@ function drawTopBar() {
     speed === 2
   );
 
-  /*
-   * 5倍
-   */
-
   drawSpeedButton(
     'time:speed:5',
     '5×',
@@ -787,10 +866,6 @@ function drawTopBar() {
     speed === 5
   );
 
-  /*
-   * 10倍
-   */
-
   drawSpeedButton(
     'time:speed:10',
     '10×',
@@ -799,10 +874,6 @@ function drawTopBar() {
     !paused &&
     speed === 10
   );
-
-  /*
-   * 当前餐饮时段
-   */
 
   drawText(
     paused
@@ -823,16 +894,11 @@ function drawTopBar() {
     'right'
   );
 }
-
 /* =========================
    正式城市地图
 ========================= */
 
 function drawMap() {
-  /*
-   * 底色
-   */
-
   roundedRect(
     MAP_X,
     MAP_Y,
@@ -848,10 +914,6 @@ function drawMap() {
         'city_base_01'
       );
 
-  /*
-   * 图片还没加载完成
-   */
-
   if (!image) {
     drawText(
       '城市地图加载中…',
@@ -866,10 +928,6 @@ function drawMap() {
 
     return;
   }
-
-  /*
-   * 地图圆角区域
-   */
 
   ctx.save();
 
@@ -889,13 +947,8 @@ function drawMap() {
     MAP_H
   );
 
-  /*
-   * 很轻的暗层。
-   * 让商圈标记更清楚。
-   */
-
   ctx.fillStyle =
-    'rgba(20,30,35,0.06)';
+    'rgba(20,30,35,0.05)';
 
   ctx.fillRect(
     MAP_X,
@@ -906,10 +959,6 @@ function drawMap() {
 
   ctx.restore();
 
-  /*
-   * 外框
-   */
-
   roundedRect(
     MAP_X,
     MAP_Y,
@@ -919,10 +968,6 @@ function drawMap() {
     null,
     'rgba(40,50,55,0.28)'
   );
-
-  /*
-   * 地图提示
-   */
 
   roundedRect(
     120,
@@ -952,19 +997,35 @@ function getDistricts() {
   const world =
     gameState.getWorld();
 
-  return (
-    citySystem
-      .getDistrictsByCity(
-        world.currentCityId
-      )
-  );
+  return citySystem
+    .getDistrictsByCity(
+      world.currentCityId
+    );
 }
 
 /* =========================
-   商圈标记
+   商圈定位针
 ========================= */
 
-function drawDistrict(
+function getDistrictPinColor(
+  saturation
+) {
+  if (saturation >= 90) {
+    return '#D85745';
+  }
+
+  if (saturation >= 80) {
+    return '#E58A37';
+  }
+
+  if (saturation >= 65) {
+    return '#D6A43B';
+  }
+
+  return '#4A9BC8';
+}
+
+function drawDistrictPin(
   district
 ) {
   const layout =
@@ -985,97 +1046,251 @@ function drawDistrict(
       .currentDistrictId ===
         district.id;
 
-  const cardW = 86;
-  const cardH = 46;
+  const animated =
+    districtPinState
+      .districtId ===
+    district.id;
 
-  const x =
-    layout.x -
-    cardW / 2;
+  const pinScale =
+    animated
+      ? districtPinState.scale
+      : 1;
 
-  const y =
-    layout.y -
-    cardH / 2;
+  const pulse =
+    selected
+      ? districtPinState.pulse
+      : 0;
 
-  /*
-   * 选中商圈发光
-   */
+  const color =
+    getDistrictPinColor(
+      district.saturation
+    );
+
+  const cx =
+    layout.x;
+
+  const cy =
+    layout.y;
+
+  ctx.save();
+
+  ctx.translate(
+    cx,
+    cy
+  );
+
+  ctx.scale(
+    pinScale,
+    pinScale
+  );
+
+  /* =========================
+     选中后的呼吸光圈
+  ========================= */
 
   if (selected) {
+    const pulseRadius =
+      18 +
+      pulse * 9;
+
     ctx.save();
 
-    ctx.shadowColor =
-      'rgba(74,164,216,0.9)';
+    ctx.globalAlpha =
+      0.32 -
+      pulse * 0.16;
 
-    ctx.shadowBlur =
-      16;
+    ctx.beginPath();
 
-    roundedRect(
-      x - 2,
-      y - 2,
-      cardW + 4,
-      cardH + 4,
-      14,
-      '#FFFDF8',
-      COLORS.blue
+    ctx.arc(
+      0,
+      -7,
+      pulseRadius,
+      0,
+      Math.PI * 2
     );
+
+    ctx.fillStyle =
+      color;
+
+    ctx.fill();
 
     ctx.restore();
-  } else {
-    roundedRect(
-      x,
-      y,
-      cardW,
-      cardH,
-      13,
-      'rgba(255,253,248,0.94)',
-      'rgba(60,55,50,0.18)'
+
+    ctx.save();
+
+    ctx.globalAlpha =
+      0.58 -
+      pulse * 0.25;
+
+    ctx.beginPath();
+
+    ctx.arc(
+      0,
+      -7,
+      14 +
+        pulse * 5,
+      0,
+      Math.PI * 2
     );
+
+    ctx.strokeStyle =
+      '#FFFFFF';
+
+    ctx.lineWidth =
+      2;
+
+    ctx.stroke();
+
+    ctx.restore();
   }
 
+  /* =========================
+     定位针阴影
+  ========================= */
+
+  ctx.save();
+
+  ctx.shadowColor =
+    'rgba(0,0,0,0.34)';
+
+  ctx.shadowBlur =
+    selected
+      ? 12
+      : 7;
+
+  ctx.shadowOffsetY =
+    3;
+
   /*
-   * 商圈名字
+   * 定位针主体
    */
+
+  ctx.beginPath();
+
+  ctx.arc(
+    0,
+    -9,
+    12,
+    Math.PI * 0.12,
+    Math.PI * 0.88,
+    true
+  );
+
+  ctx.lineTo(
+    0,
+    11
+  );
+
+  ctx.closePath();
+
+  ctx.fillStyle =
+    color;
+
+  ctx.fill();
+
+  ctx.restore();
+
+  /*
+   * 中心白点
+   */
+
+  ctx.beginPath();
+
+  ctx.arc(
+    0,
+    -9,
+    5,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fillStyle =
+    '#FFFDF9';
+
+  ctx.fill();
+
+  /*
+   * 中心小点
+   */
+
+  ctx.beginPath();
+
+  ctx.arc(
+    0,
+    -9,
+    2.3,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fillStyle =
+    color;
+
+  ctx.fill();
+
+  ctx.restore();
+
+  /* =========================
+     商圈名称标签
+  ========================= */
+
+  const labelW =
+    Math.max(
+      58,
+      district.name.length *
+        13 +
+        18
+    );
+
+  const labelX =
+    cx -
+    labelW / 2;
+
+  const labelY =
+    cy + 14;
+
+  roundedRect(
+    labelX,
+    labelY,
+    labelW,
+    24,
+    12,
+
+    selected
+      ? 'rgba(32,59,80,0.94)'
+      : 'rgba(255,253,249,0.94)',
+
+    selected
+      ? 'rgba(255,255,255,0.45)'
+      : 'rgba(40,40,40,0.18)'
+  );
 
   drawText(
     district.name,
-    layout.x,
-    y + 15,
-    11,
-    COLORS.text,
+    cx,
+    labelY + 12,
+    10,
+
+    selected
+      ? COLORS.white
+      : COLORS.text,
+
     '700',
     'center'
   );
 
-  /*
-   * 饱和度
-   */
-
-  drawText(
-    '饱和 ' +
-      district.saturation +
-      '%',
-
-    layout.x,
-    y + 32,
-    9,
-
-    district.saturation >=
-      85
-      ? COLORS.danger
-      : COLORS.muted,
-
-    '600',
-    'center'
-  );
+  /* =========================
+     点击范围比视觉针更大
+  ========================= */
 
   addButton(
     'district:' +
       district.id,
 
-    x,
-    y,
-    cardW,
-    cardH
+    cx - 32,
+    cy - 34,
+    64,
+    72
   );
 }
 
@@ -1114,14 +1329,12 @@ function drawDistrictPopup() {
     popupManager
       .getProgress();
 
-  if (
-    progress <= 0
-  ) {
+  if (progress <= 0) {
     return;
   }
 
   /* =========================
-     遮罩
+     背景遮罩
   ========================= */
 
   ctx.save();
@@ -1145,10 +1358,6 @@ function drawDistrictPopup() {
 
   ctx.restore();
 
-  /*
-   * 遮罩点击区域。
-   */
-
   addButton(
     'popup:mask',
     0,
@@ -1159,7 +1368,7 @@ function drawDistrictPopup() {
   );
 
   /* =========================
-     底部卡片
+     底部详情卡
   ========================= */
 
   const panelH =
@@ -1179,10 +1388,6 @@ function drawDistrictPopup() {
   const panelY =
     targetY +
     slideOffset;
-
-  /*
-   * 阴影
-   */
 
   ctx.save();
 
@@ -1206,12 +1411,6 @@ function drawDistrictPopup() {
 
   ctx.restore();
 
-  /*
-   * 重要：
-   * 吃掉卡片内部的点击，
-   * 不让它误触遮罩关闭。
-   */
-
   addButton(
     'popup:panel',
     10,
@@ -1221,7 +1420,7 @@ function drawDistrictPopup() {
   );
 
   /*
-   * 顶部拖拽条
+   * 顶部拖拽装饰条
    */
 
   roundedRect(
@@ -1249,22 +1448,39 @@ function drawDistrictPopup() {
   );
 
   /*
-   * 市场状态
+   * 市场竞争提示
    */
 
-  drawText(
-    district.saturation >= 85
-      ? '竞争激烈'
-      : '仍有机会',
+  let marketText =
+    '仍有机会';
 
+  let marketColor =
+    COLORS.accentDark;
+
+  if (
+    district.saturation >= 90
+  ) {
+    marketText =
+      '高度饱和';
+
+    marketColor =
+      COLORS.danger;
+  } else if (
+    district.saturation >= 80
+  ) {
+    marketText =
+      '竞争激烈';
+
+    marketColor =
+      '#CE7131';
+  }
+
+  drawText(
+    marketText,
     326,
     panelY + 34,
     11,
-
-    district.saturation >= 85
-      ? COLORS.danger
-      : COLORS.accentDark,
-
+    marketColor,
     '700',
     'right'
   );
@@ -1301,7 +1517,7 @@ function drawDistrictPopup() {
   );
 
   /* =========================
-     四项基础数据
+     四项市场数据
   ========================= */
 
   const cols = [
@@ -1336,8 +1552,7 @@ function drawDistrictPopup() {
 
   for (
     let i = 0;
-    i <
-    cols.length;
+    i < cols.length;
     i++
   ) {
     const cx =
@@ -1364,7 +1579,7 @@ function drawDistrictPopup() {
   }
 
   /* =========================
-     实时需求
+     当前实时餐饮需求
   ========================= */
 
   const mealPeriod =
@@ -1417,7 +1632,7 @@ function drawDistrictPopup() {
   );
 
   /* =========================
-     饱和度
+     市场饱和度
   ========================= */
 
   drawText(
@@ -1454,13 +1669,13 @@ function drawDistrictPopup() {
     8,
     4,
 
-    district.saturation >= 85
-      ? COLORS.danger
-      : COLORS.gold
+    getDistrictPinColor(
+      district.saturation
+    )
   );
 
   /* =========================
-     进入商圈
+     进入商圈按钮
   ========================= */
 
   roundedRect(
@@ -1569,8 +1784,7 @@ function drawBottomNav() {
 
   for (
     let i = 0;
-    i <
-    NAV_ITEMS.length;
+    i < NAV_ITEMS.length;
     i++
   ) {
     const item =
@@ -1633,7 +1847,6 @@ function drawBottomNav() {
     );
   }
 }
-
 /* =========================
    城市场景
 ========================= */
@@ -1647,6 +1860,8 @@ const cityScene = {
   exit() {
     popupManager
       .closeImmediately();
+
+    stopDistrictPinAnimation();
   },
 
   update() {
@@ -1672,11 +1887,10 @@ const cityScene = {
 
     for (
       let i = 0;
-      i <
-      districts.length;
+      i < districts.length;
       i++
     ) {
-      drawDistrict(
+      drawDistrictPin(
         districts[i]
       );
     }
@@ -1692,7 +1906,7 @@ const cityScene = {
     }
 
     /*
-     * 点击商圈
+     * 点击商圈定位针
      */
 
     if (
@@ -1709,6 +1923,10 @@ const cityScene = {
         .setCurrentDistrict(
           districtId
         );
+
+      startDistrictPinAnimation(
+        districtId
+      );
 
       popupManager.open({
         id:
@@ -1742,7 +1960,7 @@ const cityScene = {
 };
 
 /* =========================
-   注册场景
+   注册页面
 ========================= */
 
 sceneManager.register(
@@ -1780,10 +1998,6 @@ function render() {
   buttons.length =
     0;
 
-  /*
-   * 清空设计区域
-   */
-
   ctx.clearRect(
     0,
     0,
@@ -1800,20 +2014,21 @@ function render() {
   );
 
   /*
-   * 弹窗层
+   * 弹窗
    */
 
   drawPopupLayer();
 
   /*
-   * 底部导航
+   * 底部导航始终最上层
    */
 
   drawBottomNav();
 }
 
 /* =========================
-   坐标转换
+   屏幕坐标
+   转游戏设计坐标
 ========================= */
 
 function screenToDesign(
@@ -1881,6 +2096,10 @@ function hitTest(
 function handleTimeButton(
   id
 ) {
+  /*
+   * 暂停 / 继续
+   */
+
   if (
     id ===
     'time:pause'
@@ -1893,6 +2112,10 @@ function handleTimeButton(
 
     return true;
   }
+
+  /*
+   * 快进
+   */
 
   if (
     id.indexOf(
@@ -1911,6 +2134,19 @@ function handleTimeButton(
           speed
         )
     ) {
+      /*
+       * 选择速度以后
+       * 自动继续时间。
+       */
+
+      if (
+        timeSystem
+          .isPaused()
+      ) {
+        timeSystem
+          .resume();
+      }
+
       timeSystem
         .resetAccumulator();
 
@@ -1939,7 +2175,7 @@ function handlePopupButton(
   }
 
   /*
-   * 点遮罩关闭
+   * 点击黑色遮罩
    */
 
   if (
@@ -1949,11 +2185,13 @@ function handlePopupButton(
     popupManager
       .handleMaskTap();
 
+    stopDistrictPinAnimation();
+
     return true;
   }
 
   /*
-   * 点弹窗主体：
+   * 点击详情卡本身。
    * 只拦截，不关闭。
    */
 
@@ -1965,7 +2203,7 @@ function handlePopupButton(
   }
 
   /*
-   * X关闭
+   * 点击 ×
    */
 
   if (
@@ -1974,6 +2212,8 @@ function handlePopupButton(
   ) {
     popupManager
       .close();
+
+    stopDistrictPinAnimation();
 
     return true;
   }
@@ -2008,13 +2248,15 @@ function handlePopupButton(
     }
 
     /*
-     * 下一阶段这里会真正进入：
+     * 下一阶段：
      *
      * 商圈
      * ↓
      * 街道
      * ↓
      * 房源
+     * ↓
+     * 实地看铺
      */
 
     return true;
@@ -2044,7 +2286,7 @@ function handleTap(
     );
 
   /*
-   * 时间按钮
+   * 时间控制
    */
 
   if (
@@ -2079,6 +2321,8 @@ function handleTap(
     popupManager
       .closeImmediately();
 
+    stopDistrictPinAnimation();
+
     const sceneId =
       target.id
         .split(':')[1];
@@ -2094,8 +2338,8 @@ function handleTap(
   }
 
   /*
-   * 有弹窗时，
-   * 弹窗优先处理点击。
+   * 弹窗打开后
+   * 优先处理弹窗
    */
 
   if (
@@ -2112,11 +2356,16 @@ function handleTap(
       return;
     }
 
+    /*
+     * 弹窗打开时
+     * 禁止穿透点击地图。
+     */
+
     return;
   }
 
   /*
-   * 当前页面
+   * 当前页面点击
    */
 
   const currentScene =
@@ -2196,7 +2445,6 @@ function scheduleNextFrame(
         Date.now()
       );
     },
-
     33
   );
 }
@@ -2229,7 +2477,7 @@ function gameLoop(
     now;
 
   /*
-   * 页面更新
+   * 当前页面逻辑
    */
 
   sceneManager.update(
@@ -2237,7 +2485,7 @@ function gameLoop(
   );
 
   /*
-   * UI动画
+   * 动画系统
    */
 
   const animationChanged =
@@ -2263,7 +2511,11 @@ function gameLoop(
   }
 
   /*
-   * 时间改变或动画播放时重绘。
+   * 只有真正发生变化
+   * 才重新绘制。
+   *
+   * 呼吸动画运行时
+   * animationChanged 会持续为 true。
    */
 
   if (
@@ -2279,7 +2531,7 @@ function gameLoop(
 }
 
 /* =========================
-   城市资源
+   城市图片资源
 ========================= */
 
 function loadCityResources() {
@@ -2320,18 +2572,19 @@ sceneManager.switchTo(
 
 /*
  * 先显示UI。
+ * 图片没加载时会显示加载提示。
  */
 
 render();
 
 /*
- * 再异步加载地图。
+ * 后台加载正式城市底图。
  */
 
 loadCityResources();
 
 /*
- * 开始游戏循环。
+ * 启动游戏循环。
  */
 
 scheduleNextFrame(
