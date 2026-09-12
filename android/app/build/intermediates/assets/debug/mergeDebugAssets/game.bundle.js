@@ -153,7 +153,8 @@
             negotiations: {},
             leases: {}
           },
-          renovations: {}
+          renovations: {},
+          renovationTemplates: []
         },
         progress: {
           firstLaunch: true,
@@ -226,6 +227,15 @@
             business.renovations = {};
           }
           return business.renovations;
+        }
+        getRenovationTemplates() {
+          const business = this.data.business;
+          if (!Array.isArray(
+            business.renovationTemplates
+          )) {
+            business.renovationTemplates = [];
+          }
+          return business.renovationTemplates;
         }
         getSimulation() {
           const world = this.data.world;
@@ -11020,6 +11030,15 @@
           maxServiceRatio: 0.2
         },
         baseConstructionCostPerSqm: 760,
+        templateRules: {
+          maxTemplates: 30,
+          defaultNamePrefix: "\u88C5\u4FEE\u6A21\u677F"
+        },
+        nameRules: {
+          shopMaxLength: 12,
+          roomMaxLength: 10,
+          templateMaxLength: 14
+        },
         contractorNameParts: {
           prefix: ["\u57CE\u5EFA", "\u5320\u9020", "\u79BE\u6728", "\u9F0E\u76DB", "\u9752\u79BE", "\u8FDC\u666F", "\u4E07\u5BB6", "\u7B51\u5473"],
           suffix: ["\u88C5\u9970\u5DE5\u7A0B", "\u9910\u996E\u7A7A\u95F4", "\u5EFA\u8BBE\u8BBE\u8BA1", "\u5DE5\u7A0B\u670D\u52A1"]
@@ -11244,6 +11263,7 @@
               const id = "room_" + Date.now() % 1e6 + "_" + floor.privateRooms.length;
               floor.privateRooms.push({
                 id,
+                name: "\u5305\u53A2" + (floor.privateRooms.length + 1),
                 seats: 6,
                 style: "wood"
               });
@@ -11680,6 +11700,489 @@
     }
   });
 
+  // src/ui/customizationSystem.js
+  var require_customizationSystem = __commonJS({
+    "src/ui/customizationSystem.js"(exports, module) {
+      "use strict";
+      var gameState = require_gameState();
+      var renovationSystem = require_renovationSystem();
+      var renovationConfig = require_renovationConfig();
+      function clone(value) {
+        return JSON.parse(
+          JSON.stringify(value)
+        );
+      }
+      function cleanName(value, fallback, maxLength) {
+        const text = String(
+          value == null ? "" : value
+        ).replace(
+          /\s+/g,
+          " "
+        ).trim();
+        const finalText = text || String(
+          fallback || ""
+        ).trim();
+        return finalText.slice(
+          0,
+          Math.max(
+            1,
+            Number(
+              maxLength
+            ) || 12
+          )
+        );
+      }
+      var CustomizationSystem = class {
+        getShop(shopId) {
+          return renovationSystem.getShop(
+            shopId
+          );
+        }
+        renameShop(shopId, name) {
+          const shop = this.getShop(
+            shopId
+          );
+          if (!shop) {
+            return {
+              ok: false,
+              message: "\u95E8\u5E97\u4E0D\u5B58\u5728"
+            };
+          }
+          const next = cleanName(
+            name,
+            shop.name || shop.address || "\u6211\u7684\u9152\u697C",
+            renovationConfig.nameRules.shopMaxLength
+          );
+          shop.name = next;
+          return {
+            ok: true,
+            name: next
+          };
+        }
+        renameRoom(shopId, roomId, name) {
+          const plan = renovationSystem.ensurePlan(
+            shopId
+          );
+          if (!plan) {
+            return {
+              ok: false,
+              message: "\u88C5\u4FEE\u65B9\u6848\u4E0D\u5B58\u5728"
+            };
+          }
+          const store = gameState.getRenovations();
+          const livePlan = store[shopId];
+          let room = null;
+          for (let i = 0; i < livePlan.floors.length; i++) {
+            room = livePlan.floors[i].privateRooms.find(
+              (item) => item.id === roomId
+            );
+            if (room) {
+              break;
+            }
+          }
+          if (!room) {
+            return {
+              ok: false,
+              message: "\u5305\u53A2\u4E0D\u5B58\u5728"
+            };
+          }
+          room.name = cleanName(
+            name,
+            room.name || "\u5305\u53A2",
+            renovationConfig.nameRules.roomMaxLength
+          );
+          return {
+            ok: true,
+            name: room.name
+          };
+        }
+        getTemplateList() {
+          return clone(
+            gameState.getRenovationTemplates()
+          );
+        }
+        buildTemplate(shopId, name) {
+          const metrics = renovationSystem.getMetrics(
+            shopId
+          );
+          if (!metrics) {
+            return null;
+          }
+          const plan = metrics.plan;
+          return {
+            id: "tpl_" + Date.now().toString(
+              36
+            ),
+            name: cleanName(
+              name,
+              renovationConfig.templateRules.defaultNamePrefix,
+              renovationConfig.nameRules.templateMaxLength
+            ),
+            sourceShopId: shopId,
+            sourceArea: metrics.totalArea,
+            sourceFloorCount: plan.floors.length,
+            hallStyle: plan.hallStyle,
+            materialGrade: plan.materialGrade,
+            lightingLevel: plan.lightingLevel,
+            floors: plan.floors.map(
+              (floor) => {
+                const area = Math.max(
+                  1,
+                  Number(
+                    floor.area
+                  ) || 1
+                );
+                const tableDensity = {};
+                Object.keys(
+                  floor.tables
+                ).forEach(
+                  (key) => {
+                    tableDensity[key] = (floor.tables[key] || 0) / area;
+                  }
+                );
+                return {
+                  kitchenRatio: floor.kitchenRatio,
+                  storageRatio: floor.storageRatio,
+                  serviceRatio: floor.serviceRatio,
+                  aisleMode: floor.aisleMode,
+                  tableDensity,
+                  privateRooms: floor.privateRooms.map(
+                    (room) => ({
+                      name: room.name || "",
+                      seats: room.seats,
+                      style: room.style
+                    })
+                  )
+                };
+              }
+            )
+          };
+        }
+        saveTemplate(shopId, name) {
+          const list = gameState.getRenovationTemplates();
+          if (list.length >= renovationConfig.templateRules.maxTemplates) {
+            return {
+              ok: false,
+              message: "\u88C5\u4FEE\u6A21\u677F\u6570\u91CF\u5DF2\u8FBE\u5230\u4E0A\u9650"
+            };
+          }
+          const template = this.buildTemplate(
+            shopId,
+            name
+          );
+          if (!template) {
+            return {
+              ok: false,
+              message: "\u5F53\u524D\u6CA1\u6709\u53EF\u4FDD\u5B58\u7684\u88C5\u4FEE\u65B9\u6848"
+            };
+          }
+          list.unshift(
+            template
+          );
+          return {
+            ok: true,
+            template: clone(
+              template
+            )
+          };
+        }
+        renameTemplate(templateId, name) {
+          const list = gameState.getRenovationTemplates();
+          const item = list.find(
+            (template) => template.id === templateId
+          );
+          if (!item) {
+            return {
+              ok: false,
+              message: "\u6A21\u677F\u4E0D\u5B58\u5728"
+            };
+          }
+          item.name = cleanName(
+            name,
+            item.name,
+            renovationConfig.nameRules.templateMaxLength
+          );
+          return {
+            ok: true,
+            name: item.name
+          };
+        }
+        deleteTemplate(templateId) {
+          const list = gameState.getRenovationTemplates();
+          const index = list.findIndex(
+            (item) => item.id === templateId
+          );
+          if (index < 0) {
+            return {
+              ok: false,
+              message: "\u6A21\u677F\u4E0D\u5B58\u5728"
+            };
+          }
+          list.splice(
+            index,
+            1
+          );
+          return {
+            ok: true
+          };
+        }
+        applyTemplate(shopId, templateId) {
+          const templates = gameState.getRenovationTemplates();
+          const template = templates.find(
+            (item) => item.id === templateId
+          );
+          if (!template) {
+            return {
+              ok: false,
+              message: "\u6A21\u677F\u4E0D\u5B58\u5728"
+            };
+          }
+          renovationSystem.ensurePlan(
+            shopId
+          );
+          const plan = gameState.getRenovations()[shopId];
+          if (!plan) {
+            return {
+              ok: false,
+              message: "\u5F53\u524D\u95E8\u5E97\u6CA1\u6709\u88C5\u4FEE\u65B9\u6848"
+            };
+          }
+          if (plan.status !== "draft") {
+            return {
+              ok: false,
+              message: "\u65BD\u5DE5\u5F00\u59CB\u540E\u4E0D\u80FD\u5957\u7528\u6A21\u677F"
+            };
+          }
+          plan.hallStyle = template.hallStyle;
+          plan.materialGrade = template.materialGrade;
+          plan.lightingLevel = template.lightingLevel;
+          for (let i = 0; i < plan.floors.length; i++) {
+            const source = template.floors[Math.min(
+              i,
+              template.floors.length - 1
+            )];
+            const target = plan.floors[i];
+            if (!source) {
+              continue;
+            }
+            target.kitchenRatio = source.kitchenRatio;
+            target.storageRatio = source.storageRatio;
+            target.serviceRatio = source.serviceRatio;
+            target.aisleMode = source.aisleMode;
+            const area = Math.max(
+              1,
+              Number(
+                target.area
+              ) || 1
+            );
+            Object.keys(
+              target.tables
+            ).forEach(
+              (key) => {
+                const density = Number(
+                  source.tableDensity[key]
+                ) || 0;
+                target.tables[key] = Math.max(
+                  0,
+                  Math.round(
+                    density * area
+                  )
+                );
+              }
+            );
+            const sourceRooms = Array.isArray(
+              source.privateRooms
+            ) ? source.privateRooms : [];
+            const scale = area / Math.max(
+              1,
+              template.sourceArea / Math.max(
+                1,
+                template.sourceFloorCount
+              )
+            );
+            const roomCount = Math.max(
+              0,
+              Math.min(
+                8,
+                Math.round(
+                  sourceRooms.length * Math.min(
+                    1.5,
+                    Math.max(
+                      0.55,
+                      scale
+                    )
+                  )
+                )
+              )
+            );
+            target.privateRooms = [];
+            for (let r = 0; r < roomCount; r++) {
+              const sourceRoom = sourceRooms[Math.min(
+                r,
+                sourceRooms.length - 1
+              )];
+              if (!sourceRoom) {
+                break;
+              }
+              target.privateRooms.push({
+                id: "room_" + Date.now().toString(
+                  36
+                ) + "_" + i + "_" + r,
+                name: cleanName(
+                  sourceRoom.name,
+                  "\u5305\u53A2" + (r + 1),
+                  renovationConfig.nameRules.roomMaxLength
+                ),
+                seats: sourceRoom.seats,
+                style: sourceRoom.style
+              });
+            }
+          }
+          plan.selectedContractorId = null;
+          return {
+            ok: true,
+            template: clone(
+              template
+            ),
+            metrics: renovationSystem.getMetrics(
+              shopId
+            )
+          };
+        }
+      };
+      module.exports = new CustomizationSystem();
+    }
+  });
+
+  // src/ui/textInput.js
+  var require_textInput = __commonJS({
+    "src/ui/textInput.js"(exports, module) {
+      "use strict";
+      var runtime = globalThis.GameRuntime || {};
+      var api = runtime.api || {};
+      function requestRender() {
+        if (runtime && typeof runtime.requestRender === "function") {
+          runtime.requestRender();
+        }
+      }
+      function normalize(value, maxLength) {
+        return String(
+          value == null ? "" : value
+        ).replace(
+          /\s+/g,
+          " "
+        ).trim().slice(
+          0,
+          Math.max(
+            1,
+            Number(
+              maxLength
+            ) || 12
+          )
+        );
+      }
+      function promptFallback(options, done) {
+        if (typeof globalThis.prompt === "function") {
+          const result = globalThis.prompt(
+            options.title || "\u8BF7\u8F93\u5165\u540D\u79F0",
+            options.value || ""
+          );
+          done(
+            result == null ? null : normalize(
+              result,
+              options.maxLength
+            )
+          );
+          requestRender();
+          return;
+        }
+        if (api && typeof api.showToast === "function") {
+          api.showToast({
+            title: "\u5F53\u524D\u73AF\u5883\u6682\u4E0D\u652F\u6301\u6587\u5B57\u8F93\u5165",
+            icon: "none"
+          });
+        }
+        done(
+          null
+        );
+      }
+      function requestText(options) {
+        const opts = options || {};
+        return new Promise(
+          (resolve) => {
+            let settled = false;
+            const finish = (value) => {
+              if (settled) {
+                return;
+              }
+              settled = true;
+              resolve(
+                value
+              );
+              requestRender();
+            };
+            if (api && typeof api.showModal === "function") {
+              try {
+                api.showModal({
+                  title: opts.title || "\u7F16\u8F91\u540D\u79F0",
+                  content: opts.value || "",
+                  editable: true,
+                  placeholderText: opts.placeholder || "\u8BF7\u8F93\u5165\u540D\u79F0",
+                  confirmText: "\u4FDD\u5B58",
+                  cancelText: "\u53D6\u6D88",
+                  success: (result) => {
+                    if (!result || !result.confirm) {
+                      finish(
+                        null
+                      );
+                      return;
+                    }
+                    const raw = result.content != null ? result.content : result.inputValue != null ? result.inputValue : result.value != null ? result.value : "";
+                    const text = normalize(
+                      raw,
+                      opts.maxLength
+                    );
+                    if (text) {
+                      finish(
+                        text
+                      );
+                    } else {
+                      promptFallback(
+                        opts,
+                        finish
+                      );
+                    }
+                  },
+                  fail: () => {
+                    promptFallback(
+                      opts,
+                      finish
+                    );
+                  }
+                });
+                return;
+              } catch (error) {
+                promptFallback(
+                  opts,
+                  finish
+                );
+                return;
+              }
+            }
+            promptFallback(
+              opts,
+              finish
+            );
+          }
+        );
+      }
+      module.exports = {
+        requestText,
+        requestRender
+      };
+    }
+  });
+
   // src/scenes/storeScene.js
   var require_storeScene = __commonJS({
     "src/scenes/storeScene.js"(exports, module) {
@@ -11695,6 +12198,8 @@
       var citySystem = require_citySystem();
       var sceneManager = require_sceneManager();
       var renovationSystem = require_renovationSystem();
+      var customizationSystem = require_customizationSystem();
+      var textInput = require_textInput();
       var DESIGN_W = 390;
       var COLORS = {
         navy: "#12384D",
@@ -12237,6 +12742,33 @@
             COLORS.text,
             "700"
           );
+          this.roundedRect(
+            ctx2,
+            300,
+            129,
+            62,
+            28,
+            8,
+            "#FFF0D6",
+            "#E4B564"
+          );
+          this.text(
+            ctx2,
+            "\u270E \u6539\u540D",
+            331,
+            143,
+            7.5,
+            COLORS.orange,
+            "700",
+            "center"
+          );
+          this.addButton(
+            "shop:rename",
+            294,
+            124,
+            74,
+            38
+          );
           this.text(
             ctx2,
             shop.status === "renovating" ? "\u65BD\u5DE5\u8FDB\u884C\u4E2D \xB7 \u65F6\u95F4\u63A8\u8FDB\u4F1A\u66F4\u65B0\u5DE5\u7A0B\u8FDB\u5EA6" : shop.status === "renovated_pending_license" ? "\u88C5\u4FEE\u5B8C\u6210 \xB7 \u4E0B\u4E00\u6B65\u91C7\u8D2D\u8BBE\u5907\u3001\u529E\u8BC1\u4E0E\u62DB\u8058" : "\u5DF2\u7B7E\u7EA6 \xB7 \u53EF\u81EA\u7531\u89C4\u5212\u697C\u5C42\u3001\u684C\u6905\u3001\u5305\u53A2\u4E0E\u98CE\u683C",
@@ -12424,6 +12956,35 @@
           );
           if (!item) {
             return false;
+          }
+          if (item.id === "shop:rename") {
+            const shop = this.getCurrentShop();
+            if (shop) {
+              textInput.requestText({
+                title: "\u4FEE\u6539\u9152\u697C\u540D\u79F0",
+                value: shop.name || "",
+                placeholder: "\u8BF7\u8F93\u5165\u9152\u697C\u540D\u79F0",
+                maxLength: 12
+              }).then(
+                (value) => {
+                  if (!value) {
+                    return;
+                  }
+                  const result = customizationSystem.renameShop(
+                    shop.id,
+                    value
+                  );
+                  if (api && typeof api.showToast === "function") {
+                    api.showToast({
+                      title: result.ok ? "\u9152\u697C\u540D\u79F0\u5DF2\u66F4\u65B0" : result.message,
+                      icon: "none"
+                    });
+                  }
+                  textInput.requestRender();
+                }
+              );
+            }
+            return true;
           }
           if (item.id === "go-city") {
             sceneManager.switchTo(
@@ -13432,6 +13993,8 @@
       var sceneManager = require_sceneManager();
       var renovationSystem = require_renovationSystem();
       var renovationConfig = require_renovationConfig();
+      var customizationSystem = require_customizationSystem();
+      var textInput = require_textInput();
       var DESIGN_W = 390;
       var COLORS = {
         navy: "#12384D",
@@ -13664,16 +14227,43 @@
           );
           this.text(
             ctx2,
-            "\u81EA\u5B9A\u4E49\u88C5\u4FEE",
+            shop.name || "\u6211\u7684\u9152\u697C",
             68,
             21,
-            17,
+            16,
             COLORS.white,
             "700"
           );
+          this.roundedRect(
+            ctx2,
+            205,
+            10,
+            52,
+            28,
+            8,
+            "rgba(255,255,255,0.10)",
+            "rgba(255,255,255,0.18)"
+          );
           this.text(
             ctx2,
-            shop.address + " \xB7 \u6240\u6709\u5E03\u5C40\u90FD\u4F1A\u5B9E\u65F6\u91CD\u7B97\u6210\u672C\u4E0E\u7ECF\u8425\u80FD\u529B",
+            "\u270E \u6539\u540D",
+            231,
+            24,
+            6.8,
+            "#FFE8AE",
+            "700",
+            "center"
+          );
+          this.addButton(
+            "shop:rename",
+            201,
+            6,
+            60,
+            36
+          );
+          this.text(
+            ctx2,
+            "\u81EA\u5B9A\u4E49\u88C5\u4FEE \xB7 " + shop.address,
             68,
             44,
             7.2,
@@ -13846,10 +14436,13 @@
             );
             this.text(
               ctx2,
-              "\u5305" + room.seats,
+              (room.name || "\u5305" + room.seats).slice(
+                0,
+                5
+              ),
               rx + 24.5,
               ry + 8.5,
-              5.8,
+              5.6,
               COLORS.text,
               "700",
               "center"
@@ -13996,11 +14589,15 @@
             ],
             [
               "style",
-              "\u98CE\u683C/\u65BD\u5DE5"
+              "\u98CE\u683C"
+            ],
+            [
+              "templates",
+              "\u6A21\u677F"
             ]
           ];
-          const gap = 5;
-          const w = (DESIGN_W - 20 - gap * 3) / 4;
+          const gap = 4;
+          const w = (DESIGN_W - 20 - gap * 4) / 5;
           for (let i = 0; i < tabs.length; i++) {
             const active = this.page === tabs[i][0];
             const x = 10 + i * (w + gap);
@@ -14301,7 +14898,7 @@
               );
               this.text(
                 ctx2,
-                "\u5305\u53A2 " + (i + 1),
+                room.name || "\u5305\u53A2" + (i + 1),
                 22,
                 y + 17,
                 8.5,
@@ -14316,6 +14913,33 @@
                 7,
                 COLORS.muted,
                 "600"
+              );
+              this.roundedRect(
+                ctx2,
+                151,
+                y + 10,
+                52,
+                34,
+                8,
+                "#F5EEE4",
+                "#D8CBBB"
+              );
+              this.text(
+                ctx2,
+                "\u270E \u540D\u79F0",
+                177,
+                y + 27,
+                6.6,
+                COLORS.orange,
+                "700",
+                "center"
+              );
+              this.addButton(
+                "room:rename:" + room.id,
+                147,
+                y + 6,
+                60,
+                42
               );
               this.roundedRect(
                 ctx2,
@@ -14608,6 +15232,208 @@
             39
           );
         }
+        renderTemplatesPage(ctx2, metrics) {
+          const templates = customizationSystem.getTemplateList();
+          let y = 359;
+          this.roundedRect(
+            ctx2,
+            10,
+            y,
+            370,
+            45,
+            11,
+            COLORS.gold,
+            "#D49434"
+          );
+          this.text(
+            ctx2,
+            "\u4FDD\u5B58\u5F53\u524D\u88C5\u4FEE\u65B9\u6848\u4E3A\u6A21\u677F",
+            195,
+            y + 22.5,
+            8.8,
+            "#26343B",
+            "700",
+            "center"
+          );
+          this.addButton(
+            "template:save",
+            10,
+            y,
+            370,
+            45
+          );
+          y += 55;
+          this.text(
+            ctx2,
+            "\u5DF2\u4FDD\u5B58\u6A21\u677F " + templates.length + "/" + renovationConfig.templateRules.maxTemplates,
+            14,
+            y,
+            7,
+            COLORS.muted,
+            "700"
+          );
+          y += 14;
+          if (templates.length === 0) {
+            this.roundedRect(
+              ctx2,
+              10,
+              y,
+              370,
+              90,
+              12,
+              COLORS.panel,
+              COLORS.line
+            );
+            this.text(
+              ctx2,
+              "\u8FD8\u6CA1\u6709\u4FDD\u5B58\u88C5\u4FEE\u6A21\u677F",
+              22,
+              y + 27,
+              10,
+              COLORS.text,
+              "700"
+            );
+            this.text(
+              ctx2,
+              "\u4FDD\u5B58\u540E\u53EF\u5728\u5176\u4ED6\u9762\u79EF\u3001\u5176\u4ED6\u697C\u5C42\u95E8\u5E97\u4E2D\u6309\u6BD4\u4F8B\u81EA\u52A8\u9002\u914D\u3002",
+              22,
+              y + 55,
+              7,
+              COLORS.muted,
+              "500"
+            );
+            return;
+          }
+          for (let i = 0; i < Math.min(
+            templates.length,
+            4
+          ); i++) {
+            const template = templates[i];
+            this.roundedRect(
+              ctx2,
+              10,
+              y,
+              370,
+              56,
+              11,
+              COLORS.panel,
+              COLORS.line
+            );
+            this.text(
+              ctx2,
+              template.name,
+              21,
+              y + 17,
+              8.5,
+              COLORS.text,
+              "700"
+            );
+            this.text(
+              ctx2,
+              Math.round(
+                template.sourceArea
+              ) + "\u33A1 \xB7 " + template.sourceFloorCount + "\u5C42 \xB7 \u53EF\u8DE8\u95E8\u5E97\u7F29\u653E\u9002\u914D",
+              21,
+              y + 38,
+              6.5,
+              COLORS.muted,
+              "500"
+            );
+            this.roundedRect(
+              ctx2,
+              211,
+              y + 9,
+              51,
+              38,
+              8,
+              "#E8F1E9",
+              "#BDD4C3"
+            );
+            this.text(
+              ctx2,
+              "\u4F7F\u7528",
+              236.5,
+              y + 28,
+              7,
+              COLORS.green,
+              "700",
+              "center"
+            );
+            this.addButton(
+              "template:apply:" + template.id,
+              207,
+              y + 5,
+              59,
+              46
+            );
+            this.roundedRect(
+              ctx2,
+              270,
+              y + 9,
+              51,
+              38,
+              8,
+              "#FFF0D6",
+              "#E4C47E"
+            );
+            this.text(
+              ctx2,
+              "\u6539\u540D",
+              295.5,
+              y + 28,
+              7,
+              COLORS.orange,
+              "700",
+              "center"
+            );
+            this.addButton(
+              "template:rename:" + template.id,
+              266,
+              y + 5,
+              59,
+              46
+            );
+            this.roundedRect(
+              ctx2,
+              329,
+              y + 9,
+              42,
+              38,
+              8,
+              "#F4E5E2",
+              "#DABAB5"
+            );
+            this.text(
+              ctx2,
+              "\u5220\u9664",
+              350,
+              y + 28,
+              6.7,
+              COLORS.red,
+              "700",
+              "center"
+            );
+            this.addButton(
+              "template:delete:" + template.id,
+              325,
+              y + 5,
+              50,
+              46
+            );
+            y += 62;
+          }
+          if (templates.length > 4) {
+            this.text(
+              ctx2,
+              "\u8FD8\u6709 " + (templates.length - 4) + " \u4E2A\u6A21\u677F\uFF0C\u540E\u7EED\u6A21\u677F\u7BA1\u7406\u9875\u7EE7\u7EED\u663E\u793A",
+              14,
+              y + 8,
+              6.5,
+              COLORS.muted,
+              "500"
+            );
+          }
+        }
         renderConstruction(ctx2, shop, plan) {
           const construction = plan.construction;
           this.drawHeader(
@@ -14849,8 +15675,13 @@
               ctx2,
               floor
             );
-          } else {
+          } else if (this.page === "style") {
             this.renderStylePage(
+              ctx2,
+              metrics
+            );
+          } else {
+            this.renderTemplatesPage(
               ctx2,
               metrics
             );
@@ -14870,6 +15701,32 @@
             sceneManager.switchTo(
               "shop"
             );
+            return true;
+          }
+          if (id === "shop:rename") {
+            const shop = this.getShop();
+            if (shop) {
+              textInput.requestText({
+                title: "\u4FEE\u6539\u9152\u697C\u540D\u79F0",
+                value: shop.name || "",
+                placeholder: "\u8BF7\u8F93\u5165\u9152\u697C\u540D\u79F0",
+                maxLength: renovationConfig.nameRules.shopMaxLength
+              }).then(
+                (value) => {
+                  if (!value) {
+                    return;
+                  }
+                  const result = customizationSystem.renameShop(
+                    this.shopId,
+                    value
+                  );
+                  this.showToast(
+                    result.ok ? "\u9152\u697C\u540D\u79F0\u5DF2\u4FDD\u5B58" : result.message
+                  );
+                  textInput.requestRender();
+                }
+              );
+            }
             return true;
           }
           const plan = this.getPlan();
@@ -14937,6 +15794,40 @@
             return true;
           }
           if (id.indexOf(
+            "room:rename:"
+          ) === 0) {
+            const roomId = id.slice(
+              "room:rename:".length
+            );
+            const room = plan.floors[floorIndex].privateRooms.find(
+              (item2) => item2.id === roomId
+            );
+            if (room) {
+              textInput.requestText({
+                title: "\u4FEE\u6539\u5305\u53A2\u540D\u79F0",
+                value: room.name || "",
+                placeholder: "\u4F8B\u5982\uFF1A\u7261\u4E39\u5385",
+                maxLength: renovationConfig.nameRules.roomMaxLength
+              }).then(
+                (value) => {
+                  if (!value) {
+                    return;
+                  }
+                  const result = customizationSystem.renameRoom(
+                    this.shopId,
+                    roomId,
+                    value
+                  );
+                  this.showToast(
+                    result.ok ? "\u5305\u53A2\u540D\u79F0\u5DF2\u4FDD\u5B58" : result.message
+                  );
+                  textInput.requestRender();
+                }
+              );
+            }
+            return true;
+          }
+          if (id.indexOf(
             "room:seats:"
           ) === 0) {
             renovationSystem.cycleRoomSeats(
@@ -14970,6 +15861,112 @@
                 "room:remove:".length
               )
             );
+            return true;
+          }
+          if (id === "template:save") {
+            const templates = customizationSystem.getTemplateList();
+            textInput.requestText({
+              title: "\u4FDD\u5B58\u88C5\u4FEE\u6A21\u677F",
+              value: renovationConfig.templateRules.defaultNamePrefix + (templates.length + 1),
+              placeholder: "\u8BF7\u8F93\u5165\u6A21\u677F\u540D\u79F0",
+              maxLength: renovationConfig.nameRules.templateMaxLength
+            }).then(
+              (value) => {
+                if (!value) {
+                  return;
+                }
+                const result = customizationSystem.saveTemplate(
+                  this.shopId,
+                  value
+                );
+                this.showToast(
+                  result.ok ? "\u88C5\u4FEE\u6A21\u677F\u5DF2\u4FDD\u5B58" : result.message
+                );
+                textInput.requestRender();
+              }
+            );
+            return true;
+          }
+          if (id.indexOf(
+            "template:apply:"
+          ) === 0) {
+            const result = customizationSystem.applyTemplate(
+              this.shopId,
+              id.slice(
+                "template:apply:".length
+              )
+            );
+            this.showToast(
+              result.ok ? result.metrics.valid ? "\u6A21\u677F\u5DF2\u5957\u7528\u5E76\u81EA\u52A8\u9002\u914D\u5F53\u524D\u95E8\u5E97" : "\u6A21\u677F\u5DF2\u5957\u7528\uFF0C\u4F46\u5F53\u524D\u9762\u79EF\u9700\u8981\u7EE7\u7EED\u8C03\u6574" : result.message
+            );
+            if (result.ok) {
+              this.page = "layout";
+            }
+            return true;
+          }
+          if (id.indexOf(
+            "template:rename:"
+          ) === 0) {
+            const templateId = id.slice(
+              "template:rename:".length
+            );
+            const template = customizationSystem.getTemplateList().find(
+              (item2) => item2.id === templateId
+            );
+            if (template) {
+              textInput.requestText({
+                title: "\u4FEE\u6539\u6A21\u677F\u540D\u79F0",
+                value: template.name,
+                placeholder: "\u8BF7\u8F93\u5165\u6A21\u677F\u540D\u79F0",
+                maxLength: renovationConfig.nameRules.templateMaxLength
+              }).then(
+                (value) => {
+                  if (!value) {
+                    return;
+                  }
+                  const result = customizationSystem.renameTemplate(
+                    templateId,
+                    value
+                  );
+                  this.showToast(
+                    result.ok ? "\u6A21\u677F\u540D\u79F0\u5DF2\u66F4\u65B0" : result.message
+                  );
+                  textInput.requestRender();
+                }
+              );
+            }
+            return true;
+          }
+          if (id.indexOf(
+            "template:delete:"
+          ) === 0) {
+            const templateId = id.slice(
+              "template:delete:".length
+            );
+            const remove = () => {
+              const result = customizationSystem.deleteTemplate(
+                templateId
+              );
+              this.showToast(
+                result.ok ? "\u6A21\u677F\u5DF2\u5220\u9664" : result.message
+              );
+              textInput.requestRender();
+            };
+            if (api && typeof api.showModal === "function") {
+              api.showModal({
+                title: "\u5220\u9664\u88C5\u4FEE\u6A21\u677F",
+                content: "\u5220\u9664\u540E\u4E0D\u80FD\u6062\u590D\uFF0C\u786E\u5B9A\u5220\u9664\u5417\uFF1F",
+                confirmText: "\u5220\u9664",
+                cancelText: "\u53D6\u6D88",
+                success: (result) => {
+                  if (result && result.confirm) {
+                    remove();
+                  }
+                }
+              });
+            } else {
+              remove();
+            }
             return true;
           }
           if (id === "style:hall") {
@@ -16824,6 +17821,7 @@
         );
         drawBottomNav();
       }
+      runtime.requestRender = render;
       function screenToDesign(x, y) {
         return {
           x: x / scale,
@@ -17063,7 +18061,7 @@
         gameLoop
       );
       console.log(
-        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V7 \u52A8\u6001\u81EA\u5B9A\u4E49\u88C5\u4FEE\u7248\u542F\u52A8\u6210\u529F"
+        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V8 \u7D20\u6750\u6574\u5408\u4E0E\u81EA\u5B9A\u4E49\u6A21\u677F\u7248\u542F\u52A8\u6210\u529F"
       );
     }
   });

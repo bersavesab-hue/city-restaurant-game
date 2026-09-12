@@ -26,6 +26,12 @@ const sceneManager =
 const renovationSystem =
   require('../renovation/renovationSystem.js');
 
+const customizationSystem =
+  require('../ui/customizationSystem.js');
+
+const textInput =
+  require('../ui/textInput.js');
+
 const DESIGN_W =
   390;
 
@@ -960,6 +966,36 @@ class StoreScene {
       '700'
     );
 
+    this.roundedRect(
+      ctx,
+      300,
+      129,
+      62,
+      28,
+      8,
+      '#FFF0D6',
+      '#E4B564'
+    );
+
+    this.text(
+      ctx,
+      '✎ 改名',
+      331,
+      143,
+      7.5,
+      COLORS.orange,
+      '700',
+      'center'
+    );
+
+    this.addButton(
+      'shop:rename',
+      294,
+      124,
+      74,
+      38
+    );
+
     this.text(
       ctx,
       shop.status ===
@@ -1242,6 +1278,68 @@ class StoreScene {
 
     if (!item) {
       return false;
+    }
+
+    if (
+      item.id ===
+      'shop:rename'
+    ) {
+      const shop =
+        this.getCurrentShop();
+
+      if (shop) {
+        textInput
+          .requestText({
+            title:
+              '修改酒楼名称',
+
+            value:
+              shop.name ||
+              '',
+
+            placeholder:
+              '请输入酒楼名称',
+
+            maxLength:
+              12
+          })
+          .then(
+            value => {
+              if (!value) {
+                return;
+              }
+
+              const result =
+                customizationSystem
+                  .renameShop(
+                    shop.id,
+                    value
+                  );
+
+              if (
+                api &&
+                typeof api
+                  .showToast ===
+                  'function'
+              ) {
+                api.showToast({
+                  title:
+                    result.ok
+                      ? '酒楼名称已更新'
+                      : result.message,
+
+                  icon:
+                    'none'
+                });
+              }
+
+              textInput
+                .requestRender();
+            }
+          );
+      }
+
+      return true;
     }
 
     if (

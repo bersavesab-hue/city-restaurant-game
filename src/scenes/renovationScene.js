@@ -24,6 +24,12 @@ const renovationSystem =
 const renovationConfig =
   require('../renovation/renovationConfig.js');
 
+const customizationSystem =
+  require('../ui/customizationSystem.js');
+
+const textInput =
+  require('../ui/textInput.js');
+
 const DESIGN_W =
   390;
 
@@ -425,18 +431,49 @@ class RenovationScene {
 
     this.text(
       ctx,
-      '自定义装修',
+      shop.name ||
+        '我的酒楼',
       68,
       21,
-      17,
+      16,
       COLORS.white,
       '700'
     );
 
+    this.roundedRect(
+      ctx,
+      205,
+      10,
+      52,
+      28,
+      8,
+      'rgba(255,255,255,0.10)',
+      'rgba(255,255,255,0.18)'
+    );
+
     this.text(
       ctx,
-      shop.address +
-        ' · 所有布局都会实时重算成本与经营能力',
+      '✎ 改名',
+      231,
+      24,
+      6.8,
+      '#FFE8AE',
+      '700',
+      'center'
+    );
+
+    this.addButton(
+      'shop:rename',
+      201,
+      6,
+      60,
+      36
+    );
+
+    this.text(
+      ctx,
+      '自定义装修 · ' +
+        shop.address,
       68,
       44,
       7.2,
@@ -735,11 +772,19 @@ class RenovationScene {
 
       this.text(
         ctx,
-        '包' +
-          room.seats,
+        (
+          room.name ||
+          (
+            '包' +
+            room.seats
+          )
+        ).slice(
+          0,
+          5
+        ),
         rx + 24.5,
         ry + 8.5,
-        5.8,
+        5.6,
         COLORS.text,
         '700',
         'center'
@@ -1003,20 +1048,24 @@ class RenovationScene {
       ],
       [
         'style',
-        '风格/施工'
+        '风格'
+      ],
+      [
+        'templates',
+        '模板'
       ]
     ];
 
     const gap =
-      5;
+      4;
 
     const w =
       (
         DESIGN_W -
         20 -
-        gap * 3
+        gap * 4
       ) /
-      4;
+      5;
 
     for (
       let i = 0;
@@ -1452,9 +1501,12 @@ class RenovationScene {
 
         this.text(
           ctx,
-          '包厢 ' +
+          room.name ||
             (
-              i + 1
+              '包厢' +
+              (
+                i + 1
+              )
             ),
           22,
           y + 17,
@@ -1473,6 +1525,37 @@ class RenovationScene {
           7,
           COLORS.muted,
           '600'
+        );
+
+        this.roundedRect(
+          ctx,
+          151,
+          y + 10,
+          52,
+          34,
+          8,
+          '#F5EEE4',
+          '#D8CBBB'
+        );
+
+        this.text(
+          ctx,
+          '✎ 名称',
+          177,
+          y + 27,
+          6.6,
+          COLORS.orange,
+          '700',
+          'center'
+        );
+
+        this.addButton(
+          'room:rename:' +
+            room.id,
+          147,
+          y + 6,
+          60,
+          42
         );
 
         this.roundedRect(
@@ -1884,6 +1967,273 @@ class RenovationScene {
     );
   }
 
+
+  renderTemplatesPage(
+    ctx,
+    metrics
+  ) {
+    const templates =
+      customizationSystem
+        .getTemplateList();
+
+    let y =
+      359;
+
+    this.roundedRect(
+      ctx,
+      10,
+      y,
+      370,
+      45,
+      11,
+      COLORS.gold,
+      '#D49434'
+    );
+
+    this.text(
+      ctx,
+      '保存当前装修方案为模板',
+      195,
+      y + 22.5,
+      8.8,
+      '#26343B',
+      '700',
+      'center'
+    );
+
+    this.addButton(
+      'template:save',
+      10,
+      y,
+      370,
+      45
+    );
+
+    y +=
+      55;
+
+    this.text(
+      ctx,
+      '已保存模板 ' +
+        templates.length +
+        '/' +
+        renovationConfig
+          .templateRules
+          .maxTemplates,
+      14,
+      y,
+      7,
+      COLORS.muted,
+      '700'
+    );
+
+    y +=
+      14;
+
+    if (
+      templates.length ===
+      0
+    ) {
+      this.roundedRect(
+        ctx,
+        10,
+        y,
+        370,
+        90,
+        12,
+        COLORS.panel,
+        COLORS.line
+      );
+
+      this.text(
+        ctx,
+        '还没有保存装修模板',
+        22,
+        y + 27,
+        10,
+        COLORS.text,
+        '700'
+      );
+
+      this.text(
+        ctx,
+        '保存后可在其他面积、其他楼层门店中按比例自动适配。',
+        22,
+        y + 55,
+        7,
+        COLORS.muted,
+        '500'
+      );
+
+      return;
+    }
+
+    for (
+      let i = 0;
+      i <
+      Math.min(
+        templates.length,
+        4
+      );
+      i++
+    ) {
+      const template =
+        templates[i];
+
+      this.roundedRect(
+        ctx,
+        10,
+        y,
+        370,
+        56,
+        11,
+        COLORS.panel,
+        COLORS.line
+      );
+
+      this.text(
+        ctx,
+        template.name,
+        21,
+        y + 17,
+        8.5,
+        COLORS.text,
+        '700'
+      );
+
+      this.text(
+        ctx,
+        Math.round(
+          template.sourceArea
+        ) +
+          '㎡ · ' +
+          template.sourceFloorCount +
+          '层 · 可跨门店缩放适配',
+        21,
+        y + 38,
+        6.5,
+        COLORS.muted,
+        '500'
+      );
+
+      this.roundedRect(
+        ctx,
+        211,
+        y + 9,
+        51,
+        38,
+        8,
+        '#E8F1E9',
+        '#BDD4C3'
+      );
+
+      this.text(
+        ctx,
+        '使用',
+        236.5,
+        y + 28,
+        7,
+        COLORS.green,
+        '700',
+        'center'
+      );
+
+      this.addButton(
+        'template:apply:' +
+          template.id,
+        207,
+        y + 5,
+        59,
+        46
+      );
+
+      this.roundedRect(
+        ctx,
+        270,
+        y + 9,
+        51,
+        38,
+        8,
+        '#FFF0D6',
+        '#E4C47E'
+      );
+
+      this.text(
+        ctx,
+        '改名',
+        295.5,
+        y + 28,
+        7,
+        COLORS.orange,
+        '700',
+        'center'
+      );
+
+      this.addButton(
+        'template:rename:' +
+          template.id,
+        266,
+        y + 5,
+        59,
+        46
+      );
+
+      this.roundedRect(
+        ctx,
+        329,
+        y + 9,
+        42,
+        38,
+        8,
+        '#F4E5E2',
+        '#DABAB5'
+      );
+
+      this.text(
+        ctx,
+        '删除',
+        350,
+        y + 28,
+        6.7,
+        COLORS.red,
+        '700',
+        'center'
+      );
+
+      this.addButton(
+        'template:delete:' +
+          template.id,
+        325,
+        y + 5,
+        50,
+        46
+      );
+
+      y +=
+        62;
+    }
+
+    if (
+      templates.length >
+      4
+    ) {
+      this.text(
+        ctx,
+        '还有 ' +
+          (
+            templates.length -
+            4
+          ) +
+          ' 个模板，后续模板管理页继续显示',
+        14,
+        y + 8,
+        6.5,
+        COLORS.muted,
+        '500'
+      );
+    }
+  }
+
   renderConstruction(
     ctx,
     shop,
@@ -2260,8 +2610,16 @@ class RenovationScene {
         ctx,
         floor
       );
-    } else {
+    } else if (
+      this.page ===
+      'style'
+    ) {
       this.renderStylePage(
+        ctx,
+        metrics
+      );
+    } else {
+      this.renderTemplatesPage(
         ctx,
         metrics
       );
@@ -2292,6 +2650,59 @@ class RenovationScene {
         .switchTo(
           'shop'
         );
+      return true;
+    }
+
+    if (
+      id ===
+      'shop:rename'
+    ) {
+      const shop =
+        this.getShop();
+
+      if (shop) {
+        textInput
+          .requestText({
+            title:
+              '修改酒楼名称',
+
+            value:
+              shop.name ||
+              '',
+
+            placeholder:
+              '请输入酒楼名称',
+
+            maxLength:
+              renovationConfig
+                .nameRules
+                .shopMaxLength
+          })
+          .then(
+            value => {
+              if (!value) {
+                return;
+              }
+
+              const result =
+                customizationSystem
+                  .renameShop(
+                    this.shopId,
+                    value
+                  );
+
+              this.showToast(
+                result.ok
+                  ? '酒楼名称已保存'
+                  : result.message
+              );
+
+              textInput
+                .requestRender();
+            }
+          );
+      }
+
       return true;
     }
 
@@ -2413,6 +2824,77 @@ class RenovationScene {
 
     if (
       id.indexOf(
+        'room:rename:'
+      ) ===
+      0
+    ) {
+      const roomId =
+        id.slice(
+          'room:rename:'
+            .length
+        );
+
+      const room =
+        plan
+          .floors[
+            floorIndex
+          ]
+          .privateRooms
+          .find(
+            item =>
+              item.id ===
+              roomId
+          );
+
+      if (room) {
+        textInput
+          .requestText({
+            title:
+              '修改包厢名称',
+
+            value:
+              room.name ||
+              '',
+
+            placeholder:
+              '例如：牡丹厅',
+
+            maxLength:
+              renovationConfig
+                .nameRules
+                .roomMaxLength
+          })
+          .then(
+            value => {
+              if (!value) {
+                return;
+              }
+
+              const result =
+                customizationSystem
+                  .renameRoom(
+                    this.shopId,
+                    roomId,
+                    value
+                  );
+
+              this.showToast(
+                result.ok
+                  ? '包厢名称已保存'
+                  : result.message
+              );
+
+              textInput
+                .requestRender();
+            }
+          );
+      }
+
+      return true;
+    }
+
+    if (
+      id.indexOf(
         'room:seats:'
       ) ===
       0
@@ -2459,6 +2941,229 @@ class RenovationScene {
             'room:remove:'.length
           )
         );
+      return true;
+    }
+
+    if (
+      id ===
+      'template:save'
+    ) {
+      const templates =
+        customizationSystem
+          .getTemplateList();
+
+      textInput
+        .requestText({
+          title:
+            '保存装修模板',
+
+          value:
+            renovationConfig
+              .templateRules
+              .defaultNamePrefix +
+            (
+              templates.length +
+              1
+            ),
+
+          placeholder:
+            '请输入模板名称',
+
+          maxLength:
+            renovationConfig
+              .nameRules
+              .templateMaxLength
+        })
+        .then(
+          value => {
+            if (!value) {
+              return;
+            }
+
+            const result =
+              customizationSystem
+                .saveTemplate(
+                  this.shopId,
+                  value
+                );
+
+            this.showToast(
+              result.ok
+                ? '装修模板已保存'
+                : result.message
+            );
+
+            textInput
+              .requestRender();
+          }
+        );
+
+      return true;
+    }
+
+    if (
+      id.indexOf(
+        'template:apply:'
+      ) ===
+      0
+    ) {
+      const result =
+        customizationSystem
+          .applyTemplate(
+            this.shopId,
+            id.slice(
+              'template:apply:'
+                .length
+            )
+          );
+
+      this.showToast(
+        result.ok
+          ? (
+              result.metrics
+                .valid
+                ? '模板已套用并自动适配当前门店'
+                : '模板已套用，但当前面积需要继续调整'
+            )
+          : result.message
+      );
+
+      if (result.ok) {
+        this.page =
+          'layout';
+      }
+
+      return true;
+    }
+
+    if (
+      id.indexOf(
+        'template:rename:'
+      ) ===
+      0
+    ) {
+      const templateId =
+        id.slice(
+          'template:rename:'
+            .length
+        );
+
+      const template =
+        customizationSystem
+          .getTemplateList()
+          .find(
+            item =>
+              item.id ===
+              templateId
+          );
+
+      if (template) {
+        textInput
+          .requestText({
+            title:
+              '修改模板名称',
+
+            value:
+              template.name,
+
+            placeholder:
+              '请输入模板名称',
+
+            maxLength:
+              renovationConfig
+                .nameRules
+                .templateMaxLength
+          })
+          .then(
+            value => {
+              if (!value) {
+                return;
+              }
+
+              const result =
+                customizationSystem
+                  .renameTemplate(
+                    templateId,
+                    value
+                  );
+
+              this.showToast(
+                result.ok
+                  ? '模板名称已更新'
+                  : result.message
+              );
+
+              textInput
+                .requestRender();
+            }
+          );
+      }
+
+      return true;
+    }
+
+    if (
+      id.indexOf(
+        'template:delete:'
+      ) ===
+      0
+    ) {
+      const templateId =
+        id.slice(
+          'template:delete:'
+            .length
+        );
+
+      const remove =
+        () => {
+          const result =
+            customizationSystem
+              .deleteTemplate(
+                templateId
+              );
+
+          this.showToast(
+            result.ok
+              ? '模板已删除'
+              : result.message
+          );
+
+          textInput
+            .requestRender();
+        };
+
+      if (
+        api &&
+        typeof api.showModal ===
+          'function'
+      ) {
+        api.showModal({
+          title:
+            '删除装修模板',
+
+          content:
+            '删除后不能恢复，确定删除吗？',
+
+          confirmText:
+            '删除',
+
+          cancelText:
+            '取消',
+
+          success:
+            result => {
+              if (
+                result &&
+                result.confirm
+              ) {
+                remove();
+              }
+            }
+        });
+      } else {
+        remove();
+      }
+
       return true;
     }
 

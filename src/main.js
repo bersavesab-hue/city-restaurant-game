@@ -2767,6 +2767,9 @@ function render() {
   drawBottomNav();
 }
 
+runtime.requestRender =
+  render;
+
 /* =========================
    屏幕坐标转逻辑坐标
 ========================= */
@@ -3263,5 +3266,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V7 动态自定义装修版启动成功'
+  '城市餐饮经营小游戏 V8 素材整合与自定义模板版启动成功'
 );

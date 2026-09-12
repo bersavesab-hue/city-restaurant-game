@@ -391,6 +391,14 @@ class RenovationSystem {
           .privateRooms
           .push({
             id,
+            name:
+              '包厢' +
+              (
+                floor
+                  .privateRooms
+                  .length +
+                1
+              ),
             seats: 6,
             style: 'wood'
           });

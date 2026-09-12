@@ -63,7 +63,9 @@ const INITIAL_STATE = {
       leases: {}
     },
 
-    renovations: {}
+    renovations: {},
+
+    renovationTemplates: []
   },
 
   progress: {
@@ -194,6 +196,25 @@ class GameState {
     }
 
     return business.renovations;
+  }
+
+  getRenovationTemplates() {
+    const business =
+      this.data.business;
+
+    if (
+      !Array.isArray(
+        business
+          .renovationTemplates
+      )
+    ) {
+      business
+        .renovationTemplates =
+        [];
+    }
+
+    return business
+      .renovationTemplates;
   }
 
   getSimulation() {

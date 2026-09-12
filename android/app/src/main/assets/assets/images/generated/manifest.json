@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "policy": "lazy-load-only",
+  "note": "Generated visual resources. Do not preload all files at startup; scenes should load on demand.",
+  "mockups": {
+    "storeManagement": "assets/images/generated/mockups/store_management_v1.png",
+    "districtDashboard": "assets/images/generated/mockups/district_dashboard_v1.png",
+    "renovationScreen": "assets/images/generated/mockups/renovation_screen_v1.png",
+    "storePreparation": "assets/images/generated/mockups/store_preparation_v1.png",
+    "districtDashboardAlt": "assets/images/generated/mockups/district_dashboard_alt_v1.png"
+  },
+  "atlases": {
+    "uiComponents": "assets/images/generated/atlases/ui_components_v1.png",
+    "renovationAssets": "assets/images/generated/atlases/renovation_assets_v1.png"
+  }
+}

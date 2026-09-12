@@ -79,6 +79,17 @@ module.exports = {
 
   baseConstructionCostPerSqm: 760,
 
+  templateRules: {
+    maxTemplates: 30,
+    defaultNamePrefix: '装修模板'
+  },
+
+  nameRules: {
+    shopMaxLength: 12,
+    roomMaxLength: 10,
+    templateMaxLength: 14
+  },
+
   contractorNameParts: {
     prefix: ['城建', '匠造', '禾木', '鼎盛', '青禾', '远景', '万家', '筑味'],
     suffix: ['装饰工程', '餐饮空间', '建设设计', '工程服务']
