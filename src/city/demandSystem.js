@@ -11,18 +11,6 @@ const gameState =
 
 /**
  * 顾客群体基础特征
- *
- * share:
- * 只用于各商圈内部的客群分配参考
- *
- * priceSensitivity:
- * 越高越在乎价格
- *
- * speedSensitivity:
- * 越高越在乎出餐速度
- *
- * qualitySensitivity:
- * 越高越在乎味道和品质
  */
 
 const CUSTOMER_TYPES = {
@@ -155,8 +143,6 @@ const CUSTOMER_TYPES = {
 
 /**
  * 不同商圈客群比例
- *
- * 总和必须接近 1
  */
 
 const DISTRICT_CUSTOMER_MIX = {
@@ -204,7 +190,7 @@ const DISTRICT_CUSTOMER_MIX = {
 };
 
 /**
- * 天气对整体餐饮需求的影响
+ * 天气对餐饮需求的影响
  */
 
 const WEATHER_MODIFIERS = {
@@ -229,9 +215,6 @@ class DemandSystem {
     );
   }
 
-  /**
-   * 当前天气修正
-   */
   getWeatherModifier() {
     const world =
       gameState.getWorld();
@@ -243,9 +226,6 @@ class DemandSystem {
     );
   }
 
-  /**
-   * 当前时段基础需求
-   */
   getBaseDemand(
     districtId
   ) {
@@ -258,10 +238,6 @@ class DemandSystem {
     );
   }
 
-  /**
-   * 获取某商圈当前时段
-   * 真实总需求
-   */
   getTotalDemand(
     districtId
   ) {
@@ -281,9 +257,6 @@ class DemandSystem {
     );
   }
 
-  /**
-   * 将总需求分配给不同客群
-   */
   getDemandByCustomerType(
     districtId
   ) {
@@ -327,4 +300,155 @@ class DemandSystem {
             mix[typeId]
           );
 
-        ass
+        assigned += amount;
+      }
+
+      result[typeId] = {
+        typeId,
+
+        name:
+          CUSTOMER_TYPES[
+            typeId
+          ]
+            ? CUSTOMER_TYPES[
+                typeId
+              ].name
+            : typeId,
+
+        demand:
+          Math.max(
+            0,
+            amount
+          )
+      };
+    }
+
+    return result;
+  }
+
+  createDemandPool(
+    districtId
+  ) {
+    const district =
+      citySystem.getDistrict(
+        districtId
+      );
+
+    if (!district) {
+      return null;
+    }
+
+    const mealPeriod =
+      timeSystem.getMealPeriod();
+
+    const totalDemand =
+      this.getTotalDemand(
+        districtId
+      );
+
+    const customerGroups =
+      this.getDemandByCustomerType(
+        districtId
+      );
+
+    return {
+      districtId,
+
+      districtName:
+        district.name,
+
+      mealPeriod,
+
+      totalDemand,
+
+      remainingDemand:
+        totalDemand,
+
+      customerGroups,
+
+      createdAt:
+        Date.now()
+    };
+  }
+
+  consumeDemand(
+    pool,
+    amount
+  ) {
+    if (
+      !pool ||
+      amount <= 0
+    ) {
+      return 0;
+    }
+
+    const actual =
+      Math.min(
+        pool.remainingDemand,
+        Math.floor(amount)
+      );
+
+    pool.remainingDemand -=
+      actual;
+
+    return actual;
+  }
+
+  consumeCustomerType(
+    pool,
+    typeId,
+    amount
+  ) {
+    if (
+      !pool ||
+      !pool.customerGroups ||
+      !pool.customerGroups[
+        typeId
+      ]
+    ) {
+      return 0;
+    }
+
+    const group =
+      pool.customerGroups[
+        typeId
+      ];
+
+    const actual =
+      Math.min(
+        group.demand,
+        pool.remainingDemand,
+        Math.floor(amount)
+      );
+
+    group.demand -=
+      actual;
+
+    pool.remainingDemand -=
+      actual;
+
+    return actual;
+  }
+
+  getRemainingRatio(
+    pool
+  ) {
+    if (
+      !pool ||
+      pool.totalDemand <= 0
+    ) {
+      return 0;
+    }
+
+    return (
+      pool.remainingDemand /
+      pool.totalDemand
+    );
+  }
+}
+
+const demandSystem =
+  new DemandSystem();
+
+module.exports =
+  demandSystem;
