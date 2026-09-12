@@ -2,8 +2,6 @@
 
 /**
  * 游戏全局状态
- * 后续城市、门店、资金、日期、品牌等系统
- * 都从这里读取和修改。
  */
 
 const INITIAL_STATE = {
@@ -20,12 +18,24 @@ const INITIAL_STATE = {
     month: 4,
     day: 12,
     hour: 10,
-    minute: 20
+    minute: 20,
+
+    // 时间倍率
+    speed: 1,
+
+    // 是否暂停
+    paused: false
   },
 
   world: {
+    // 内部城市ID，不给玩家看
     currentCityId: 'yunzhou',
+
+    // 显示名称由玩家命名或随机生成
+    cityName: '',
+
     currentDistrictId: 'university',
+
     weather: 'sunny',
     temperature: 23
   },
@@ -48,9 +58,76 @@ function clone(value) {
   );
 }
 
+/**
+ * 兼容旧存档。
+ * 新增字段时不会把旧存档直接弄坏。
+ */
+function mergeDefaults(
+  defaults,
+  source
+) {
+  if (
+    source === undefined ||
+    source === null
+  ) {
+    return clone(defaults);
+  }
+
+  if (
+    Array.isArray(defaults)
+  ) {
+    return Array.isArray(source)
+      ? clone(source)
+      : clone(defaults);
+  }
+
+  if (
+    typeof defaults !== 'object'
+  ) {
+    return source;
+  }
+
+  const result =
+    clone(defaults);
+
+  const keys =
+    Object.keys(source);
+
+  for (
+    let i = 0;
+    i < keys.length;
+    i++
+  ) {
+    const key =
+      keys[i];
+
+    if (
+      defaults[key] !== undefined &&
+      defaults[key] !== null &&
+      typeof defaults[key] === 'object' &&
+      !Array.isArray(defaults[key]) &&
+      source[key] !== null &&
+      typeof source[key] === 'object' &&
+      !Array.isArray(source[key])
+    ) {
+      result[key] =
+        mergeDefaults(
+          defaults[key],
+          source[key]
+        );
+    } else {
+      result[key] =
+        clone(source[key]);
+    }
+  }
+
+  return result;
+}
+
 class GameState {
   constructor() {
-    this.data = clone(INITIAL_STATE);
+    this.data =
+      clone(INITIAL_STATE);
   }
 
   getData() {
@@ -73,28 +150,139 @@ class GameState {
     return this.data.business;
   }
 
+  /* =========================
+     城市名称
+  ========================= */
+
+  getCityName() {
+    const name =
+      this.data.world.cityName;
+
+    return name &&
+      name.trim()
+      ? name
+      : '未命名城市';
+  }
+
+  setCityName(name) {
+    const cleanName =
+      String(
+        name || ''
+      ).trim();
+
+    if (!cleanName) {
+      return false;
+    }
+
+    this.data.world.cityName =
+      cleanName.slice(
+        0,
+        12
+      );
+
+    return true;
+  }
+
+  clearCityName() {
+    this.data.world.cityName =
+      '';
+  }
+
+  /* =========================
+     时间控制
+  ========================= */
+
+  getTimeSpeed() {
+    const speed =
+      Number(
+        this.data.time.speed
+      );
+
+    return speed || 1;
+  }
+
+  setTimeSpeed(speed) {
+    const value =
+      Number(speed);
+
+    const allowed = [
+      1,
+      2,
+      5,
+      10
+    ];
+
+    if (
+      allowed.indexOf(
+        value
+      ) === -1
+    ) {
+      return false;
+    }
+
+    this.data.time.speed =
+      value;
+
+    this.data.time.paused =
+      false;
+
+    return true;
+  }
+
+  isTimePaused() {
+    return !!this.data.time.paused;
+  }
+
+  setTimePaused(value) {
+    this.data.time.paused =
+      !!value;
+  }
+
+  toggleTimePause() {
+    this.data.time.paused =
+      !this.data.time.paused;
+
+    return (
+      this.data.time.paused
+    );
+  }
+
+  /* =========================
+     玩家资金
+  ========================= */
+
   setCash(value) {
     this.data.player.cash =
-      Math.max(0, Math.floor(value));
+      Math.max(
+        0,
+        Math.floor(value)
+      );
   }
 
   addCash(value) {
     this.setCash(
-      this.data.player.cash + value
+      this.data.player.cash +
+      value
     );
   }
 
   spendCash(value) {
     if (
-      this.data.player.cash < value
+      this.data.player.cash <
+      value
     ) {
       return false;
     }
 
-    this.data.player.cash -= value;
+    this.data.player.cash -=
+      value;
 
     return true;
   }
+
+  /* =========================
+     世界状态
+  ========================= */
 
   setDistrict(id) {
     this.data.world.currentDistrictId =
@@ -102,20 +290,30 @@ class GameState {
   }
 
   addShop(shop) {
-    this.data.business.shops.push(shop);
+    this.data.business.shops.push(
+      shop
+    );
 
-    this.data.business.hasShop = true;
+    this.data.business.hasShop =
+      true;
 
     this.data.business.currentShopId =
       shop.id;
   }
 
+  /* =========================
+     存档
+  ========================= */
+
   reset() {
-    this.data = clone(INITIAL_STATE);
+    this.data =
+      clone(INITIAL_STATE);
   }
 
   exportSave() {
-    return clone(this.data);
+    return clone(
+      this.data
+    );
   }
 
   importSave(saveData) {
@@ -130,7 +328,11 @@ class GameState {
       return false;
     }
 
-    this.data = clone(saveData);
+    this.data =
+      mergeDefaults(
+        INITIAL_STATE,
+        saveData
+      );
 
     return true;
   }
@@ -139,4 +341,5 @@ class GameState {
 const gameState =
   new GameState();
 
-module.exports = gameState;
+module.exports =
+  gameState;
