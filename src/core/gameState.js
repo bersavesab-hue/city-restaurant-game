@@ -55,7 +55,13 @@ const INITIAL_STATE = {
   business: {
     hasShop: false,
     currentShopId: null,
-    shops: []
+    shops: [],
+
+    propertyProcess: {
+      visits: {},
+      negotiations: {},
+      leases: {}
+    }
   },
 
   progress: {
@@ -156,6 +162,23 @@ class GameState {
 
   getBusiness() {
     return this.data.business;
+  }
+
+  getPropertyProcess() {
+    const business =
+      this.data.business;
+
+    if (
+      !business.propertyProcess
+    ) {
+      business.propertyProcess = {
+        visits: {},
+        negotiations: {},
+        leases: {}
+      };
+    }
+
+    return business.propertyProcess;
   }
 
   getSimulation() {
