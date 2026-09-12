@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "node tests/core.test.js"
+    "test": "node tests/core.test.js",
+    "build:android-js": "esbuild android/entry.js --bundle --platform=browser --format=iife --target=chrome100 --outfile=android/app/src/main/assets/game.bundle.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
   }
 }
