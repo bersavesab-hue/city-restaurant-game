@@ -1475,6 +1475,45 @@ class PropertyNegotiationSystem {
       seatEstimate:
         listing.seatEstimate,
 
+      propertyTypeName:
+        listing.propertyTypeName,
+
+      layoutTypeName:
+        listing.layoutTypeName,
+
+      floor:
+        listing.floor,
+
+      frontage:
+        listing.frontage,
+
+      depth:
+        listing.depth,
+
+      ceilingHeight:
+        listing.ceilingHeight,
+
+      exhaust:
+        listing.exhaust,
+
+      gas:
+        listing.gas,
+
+      threePhase:
+        listing.threePhase,
+
+      drainage:
+        listing.drainage,
+
+      greaseTrap:
+        listing.greaseTrap,
+
+      fireSprinkler:
+        listing.fireSprinkler,
+
+      electricCapacityKw:
+        listing.electricCapacityKw,
+
       monthlyRent:
         terms.monthlyRent,
 

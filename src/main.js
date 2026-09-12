@@ -53,6 +53,9 @@ const storeScene =
 const districtScene =
   require('./scenes/districtScene.js');
 
+const renovationScene =
+  require('./scenes/renovationScene.js');
+
 const researchScene =
   require('./scenes/researchScene.js');
 
@@ -2506,8 +2509,12 @@ function drawBottomNav() {
       (
         item.id ===
           'shop' &&
-        current ===
-          'propertyMarket'
+        (
+          current ===
+            'propertyMarket' ||
+          current ===
+            'renovation'
+        )
       );
 
     if (active) {
@@ -2711,6 +2718,11 @@ sceneManager.register(
 sceneManager.register(
   'propertyMarket',
   propertyMarketScene
+);
+
+sceneManager.register(
+  'renovation',
+  renovationScene
 );
 
 sceneManager.register(
@@ -3251,5 +3263,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V6 商圈详情与门店分流版启动成功'
+  '城市餐饮经营小游戏 V7 动态自定义装修版启动成功'
 );

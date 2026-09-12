@@ -61,7 +61,9 @@ const INITIAL_STATE = {
       visits: {},
       negotiations: {},
       leases: {}
-    }
+    },
+
+    renovations: {}
   },
 
   progress: {
@@ -179,6 +181,19 @@ class GameState {
     }
 
     return business.propertyProcess;
+  }
+
+  getRenovations() {
+    const business =
+      this.data.business;
+
+    if (
+      !business.renovations
+    ) {
+      business.renovations = {};
+    }
+
+    return business.renovations;
   }
 
   getSimulation() {

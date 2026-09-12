@@ -152,7 +152,8 @@
             visits: {},
             negotiations: {},
             leases: {}
-          }
+          },
+          renovations: {}
         },
         progress: {
           firstLaunch: true,
@@ -218,6 +219,13 @@
             };
           }
           return business.propertyProcess;
+        }
+        getRenovations() {
+          const business = this.data.business;
+          if (!business.renovations) {
+            business.renovations = {};
+          }
+          return business.renovations;
         }
         getSimulation() {
           const world = this.data.world;
@@ -7016,6 +7024,19 @@
             grossArea: listing.grossArea,
             usableArea: listing.usableArea,
             seatEstimate: listing.seatEstimate,
+            propertyTypeName: listing.propertyTypeName,
+            layoutTypeName: listing.layoutTypeName,
+            floor: listing.floor,
+            frontage: listing.frontage,
+            depth: listing.depth,
+            ceilingHeight: listing.ceilingHeight,
+            exhaust: listing.exhaust,
+            gas: listing.gas,
+            threePhase: listing.threePhase,
+            drainage: listing.drainage,
+            greaseTrap: listing.greaseTrap,
+            fireSprinkler: listing.fireSprinkler,
+            electricCapacityKw: listing.electricCapacityKw,
             monthlyRent: terms.monthlyRent,
             transferFee: terms.transferFee,
             freeRentDays: terms.freeRentDays,
@@ -10927,6 +10948,738 @@
     }
   });
 
+  // src/renovation/renovationConfig.js
+  var require_renovationConfig = __commonJS({
+    "src/renovation/renovationConfig.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        // Furniture footprint includes basic chair pull-out + service clearance.
+        tableFootprint: {
+          2: 4.8,
+          4: 7.6,
+          6: 10.4,
+          8: 13.2
+        },
+        aisleModes: {
+          compact: {
+            id: "compact",
+            name: "\u7D27\u51D1",
+            areaFactor: 0.9,
+            comfort: 0.84,
+            serviceEfficiency: 1.06
+          },
+          standard: {
+            id: "standard",
+            name: "\u6807\u51C6",
+            areaFactor: 1,
+            comfort: 1,
+            serviceEfficiency: 1
+          },
+          spacious: {
+            id: "spacious",
+            name: "\u5BBD\u677E",
+            areaFactor: 1.15,
+            comfort: 1.1,
+            serviceEfficiency: 0.96
+          }
+        },
+        hallStyles: [
+          { id: "simple", name: "\u7B80\u7EA6", costFactor: 0.88, appeal: 0.95, maintenance: 0.9 },
+          { id: "wood", name: "\u539F\u6728", costFactor: 1, appeal: 1.03, maintenance: 0.98 },
+          { id: "modern_cn", name: "\u73B0\u4EE3\u4E2D\u5F0F", costFactor: 1.18, appeal: 1.1, maintenance: 1.06 },
+          { id: "industrial", name: "\u5DE5\u4E1A\u98CE", costFactor: 1.06, appeal: 1.04, maintenance: 0.94 },
+          { id: "retro", name: "\u590D\u53E4\u5E02\u4E95", costFactor: 1.12, appeal: 1.08, maintenance: 1.04 },
+          { id: "premium", name: "\u54C1\u8D28\u5546\u52A1", costFactor: 1.36, appeal: 1.18, maintenance: 1.16 }
+        ],
+        privateRoomStyles: [
+          { id: "plain", name: "\u5B9E\u7528\u578B", costPerSqm: 620, appeal: 0.96 },
+          { id: "wood", name: "\u539F\u6728\u96C5\u95F4", costPerSqm: 880, appeal: 1.05 },
+          { id: "chinese", name: "\u4E2D\u5F0F\u96C5\u95F4", costPerSqm: 1180, appeal: 1.12 },
+          { id: "modern", name: "\u73B0\u4EE3\u5305\u53A2", costPerSqm: 1080, appeal: 1.1 },
+          { id: "premium", name: "\u5546\u52A1\u5305\u53A2", costPerSqm: 1580, appeal: 1.2 }
+        ],
+        materialGrades: [
+          { id: "budget", name: "\u7ECF\u6D4E", costFactor: 0.82, quality: 0.88, durability: 0.85 },
+          { id: "standard", name: "\u6807\u51C6", costFactor: 1, quality: 1, durability: 1 },
+          { id: "good", name: "\u54C1\u8D28", costFactor: 1.22, quality: 1.1, durability: 1.12 },
+          { id: "premium", name: "\u9AD8\u6863", costFactor: 1.48, quality: 1.18, durability: 1.2 }
+        ],
+        lightingLevels: [
+          { id: "basic", name: "\u57FA\u7840\u7167\u660E", costPerSqm: 55, appeal: 0.96 },
+          { id: "warm", name: "\u6696\u5149\u6C1B\u56F4", costPerSqm: 88, appeal: 1.04 },
+          { id: "layered", name: "\u5206\u5C42\u706F\u5149", costPerSqm: 125, appeal: 1.1 },
+          { id: "premium", name: "\u8BBE\u8BA1\u706F\u5149", costPerSqm: 188, appeal: 1.16 }
+        ],
+        privateRoomSeatOptions: [4, 6, 8, 10, 12],
+        zoneRules: {
+          minKitchenRatio: 0.18,
+          maxKitchenRatio: 0.42,
+          minStorageRatio: 0.04,
+          maxStorageRatio: 0.18,
+          minServiceRatio: 0.08,
+          maxServiceRatio: 0.2
+        },
+        baseConstructionCostPerSqm: 760,
+        contractorNameParts: {
+          prefix: ["\u57CE\u5EFA", "\u5320\u9020", "\u79BE\u6728", "\u9F0E\u76DB", "\u9752\u79BE", "\u8FDC\u666F", "\u4E07\u5BB6", "\u7B51\u5473"],
+          suffix: ["\u88C5\u9970\u5DE5\u7A0B", "\u9910\u996E\u7A7A\u95F4", "\u5EFA\u8BBE\u8BBE\u8BA1", "\u5DE5\u7A0B\u670D\u52A1"]
+        }
+      };
+    }
+  });
+
+  // src/renovation/renovationSystem.js
+  var require_renovationSystem = __commonJS({
+    "src/renovation/renovationSystem.js"(exports, module) {
+      "use strict";
+      var gameState = require_gameState();
+      var simulationSystem = require_simulationSystem();
+      var config = require_renovationConfig();
+      function clone(value) {
+        return JSON.parse(
+          JSON.stringify(value)
+        );
+      }
+      function clamp(value, min, max) {
+        return Math.max(
+          min,
+          Math.min(max, value)
+        );
+      }
+      function hashFloat(text) {
+        let h = 2166136261;
+        const source = String(text);
+        for (let i = 0; i < source.length; i++) {
+          h ^= source.charCodeAt(i);
+          h = Math.imul(h, 16777619);
+        }
+        return (h >>> 0) % 1e5 / 1e5;
+      }
+      var RenovationSystem = class {
+        getShop(shopId) {
+          const business = gameState.getBusiness();
+          return business.shops.find(
+            (item) => item.id === shopId
+          ) || null;
+        }
+        getStore() {
+          return gameState.getRenovations();
+        }
+        getMaxFloors(shop) {
+          const raw = String(
+            shop.floor || ""
+          );
+          if (raw.indexOf("1-3") >= 0) {
+            return 3;
+          }
+          if (raw.indexOf("1-2") >= 0) {
+            return 2;
+          }
+          return 1;
+        }
+        createFloor(index, area) {
+          const diningArea = area * 0.56;
+          const table4 = Math.max(
+            1,
+            Math.floor(
+              diningArea / 16
+            )
+          );
+          return {
+            index,
+            name: "\u7B2C" + (index + 1) + "\u5C42",
+            area: Number(
+              area.toFixed(1)
+            ),
+            kitchenRatio: index === 0 ? 0.27 : 0.18,
+            storageRatio: 0.08,
+            serviceRatio: 0.11,
+            aisleMode: "standard",
+            tables: {
+              2: 2,
+              4: table4,
+              6: 0,
+              8: 0
+            },
+            privateRooms: []
+          };
+        }
+        ensurePlan(shopId) {
+          const shop = this.getShop(shopId);
+          if (!shop) {
+            return null;
+          }
+          const store = this.getStore();
+          if (!store[shopId]) {
+            const maxFloors = this.getMaxFloors(shop);
+            const usable = Math.max(
+              1,
+              Number(
+                shop.usableArea || shop.grossArea || 60
+              )
+            );
+            const perFloor = usable / maxFloors;
+            const floors = [];
+            for (let i = 0; i < maxFloors; i++) {
+              floors.push(
+                this.createFloor(
+                  i,
+                  perFloor
+                )
+              );
+            }
+            store[shopId] = {
+              shopId,
+              status: "draft",
+              activeFloor: 0,
+              hallStyle: "wood",
+              materialGrade: "standard",
+              lightingLevel: "warm",
+              floors,
+              selectedContractorId: null,
+              construction: null
+            };
+          }
+          return clone(
+            store[shopId]
+          );
+        }
+        mutatePlan(shopId, callback) {
+          this.ensurePlan(shopId);
+          const plan = this.getStore()[shopId];
+          callback(plan);
+          return clone(plan);
+        }
+        setActiveFloor(shopId, index) {
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              plan.activeFloor = clamp(
+                Math.floor(index),
+                0,
+                plan.floors.length - 1
+              );
+            }
+          );
+        }
+        adjustZone(shopId, floorIndex, key, delta) {
+          const rules = config.zoneRules;
+          const range = {
+            kitchenRatio: [
+              rules.minKitchenRatio,
+              rules.maxKitchenRatio
+            ],
+            storageRatio: [
+              rules.minStorageRatio,
+              rules.maxStorageRatio
+            ],
+            serviceRatio: [
+              rules.minServiceRatio,
+              rules.maxServiceRatio
+            ]
+          }[key];
+          if (!range) {
+            return null;
+          }
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              const floor = plan.floors[clamp(
+                floorIndex,
+                0,
+                plan.floors.length - 1
+              )];
+              floor[key] = Number(
+                clamp(
+                  floor[key] + delta,
+                  range[0],
+                  range[1]
+                ).toFixed(2)
+              );
+            }
+          );
+        }
+        cycleAisle(shopId, floorIndex) {
+          const ids = Object.keys(
+            config.aisleModes
+          );
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              const floor = plan.floors[floorIndex];
+              const current = ids.indexOf(
+                floor.aisleMode
+              );
+              floor.aisleMode = ids[(current + 1) % ids.length];
+            }
+          );
+        }
+        adjustTable(shopId, floorIndex, seats, delta) {
+          const key = String(seats);
+          if (!config.tableFootprint[key]) {
+            return null;
+          }
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              const floor = plan.floors[floorIndex];
+              floor.tables[key] = Math.max(
+                0,
+                Math.min(
+                  40,
+                  (floor.tables[key] || 0) + delta
+                )
+              );
+            }
+          );
+        }
+        addPrivateRoom(shopId, floorIndex) {
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              const floor = plan.floors[floorIndex];
+              if (floor.privateRooms.length >= 8) {
+                return;
+              }
+              const id = "room_" + Date.now() % 1e6 + "_" + floor.privateRooms.length;
+              floor.privateRooms.push({
+                id,
+                seats: 6,
+                style: "wood"
+              });
+            }
+          );
+        }
+        removePrivateRoom(shopId, floorIndex, roomId) {
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              const floor = plan.floors[floorIndex];
+              floor.privateRooms = floor.privateRooms.filter(
+                (item) => item.id !== roomId
+              );
+            }
+          );
+        }
+        cycleRoomSeats(shopId, floorIndex, roomId) {
+          const options = config.privateRoomSeatOptions;
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              const room = plan.floors[floorIndex].privateRooms.find(
+                (item) => item.id === roomId
+              );
+              if (!room) {
+                return;
+              }
+              const current = options.indexOf(
+                room.seats
+              );
+              room.seats = options[(current + 1) % options.length];
+            }
+          );
+        }
+        cycleRoomStyle(shopId, floorIndex, roomId) {
+          const styles = config.privateRoomStyles;
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              const room = plan.floors[floorIndex].privateRooms.find(
+                (item) => item.id === roomId
+              );
+              if (!room) {
+                return;
+              }
+              const current = styles.findIndex(
+                (item) => item.id === room.style
+              );
+              room.style = styles[(current + 1) % styles.length].id;
+            }
+          );
+        }
+        cycleGlobal(shopId, key) {
+          const source = key === "hallStyle" ? config.hallStyles : key === "materialGrade" ? config.materialGrades : config.lightingLevels;
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              const current = source.findIndex(
+                (item) => item.id === plan[key]
+              );
+              plan[key] = source[(current + 1) % source.length].id;
+            }
+          );
+        }
+        getById(list, id) {
+          return list.find(
+            (item) => item.id === id
+          ) || list[0];
+        }
+        getMetrics(shopId) {
+          const shop = this.getShop(shopId);
+          const plan = this.ensurePlan(shopId);
+          if (!shop || !plan) {
+            return null;
+          }
+          const hallStyle = this.getById(
+            config.hallStyles,
+            plan.hallStyle
+          );
+          const material = this.getById(
+            config.materialGrades,
+            plan.materialGrade
+          );
+          const lighting = this.getById(
+            config.lightingLevels,
+            plan.lightingLevel
+          );
+          let totalSeats = 0;
+          let totalDiningArea = 0;
+          let totalFurnitureArea = 0;
+          let privateRoomArea = 0;
+          let privateRoomSeats = 0;
+          let roomAppeal = 0;
+          let roomCount = 0;
+          let kitchenArea = 0;
+          let storageArea = 0;
+          let serviceArea = 0;
+          let comfortScore = 0;
+          let serviceScore = 0;
+          let invalidFloorCount = 0;
+          const floorMetrics = [];
+          for (let i = 0; i < plan.floors.length; i++) {
+            const floor = plan.floors[i];
+            const aisle = config.aisleModes[floor.aisleMode];
+            const zoneRatio = floor.kitchenRatio + floor.storageRatio + floor.serviceRatio;
+            const diningArea = Math.max(
+              0,
+              floor.area * (1 - zoneRatio)
+            );
+            let tableArea = 0;
+            let tableSeats = 0;
+            Object.keys(
+              floor.tables
+            ).forEach(
+              (key) => {
+                const count = floor.tables[key];
+                tableArea += count * config.tableFootprint[key] * aisle.areaFactor;
+                tableSeats += count * Number(key);
+              }
+            );
+            let roomArea = 0;
+            let roomSeats = 0;
+            let floorRoomAppeal = 0;
+            for (let j = 0; j < floor.privateRooms.length; j++) {
+              const room = floor.privateRooms[j];
+              const style = this.getById(
+                config.privateRoomStyles,
+                room.style
+              );
+              const area = 7 + room.seats * 1.55;
+              roomArea += area;
+              roomSeats += room.seats;
+              floorRoomAppeal += style.appeal;
+            }
+            const used = tableArea + roomArea;
+            const remaining = diningArea - used;
+            const crowding = diningArea > 0 ? used / diningArea : 99;
+            const valid = remaining >= -0.01 && zoneRatio < 0.78;
+            if (!valid) {
+              invalidFloorCount += 1;
+            }
+            floorMetrics.push({
+              ...floor,
+              diningArea: Number(
+                diningArea.toFixed(1)
+              ),
+              tableArea: Number(
+                tableArea.toFixed(1)
+              ),
+              privateRoomArea: Number(
+                roomArea.toFixed(1)
+              ),
+              remainingArea: Number(
+                remaining.toFixed(1)
+              ),
+              seats: tableSeats + roomSeats,
+              crowding,
+              valid
+            });
+            totalSeats += tableSeats + roomSeats;
+            totalDiningArea += diningArea;
+            totalFurnitureArea += tableArea;
+            privateRoomArea += roomArea;
+            privateRoomSeats += roomSeats;
+            roomAppeal += floorRoomAppeal;
+            roomCount += floor.privateRooms.length;
+            kitchenArea += floor.area * floor.kitchenRatio;
+            storageArea += floor.area * floor.storageRatio;
+            serviceArea += floor.area * floor.serviceRatio;
+            comfortScore += aisle.comfort;
+            serviceScore += aisle.serviceEfficiency;
+          }
+          const totalArea = plan.floors.reduce(
+            (sum, item) => sum + item.area,
+            0
+          );
+          const furnitureCost = plan.floors.reduce(
+            (sum, floor) => {
+              return sum + Object.keys(
+                floor.tables
+              ).reduce(
+                (inner, key) => inner + floor.tables[key] * (420 + Number(key) * 165),
+                0
+              );
+            },
+            0
+          );
+          let roomCost = 0;
+          for (let i = 0; i < plan.floors.length; i++) {
+            const floor = plan.floors[i];
+            for (let j = 0; j < floor.privateRooms.length; j++) {
+              const room = floor.privateRooms[j];
+              const style = this.getById(
+                config.privateRoomStyles,
+                room.style
+              );
+              const area = 7 + room.seats * 1.55;
+              roomCost += area * style.costPerSqm;
+            }
+          }
+          const constructionBase = totalArea * config.baseConstructionCostPerSqm * hallStyle.costFactor * material.costFactor;
+          const lightingCost = totalArea * lighting.costPerSqm;
+          const kitchenComplexity = kitchenArea * (210 + totalSeats * 1.8);
+          const totalCost = Math.round(
+            constructionBase + lightingCost + furnitureCost + roomCost + kitchenComplexity
+          );
+          const averageComfort = comfortScore / Math.max(
+            1,
+            plan.floors.length
+          );
+          const averageService = serviceScore / Math.max(
+            1,
+            plan.floors.length
+          );
+          const kitchenLoad = totalSeats / Math.max(
+            1,
+            kitchenArea * 2.65
+          );
+          const comfort = clamp(
+            averageComfort * material.quality * lighting.appeal * (1 - Math.max(
+              0,
+              (totalFurnitureArea + privateRoomArea) / Math.max(
+                1,
+                totalDiningArea
+              ) - 0.78
+            ) * 0.8),
+            0.35,
+            1.35
+          );
+          const appeal = clamp(
+            hallStyle.appeal * lighting.appeal * material.quality * (roomCount ? roomAppeal / roomCount : 1),
+            0.55,
+            1.55
+          );
+          const operationalEfficiency = clamp(
+            averageService * (1 - Math.max(
+              0,
+              kitchenLoad - 1
+            ) * 0.32) * (1 + storageArea / Math.max(
+              1,
+              totalArea
+            ) * 0.22),
+            0.45,
+            1.35
+          );
+          const buildDays = Math.max(
+            5,
+            Math.round(
+              Math.sqrt(
+                totalArea
+              ) * 1.4 * hallStyle.costFactor + roomCount * 1.8 + plan.floors.length * 2
+            )
+          );
+          return {
+            shopId,
+            plan,
+            floors: floorMetrics,
+            totalArea: Number(
+              totalArea.toFixed(1)
+            ),
+            totalSeats,
+            privateRoomSeats,
+            roomCount,
+            kitchenArea: Number(
+              kitchenArea.toFixed(1)
+            ),
+            storageArea: Number(
+              storageArea.toFixed(1)
+            ),
+            serviceArea: Number(
+              serviceArea.toFixed(1)
+            ),
+            totalDiningArea: Number(
+              totalDiningArea.toFixed(1)
+            ),
+            invalidFloorCount,
+            valid: invalidFloorCount === 0 && kitchenLoad <= 1.28,
+            kitchenLoad,
+            comfort,
+            appeal,
+            operationalEfficiency,
+            totalCost,
+            buildDays
+          };
+        }
+        getContractorQuotes(shopId) {
+          const metrics = this.getMetrics(
+            shopId
+          );
+          if (!metrics) {
+            return [];
+          }
+          const seed = gameState.getSimulation().seed || 1;
+          const quotes = [];
+          for (let i = 0; i < 3; i++) {
+            const r1 = hashFloat(
+              shopId + ":contractor:" + seed + ":" + i
+            );
+            const r2 = hashFloat(
+              shopId + ":contractor2:" + seed + ":" + i
+            );
+            const prefix = config.contractorNameParts.prefix[Math.floor(
+              r1 * config.contractorNameParts.prefix.length
+            ) % config.contractorNameParts.prefix.length];
+            const suffix = config.contractorNameParts.suffix[Math.floor(
+              r2 * config.contractorNameParts.suffix.length
+            ) % config.contractorNameParts.suffix.length];
+            const priceFactor = 0.88 + r1 * 0.3;
+            const speedFactor = 0.84 + r2 * 0.3;
+            const reliability = Math.round(
+              68 + (r1 * 0.45 + r2 * 0.55) * 29
+            );
+            quotes.push({
+              id: "contractor_" + i,
+              name: prefix + suffix,
+              price: Math.round(
+                metrics.totalCost * priceFactor
+              ),
+              days: Math.max(
+                4,
+                Math.round(
+                  metrics.buildDays * speedFactor
+                )
+              ),
+              reliability,
+              quality: Math.round(
+                65 + r2 * 32
+              )
+            });
+          }
+          return quotes.sort(
+            (a, b) => a.price - b.price
+          );
+        }
+        selectContractor(shopId, contractorId) {
+          const quotes = this.getContractorQuotes(
+            shopId
+          );
+          const found = quotes.find(
+            (item) => item.id === contractorId
+          );
+          if (!found) {
+            return null;
+          }
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              plan.selectedContractorId = contractorId;
+            }
+          );
+        }
+        startConstruction(shopId) {
+          const shop = this.getShop(
+            shopId
+          );
+          const metrics = this.getMetrics(
+            shopId
+          );
+          if (!shop || !metrics) {
+            return {
+              ok: false,
+              message: "\u95E8\u5E97\u4E0D\u5B58\u5728"
+            };
+          }
+          if (!metrics.valid) {
+            return {
+              ok: false,
+              message: "\u5F53\u524D\u5E03\u5C40\u5B58\u5728\u9762\u79EF\u6216\u540E\u53A8\u627F\u8F7D\u95EE\u9898"
+            };
+          }
+          const plan = this.getStore()[shopId];
+          const quotes = this.getContractorQuotes(
+            shopId
+          );
+          const quote = quotes.find(
+            (item) => item.id === plan.selectedContractorId
+          ) || quotes[0];
+          if (gameState.getPlayer().cash < quote.price) {
+            return {
+              ok: false,
+              message: "\u88C5\u4FEE\u8D44\u91D1\u4E0D\u8DB3\uFF0C\u8FD8\u5DEE\xA5" + (quote.price - gameState.getPlayer().cash).toLocaleString()
+            };
+          }
+          gameState.spendCash(
+            quote.price
+          );
+          const currentDay = simulationSystem.getDayOrdinal(
+            gameState.getTime()
+          );
+          plan.status = "constructing";
+          plan.construction = {
+            contractor: clone(quote),
+            startDay: currentDay,
+            finishDay: currentDay + quote.days,
+            paid: quote.price,
+            snapshot: clone(metrics)
+          };
+          shop.status = "renovating";
+          shop.renovationCost = quote.price;
+          shop.renovationFinishDay = plan.construction.finishDay;
+          return {
+            ok: true,
+            quote: clone(quote),
+            finishDay: plan.construction.finishDay
+          };
+        }
+        updateShop(shopId) {
+          const shop = this.getShop(
+            shopId
+          );
+          const plan = this.ensurePlan(
+            shopId
+          );
+          if (!shop || !plan || plan.status !== "constructing" || !plan.construction) {
+            return false;
+          }
+          const currentDay = simulationSystem.getDayOrdinal(
+            gameState.getTime()
+          );
+          if (currentDay < plan.construction.finishDay) {
+            return false;
+          }
+          const stored = this.getStore()[shopId];
+          stored.status = "completed";
+          shop.status = "renovated_pending_license";
+          shop.layoutMetrics = clone(
+            stored.construction.snapshot
+          );
+          return true;
+        }
+      };
+      module.exports = new RenovationSystem();
+    }
+  });
+
   // src/scenes/storeScene.js
   var require_storeScene = __commonJS({
     "src/scenes/storeScene.js"(exports, module) {
@@ -10941,6 +11694,7 @@
       var gameState = require_gameState();
       var citySystem = require_citySystem();
       var sceneManager = require_sceneManager();
+      var renovationSystem = require_renovationSystem();
       var DESIGN_W = 390;
       var COLORS = {
         navy: "#12384D",
@@ -11460,13 +12214,17 @@
             "#FFF0D6",
             "#E4B564"
           );
+          const renovation = renovationSystem.ensurePlan(
+            shop.id
+          );
+          const statusLabel = shop.status === "renovating" ? "\u88C5\u4FEE\u4E2D" : shop.status === "renovated_pending_license" ? "\u88C5\u4FEE\u5B8C\u6210" : "\u5F85\u88C5\u4FEE";
           this.text(
             ctx2,
-            "\u5F85\u88C5\u4FEE",
+            statusLabel,
             62,
             107,
             8,
-            COLORS.orange,
+            shop.status === "renovated_pending_license" ? COLORS.green : COLORS.orange,
             "700",
             "center"
           );
@@ -11481,7 +12239,7 @@
           );
           this.text(
             ctx2,
-            "\u5DF2\u7B7E\u7EA6 \xB7 \u4E0B\u4E00\u6B65\u8FDB\u5165\u88C5\u4FEE\u7B79\u5907",
+            shop.status === "renovating" ? "\u65BD\u5DE5\u8FDB\u884C\u4E2D \xB7 \u65F6\u95F4\u63A8\u8FDB\u4F1A\u66F4\u65B0\u5DE5\u7A0B\u8FDB\u5EA6" : shop.status === "renovated_pending_license" ? "\u88C5\u4FEE\u5B8C\u6210 \xB7 \u4E0B\u4E00\u6B65\u91C7\u8D2D\u8BBE\u5907\u3001\u529E\u8BC1\u4E0E\u62DB\u8058" : "\u5DF2\u7B7E\u7EA6 \xB7 \u53EF\u81EA\u7531\u89C4\u5212\u697C\u5C42\u3001\u684C\u6905\u3001\u5305\u53A2\u4E0E\u98CE\u683C",
             24,
             165,
             7.5,
@@ -11595,8 +12353,8 @@
           this.drawModule(
             ctx2,
             "renovation",
-            "\u88C5\u4FEE\u65B9\u6848",
-            "\u7A7A\u95F4\u3001\u540E\u53A8\u3001\u5EA7\u4F4D\u5E03\u5C40",
+            shop.status === "renovated_pending_license" ? "\u88C5\u4FEE\u6210\u679C" : shop.status === "renovating" ? "\u65BD\u5DE5\u8FDB\u5EA6" : "\u81EA\u5B9A\u4E49\u88C5\u4FEE",
+            shop.status === "renovated_pending_license" ? "\u67E5\u770B\u5B8C\u5DE5\u5E03\u5C40\u4E0E\u7ECF\u8425\u53C2\u6570" : "\u697C\u5C42\u3001\u684C\u6905\u3001\u5305\u53A2\u3001\u98CE\u683C\u3001\u65BD\u5DE5",
             12,
             modulesY + 15,
             moduleW
@@ -11645,6 +12403,9 @@
           );
           const shop = this.getCurrentShop();
           if (shop) {
+            renovationSystem.updateShop(
+              shop.id
+            );
             this.renderShop(
               ctx2,
               shop
@@ -11674,6 +12435,18 @@
             "module:"
           ) === 0) {
             const moduleId = item.id.split(":")[1];
+            if (moduleId === "renovation") {
+              const shop = this.getCurrentShop();
+              if (shop) {
+                sceneManager.switchTo(
+                  "renovation",
+                  {
+                    shopId: shop.id
+                  }
+                );
+              }
+              return true;
+            }
             const names = {
               renovation: "\u88C5\u4FEE\u65B9\u6848",
               equipment: "\u8BBE\u5907\u91C7\u8D2D",
@@ -12644,6 +13417,1609 @@
     }
   });
 
+  // src/scenes/renovationScene.js
+  var require_renovationScene = __commonJS({
+    "src/scenes/renovationScene.js"(exports, module) {
+      "use strict";
+      var runtime = globalThis.GameRuntime;
+      if (!runtime) {
+        throw new Error(
+          "RenovationScene\uFF1AGameRuntime \u672A\u521D\u59CB\u5316"
+        );
+      }
+      var api = runtime.api || {};
+      var gameState = require_gameState();
+      var sceneManager = require_sceneManager();
+      var renovationSystem = require_renovationSystem();
+      var renovationConfig = require_renovationConfig();
+      var DESIGN_W = 390;
+      var COLORS = {
+        navy: "#12384D",
+        navy2: "#0A2A3B",
+        paper: "#F4EBDD",
+        panel: "#FFF9EF",
+        panel2: "#F8F0E4",
+        text: "#24323A",
+        muted: "#718087",
+        gold: "#E4AA48",
+        orange: "#D9853E",
+        red: "#BF584A",
+        green: "#4B9567",
+        blue: "#4C86A6",
+        line: "#DED1C1",
+        white: "#FFFFFF"
+      };
+      function money(value) {
+        return "\xA5" + Math.max(
+          0,
+          Math.round(
+            Number(value) || 0
+          )
+        ).toLocaleString();
+      }
+      function pct(value) {
+        return Math.round(
+          Number(value) * 100
+        ) + "%";
+      }
+      var RenovationScene = class {
+        constructor() {
+          this.id = "renovation";
+          this.shopId = null;
+          this.page = "layout";
+          this.buttons = [];
+          this.viewH = 780;
+          this.navH = 64;
+          this.contentBottom = 716;
+        }
+        enter(payload) {
+          const business = gameState.getBusiness();
+          const data = payload || {};
+          this.shopId = data.shopId || business.currentShopId;
+          if (this.shopId) {
+            renovationSystem.ensurePlan(
+              this.shopId
+            );
+          }
+          this.page = "layout";
+        }
+        exit() {
+          this.buttons = [];
+        }
+        update() {
+          if (this.shopId) {
+            renovationSystem.updateShop(
+              this.shopId
+            );
+          }
+        }
+        getLayout() {
+          let height = 780;
+          if (api && typeof api.getSystemInfoSync === "function") {
+            const info = api.getSystemInfoSync();
+            const screenW = Math.max(
+              1,
+              Number(
+                info.windowWidth
+              ) || DESIGN_W
+            );
+            const screenH = Math.max(
+              1,
+              Number(
+                info.windowHeight
+              ) || 780
+            );
+            height = screenH / (screenW / DESIGN_W);
+          }
+          this.viewH = height;
+          this.navH = height < 740 ? 60 : 64;
+          this.contentBottom = height - this.navH;
+        }
+        showToast(text) {
+          if (api && typeof api.showToast === "function") {
+            api.showToast({
+              title: String(text),
+              icon: "none"
+            });
+          }
+        }
+        roundedPath(ctx2, x, y, w, h, r) {
+          const radius = Math.min(
+            r,
+            w / 2,
+            h / 2
+          );
+          ctx2.beginPath();
+          ctx2.moveTo(
+            x + radius,
+            y
+          );
+          ctx2.arcTo(
+            x + w,
+            y,
+            x + w,
+            y + h,
+            radius
+          );
+          ctx2.arcTo(
+            x + w,
+            y + h,
+            x,
+            y + h,
+            radius
+          );
+          ctx2.arcTo(
+            x,
+            y + h,
+            x,
+            y,
+            radius
+          );
+          ctx2.arcTo(
+            x,
+            y,
+            x + w,
+            y,
+            radius
+          );
+          ctx2.closePath();
+        }
+        roundedRect(ctx2, x, y, w, h, r, fill, stroke, width) {
+          this.roundedPath(
+            ctx2,
+            x,
+            y,
+            w,
+            h,
+            r
+          );
+          if (fill) {
+            ctx2.fillStyle = fill;
+            ctx2.fill();
+          }
+          if (stroke) {
+            ctx2.strokeStyle = stroke;
+            ctx2.lineWidth = width || 1;
+            ctx2.stroke();
+          }
+        }
+        text(ctx2, text, x, y, size, color, weight, align) {
+          ctx2.fillStyle = color || COLORS.text;
+          ctx2.font = (weight || "500") + " " + size + "px sans-serif";
+          ctx2.textAlign = align || "left";
+          ctx2.textBaseline = "middle";
+          ctx2.fillText(
+            String(text),
+            x,
+            y
+          );
+        }
+        addButton(id, x, y, w, h) {
+          this.buttons.push({
+            id,
+            x,
+            y,
+            w,
+            h
+          });
+        }
+        hitButton(x, y) {
+          for (let i = this.buttons.length - 1; i >= 0; i--) {
+            const item = this.buttons[i];
+            if (x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h) {
+              return item;
+            }
+          }
+          return null;
+        }
+        getShop() {
+          return renovationSystem.getShop(
+            this.shopId
+          );
+        }
+        getMetrics() {
+          return renovationSystem.getMetrics(
+            this.shopId
+          );
+        }
+        getPlan() {
+          return renovationSystem.ensurePlan(
+            this.shopId
+          );
+        }
+        drawHeader(ctx2, shop) {
+          ctx2.fillStyle = COLORS.navy2;
+          ctx2.fillRect(
+            0,
+            0,
+            DESIGN_W,
+            66
+          );
+          this.roundedRect(
+            ctx2,
+            10,
+            13,
+            44,
+            34,
+            10,
+            "rgba(255,255,255,0.10)",
+            "rgba(255,255,255,0.15)"
+          );
+          this.text(
+            ctx2,
+            "\u2039",
+            32,
+            30,
+            22,
+            COLORS.white,
+            "700",
+            "center"
+          );
+          this.addButton(
+            "back",
+            6,
+            8,
+            54,
+            44
+          );
+          this.text(
+            ctx2,
+            "\u81EA\u5B9A\u4E49\u88C5\u4FEE",
+            68,
+            21,
+            17,
+            COLORS.white,
+            "700"
+          );
+          this.text(
+            ctx2,
+            shop.address + " \xB7 \u6240\u6709\u5E03\u5C40\u90FD\u4F1A\u5B9E\u65F6\u91CD\u7B97\u6210\u672C\u4E0E\u7ECF\u8425\u80FD\u529B",
+            68,
+            44,
+            7.2,
+            "rgba(255,255,255,0.72)",
+            "500"
+          );
+          this.text(
+            ctx2,
+            money(
+              gameState.getPlayer().cash
+            ),
+            376,
+            22,
+            12,
+            "#FFE8AE",
+            "700",
+            "right"
+          );
+          this.text(
+            ctx2,
+            "\u53EF\u7528\u8D44\u91D1",
+            376,
+            44,
+            6.5,
+            "#D8E5EB",
+            "500",
+            "right"
+          );
+        }
+        drawFloorTabs(ctx2, plan) {
+          const y = 72;
+          const count = plan.floors.length;
+          const gap = 5;
+          const w = Math.min(
+            82,
+            (DESIGN_W - 20 - (count - 1) * gap) / count
+          );
+          for (let i = 0; i < count; i++) {
+            const active = i === plan.activeFloor;
+            const x = 10 + i * (w + gap);
+            this.roundedRect(
+              ctx2,
+              x,
+              y,
+              w,
+              29,
+              8,
+              active ? COLORS.gold : "#EEE5D8",
+              active ? "#D49434" : "#D4C8BA"
+            );
+            this.text(
+              ctx2,
+              plan.floors[i].name,
+              x + w / 2,
+              y + 14.5,
+              7.5,
+              active ? "#26343B" : COLORS.muted,
+              "700",
+              "center"
+            );
+            this.addButton(
+              "floor:" + i,
+              x,
+              y,
+              w,
+              29
+            );
+          }
+        }
+        drawFloorPlan(ctx2, metrics, floor) {
+          const x = 10;
+          const y = 108;
+          const w = 370;
+          const h = 142;
+          this.roundedRect(
+            ctx2,
+            x,
+            y,
+            w,
+            h,
+            14,
+            "#FDF9F1",
+            "#CFC2B3"
+          );
+          const total = Math.max(
+            1,
+            floor.area
+          );
+          const zones = [
+            {
+              name: "\u540E\u53A8",
+              ratio: floor.kitchenRatio,
+              fill: "#EFC7A7"
+            },
+            {
+              name: "\u50A8\u7269",
+              ratio: floor.storageRatio,
+              fill: "#D8D0B7"
+            },
+            {
+              name: "\u670D\u52A1",
+              ratio: floor.serviceRatio,
+              fill: "#BDD8DF"
+            }
+          ];
+          let cursor = x + 8;
+          const innerY = y + 29;
+          const innerH = h - 38;
+          const innerW = w - 16;
+          for (let i = 0; i < zones.length; i++) {
+            const zoneW = innerW * zones[i].ratio;
+            this.roundedRect(
+              ctx2,
+              cursor,
+              innerY,
+              zoneW,
+              innerH,
+              6,
+              zones[i].fill
+            );
+            this.text(
+              ctx2,
+              zones[i].name,
+              cursor + zoneW / 2,
+              innerY + 13,
+              6.5,
+              COLORS.text,
+              "700",
+              "center"
+            );
+            cursor += zoneW;
+          }
+          const diningX = cursor;
+          const diningW = x + w - 8 - diningX;
+          this.roundedRect(
+            ctx2,
+            diningX,
+            innerY,
+            diningW,
+            innerH,
+            6,
+            "#E7F0E8"
+          );
+          this.text(
+            ctx2,
+            "\u5802\u98DF/\u5305\u53A2",
+            diningX + 8,
+            innerY + 13,
+            6.5,
+            COLORS.green,
+            "700"
+          );
+          const roomCount = floor.privateRooms.length;
+          for (let i = 0; i < Math.min(
+            roomCount,
+            4
+          ); i++) {
+            const room = floor.privateRooms[i];
+            const rx = diningX + diningW - 57;
+            const ry = innerY + 23 + i * 20;
+            this.roundedRect(
+              ctx2,
+              rx,
+              ry,
+              49,
+              17,
+              4,
+              "#F1DDB8",
+              "#D7B06B"
+            );
+            this.text(
+              ctx2,
+              "\u5305" + room.seats,
+              rx + 24.5,
+              ry + 8.5,
+              5.8,
+              COLORS.text,
+              "700",
+              "center"
+            );
+          }
+          const tableAreaW = Math.max(
+            30,
+            diningW - (roomCount ? 66 : 10)
+          );
+          let tableIndex = 0;
+          const tableKeys = [
+            "2",
+            "4",
+            "6",
+            "8"
+          ];
+          for (let k = 0; k < tableKeys.length; k++) {
+            const key = tableKeys[k];
+            const count = floor.tables[key] || 0;
+            for (let i = 0; i < Math.min(
+              count,
+              18
+            ); i++) {
+              const col = tableIndex % Math.max(
+                1,
+                Math.floor(
+                  tableAreaW / 27
+                )
+              );
+              const row = Math.floor(
+                tableIndex / Math.max(
+                  1,
+                  Math.floor(
+                    tableAreaW / 27
+                  )
+                )
+              );
+              const tx = diningX + 13 + col * 27;
+              const ty = innerY + 31 + row * 23;
+              if (ty > innerY + innerH - 15) {
+                break;
+              }
+              this.roundedRect(
+                ctx2,
+                tx,
+                ty,
+                key === "2" ? 14 : key === "4" ? 18 : 22,
+                11,
+                4,
+                key === "8" ? "#C39A73" : "#8EB5C8"
+              );
+              tableIndex += 1;
+            }
+          }
+          const status = floor.valid ? "\u5E03\u5C40\u53EF\u7528" : "\u9762\u79EF\u8D85\u8F7D";
+          this.text(
+            ctx2,
+            floor.name + " \xB7 " + floor.area + "\u33A1 \xB7 \u5EA7\u4F4D" + floor.seats + " \xB7 \u5269\u4F59" + floor.remainingArea + "\u33A1",
+            x + 10,
+            y + 16,
+            7.3,
+            COLORS.text,
+            "700"
+          );
+          this.text(
+            ctx2,
+            status,
+            x + w - 10,
+            y + 16,
+            7.3,
+            floor.valid ? COLORS.green : COLORS.red,
+            "700",
+            "right"
+          );
+        }
+        drawTopMetrics(ctx2, metrics) {
+          const y = 258;
+          const gap = 6;
+          const w = (DESIGN_W - 20 - gap * 2) / 3;
+          const items = [
+            [
+              "\u603B\u5EA7\u4F4D",
+              metrics.totalSeats + "\u5E2D",
+              COLORS.blue
+            ],
+            [
+              "\u9884\u7B97",
+              money(
+                metrics.totalCost
+              ),
+              COLORS.red
+            ],
+            [
+              "\u9884\u8BA1\u5DE5\u671F",
+              metrics.buildDays + "\u5929",
+              COLORS.orange
+            ]
+          ];
+          for (let i = 0; i < items.length; i++) {
+            const x = 10 + i * (w + gap);
+            this.roundedRect(
+              ctx2,
+              x,
+              y,
+              w,
+              50,
+              10,
+              COLORS.panel2
+            );
+            this.text(
+              ctx2,
+              items[i][0],
+              x + 10,
+              y + 13,
+              6.5,
+              COLORS.muted,
+              "600"
+            );
+            this.text(
+              ctx2,
+              items[i][1],
+              x + 10,
+              y + 34,
+              10,
+              items[i][2],
+              "700"
+            );
+          }
+        }
+        drawPageTabs(ctx2) {
+          const y = 316;
+          const tabs = [
+            [
+              "layout",
+              "\u7A7A\u95F4"
+            ],
+            [
+              "tables",
+              "\u684C\u6905"
+            ],
+            [
+              "rooms",
+              "\u5305\u53A2"
+            ],
+            [
+              "style",
+              "\u98CE\u683C/\u65BD\u5DE5"
+            ]
+          ];
+          const gap = 5;
+          const w = (DESIGN_W - 20 - gap * 3) / 4;
+          for (let i = 0; i < tabs.length; i++) {
+            const active = this.page === tabs[i][0];
+            const x = 10 + i * (w + gap);
+            this.roundedRect(
+              ctx2,
+              x,
+              y,
+              w,
+              32,
+              9,
+              active ? COLORS.navy : "#EAE1D5",
+              active ? "#244A60" : "#D5C8B9"
+            );
+            this.text(
+              ctx2,
+              tabs[i][1],
+              x + w / 2,
+              y + 16,
+              7.5,
+              active ? COLORS.white : COLORS.text,
+              "700",
+              "center"
+            );
+            this.addButton(
+              "page:" + tabs[i][0],
+              x,
+              y,
+              w,
+              32
+            );
+          }
+        }
+        drawAdjustRow(ctx2, id, label, value, sub, y, canMinus, canPlus) {
+          this.roundedRect(
+            ctx2,
+            10,
+            y,
+            370,
+            52,
+            11,
+            COLORS.panel,
+            COLORS.line
+          );
+          this.text(
+            ctx2,
+            label,
+            22,
+            y + 17,
+            8.5,
+            COLORS.text,
+            "700"
+          );
+          this.text(
+            ctx2,
+            sub,
+            22,
+            y + 36,
+            6.5,
+            COLORS.muted,
+            "500"
+          );
+          this.roundedRect(
+            ctx2,
+            252,
+            y + 10,
+            32,
+            32,
+            8,
+            canMinus ? "#E9E2D8" : "#F0ECE6"
+          );
+          this.text(
+            ctx2,
+            "\u2212",
+            268,
+            y + 26,
+            15,
+            canMinus ? COLORS.navy : "#B6AEA5",
+            "700",
+            "center"
+          );
+          this.addButton(
+            id + ":minus",
+            248,
+            y + 6,
+            40,
+            40
+          );
+          this.text(
+            ctx2,
+            value,
+            312,
+            y + 26,
+            9,
+            COLORS.text,
+            "700",
+            "center"
+          );
+          this.roundedRect(
+            ctx2,
+            340,
+            y + 10,
+            32,
+            32,
+            8,
+            canPlus ? COLORS.gold : "#E3DDD4"
+          );
+          this.text(
+            ctx2,
+            "+",
+            356,
+            y + 26,
+            14,
+            canPlus ? "#26343B" : "#B6AEA5",
+            "700",
+            "center"
+          );
+          this.addButton(
+            id + ":plus",
+            336,
+            y + 6,
+            40,
+            40
+          );
+        }
+        renderLayoutPage(ctx2, floor) {
+          let y = 359;
+          this.drawAdjustRow(
+            ctx2,
+            "zone:kitchen",
+            "\u540E\u53A8\u9762\u79EF",
+            pct(
+              floor.kitchenRatio
+            ),
+            "\u51B3\u5B9A\u51FA\u9910\u627F\u8F7D\u4E0E\u540E\u53A8\u52A8\u7EBF",
+            y,
+            true,
+            true
+          );
+          y += 58;
+          this.drawAdjustRow(
+            ctx2,
+            "zone:storage",
+            "\u4ED3\u50A8\u9762\u79EF",
+            pct(
+              floor.storageRatio
+            ),
+            "\u5F71\u54CD\u5907\u8D27\u80FD\u529B\u4E0E\u64CD\u4F5C\u7A7A\u95F4",
+            y,
+            true,
+            true
+          );
+          y += 58;
+          this.drawAdjustRow(
+            ctx2,
+            "zone:service",
+            "\u670D\u52A1/\u6536\u94F6\u533A",
+            pct(
+              floor.serviceRatio
+            ),
+            "\u6536\u94F6\u3001\u7B49\u4F4D\u3001\u4F20\u83DC\u548C\u670D\u52A1\u7AD9",
+            y,
+            true,
+            true
+          );
+          y += 58;
+          const aisle = renovationConfig.aisleModes[floor.aisleMode];
+          this.roundedRect(
+            ctx2,
+            10,
+            y,
+            370,
+            52,
+            11,
+            COLORS.panel,
+            COLORS.line
+          );
+          this.text(
+            ctx2,
+            "\u684C\u95F4\u901A\u9053",
+            22,
+            y + 17,
+            8.5,
+            COLORS.text,
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u8D8A\u5BBD\u8212\u9002\u5EA6\u8D8A\u9AD8\uFF0C\u4F46\u4F1A\u5360\u7528\u66F4\u591A\u53EF\u6446\u684C\u9762\u79EF",
+            22,
+            y + 36,
+            6.5,
+            COLORS.muted,
+            "500"
+          );
+          this.roundedRect(
+            ctx2,
+            280,
+            y + 10,
+            90,
+            32,
+            8,
+            "#E6EEF1",
+            "#B8CBD3"
+          );
+          this.text(
+            ctx2,
+            aisle.name + " \u203A",
+            325,
+            y + 26,
+            8,
+            COLORS.navy,
+            "700",
+            "center"
+          );
+          this.addButton(
+            "aisle:cycle",
+            276,
+            y + 6,
+            98,
+            40
+          );
+        }
+        renderTablesPage(ctx2, floor) {
+          const options = [
+            2,
+            4,
+            6,
+            8
+          ];
+          let y = 359;
+          for (let i = 0; i < options.length; i++) {
+            const seats = options[i];
+            const count = floor.tables[String(seats)] || 0;
+            this.drawAdjustRow(
+              ctx2,
+              "table:" + seats,
+              seats + "\u4EBA\u684C",
+              count + "\u5F20",
+              "\u5F53\u524D\u8D21\u732E " + count * seats + "\u4E2A\u5802\u98DF\u5EA7\u4F4D",
+              y,
+              count > 0,
+              true
+            );
+            y += 58;
+          }
+        }
+        renderRoomsPage(ctx2, floor) {
+          let y = 359;
+          const rooms = floor.privateRooms;
+          if (!rooms.length) {
+            this.roundedRect(
+              ctx2,
+              10,
+              y,
+              370,
+              84,
+              12,
+              COLORS.panel,
+              COLORS.line
+            );
+            this.text(
+              ctx2,
+              "\u5F53\u524D\u697C\u5C42\u6CA1\u6709\u5305\u53A2",
+              22,
+              y + 25,
+              11,
+              COLORS.text,
+              "700"
+            );
+            this.text(
+              ctx2,
+              "\u65B0\u589E\u540E\u4F1A\u5360\u7528\u5802\u98DF\u9762\u79EF\uFF0C\u540C\u65F6\u63D0\u9AD8\u591A\u4EBA\u805A\u9910\u548C\u9AD8\u5BA2\u5355\u627F\u8F7D\u3002",
+              22,
+              y + 54,
+              7,
+              COLORS.muted,
+              "500"
+            );
+            y += 94;
+          } else {
+            for (let i = 0; i < Math.min(
+              rooms.length,
+              4
+            ); i++) {
+              const room = rooms[i];
+              const style = renovationConfig.privateRoomStyles.find(
+                (item) => item.id === room.style
+              ) || renovationConfig.privateRoomStyles[0];
+              this.roundedRect(
+                ctx2,
+                10,
+                y,
+                370,
+                55,
+                11,
+                COLORS.panel,
+                COLORS.line
+              );
+              this.text(
+                ctx2,
+                "\u5305\u53A2 " + (i + 1),
+                22,
+                y + 17,
+                8.5,
+                COLORS.text,
+                "700"
+              );
+              this.text(
+                ctx2,
+                room.seats + "\u4EBA \xB7 " + style.name,
+                22,
+                y + 38,
+                7,
+                COLORS.muted,
+                "600"
+              );
+              this.roundedRect(
+                ctx2,
+                211,
+                y + 10,
+                66,
+                34,
+                8,
+                "#E7EEF1"
+              );
+              this.text(
+                ctx2,
+                "\u4EBA\u6570 \u203A",
+                244,
+                y + 27,
+                7,
+                COLORS.navy,
+                "700",
+                "center"
+              );
+              this.addButton(
+                "room:seats:" + room.id,
+                207,
+                y + 6,
+                74,
+                42
+              );
+              this.roundedRect(
+                ctx2,
+                283,
+                y + 10,
+                56,
+                34,
+                8,
+                "#FFF0D6"
+              );
+              this.text(
+                ctx2,
+                "\u98CE\u683C \u203A",
+                311,
+                y + 27,
+                7,
+                COLORS.orange,
+                "700",
+                "center"
+              );
+              this.addButton(
+                "room:style:" + room.id,
+                279,
+                y + 6,
+                64,
+                42
+              );
+              this.roundedRect(
+                ctx2,
+                345,
+                y + 10,
+                27,
+                34,
+                8,
+                "#F2E4E1"
+              );
+              this.text(
+                ctx2,
+                "\xD7",
+                358.5,
+                y + 27,
+                9,
+                COLORS.red,
+                "700",
+                "center"
+              );
+              this.addButton(
+                "room:remove:" + room.id,
+                341,
+                y + 6,
+                35,
+                42
+              );
+              y += 61;
+            }
+          }
+          if (rooms.length < 8 && y < this.contentBottom - 58) {
+            this.roundedRect(
+              ctx2,
+              10,
+              y,
+              370,
+              40,
+              11,
+              COLORS.gold,
+              "#D49434"
+            );
+            this.text(
+              ctx2,
+              "+ \u65B0\u589E\u5305\u53A2",
+              195,
+              y + 20,
+              8.5,
+              "#26343B",
+              "700",
+              "center"
+            );
+            this.addButton(
+              "room:add",
+              10,
+              y,
+              370,
+              40
+            );
+          }
+        }
+        drawCycleRow(ctx2, id, label, value, sub, y) {
+          this.roundedRect(
+            ctx2,
+            10,
+            y,
+            370,
+            52,
+            11,
+            COLORS.panel,
+            COLORS.line
+          );
+          this.text(
+            ctx2,
+            label,
+            22,
+            y + 17,
+            8.5,
+            COLORS.text,
+            "700"
+          );
+          this.text(
+            ctx2,
+            sub,
+            22,
+            y + 36,
+            6.5,
+            COLORS.muted,
+            "500"
+          );
+          this.text(
+            ctx2,
+            value + " \u203A",
+            365,
+            y + 26,
+            8,
+            COLORS.navy,
+            "700",
+            "right"
+          );
+          this.addButton(
+            id,
+            10,
+            y,
+            370,
+            52
+          );
+        }
+        renderStylePage(ctx2, metrics) {
+          const plan = metrics.plan;
+          const hall = renovationConfig.hallStyles.find(
+            (item) => item.id === plan.hallStyle
+          );
+          const material = renovationConfig.materialGrades.find(
+            (item) => item.id === plan.materialGrade
+          );
+          const lighting = renovationConfig.lightingLevels.find(
+            (item) => item.id === plan.lightingLevel
+          );
+          let y = 359;
+          this.drawCycleRow(
+            ctx2,
+            "style:hall",
+            "\u5927\u5385\u98CE\u683C",
+            hall.name,
+            "\u5F71\u54CD\u88C5\u4FEE\u6210\u672C\u3001\u5438\u5F15\u529B\u548C\u7EF4\u62A4\u6210\u672C",
+            y
+          );
+          y += 58;
+          this.drawCycleRow(
+            ctx2,
+            "style:material",
+            "\u6750\u6599\u6863\u6B21",
+            material.name,
+            "\u5F71\u54CD\u8D28\u91CF\u3001\u8010\u7528\u5EA6\u4E0E\u88C5\u4FEE\u9884\u7B97",
+            y
+          );
+          y += 58;
+          this.drawCycleRow(
+            ctx2,
+            "style:lighting",
+            "\u706F\u5149\u65B9\u6848",
+            lighting.name,
+            "\u5F71\u54CD\u6C1B\u56F4\u3001\u5BA2\u7FA4\u611F\u77E5\u548C\u6210\u672C",
+            y
+          );
+          y += 65;
+          this.text(
+            ctx2,
+            "\u65BD\u5DE5\u961F\u62A5\u4EF7",
+            14,
+            y,
+            8,
+            COLORS.muted,
+            "700"
+          );
+          y += 14;
+          const quotes = renovationSystem.getContractorQuotes(
+            this.shopId
+          );
+          for (let i = 0; i < quotes.length; i++) {
+            const q = quotes[i];
+            const selected = q.id === plan.selectedContractorId || !plan.selectedContractorId && i === 0;
+            this.roundedRect(
+              ctx2,
+              10,
+              y,
+              370,
+              47,
+              10,
+              selected ? "#FFF0D6" : COLORS.panel,
+              selected ? "#E0B25F" : COLORS.line
+            );
+            this.text(
+              ctx2,
+              q.name,
+              20,
+              y + 14,
+              7.5,
+              COLORS.text,
+              "700"
+            );
+            this.text(
+              ctx2,
+              money(
+                q.price
+              ) + " \xB7 " + q.days + "\u5929 \xB7 \u53EF\u9760" + q.reliability,
+              20,
+              y + 33,
+              6.5,
+              COLORS.muted,
+              "600"
+            );
+            this.text(
+              ctx2,
+              selected ? "\u5DF2\u9009" : "\u9009\u62E9",
+              363,
+              y + 23,
+              7,
+              selected ? COLORS.orange : COLORS.navy,
+              "700",
+              "right"
+            );
+            this.addButton(
+              "contractor:" + q.id,
+              10,
+              y,
+              370,
+              47
+            );
+            y += 53;
+          }
+          const actionY = this.contentBottom - 49;
+          this.roundedRect(
+            ctx2,
+            10,
+            actionY,
+            370,
+            39,
+            11,
+            metrics.valid ? COLORS.gold : "#DED7CD",
+            metrics.valid ? "#D49434" : "#C4BAAD"
+          );
+          this.text(
+            ctx2,
+            metrics.valid ? "\u786E\u8BA4\u65B9\u6848\u5E76\u5F00\u59CB\u65BD\u5DE5" : "\u5F53\u524D\u5E03\u5C40\u8D85\u8F7D\uFF0C\u4E0D\u80FD\u65BD\u5DE5",
+            195,
+            actionY + 19.5,
+            9,
+            metrics.valid ? "#26343B" : COLORS.muted,
+            "700",
+            "center"
+          );
+          this.addButton(
+            "construction:start",
+            10,
+            actionY,
+            370,
+            39
+          );
+        }
+        renderConstruction(ctx2, shop, plan) {
+          const construction = plan.construction;
+          this.drawHeader(
+            ctx2,
+            shop
+          );
+          this.roundedRect(
+            ctx2,
+            12,
+            92,
+            366,
+            166,
+            15,
+            COLORS.panel,
+            COLORS.line
+          );
+          this.text(
+            ctx2,
+            plan.status === "completed" ? "\u88C5\u4FEE\u5DF2\u5B8C\u6210" : "\u6B63\u5728\u65BD\u5DE5",
+            24,
+            123,
+            17,
+            plan.status === "completed" ? COLORS.green : COLORS.orange,
+            "700"
+          );
+          this.text(
+            ctx2,
+            construction ? construction.contractor.name : "\u65BD\u5DE5\u8BB0\u5F55",
+            24,
+            154,
+            9,
+            COLORS.text,
+            "700"
+          );
+          this.text(
+            ctx2,
+            construction ? "\u603B\u4EF7 " + money(
+              construction.paid
+            ) + " \xB7 \u7B2C" + construction.startDay + "\u5929\u5F00\u5DE5 \xB7 \u7B2C" + construction.finishDay + "\u5929\u5B8C\u5DE5" : "",
+            24,
+            181,
+            7,
+            COLORS.muted,
+            "600"
+          );
+          if (construction) {
+            const currentDay = require_simulationSystem().getDayOrdinal(
+              gameState.getTime()
+            );
+            const total = Math.max(
+              1,
+              construction.finishDay - construction.startDay
+            );
+            const progress = Math.max(
+              0,
+              Math.min(
+                1,
+                (currentDay - construction.startDay) / total
+              )
+            );
+            this.roundedRect(
+              ctx2,
+              24,
+              209,
+              330,
+              13,
+              7,
+              "#E8E0D5"
+            );
+            this.roundedRect(
+              ctx2,
+              24,
+              209,
+              Math.max(
+                8,
+                330 * (plan.status === "completed" ? 1 : progress)
+              ),
+              13,
+              7,
+              plan.status === "completed" ? COLORS.green : COLORS.gold
+            );
+            this.text(
+              ctx2,
+              plan.status === "completed" ? "100%" : Math.round(
+                progress * 100
+              ) + "%",
+              359,
+              238,
+              7,
+              COLORS.muted,
+              "700",
+              "right"
+            );
+          }
+          this.roundedRect(
+            ctx2,
+            12,
+            278,
+            366,
+            142,
+            14,
+            COLORS.panel,
+            COLORS.line
+          );
+          const metrics = construction ? construction.snapshot : this.getMetrics();
+          this.text(
+            ctx2,
+            "\u5B8C\u5DE5\u65B9\u6848",
+            24,
+            301,
+            10,
+            COLORS.text,
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u5EA7\u4F4D " + metrics.totalSeats + "\u5E2D \xB7 \u5305\u53A2 " + metrics.roomCount + "\u95F4 \xB7 \u540E\u53A8 " + metrics.kitchenArea + "\u33A1",
+            24,
+            333,
+            8,
+            COLORS.navy,
+            "700"
+          );
+          this.text(
+            ctx2,
+            "\u8212\u9002\u5EA6\xD7" + metrics.comfort.toFixed(2) + " \xB7 \u5438\u5F15\u529B\xD7" + metrics.appeal.toFixed(2) + " \xB7 \u8FD0\u8425\u6548\u7387\xD7" + metrics.operationalEfficiency.toFixed(2),
+            24,
+            362,
+            7.5,
+            COLORS.muted,
+            "600"
+          );
+          this.text(
+            ctx2,
+            plan.status === "completed" ? "\u4E0B\u4E00\u6B65\uFF1A\u8BBE\u5907\u91C7\u8D2D\u3001\u8BC1\u7167\u4E0E\u62DB\u8058" : "\u65F6\u95F4\u7EE7\u7EED\u63A8\u8FDB\uFF0C\u65BD\u5DE5\u8FDB\u5EA6\u4F1A\u968F\u6E38\u620F\u65E5\u671F\u53D8\u5316\u3002",
+            24,
+            397,
+            7,
+            plan.status === "completed" ? COLORS.green : COLORS.orange,
+            "700"
+          );
+          const actionY = this.contentBottom - 50;
+          this.roundedRect(
+            ctx2,
+            12,
+            actionY,
+            366,
+            40,
+            11,
+            COLORS.navy,
+            "#244A60"
+          );
+          this.text(
+            ctx2,
+            "\u8FD4\u56DE\u95E8\u5E97",
+            195,
+            actionY + 20,
+            9,
+            COLORS.white,
+            "700",
+            "center"
+          );
+          this.addButton(
+            "back",
+            12,
+            actionY,
+            366,
+            40
+          );
+        }
+        render(ctx2) {
+          if (!ctx2) {
+            return;
+          }
+          this.getLayout();
+          this.buttons = [];
+          const shop = this.getShop();
+          if (!shop) {
+            sceneManager.switchTo(
+              "shop"
+            );
+            return;
+          }
+          renovationSystem.updateShop(
+            shop.id
+          );
+          const metrics = this.getMetrics();
+          const plan = metrics.plan;
+          ctx2.save();
+          ctx2.fillStyle = COLORS.paper;
+          ctx2.fillRect(
+            0,
+            0,
+            DESIGN_W,
+            this.viewH
+          );
+          if (plan.status === "constructing" || plan.status === "completed") {
+            this.renderConstruction(
+              ctx2,
+              shop,
+              plan
+            );
+            ctx2.restore();
+            return;
+          }
+          this.drawHeader(
+            ctx2,
+            shop
+          );
+          this.drawFloorTabs(
+            ctx2,
+            plan
+          );
+          const floor = metrics.floors[plan.activeFloor];
+          this.drawFloorPlan(
+            ctx2,
+            metrics,
+            floor
+          );
+          this.drawTopMetrics(
+            ctx2,
+            metrics
+          );
+          this.drawPageTabs(
+            ctx2
+          );
+          if (this.page === "layout") {
+            this.renderLayoutPage(
+              ctx2,
+              floor
+            );
+          } else if (this.page === "tables") {
+            this.renderTablesPage(
+              ctx2,
+              floor
+            );
+          } else if (this.page === "rooms") {
+            this.renderRoomsPage(
+              ctx2,
+              floor
+            );
+          } else {
+            this.renderStylePage(
+              ctx2,
+              metrics
+            );
+          }
+          ctx2.restore();
+        }
+        handleTap(x, y) {
+          const item = this.hitButton(
+            x,
+            y
+          );
+          if (!item) {
+            return false;
+          }
+          const id = item.id;
+          if (id === "back") {
+            sceneManager.switchTo(
+              "shop"
+            );
+            return true;
+          }
+          const plan = this.getPlan();
+          const floorIndex = plan.activeFloor;
+          if (id.indexOf(
+            "floor:"
+          ) === 0) {
+            renovationSystem.setActiveFloor(
+              this.shopId,
+              Number(
+                id.split(":")[1]
+              )
+            );
+            return true;
+          }
+          if (id.indexOf(
+            "page:"
+          ) === 0) {
+            this.page = id.split(":")[1];
+            return true;
+          }
+          if (id.indexOf(
+            "zone:"
+          ) === 0) {
+            const parts = id.split(":");
+            const map = {
+              kitchen: "kitchenRatio",
+              storage: "storageRatio",
+              service: "serviceRatio"
+            };
+            renovationSystem.adjustZone(
+              this.shopId,
+              floorIndex,
+              map[parts[1]],
+              parts[2] === "plus" ? 0.02 : -0.02
+            );
+            return true;
+          }
+          if (id === "aisle:cycle") {
+            renovationSystem.cycleAisle(
+              this.shopId,
+              floorIndex
+            );
+            return true;
+          }
+          if (id.indexOf(
+            "table:"
+          ) === 0) {
+            const parts = id.split(":");
+            renovationSystem.adjustTable(
+              this.shopId,
+              floorIndex,
+              Number(
+                parts[1]
+              ),
+              parts[2] === "plus" ? 1 : -1
+            );
+            return true;
+          }
+          if (id === "room:add") {
+            renovationSystem.addPrivateRoom(
+              this.shopId,
+              floorIndex
+            );
+            return true;
+          }
+          if (id.indexOf(
+            "room:seats:"
+          ) === 0) {
+            renovationSystem.cycleRoomSeats(
+              this.shopId,
+              floorIndex,
+              id.slice(
+                "room:seats:".length
+              )
+            );
+            return true;
+          }
+          if (id.indexOf(
+            "room:style:"
+          ) === 0) {
+            renovationSystem.cycleRoomStyle(
+              this.shopId,
+              floorIndex,
+              id.slice(
+                "room:style:".length
+              )
+            );
+            return true;
+          }
+          if (id.indexOf(
+            "room:remove:"
+          ) === 0) {
+            renovationSystem.removePrivateRoom(
+              this.shopId,
+              floorIndex,
+              id.slice(
+                "room:remove:".length
+              )
+            );
+            return true;
+          }
+          if (id === "style:hall") {
+            renovationSystem.cycleGlobal(
+              this.shopId,
+              "hallStyle"
+            );
+            return true;
+          }
+          if (id === "style:material") {
+            renovationSystem.cycleGlobal(
+              this.shopId,
+              "materialGrade"
+            );
+            return true;
+          }
+          if (id === "style:lighting") {
+            renovationSystem.cycleGlobal(
+              this.shopId,
+              "lightingLevel"
+            );
+            return true;
+          }
+          if (id.indexOf(
+            "contractor:"
+          ) === 0) {
+            renovationSystem.selectContractor(
+              this.shopId,
+              id.slice(
+                "contractor:".length
+              )
+            );
+            return true;
+          }
+          if (id === "construction:start") {
+            const result = renovationSystem.startConstruction(
+              this.shopId
+            );
+            this.showToast(
+              result.ok ? "\u5DF2\u5F00\u5DE5\uFF0C\u9884\u8BA1\u7B2C" + result.finishDay + "\u5929\u5B8C\u6210" : result.message
+            );
+            return true;
+          }
+          return false;
+        }
+      };
+      module.exports = new RenovationScene();
+    }
+  });
+
   // src/scenes/simpleScene.js
   var require_simpleScene = __commonJS({
     "src/scenes/simpleScene.js"(exports, module) {
@@ -12925,6 +15301,7 @@
       var propertyMarketScene = require_shopScene();
       var storeScene = require_storeScene();
       var districtScene = require_districtScene();
+      var renovationScene = require_renovationScene();
       var researchScene = require_researchScene();
       var supplyScene = require_supplyScene();
       var businessScene = require_businessScene();
@@ -14302,7 +16679,7 @@
         for (let i = 0; i < NAV_ITEMS.length; i++) {
           const item = NAV_ITEMS[i];
           const cx = i * cellW + cellW / 2;
-          const active = item.id === current || item.id === "city" && current === "district" || item.id === "shop" && current === "propertyMarket";
+          const active = item.id === current || item.id === "city" && current === "district" || item.id === "shop" && (current === "propertyMarket" || current === "renovation");
           if (active) {
             if (!drawAtlas(
               "navActive",
@@ -14414,6 +16791,10 @@
       sceneManager.register(
         "propertyMarket",
         propertyMarketScene
+      );
+      sceneManager.register(
+        "renovation",
+        renovationScene
       );
       sceneManager.register(
         "research",
@@ -14682,7 +17063,7 @@
         gameLoop
       );
       console.log(
-        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V6 \u5546\u5708\u8BE6\u60C5\u4E0E\u95E8\u5E97\u5206\u6D41\u7248\u542F\u52A8\u6210\u529F"
+        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V7 \u52A8\u6001\u81EA\u5B9A\u4E49\u88C5\u4FEE\u7248\u542F\u52A8\u6210\u529F"
       );
     }
   });

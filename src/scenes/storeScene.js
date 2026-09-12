@@ -23,6 +23,9 @@ const citySystem =
 const sceneManager =
   require('../core/sceneManager.js');
 
+const renovationSystem =
+  require('../renovation/renovationSystem.js');
+
 const DESIGN_W =
   390;
 
@@ -917,13 +920,31 @@ class StoreScene {
       '#E4B564'
     );
 
+    const renovation =
+      renovationSystem
+        .ensurePlan(
+          shop.id
+        );
+
+    const statusLabel =
+      shop.status ===
+        'renovating'
+        ? '装修中'
+        : shop.status ===
+            'renovated_pending_license'
+          ? '装修完成'
+          : '待装修';
+
     this.text(
       ctx,
-      '待装修',
+      statusLabel,
       62,
       107,
       8,
-      COLORS.orange,
+      shop.status ===
+        'renovated_pending_license'
+        ? COLORS.green
+        : COLORS.orange,
       '700',
       'center'
     );
@@ -941,7 +962,13 @@ class StoreScene {
 
     this.text(
       ctx,
-      '已签约 · 下一步进入装修筹备',
+      shop.status ===
+        'renovating'
+        ? '施工进行中 · 时间推进会更新工程进度'
+        : shop.status ===
+            'renovated_pending_license'
+          ? '装修完成 · 下一步采购设备、办证与招聘'
+          : '已签约 · 可自由规划楼层、桌椅、包厢与风格',
       24,
       165,
       7.5,
@@ -1106,8 +1133,17 @@ class StoreScene {
     this.drawModule(
       ctx,
       'renovation',
-      '装修方案',
-      '空间、后厨、座位布局',
+      shop.status ===
+        'renovated_pending_license'
+        ? '装修成果'
+        : shop.status ===
+            'renovating'
+          ? '施工进度'
+          : '自定义装修',
+      shop.status ===
+        'renovated_pending_license'
+        ? '查看完工布局与经营参数'
+        : '楼层、桌椅、包厢、风格、施工',
       12,
       modulesY +
         15,
@@ -1176,6 +1212,11 @@ class StoreScene {
       this.getCurrentShop();
 
     if (shop) {
+      renovationSystem
+        .updateShop(
+          shop.id
+        );
+
       this.renderShop(
         ctx,
         shop
@@ -1224,6 +1265,27 @@ class StoreScene {
       const moduleId =
         item.id
           .split(':')[1];
+
+      if (
+        moduleId ===
+        'renovation'
+      ) {
+        const shop =
+          this.getCurrentShop();
+
+        if (shop) {
+          sceneManager
+            .switchTo(
+              'renovation',
+              {
+                shopId:
+                  shop.id
+              }
+            );
+        }
+
+        return true;
+      }
 
       const names = {
         renovation:
