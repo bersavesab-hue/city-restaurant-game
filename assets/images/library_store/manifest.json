@@ -1,0 +1,1016 @@
+{
+  "version": "V39_LIBRARY_ASSET_INTEGRATION",
+  "generated": false,
+  "method": "cropped_from_user_library_assets",
+  "asset_count": 72,
+  "assets": [
+    {
+      "path": "assets/images/library_store/listings/storefront_1.png",
+      "source": "image-gen-4(5).png",
+      "crop": [
+        18,
+        22,
+        248,
+        220
+      ],
+      "size": [
+        230,
+        198
+      ]
+    },
+    {
+      "path": "assets/images/library_store/listings/storefront_2.png",
+      "source": "image-gen-4(5).png",
+      "crop": [
+        264,
+        22,
+        494,
+        220
+      ],
+      "size": [
+        230,
+        198
+      ]
+    },
+    {
+      "path": "assets/images/library_store/listings/storefront_3.png",
+      "source": "image-gen-4(5).png",
+      "crop": [
+        508,
+        22,
+        741,
+        220
+      ],
+      "size": [
+        233,
+        198
+      ]
+    },
+    {
+      "path": "assets/images/library_store/listings/storefront_4.png",
+      "source": "image-gen-4(5).png",
+      "crop": [
+        754,
+        22,
+        987,
+        220
+      ],
+      "size": [
+        233,
+        198
+      ]
+    },
+    {
+      "path": "assets/images/library_store/listings/storefront_5.png",
+      "source": "image-gen-4(5).png",
+      "crop": [
+        999,
+        22,
+        1236,
+        220
+      ],
+      "size": [
+        237,
+        198
+      ]
+    },
+    {
+      "path": "assets/images/library_store/store/storefront_hero_clean.png",
+      "source": "image-gen-1(8).png",
+      "crop": [
+        470,
+        360,
+        930,
+        610
+      ],
+      "size": [
+        460,
+        250
+      ]
+    },
+    {
+      "path": "assets/images/library_store/store/room_1.png",
+      "source": "image-gen-1(8).png",
+      "crop": [
+        43,
+        623,
+        250,
+        735
+      ],
+      "size": [
+        207,
+        112
+      ]
+    },
+    {
+      "path": "assets/images/library_store/store/room_2.png",
+      "source": "image-gen-1(8).png",
+      "crop": [
+        263,
+        623,
+        463,
+        735
+      ],
+      "size": [
+        200,
+        112
+      ]
+    },
+    {
+      "path": "assets/images/library_store/store/room_3.png",
+      "source": "image-gen-1(8).png",
+      "crop": [
+        476,
+        623,
+        671,
+        735
+      ],
+      "size": [
+        195,
+        112
+      ]
+    },
+    {
+      "path": "assets/images/library_store/store/advice_renovation.png",
+      "source": "image-gen-1(8).png",
+      "crop": [
+        47,
+        1097,
+        160,
+        1257
+      ],
+      "size": [
+        113,
+        160
+      ]
+    },
+    {
+      "path": "assets/images/library_store/store/advice_license.png",
+      "source": "image-gen-1(8).png",
+      "crop": [
+        328,
+        1097,
+        445,
+        1257
+      ],
+      "size": [
+        117,
+        160
+      ]
+    },
+    {
+      "path": "assets/images/library_store/store/advice_staff.png",
+      "source": "image-gen-1(8).png",
+      "crop": [
+        608,
+        1097,
+        731,
+        1257
+      ],
+      "size": [
+        123,
+        160
+      ]
+    },
+    {
+      "path": "assets/images/library_store/status/hot_district.png",
+      "source": "image-gen-4(3).png",
+      "crop": [
+        762,
+        287,
+        965,
+        359
+      ],
+      "size": [
+        203,
+        69
+      ]
+    },
+    {
+      "path": "assets/images/library_store/status/new.png",
+      "source": "image-gen-4(3).png",
+      "crop": [
+        968,
+        287,
+        1120,
+        359
+      ],
+      "size": [
+        131,
+        69
+      ]
+    },
+    {
+      "path": "assets/images/library_store/status/recommend.png",
+      "source": "image-gen-4(3).png",
+      "crop": [
+        760,
+        357,
+        879,
+        422
+      ],
+      "size": [
+        119,
+        65
+      ]
+    },
+    {
+      "path": "assets/images/library_store/status/renovating.png",
+      "source": "image-gen-4(3).png",
+      "crop": [
+        875,
+        357,
+        1001,
+        422
+      ],
+      "size": [
+        126,
+        65
+      ]
+    },
+    {
+      "path": "assets/images/library_store/status/signed.png",
+      "source": "image-gen-4(3).png",
+      "crop": [
+        995,
+        357,
+        1121,
+        422
+      ],
+      "size": [
+        111,
+        65
+      ]
+    },
+    {
+      "path": "assets/images/library_store/ui/opening_flow_step1.png",
+      "source": "image-gen-4(3).png",
+      "crop": [
+        22,
+        588,
+        1025,
+        765
+      ],
+      "size": [
+        1003,
+        177
+      ]
+    },
+    {
+      "path": "assets/images/library_store/ui/pin_red.png",
+      "source": "image-gen-4(3).png",
+      "crop": [
+        34,
+        87,
+        145,
+        239
+      ],
+      "size": [
+        88,
+        132
+      ]
+    },
+    {
+      "path": "assets/images/library_store/ui/pin_orange.png",
+      "source": "image-gen-4(3).png",
+      "crop": [
+        143,
+        87,
+        255,
+        239
+      ],
+      "size": [
+        110,
+        136
+      ]
+    },
+    {
+      "path": "assets/images/library_store/ui/pin_blue.png",
+      "source": "image-gen-4(3).png",
+      "crop": [
+        252,
+        87,
+        365,
+        239
+      ],
+      "size": [
+        103,
+        135
+      ]
+    },
+    {
+      "path": "assets/images/library_store/ui/pin_green.png",
+      "source": "image-gen-4(3).png",
+      "crop": [
+        362,
+        87,
+        475,
+        239
+      ],
+      "size": [
+        96,
+        136
+      ]
+    },
+    {
+      "path": "assets/images/library_store/ui/pin_purple.png",
+      "source": "image-gen-4(3).png",
+      "crop": [
+        472,
+        87,
+        585,
+        239
+      ],
+      "size": [
+        103,
+        135
+      ]
+    },
+    {
+      "path": "assets/images/library_store/ui/pin_gold.png",
+      "source": "image-gen-4(3).png",
+      "crop": [
+        582,
+        87,
+        700,
+        239
+      ],
+      "size": [
+        110,
+        137
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/styles/natural.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        18,
+        1100,
+        225,
+        1248
+      ],
+      "size": [
+        207,
+        148
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/styles/chinese.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        226,
+        1100,
+        434,
+        1248
+      ],
+      "size": [
+        208,
+        148
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/styles/modern.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        435,
+        1100,
+        642,
+        1248
+      ],
+      "size": [
+        207,
+        148
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/styles/night_market.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        643,
+        1100,
+        852,
+        1248
+      ],
+      "size": [
+        209,
+        148
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/styles/business.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        853,
+        1100,
+        1112,
+        1248
+      ],
+      "size": [
+        259,
+        148
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/table_2.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        8,
+        35,
+        180,
+        177
+      ],
+      "size": [
+        171,
+        140
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/table_4.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        178,
+        10,
+        360,
+        177
+      ],
+      "size": [
+        182,
+        160
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/table_6_rect.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        350,
+        25,
+        550,
+        177
+      ],
+      "size": [
+        200,
+        147
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/table_6_long.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        550,
+        8,
+        828,
+        177
+      ],
+      "size": [
+        278,
+        160
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/chair_light.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        840,
+        20,
+        965,
+        177
+      ],
+      "size": [
+        125,
+        155
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/chair_leather.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        970,
+        20,
+        1118,
+        177
+      ],
+      "size": [
+        135,
+        157
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/bar_counter.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        20,
+        205,
+        388,
+        356
+      ],
+      "size": [
+        368,
+        151
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/cashier.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        430,
+        205,
+        780,
+        356
+      ],
+      "size": [
+        350,
+        151
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/waiting_sofa.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        780,
+        195,
+        1118,
+        356
+      ],
+      "size": [
+        338,
+        161
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/stove.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        8,
+        394,
+        184,
+        558
+      ],
+      "size": [
+        169,
+        164
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/prep_counter.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        185,
+        394,
+        352,
+        558
+      ],
+      "size": [
+        167,
+        164
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/sink.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        350,
+        394,
+        502,
+        558
+      ],
+      "size": [
+        152,
+        164
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/fridge.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        496,
+        390,
+        640,
+        558
+      ],
+      "size": [
+        144,
+        168
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/food_shelf.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        632,
+        394,
+        793,
+        558
+      ],
+      "size": [
+        161,
+        164
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/dish_rack.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        790,
+        394,
+        952,
+        558
+      ],
+      "size": [
+        162,
+        164
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/storage_shelf.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        948,
+        394,
+        1118,
+        558
+      ],
+      "size": [
+        158,
+        164
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/plant_1.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        17,
+        590,
+        155,
+        730
+      ],
+      "size": [
+        134,
+        140
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/plant_2.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        135,
+        590,
+        270,
+        730
+      ],
+      "size": [
+        135,
+        140
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/plant_3.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        252,
+        585,
+        390,
+        730
+      ],
+      "size": [
+        138,
+        145
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/bonsai.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        390,
+        585,
+        548,
+        730
+      ],
+      "size": [
+        158,
+        145
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/plant_4.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        520,
+        585,
+        665,
+        730
+      ],
+      "size": [
+        145,
+        145
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/pendant_black.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        655,
+        585,
+        780,
+        735
+      ],
+      "size": [
+        119,
+        150
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/pendant_cage.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        775,
+        585,
+        890,
+        735
+      ],
+      "size": [
+        108,
+        150
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/pendant_glass.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        882,
+        585,
+        1000,
+        735
+      ],
+      "size": [
+        118,
+        150
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/pendant_gold.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        990,
+        585,
+        1118,
+        735
+      ],
+      "size": [
+        106,
+        150
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/brand_sign.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        18,
+        776,
+        308,
+        923
+      ],
+      "size": [
+        290,
+        147
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/culture_sign.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        305,
+        776,
+        485,
+        923
+      ],
+      "size": [
+        180,
+        147
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/slogan_sign.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        476,
+        776,
+        655,
+        923
+      ],
+      "size": [
+        179,
+        147
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/screen_round.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        650,
+        776,
+        855,
+        923
+      ],
+      "size": [
+        205,
+        147
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/furniture/screen_lattice.png",
+      "source": "image-gen-5(2).png",
+      "crop": [
+        845,
+        776,
+        1118,
+        923
+      ],
+      "size": [
+        265,
+        147
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/layouts/kitchen.png",
+      "source": "image-gen-3(7).png",
+      "crop": [
+        20,
+        35,
+        250,
+        238
+      ],
+      "size": [
+        230,
+        203
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/layouts/storage.png",
+      "source": "image-gen-3(7).png",
+      "crop": [
+        252,
+        35,
+        472,
+        238
+      ],
+      "size": [
+        220,
+        203
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/layouts/service.png",
+      "source": "image-gen-3(7).png",
+      "crop": [
+        482,
+        35,
+        675,
+        238
+      ],
+      "size": [
+        193,
+        203
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/layouts/dining.png",
+      "source": "image-gen-3(7).png",
+      "crop": [
+        685,
+        35,
+        1003,
+        238
+      ],
+      "size": [
+        318,
+        203
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/layouts/cashier.png",
+      "source": "image-gen-3(7).png",
+      "crop": [
+        1010,
+        35,
+        1238,
+        238
+      ],
+      "size": [
+        228,
+        203
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/layouts/private_small.png",
+      "source": "image-gen-3(7).png",
+      "crop": [
+        20,
+        294,
+        220,
+        487
+      ],
+      "size": [
+        200,
+        193
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/layouts/private_medium.png",
+      "source": "image-gen-3(7).png",
+      "crop": [
+        226,
+        294,
+        475,
+        487
+      ],
+      "size": [
+        249,
+        193
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/layouts/private_large.png",
+      "source": "image-gen-3(7).png",
+      "crop": [
+        480,
+        294,
+        710,
+        487
+      ],
+      "size": [
+        230,
+        193
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/layouts/private_luxury.png",
+      "source": "image-gen-3(7).png",
+      "crop": [
+        715,
+        294,
+        1010,
+        487
+      ],
+      "size": [
+        295,
+        193
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/layouts/tea_room.png",
+      "source": "image-gen-3(7).png",
+      "crop": [
+        1015,
+        294,
+        1238,
+        487
+      ],
+      "size": [
+        223,
+        193
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/layouts/family_room.png",
+      "source": "image-gen-3(7).png",
+      "crop": [
+        20,
+        525,
+        255,
+        732
+      ],
+      "size": [
+        235,
+        207
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/layouts/banquet_room.png",
+      "source": "image-gen-3(7).png",
+      "crop": [
+        258,
+        525,
+        515,
+        732
+      ],
+      "size": [
+        257,
+        207
+      ]
+    },
+    {
+      "path": "assets/images/library_store/renovation/layouts/corridor.png",
+      "source": "image-gen-3(7).png",
+      "crop": [
+        515,
+        525,
+        690,
+        732
+      ],
+      "size": [
+        175,
+        207
+      ]
+    }
+  ]
+}
