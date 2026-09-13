@@ -6317,6 +6317,521 @@ loadResources = function () {
 
 console.log('V21_HOME_ICON_POLISH loaded');
 
+/* V22_HOME_MATCH */
+
+const V22_DISTRICT_POINT_RATIOS = {
+  university: { x: 0.22, y: 0.24 },
+  hightech: { x: 0.81, y: 0.25 },
+  cbd: { x: 0.56, y: 0.44 },
+  oldtown: { x: 0.12, y: 0.57 },
+  village: { x: 0.43, y: 0.64 },
+  market: { x: 0.18, y: 0.80 },
+  industry: { x: 0.81, y: 0.57 }
+};
+
+const v22OriginalDrawMapBase = drawMapBase;
+const v22OriginalDrawTopHud = drawTopHud;
+const v22OriginalDrawNewsTicker = drawNewsTicker;
+const v22OriginalDrawGoalBar = drawGoalBar;
+const v22OriginalDrawDistrictCard = drawDistrictCard;
+const v22OriginalDrawBottomNav = drawBottomNav;
+const v22OriginalDrawDistrictMarker = drawDistrictMarker;
+
+function v22EnsureSelectedDistrict() {
+  const districts = getDistricts();
+  if (!districts || !districts.length) return null;
+
+  let current = null;
+  for (let i = 0; i < districts.length; i++) {
+    if (districts[i].id === selectedDistrictId) {
+      current = districts[i];
+      break;
+    }
+  }
+
+  if (current) return current;
+
+  const preferred = districts.find(function (item) {
+    return item.id === 'market';
+  });
+
+  current = preferred || districts[0];
+  if (current) {
+    selectedDistrictId = current.id;
+  }
+  return current;
+}
+
+function v22GetDistrictPoint(districtId) {
+  const ratio = V22_DISTRICT_POINT_RATIOS[districtId];
+  if (!ratio) {
+    return getDistrictPoint(districtId);
+  }
+
+  const top = MAP_Y + 96;
+  const bottom = CARD_Y - 62;
+  const usableH = Math.max(120, bottom - top);
+
+  return {
+    x: Math.round(MAP_X + MAP_W * ratio.x),
+    y: Math.round(top + usableH * ratio.y)
+  };
+}
+
+updateLayout = function () {
+  TOP_H = (VIEW_H < 740 ? 94 : 98) + SAFE_TOP;
+  NAV_H = (VIEW_H < 740 ? 58 : 62) + SAFE_BOTTOM;
+
+  MAP_X = 0;
+  MAP_Y = TOP_H;
+  MAP_W = VIEW_W;
+
+  NAV_Y = VIEW_H - NAV_H;
+  MAP_H = NAV_Y - MAP_Y;
+
+  CARD_H = VIEW_H < 740 ? 126 : 138;
+  CARD_X = 7;
+  CARD_W = VIEW_W - 14;
+  CARD_Y = NAV_Y - CARD_H - 5;
+};
+
+drawMapBase = function () {
+  const image = resourceManager.getImage('city_base_01');
+  if (!image) {
+    return v22OriginalDrawMapBase();
+  }
+
+  drawImageFocus(
+    ctx,
+    image,
+    MAP_X,
+    MAP_Y,
+    MAP_W,
+    MAP_H,
+    1.64,
+    0.56,
+    0.55
+  );
+
+  const topFade = ctx.createLinearGradient(0, MAP_Y, 0, MAP_Y + 110);
+  topFade.addColorStop(0, 'rgba(8,45,70,0.26)');
+  topFade.addColorStop(1, 'rgba(8,45,70,0.02)');
+  ctx.fillStyle = topFade;
+  ctx.fillRect(MAP_X, MAP_Y, MAP_W, 110);
+
+  const mapTint = ctx.createLinearGradient(0, MAP_Y, 0, CARD_Y - 8);
+  mapTint.addColorStop(0, 'rgba(24,118,170,0.03)');
+  mapTint.addColorStop(1, 'rgba(255,255,255,0.00)');
+  ctx.fillStyle = mapTint;
+  ctx.fillRect(MAP_X, MAP_Y, MAP_W, CARD_Y - MAP_Y);
+};
+
+drawTopHud = function () {
+  const player = gameState.getPlayer();
+  const world = gameState.getWorld();
+  const display = timeSystem.getDisplayState();
+  const brand = getBrandState(player);
+
+  let cityName = gameState.getCityName();
+  if (!cityName || cityName === '未命名城市') cityName = '云州市';
+
+  const cityImage = resourceManager.getImage('city_base_01');
+  if (cityImage) {
+    drawImageFocus(ctx, cityImage, 0, 0, VIEW_W, TOP_H, 1.58, 0.55, 0.16);
+    ctx.fillStyle = 'rgba(4,35,58,0.58)';
+    ctx.fillRect(0, 0, VIEW_W, TOP_H);
+  } else {
+    ctx.fillStyle = COLORS.navy;
+    ctx.fillRect(0, 0, VIEW_W, TOP_H);
+  }
+
+  drawCityBadge(cityName, 10, 8 + SAFE_TOP, 44);
+
+  drawText(fitText(cityName, 112, 18, '800'), 66, 19 + SAFE_TOP, 18, COLORS.white, '800');
+
+  roundedRect(145, 11 + SAFE_TOP, 18, 18, 5, 'rgba(4,49,72,0.74)', 'rgba(255,255,255,0.24)');
+  drawText('✎', 154, 20 + SAFE_TOP, 7.3, '#FFE08B', '800', 'center');
+  addButton('city:rename', 140, 6 + SAFE_TOP, 28, 28);
+
+  drawText('打造属于你的美食之都', 66, 40 + SAFE_TOP, 7.2, '#E7F0F5', '600');
+
+  drawWeatherGlyph(world.weather, 187, 24 + SAFE_TOP);
+  drawText(WEATHER_NAMES[world.weather] || '多云', 210, 17 + SAFE_TOP, 7.8, '#FFFFFF', '800', 'center');
+  drawText(
+    (Number.isFinite(Number(world.temperature)) ? world.temperature : 22) + '℃',
+    210,
+    35 + SAFE_TOP,
+    7.8,
+    '#E9F4F8',
+    '700',
+    'center'
+  );
+
+  roundedRect(230, 8 + SAFE_TOP, 95, 48, 12, 'rgba(5,43,65,0.92)', 'rgba(114,208,244,0.40)');
+  drawCashGlyph(246, 25 + SAFE_TOP);
+  drawText(fitText('¥' + player.cash.toLocaleString(), 62, 11.5, '800'), 279, 21 + SAFE_TOP, 11.5, '#FFF1A7', '800', 'center');
+  drawText('可用资金', 279, 41 + SAFE_TOP, 6.8, '#DCEBF1', '600', 'center');
+  roundedRect(309, 16 + SAFE_TOP, 12, 12, 4, '#F5B62D', '#FFE598');
+  drawText('+', 315, 22 + SAFE_TOP, 8.5, '#FFFFFF', '800', 'center');
+
+  roundedRect(331, 8 + SAFE_TOP, 52, 48, 12, 'rgba(5,43,65,0.92)', 'rgba(114,208,244,0.40)');
+  drawCrownGlyph(344, 24 + SAFE_TOP);
+  drawText('Lv.' + brand.level, 362, 19 + SAFE_TOP, 8.4, '#FFE27D', '800', 'center');
+  roundedRect(339, 39 + SAFE_TOP, 35, 4, 2, 'rgba(255,255,255,0.22)');
+  roundedRect(339, 39 + SAFE_TOP, Math.max(3, 35 * brand.progress), 4, 2, COLORS.gold);
+  drawText(
+    brand.reputation + '/100',
+    357,
+    49 + SAFE_TOP,
+    5.2,
+    '#E7F2F6',
+    '600',
+    'center'
+  );
+  addButton('brand:status', 328, 5 + SAFE_TOP, 58, 54);
+
+  const speedItems = [
+    ['time:pause', timeSystem.isPaused() ? '▶' : 'Ⅱ'],
+    ['time:speed:1', '1x'],
+    ['time:speed:2', '2x'],
+    ['time:speed:5', '5x'],
+    ['time:speed:10', '10x']
+  ];
+
+  const y = TOP_H - 28;
+  for (let i = 0; i < speedItems.length; i++) {
+    const id = speedItems[i][0];
+    const speed = timeSystem.getSpeed();
+    const paused = timeSystem.isPaused();
+    const active = id === 'time:pause'
+      ? paused
+      : (!paused && Number(id.split(':')[2]) === speed);
+
+    const x = 12 + i * 46;
+    roundedRect(
+      x,
+      y,
+      40,
+      21,
+      8,
+      active ? COLORS.gold : 'rgba(4,40,60,0.86)',
+      active ? '#FFE38D' : 'rgba(255,255,255,0.18)'
+    );
+    drawText(speedItems[i][1], x + 20, y + 10.5, 8, active ? '#173444' : COLORS.white, '800', 'center');
+    addButton(id, x - 3, y - 5, 46, 31);
+  }
+
+  drawText(
+    fitText(display.date + ' · ' + display.time + ' · ' + (MEAL_NAMES[display.mealPeriod] || ''), 168, 6.7, '600'),
+    378,
+    y + 10.5,
+    6.7,
+    '#E5F0F4',
+    '600',
+    'right'
+  );
+};
+
+drawNewsTicker = function () {
+  const feed = simulationSystem.getNewsFeed();
+  const bulletin = simulationSystem.getBulletin();
+  const x = 8;
+  const y = MAP_Y + 5;
+  const w = VIEW_W - 16;
+  const h = 30;
+
+  roundedRect(x, y, w, h, 15, 'rgba(3,40,62,0.95)', 'rgba(73,192,239,0.54)');
+  drawText('📣', x + 16, y + 15.5, 10, '#FFD65A', '800', 'center');
+  drawText('城市通报', x + 31, y + 15.5, 7.3, '#FFD65A', '800');
+
+  const items = ((feed && feed.length ? feed : [bulletin])).slice(0, 3);
+  const startX = x + 84;
+  const sectionW = (w - 111) / Math.max(1, items.length);
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (i > 0) {
+      ctx.fillStyle = 'rgba(230,242,247,0.34)';
+      ctx.fillRect(startX + i * sectionW - 5, y + 8, 1, 14);
+    }
+    drawText(
+      fitText(item && item.title ? item.title : '城市运行平稳', sectionW - 12, 6.2, '600'),
+      startX + i * sectionW,
+      y + 15.2,
+      6.2,
+      '#F3FAFC',
+      '600'
+    );
+  }
+
+  drawText('›', x + w - 12, y + 15.3, 14, '#FFE49C', '800', 'center');
+  addButton('tool:news', x, y, w, h);
+};
+
+drawGoalBar = function () {
+  const goal = getHomeGoalState();
+  const x = 8;
+  const y = MAP_Y + 40;
+  const w = VIEW_W - 16;
+  const h = 30;
+
+  roundedRect(x, y, w, h, 15, 'rgba(3,40,62,0.95)', 'rgba(73,192,239,0.46)');
+  drawText('◎', x + 15, y + 15, 13, '#FFD85C', '800', 'center');
+  drawText('当前目标：', x + 28, y + 15, 7.1, '#FFD85C', '800');
+  drawText(goal.title === '筹备首店' ? '开设首家餐厅' : goal.title, x + 83, y + 15, 7.2, '#FFFFFF', '800');
+
+  const labels = goal.title === '筹备首店'
+    ? ['选址', '看铺', '谈判', '签约', '装修']
+    : goal.steps;
+  const currentIndex = Math.max(0, Math.min(labels.length - 1, goal.current));
+  const startX = x + 159;
+  const usable = w - 190;
+  const gap = usable / Math.max(1, labels.length - 1);
+
+  for (let i = 0; i < labels.length; i++) {
+    const cx = startX + i * gap;
+    const done = i < currentIndex;
+    const active = i === currentIndex && !goal.completed;
+
+    if (i < labels.length - 1) {
+      ctx.strokeStyle = i < currentIndex ? '#F7CC4A' : 'rgba(220,234,240,0.38)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(cx + 8, y + 11);
+      ctx.lineTo(cx + gap - 8, y + 11);
+      ctx.stroke();
+    }
+
+    ctx.beginPath();
+    ctx.arc(cx, y + 11, 5.5, 0, Math.PI * 2);
+    ctx.fillStyle = done ? '#F2C744' : (active ? '#FFF8CF' : 'rgba(225,239,244,0.18)');
+    ctx.fill();
+    ctx.strokeStyle = done || active ? '#FFE58B' : '#9DB8C5';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    drawText(labels[i], cx, y + 23.5, 5.8, active ? '#FFE08A' : '#E8F3F7', active ? '800' : '600', 'center');
+  }
+
+  drawText('🎁', x + w - 13, y + 15.5, 10.5, '#FFD85C', '800', 'center');
+};
+
+drawDistrictMarker = function (district) {
+  const point = v22GetDistrictPoint(district.id);
+  if (!point) return v22OriginalDrawDistrictMarker(district);
+
+  const x = point.x;
+  const y = point.y;
+  const selected = selectedDistrictId === district.id;
+  const meta = getDistrictVisualMeta(district);
+  const animated = districtFx.id === district.id;
+  const markerScale = animated ? districtFx.scale : 1;
+
+  if (selected) {
+    ctx.beginPath();
+    ctx.arc(x, y, 20 + districtFx.flash * 4, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,195,54,0.16)';
+    ctx.fill();
+  }
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(markerScale, markerScale);
+  const key = V21_DISTRICT_ICON_KEYS && V21_DISTRICT_ICON_KEYS[district.id];
+  if (!key || !(typeof v21DrawImage === 'function' && v21DrawImage(key, 0, -4, 34, 43))) {
+    drawDistrictPictogram(district.id, 0, -5);
+  }
+  ctx.restore();
+
+  const boxW = Math.max(76, Math.min(95, 38 + district.name.length * 9));
+  const preferLeft = x > VIEW_W * 0.64;
+  let boxX = preferLeft ? x - boxW - 11 : x + 10;
+  boxX = Math.max(5, Math.min(VIEW_W - boxW - 5, boxX));
+
+  let boxY = y - 14;
+  boxY = Math.max(MAP_Y + 80, Math.min(CARD_Y - 44, boxY));
+
+  roundedRect(boxX, boxY, boxW, 24, 10, 'rgba(5,53,79,0.97)', selected ? '#FFE06C' : 'rgba(255,218,93,0.82)', selected ? 1.25 : 1);
+  drawText(district.name, boxX + 10, boxY + 12, 8.1, '#FFFFFF', '800');
+  drawText('›', boxX + boxW - 8, boxY + 12, 9.6, '#FFE49C', '800', 'center');
+
+  roundedRect(boxX + 5, boxY + 24, boxW - 10, 16, 7, 'rgba(255,253,247,0.98)', 'rgba(11,55,76,0.12)');
+  drawText(fitText(meta.subtitle, boxW - 16, 5.2, '700'), boxX + boxW / 2, boxY + 31.5, 5.2, '#23455B', '700', 'center');
+
+  if (meta.badge) {
+    const badgeW = Math.max(34, 15 + meta.badge.length * 5.6);
+    const badgeX = Math.max(5, Math.min(VIEW_W - badgeW - 5, boxX + boxW - badgeW + 4));
+    roundedRect(badgeX, boxY - 7, badgeW, 15, 7, meta.badgeColor, 'rgba(255,245,218,0.98)');
+    drawText(meta.badge, badgeX + badgeW / 2, boxY + 0.8, 4.9, '#FFFFFF', '800', 'center');
+  }
+
+  if (meta.myShopCount > 0) {
+    const textValue = meta.myShopCount > 1 ? '✓ 我的店×' + meta.myShopCount : '✓ 我的店';
+    const shopW = meta.myShopCount > 1 ? 50 : 40;
+    const sx = Math.max(5, Math.min(VIEW_W - shopW - 5, boxX + boxW - shopW + 6));
+    roundedRect(sx, boxY - 24, shopW, 14, 7, '#1E9A5E', '#B9F0C8');
+    drawText(textValue, sx + shopW / 2, boxY - 17, 4.6, '#FFFFFF', '800', 'center');
+  }
+
+  const hitLeft = Math.min(x - 18, boxX - 3);
+  const hitRight = Math.max(x + 18, boxX + boxW + 3);
+  const hitTop = Math.min(y - 25, boxY - 24);
+  const hitBottom = Math.max(y + 22, boxY + 43);
+  addButton('district:' + district.id, hitLeft, hitTop, hitRight - hitLeft, hitBottom - hitTop);
+};
+
+drawDistrictCard = function () {
+  const district = v22EnsureSelectedDistrict();
+  if (!district) {
+    return v22OriginalDrawDistrictCard();
+  }
+
+  const meta = getDistrictVisualMeta(district);
+  const x = CARD_X;
+  const y = CARD_Y;
+  const w = CARD_W;
+  const h = CARD_H;
+
+  roundedRect(x, y, w, h, 17, 'rgba(255,255,255,0.98)', 'rgba(10,56,79,0.16)', 1.1);
+
+  const preview = resourceManager.getImage('city_base_01');
+  if (preview) {
+    ctx.save();
+    ctx.beginPath();
+    const px = x + 12;
+    const py = y + 10;
+    const pw = 100;
+    const ph = h - 20;
+    ctx.moveTo(px + 14, py);
+    ctx.arcTo(px + pw, py, px + pw, py + ph, 14);
+    ctx.arcTo(px + pw, py + ph, px, py + ph, 14);
+    ctx.arcTo(px, py + ph, px, py, 14);
+    ctx.arcTo(px, py, px + pw, py, 14);
+    ctx.closePath();
+    ctx.clip();
+    drawImageFocus(ctx, preview, px, py, pw, ph, 2.0, 0.56, 0.60);
+    ctx.restore();
+  } else {
+    roundedRect(x + 12, y + 10, 100, h - 20, 14, '#C5D7E1');
+  }
+
+  const iconKey = V21_DISTRICT_ICON_KEYS && V21_DISTRICT_ICON_KEYS[district.id];
+  if (iconKey && typeof v21DrawImage === 'function') {
+    v21DrawImage(iconKey, x + 132, y + 22, 23, 29);
+  }
+
+  drawText(district.name, x + 146, y + 22, 13.5, '#113654', '800');
+  drawText('›', x + 212, y + 22, 13, '#2F5673', '800', 'center');
+  drawText(meta.subtitle + ' · ' + (meta.badge ? meta.badge.replace('↑', '') : '仍有经营机会'), x + 146, y + 43, 6.4, '#40627B', '700');
+
+  const metrics = [
+    ['人口', district.population.toLocaleString(), '#1E76C5'],
+    ['需求', demandSystem.getTotalDemand(district.id).toLocaleString(), '#1E9A5E'],
+    ['客单', '¥' + district.avgSpend, '#164A86'],
+    ['餐饮店', district.restaurantCount + '家', '#164A86'],
+    ['饱和度', district.saturation + '%', '#1E76C5'],
+    ['租金', district.rentIndex.toFixed(2), '#164A86']
+  ];
+
+  const metricX = x + 120;
+  const metricY = y + 52;
+  const metricGap = 4;
+  const metricW = (w - 132 - metricGap * 5) / 6;
+  for (let i = 0; i < metrics.length; i++) {
+    const mx = metricX + i * (metricW + metricGap);
+    roundedRect(mx, metricY, metricW, 45, 9, '#FAF8F3', 'rgba(17,62,92,0.10)');
+    drawMetricSymbol(metrics[i][0], mx + metricW / 2, metricY + 10.5, metrics[i][2]);
+    drawText(metrics[i][0], mx + metricW / 2, metricY + 24, 5.4, '#245276', '700', 'center');
+    drawText(metrics[i][1], mx + metricW / 2, metricY + 38, 6.8, metrics[i][2], '800', 'center');
+  }
+
+  let summary = '客群活跃 · 仍有经营机会';
+  if (meta.badge === '租金低') summary = '租金较低 · 适合抢先布局';
+  if (meta.badge === '竞争高') summary = '竞争激烈 · 适合差异化经营';
+  if (meta.badge === '人气高') summary = '客群活跃 · 仍有经营机会';
+  if (meta.myShopCount > 0) summary = '已开门店 · 可继续深耕经营';
+
+  drawText(summary, x + 120, y + h - 38, 7.2, '#25597A', '800');
+  drawText('实时数据会随人口、城市事件、竞争和租金变化', x + 120, y + h - 18, 5.6, '#607D92', '600');
+
+  roundedRect(x + w - 119, y + h - 44, 108, 36, 18, '#FFC22D', '#DFA01B', 1.2);
+  drawText('进入商圈  ›', x + w - 65, y + h - 26, 8.6, '#123A53', '800', 'center');
+  addButton('district:details', x + w - 123, y + h - 48, 116, 44);
+};
+
+drawBottomNav = function () {
+  const items = [
+    { id: 'city', label: '城市' },
+    { id: 'shop', label: '门店' },
+    { id: 'traffic', label: '客流' },
+    { id: 'research', label: '菜单' },
+    { id: 'supply', label: '供应链' },
+    { id: 'business', label: '数据' },
+    { id: 'system', label: '系统' }
+  ];
+
+  roundedRect(0, NAV_Y, VIEW_W, NAV_H, 0, 'rgba(5,52,79,0.98)');
+  const glow = ctx.createLinearGradient(0, NAV_Y, 0, NAV_Y + NAV_H);
+  glow.addColorStop(0, 'rgba(23,125,203,0.18)');
+  glow.addColorStop(1, 'rgba(23,125,203,0.00)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, NAV_Y, VIEW_W, NAV_H);
+
+  const cellW = VIEW_W / items.length;
+  const current = sceneManager.getCurrentId();
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const active =
+      (
+        item.id === 'city' &&
+        current === 'city' &&
+        !trafficMode
+      ) ||
+      (
+        item.id === 'traffic' &&
+        current === 'city' &&
+        trafficMode
+      ) ||
+      (
+        item.id === 'shop' &&
+        (
+          current === 'shop' ||
+          current === 'propertyMarket' ||
+          current === 'equipment' ||
+          current === 'license' ||
+          current === 'staff' ||
+          current === 'renovation'
+        )
+      ) ||
+      (
+        item.id !== 'city' &&
+        item.id !== 'traffic' &&
+        item.id !== 'shop' &&
+        item.id === current
+      );
+    const cellX = i * cellW;
+
+    if (active) {
+      roundedRect(cellX + 3, NAV_Y + 4, cellW - 6, NAV_H - 8, 14, '#F3BF20', '#FFE599', 1.1);
+    }
+
+    drawNavIcon(item.id, cellX + cellW / 2, NAV_Y + 19, active);
+    drawText(item.label, cellX + cellW / 2, NAV_Y + 42, 6.8, active ? '#173444' : '#FFFFFF', active ? '800' : '600', 'center');
+
+    addButton('nav:' + item.id, cellX, NAV_Y, cellW, NAV_H);
+  }
+};
+
+if (cityScene && typeof cityScene.enter === 'function') {
+  const v22OriginalCityEnter = cityScene.enter;
+  cityScene.enter = function () {
+    v22OriginalCityEnter.call(this);
+    v22EnsureSelectedDistrict();
+  };
+}
+
+console.log('V22_HOME_MATCH loaded');
+
 /* =========================
    启动
 ========================= */
@@ -6338,5 +6853,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V21 主页图标重构版启动成功'
+  '城市餐饮经营小游戏 V22 主页一对一复刻版启动成功'
 );
