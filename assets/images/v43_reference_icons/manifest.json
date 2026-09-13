@@ -1,0 +1,594 @@
+{
+  "generated": false,
+  "count": 42,
+  "icons": {
+    "money": {
+      "path": "assets/images/v43_reference_icons/money.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        255,
+        110,
+        365,
+        195
+      ],
+      "size": [
+        79,
+        62
+      ]
+    },
+    "plus": {
+      "path": "assets/images/v43_reference_icons/plus.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        382,
+        112,
+        456,
+        194
+      ],
+      "size": [
+        74,
+        77
+      ]
+    },
+    "crown": {
+      "path": "assets/images/v43_reference_icons/crown.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        478,
+        105,
+        575,
+        194
+      ],
+      "size": [
+        75,
+        61
+      ]
+    },
+    "bulletin": {
+      "path": "assets/images/v43_reference_icons/bulletin.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        1130,
+        105,
+        1230,
+        200
+      ],
+      "size": [
+        100,
+        70
+      ]
+    },
+    "target": {
+      "path": "assets/images/v43_reference_icons/target.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        1260,
+        105,
+        1362,
+        198
+      ],
+      "size": [
+        64,
+        66
+      ]
+    },
+    "gift": {
+      "path": "assets/images/v43_reference_icons/gift.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        1400,
+        105,
+        1508,
+        198
+      ],
+      "size": [
+        76,
+        73
+      ]
+    },
+    "district_food": {
+      "path": "assets/images/v43_reference_icons/district_food.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        34,
+        278,
+        145,
+        418
+      ],
+      "size": [
+        103,
+        140
+      ]
+    },
+    "district_office": {
+      "path": "assets/images/v43_reference_icons/district_office.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        155,
+        278,
+        270,
+        418
+      ],
+      "size": [
+        102,
+        140
+      ]
+    },
+    "district_shop": {
+      "path": "assets/images/v43_reference_icons/district_shop.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        285,
+        278,
+        398,
+        418
+      ],
+      "size": [
+        99,
+        140
+      ]
+    },
+    "district_old": {
+      "path": "assets/images/v43_reference_icons/district_old.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        414,
+        278,
+        525,
+        418
+      ],
+      "size": [
+        111,
+        140
+      ]
+    },
+    "district_home": {
+      "path": "assets/images/v43_reference_icons/district_home.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        538,
+        278,
+        650,
+        418
+      ],
+      "size": [
+        112,
+        140
+      ]
+    },
+    "district_market": {
+      "path": "assets/images/v43_reference_icons/district_market.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        665,
+        278,
+        778,
+        418
+      ],
+      "size": [
+        113,
+        140
+      ]
+    },
+    "district_factory": {
+      "path": "assets/images/v43_reference_icons/district_factory.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        793,
+        278,
+        912,
+        418
+      ],
+      "size": [
+        119,
+        140
+      ]
+    },
+    "people": {
+      "path": "assets/images/v43_reference_icons/people.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        40,
+        505,
+        115,
+        590
+      ],
+      "size": [
+        75,
+        84
+      ]
+    },
+    "demand": {
+      "path": "assets/images/v43_reference_icons/demand.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        130,
+        505,
+        205,
+        590
+      ],
+      "size": [
+        75,
+        71
+      ]
+    },
+    "avgspend": {
+      "path": "assets/images/v43_reference_icons/avgspend.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        225,
+        505,
+        302,
+        590
+      ],
+      "size": [
+        64,
+        56
+      ]
+    },
+    "restaurant": {
+      "path": "assets/images/v43_reference_icons/restaurant.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        322,
+        505,
+        402,
+        590
+      ],
+      "size": [
+        59,
+        56
+      ]
+    },
+    "saturation": {
+      "path": "assets/images/v43_reference_icons/saturation.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        418,
+        505,
+        500,
+        590
+      ],
+      "size": [
+        58,
+        57
+      ]
+    },
+    "rent": {
+      "path": "assets/images/v43_reference_icons/rent.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        520,
+        505,
+        610,
+        590
+      ],
+      "size": [
+        48,
+        56
+      ]
+    },
+    "search": {
+      "path": "assets/images/v43_reference_icons/search.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        38,
+        657,
+        115,
+        734
+      ],
+      "size": [
+        77,
+        68
+      ]
+    },
+    "location": {
+      "path": "assets/images/v43_reference_icons/location.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        130,
+        657,
+        208,
+        734
+      ],
+      "size": [
+        67,
+        68
+      ]
+    },
+    "route": {
+      "path": "assets/images/v43_reference_icons/route.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        225,
+        657,
+        305,
+        734
+      ],
+      "size": [
+        35,
+        44
+      ]
+    },
+    "edit": {
+      "path": "assets/images/v43_reference_icons/edit.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        320,
+        657,
+        400,
+        734
+      ],
+      "size": [
+        52,
+        43
+      ]
+    },
+    "view": {
+      "path": "assets/images/v43_reference_icons/view.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        515,
+        657,
+        600,
+        734
+      ],
+      "size": [
+        56,
+        47
+      ]
+    },
+    "settings": {
+      "path": "assets/images/v43_reference_icons/settings.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        614,
+        657,
+        700,
+        734
+      ],
+      "size": [
+        51,
+        44
+      ]
+    },
+    "shop": {
+      "path": "assets/images/v43_reference_icons/shop.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        748,
+        657,
+        832,
+        734
+      ],
+      "size": [
+        84,
+        70
+      ]
+    },
+    "dish": {
+      "path": "assets/images/v43_reference_icons/dish.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        845,
+        657,
+        930,
+        734
+      ],
+      "size": [
+        63,
+        71
+      ]
+    },
+    "business": {
+      "path": "assets/images/v43_reference_icons/business.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        940,
+        657,
+        1027,
+        734
+      ],
+      "size": [
+        64,
+        41
+      ]
+    },
+    "renovation": {
+      "path": "assets/images/v43_reference_icons/renovation.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        1040,
+        657,
+        1128,
+        734
+      ],
+      "size": [
+        38,
+        37
+      ]
+    },
+    "purchase": {
+      "path": "assets/images/v43_reference_icons/purchase.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        1140,
+        657,
+        1228,
+        734
+      ],
+      "size": [
+        51,
+        46
+      ]
+    },
+    "delivery": {
+      "path": "assets/images/v43_reference_icons/delivery.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        1240,
+        657,
+        1335,
+        734
+      ],
+      "size": [
+        25,
+        36
+      ]
+    },
+    "upgrade": {
+      "path": "assets/images/v43_reference_icons/upgrade.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        1350,
+        657,
+        1450,
+        734
+      ],
+      "size": [
+        100,
+        29
+      ]
+    },
+    "up": {
+      "path": "assets/images/v43_reference_icons/up.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        40,
+        790,
+        100,
+        860
+      ],
+      "size": [
+        60,
+        70
+      ]
+    },
+    "down": {
+      "path": "assets/images/v43_reference_icons/down.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        104,
+        790,
+        168,
+        860
+      ],
+      "size": [
+        64,
+        70
+      ]
+    },
+    "good": {
+      "path": "assets/images/v43_reference_icons/good.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        230,
+        790,
+        295,
+        860
+      ],
+      "size": [
+        51,
+        42
+      ]
+    },
+    "warning": {
+      "path": "assets/images/v43_reference_icons/warning.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        365,
+        790,
+        430,
+        860
+      ],
+      "size": [
+        65,
+        42
+      ]
+    },
+    "info": {
+      "path": "assets/images/v43_reference_icons/info.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        435,
+        790,
+        500,
+        860
+      ],
+      "size": [
+        65,
+        42
+      ]
+    },
+    "complete": {
+      "path": "assets/images/v43_reference_icons/complete.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        500,
+        790,
+        565,
+        860
+      ],
+      "size": [
+        65,
+        42
+      ]
+    },
+    "fail": {
+      "path": "assets/images/v43_reference_icons/fail.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        565,
+        790,
+        630,
+        860
+      ],
+      "size": [
+        65,
+        42
+      ]
+    },
+    "wait": {
+      "path": "assets/images/v43_reference_icons/wait.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        630,
+        790,
+        700,
+        860
+      ],
+      "size": [
+        70,
+        42
+      ]
+    },
+    "star": {
+      "path": "assets/images/v43_reference_icons/star.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        772,
+        790,
+        842,
+        860
+      ],
+      "size": [
+        70,
+        42
+      ]
+    },
+    "heart": {
+      "path": "assets/images/v43_reference_icons/heart.png",
+      "source": "餐饮城市经营游戏图标资源包.png",
+      "box": [
+        842,
+        790,
+        915,
+        860
+      ],
+      "size": [
+        72,
+        42
+      ]
+    }
+  }
+}

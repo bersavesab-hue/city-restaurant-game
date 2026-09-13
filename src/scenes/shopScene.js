@@ -1,5 +1,7 @@
 'use strict';
 
+// V43_PROPERTY_IMAGE_REBUILD
+
 const runtime =
   globalThis.GameRuntime;
 
@@ -835,6 +837,36 @@ class ShopScene {
   enter(
     payload
   ) {
+    Object.values(V43_PROPERTY_ICONS)
+      .filter((value, index, list) => list.indexOf(value) === index)
+      .forEach(name => {
+        resourceManager
+          .loadImage(
+            'v43_icon_' + name,
+            'assets/images/v43_reference_icons/' + name + '.png',
+            'v43-reference-icons'
+          )
+          .catch(() => {});
+      });
+
+    V43_STOREFRONTS.forEach((asset, index) => {
+      resourceManager
+        .loadImage(
+          'v43_storefront_' + index,
+          asset,
+          'v43-property-storefronts'
+        )
+        .catch(() => {});
+    });
+
+    resourceManager
+      .loadImage(
+        'v43_property_header',
+        'assets/images/premium/store/explore_banner.jpg',
+        'v43-property-storefronts'
+      )
+      .catch(() => {});
+
     const data =
       payload ||
       {};
@@ -1567,42 +1599,22 @@ class ShopScene {
     weight,
     align
   ) {
-    ctx.fillStyle =
-      color ||
-      COLORS.text;
-
+    ctx.save();
+    ctx.fillStyle = color || COLORS.text;
     const readableSize =
       Math.max(
-        7.3,
-        Number(
-          size
-        ) ||
-        7.3
+        4.8,
+        Number(size) || 5.5
       );
-
     ctx.font =
-      (
-        weight ||
-        '500'
-      ) +
+      (weight || '500') +
       ' ' +
       readableSize +
-      'px sans-serif';
-
-    ctx.textAlign =
-      align ||
-      'left';
-
-    ctx.textBaseline =
-      'middle';
-
-    ctx.fillText(
-      String(
-        text
-      ),
-      x,
-      y
-    );
+      'px "Noto Sans SC","Microsoft YaHei",sans-serif';
+    ctx.textAlign = align || 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(text), x, y);
+    ctx.restore();
   }
 
   drawIcon(
@@ -1613,36 +1625,46 @@ class ShopScene {
     size,
     fallback
   ) {
-    const image =
-      resourceManager
-        .getImage(
-          'property_icons_01'
-        );
+    const mapped =
+      V43_PROPERTY_ICONS[name];
 
-    const region =
-      propertyIconAtlas
-        .icons[
-          name
-        ];
+    const libImage =
+      mapped
+        ? resourceManager.getImage(
+            'v43_icon_' + mapped
+          )
+        : null;
 
-    if (
-      image &&
-      region
-    ) {
+    if (libImage) {
       ctx.drawImage(
-        image,
-
-        region.x,
-        region.y,
-        region.w,
-        region.h,
-
+        libImage,
         x,
         y,
         size,
         size
       );
+      return;
+    }
 
+    const image =
+      resourceManager.getImage(
+        'property_icons_01'
+      );
+    const region =
+      propertyIconAtlas.icons[name];
+
+    if (image && region) {
+      ctx.drawImage(
+        image,
+        region.x,
+        region.y,
+        region.w,
+        region.h,
+        x,
+        y,
+        size,
+        size
+      );
       return;
     }
 
@@ -1652,29 +1674,15 @@ class ShopScene {
       y,
       size,
       size,
-      Math.max(
-        4,
-        size *
-          0.23
-      ),
+      Math.max(4, size * 0.23),
       '#EEE2D3'
     );
-
     this.text(
       ctx,
-      fallback ||
-        '·',
-      x +
-        size /
-        2,
-      y +
-        size /
-        2,
-      Math.max(
-        8,
-        size *
-          0.42
-      ),
+      fallback || '·',
+      x + size / 2,
+      y + size / 2,
+      Math.max(5, size * 0.32),
       COLORS.navy,
       '700',
       'center'
@@ -1687,18 +1695,34 @@ class ShopScene {
     subtitle,
     backId
   ) {
-    const h =
-      66;
+    const h = 66;
+    const headerImage =
+      resourceManager.getImage(
+        'v43_property_header'
+      );
 
-    ctx.fillStyle =
-      COLORS.navy2;
-
-    ctx.fillRect(
-      0,
-      0,
-      DESIGN_W,
-      h
-    );
+    if (headerImage) {
+      ctx.save();
+      ctx.drawImage(
+        headerImage,
+        0,
+        0,
+        DESIGN_W,
+        h
+      );
+      ctx.fillStyle =
+        'rgba(2,42,64,0.64)';
+      ctx.fillRect(
+        0,
+        0,
+        DESIGN_W,
+        h
+      );
+      ctx.restore();
+    } else {
+      ctx.fillStyle = COLORS.navy2;
+      ctx.fillRect(0, 0, DESIGN_W, h);
+    }
 
     if (backId) {
       this.roundedRect(
@@ -1708,21 +1732,19 @@ class ShopScene {
         46,
         34,
         10,
-        'rgba(255,255,255,0.10)',
-        'rgba(255,255,255,0.15)'
+        'rgba(3,55,80,0.88)',
+        'rgba(255,255,255,0.25)'
       );
-
       this.text(
         ctx,
         '‹',
         33,
         30,
-        22,
-        COLORS.white,
-        '700',
+        20,
+        '#FFE070',
+        '800',
         'center'
       );
-
       this.addButton(
         backId,
         6,
@@ -1732,51 +1754,40 @@ class ShopScene {
       );
     }
 
-    const textX =
-      backId
-        ? 69
-        : 15;
-
+    const textX = backId ? 69 : 15;
     this.text(
       ctx,
       title,
       textX,
-      22,
-      17,
+      21,
+      15,
       COLORS.white,
-      '700'
+      '800'
     );
-
     this.text(
       ctx,
-      subtitle ||
-        '',
+      subtitle || '',
       textX,
-      45,
-      8,
-      'rgba(255,255,255,0.70)',
-      '500'
+      44,
+      5.6,
+      'rgba(255,255,255,0.82)',
+      '600'
     );
-
     this.text(
       ctx,
       money(
-        gameState
-          .getPlayer()
-          .cash
+        gameState.getPlayer().cash
       ),
       377,
-      22,
-      12,
-      '#FFE8AE',
-      '700',
+      20,
+      10,
+      '#FFE37A',
+      '800',
       'right'
     );
 
     const time =
-      gameState
-        .getTime();
-
+      gameState.getTime();
     this.text(
       ctx,
       '第' +
@@ -1787,10 +1798,10 @@ class ShopScene {
         time.day +
         '日',
       377,
-      44,
-      7,
-      '#D8E5EB',
-      '500',
+      43,
+      5.4,
+      '#E1ECF0',
+      '600',
       'right'
     );
   }
@@ -2592,18 +2603,14 @@ class ShopScene {
     h
   ) {
     const hot =
-      item.watchers >=
-        4 ||
-      item.competitorCount >=
-        2;
+      item.watchers >= 4 ||
+      item.competitorCount >= 2;
 
     const isNew =
-      item.daysOnMarket <=
-      3;
+      item.daysOnMarket <= 3;
 
     const isCut =
-      item.priceChangeRate <
-      -0.01;
+      item.priceChangeRate < -0.01;
 
     this.roundedRect(
       ctx,
@@ -2616,9 +2623,47 @@ class ShopScene {
       '#D7CABC'
     );
 
+    const imageIndex =
+      Math.abs(
+        String(item.marketKey || item.address)
+          .split('')
+          .reduce(
+            (sum, ch) =>
+              sum + ch.charCodeAt(0),
+            0
+          )
+      ) %
+      5;
+
+    const photo =
+      resourceManager.getImage(
+        'v43_storefront_' +
+        imageIndex
+      );
+
+    if (photo) {
+      ctx.save();
+      this.roundedPath(
+        ctx,
+        x + 8,
+        y + 8,
+        105,
+        h - 16,
+        9
+      );
+      ctx.clip();
+      ctx.drawImage(
+        photo,
+        x + 8,
+        y + 8,
+        105,
+        h - 16
+      );
+      ctx.restore();
+    }
+
     let badgeX =
-      x +
-      12;
+      x + 14;
 
     if (isNew) {
       badgeX +=
@@ -2626,26 +2671,22 @@ class ShopScene {
           ctx,
           '新上架',
           badgeX,
-          y +
-            9,
+          y + 10,
           '#E4F0E8',
           COLORS.green
-        ) +
-        5;
+        ) + 4;
     }
 
     if (isCut) {
       badgeX +=
         this.drawBadge(
           ctx,
-          '已降价',
+          '租金低',
           badgeX,
-          y +
-            9,
+          y + 10,
           '#E7F2EA',
           COLORS.green
-        ) +
-        5;
+        ) + 4;
     }
 
     if (hot) {
@@ -2653,23 +2694,23 @@ class ShopScene {
         ctx,
         '多人关注',
         badgeX,
-        y +
-          9,
+        y + 10,
         '#FFF0DD',
         COLORS.orange
       );
     }
 
+    const tx =
+      x + 123;
+
     this.text(
       ctx,
       item.address,
-      x +
-        12,
-      y +
-        40,
-      12,
+      tx,
+      y + 22,
+      9.2,
       COLORS.text,
-      '700'
+      '800'
     );
 
     this.text(
@@ -2679,11 +2720,9 @@ class ShopScene {
         item.layoutTypeName +
         ' · ' +
         item.floor,
-      x +
-        12,
-      y +
-        58,
-      7,
+      tx,
+      y + 39,
+      5.2,
       COLORS.muted,
       '600'
     );
@@ -2693,147 +2732,88 @@ class ShopScene {
       money(
         item.askingMonthlyRent
       ),
-      x +
-        w -
-        12,
-      y +
-        39,
-      14,
+      x + w - 12,
+      y + 21,
+      11.5,
       COLORS.red,
-      '700',
+      '800',
       'right'
     );
 
     this.text(
       ctx,
       '/月',
-      x +
-        w -
-        12,
-      y +
-        57,
-      6.5,
+      x + w - 12,
+      y + 39,
+      5.2,
       COLORS.muted,
-      '500',
+      '600',
       'right'
     );
 
-    this.drawIcon(
-      ctx,
-      'area',
-      x +
-        12,
-      y +
-        69,
-      20,
-      '面'
-    );
+    const metricY =
+      y + 50;
 
-    this.text(
-      ctx,
-      item.grossArea +
-        '㎡',
-      x +
-        37,
-      y +
-        79,
-      8,
-      COLORS.text,
-      '700'
-    );
+    const metrics = [
+      ['area', item.grossArea + '㎡'],
+      ['frontage', item.frontage + 'm'],
+      ['competitor', item.competitorCount + '人']
+    ];
 
-    this.drawIcon(
-      ctx,
-      'frontage',
-      x +
-        77,
-      y +
-        69,
-      20,
-      '宽'
-    );
-
-    this.text(
-      ctx,
-      item.frontage +
-        'm',
-      x +
-        102,
-      y +
-        79,
-      8,
-      COLORS.text,
-      '700'
-    );
+    for (
+      let i = 0;
+      i < metrics.length;
+      i++
+    ) {
+      const mx =
+        tx + i * 62;
+      this.drawIcon(
+        ctx,
+        metrics[i][0],
+        mx,
+        metricY,
+        17,
+        ''
+      );
+      this.text(
+        ctx,
+        metrics[i][1],
+        mx + 21,
+        metricY + 8.5,
+        5.7,
+        COLORS.text,
+        '700'
+      );
+    }
 
     this.drawHardwareMini(
       ctx,
       item,
-      x +
-        145,
-      y +
-        69
-    );
-
-    this.drawIcon(
-      ctx,
-      'competitor',
-      x +
-        235,
-      y +
-        69,
-      20,
-      '竞'
+      tx,
+      y + 74
     );
 
     this.text(
       ctx,
-      item.competitorCount +
-        '人',
-      x +
-        260,
-      y +
-        79,
-      8,
-      item.competitorCount >
-        0
-        ? COLORS.orange
-        : COLORS.muted,
-      '700'
-    );
-
-    this.text(
-      ctx,
-      '挂牌 ' +
-        item.daysOnMarket +
-        '天 · 关注 ' +
-        item.watchers +
-        ' · 入场约 ' +
+      '入场约 ' +
         money(
           item.liveUpfrontCash
         ),
-      x +
-        12,
-      y +
-        h -
-        17,
-      7,
-      COLORS.muted,
-      '600'
+      tx,
+      y + h - 15,
+      5.1,
+      COLORS.red,
+      '700'
     );
 
     this.text(
       ctx,
       '详情 ›',
-      x +
-        w -
-        12,
-      y +
-        h -
-        17,
-      8,
+      x + w - 12,
+      y + h - 15,
+      6.4,
       COLORS.navy,
-      '700',
+      '800',
       'right'
     );
 
@@ -3788,29 +3768,66 @@ class ShopScene {
     ctx,
     item
   ) {
-    const y0 =
-      76;
+    const y0 = 76;
 
     this.roundedRect(
       ctx,
       10,
       y0,
       370,
-      90,
+      128,
       14,
       COLORS.panel,
       COLORS.line
     );
 
+    const imageIndex =
+      Math.abs(
+        String(item.marketKey || item.address)
+          .split('')
+          .reduce(
+            (sum, ch) =>
+              sum + ch.charCodeAt(0),
+            0
+          )
+      ) %
+      5;
+
+    const photo =
+      resourceManager.getImage(
+        'v43_storefront_' +
+        imageIndex
+      );
+
+    if (photo) {
+      ctx.save();
+      this.roundedPath(
+        ctx,
+        18,
+        y0 + 8,
+        136,
+        112,
+        10
+      );
+      ctx.clip();
+      ctx.drawImage(
+        photo,
+        18,
+        y0 + 8,
+        136,
+        112
+      );
+      ctx.restore();
+    }
+
     this.text(
       ctx,
       item.address,
-      22,
-      y0 +
-        20,
-      14,
+      166,
+      y0 + 21,
+      12.5,
       COLORS.text,
-      '700'
+      '800'
     );
 
     this.text(
@@ -3820,10 +3837,9 @@ class ShopScene {
         item.layoutTypeName +
         ' · ' +
         item.floor,
-      22,
-      y0 +
-        43,
-      7.5,
+      166,
+      y0 + 42,
+      5.5,
       COLORS.muted,
       '600'
     );
@@ -3835,11 +3851,10 @@ class ShopScene {
       ) +
         '/月',
       366,
-      y0 +
-        23,
-      16,
+      y0 + 22,
+      14,
       COLORS.red,
-      '700',
+      '800',
       'right'
     );
 
@@ -3850,9 +3865,8 @@ class ShopScene {
           item.liveUpfrontCash
         ),
       366,
-      y0 +
-        49,
-      7.5,
+      y0 + 45,
+      5.5,
       COLORS.orange,
       '700',
       'right'
@@ -3867,94 +3881,67 @@ class ShopScene {
         ' · ' +
         item.competitorCount +
         '个竞争者',
-      22,
-      y0 +
-        70,
-      7,
+      166,
+      y0 + 66,
+      5.4,
       COLORS.muted,
       '600'
     );
 
-    const gridY =
-      176;
+    const fastMetrics = [
+      ['预算友好', item.liveUpfrontCash <= 80000 ? '高' : '中'],
+      ['堂食能力', item.seatEstimate + '席'],
+      ['外卖潜力', item.riderAccess >= 60 ? '高' : '中'],
+      ['改造难度', item.riskLevel <= 1 ? '低' : '中']
+    ];
 
-    const metricW =
-      116;
+    for (
+      let i = 0;
+      i < 4;
+      i++
+    ) {
+      const mx =
+        166 + (i % 2) * 100;
+      const my =
+        y0 + 83 + Math.floor(i / 2) * 20;
 
-    this.drawDetailMetric(
-      ctx,
-      'area',
-      '建筑面积',
-      item.grossArea +
-        '㎡',
-      10,
-      gridY,
-      metricW
-    );
+      this.text(
+        ctx,
+        fastMetrics[i][0],
+        mx,
+        my,
+        4.6,
+        COLORS.muted,
+        '600'
+      );
 
-    this.drawDetailMetric(
-      ctx,
-      'layout',
-      '可用面积',
-      item.usableArea +
-        '㎡',
-      137,
-      gridY,
-      metricW
-    );
+      this.text(
+        ctx,
+        fastMetrics[i][1],
+        mx + 61,
+        my,
+        5.4,
+        i === 3
+          ? COLORS.orange
+          : COLORS.green,
+        '800'
+      );
+    }
 
-    this.drawDetailMetric(
-      ctx,
-      'floor',
-      '估算座位',
-      item.seatEstimate +
-        '席',
-      264,
-      gridY,
-      metricW
-    );
+    const gridY = 214;
+    const metricW = 116;
 
-    this.drawDetailMetric(
-      ctx,
-      'frontage',
-      '门面宽',
-      item.frontage +
-        'm',
-      10,
-      gridY +
-        57,
-      metricW
-    );
-
-    this.drawDetailMetric(
-      ctx,
-      'depth',
-      '进深',
-      item.depth +
-        'm',
-      137,
-      gridY +
-        57,
-      metricW
-    );
-
-    this.drawDetailMetric(
-      ctx,
-      'layout',
-      '层高',
-      item.ceilingHeight +
-        'm',
-      264,
-      gridY +
-        57,
-      metricW
-    );
+    this.drawDetailMetric(ctx, 'area', '建筑面积', item.grossArea + '㎡', 10, gridY, metricW);
+    this.drawDetailMetric(ctx, 'layout', '可用面积', item.usableArea + '㎡', 137, gridY, metricW);
+    this.drawDetailMetric(ctx, 'floor', '估算座位', item.seatEstimate + '席', 264, gridY, metricW);
+    this.drawDetailMetric(ctx, 'frontage', '门面宽', item.frontage + 'm', 10, gridY + 57, metricW);
+    this.drawDetailMetric(ctx, 'depth', '进深', item.depth + 'm', 137, gridY + 57, metricW);
+    this.drawDetailMetric(ctx, 'layout', '层高', item.ceilingHeight + 'm', 264, gridY + 57, metricW);
 
     this.roundedRect(
       ctx,
       10,
-      gridY +
-        119,
+      gridY + 119,
       370,
       77,
       13,
@@ -3966,59 +3953,27 @@ class ShopScene {
       ctx,
       '餐饮硬件条件',
       22,
-      gridY +
-        136,
-      8,
-      COLORS.muted,
-      '700'
+      gridY + 136,
+      7.5,
+      COLORS.text,
+      '800'
     );
 
     const boolY =
-      gridY +
-      145;
+      gridY + 145;
 
     const bools = [
-      [
-        'exhaust',
-        '排烟',
-        item.exhaust
-      ],
-
-      [
-        'gas',
-        '燃气',
-        item.gas
-      ],
-
-      [
-        'power',
-        '三相电',
-        item.threePhase
-      ],
-
-      [
-        'drainage',
-        '排水',
-        item.drainage
-      ],
-
-      [
-        'grease',
-        '隔油',
-        item.greaseTrap
-      ],
-
-      [
-        'fire',
-        '消防',
-        item.fireSprinkler
-      ]
+      ['exhaust', '排烟', item.exhaust],
+      ['gas', '燃气', item.gas],
+      ['power', '三相电', item.threePhase],
+      ['drainage', '排水', item.drainage],
+      ['grease', '隔油', item.greaseTrap],
+      ['fire', '消防', item.fireSprinkler]
     ];
 
     for (
       let i = 0;
-      i <
-      bools.length;
+      i < bools.length;
       i++
     ) {
       this.drawBoolCell(
@@ -4026,16 +3981,13 @@ class ShopScene {
         bools[i][0],
         bools[i][1],
         bools[i][2],
-        16 +
-          i *
-            61,
+        16 + i * 61,
         boolY
       );
     }
 
     const utilityY =
-      gridY +
-      207;
+      gridY + 207;
 
     this.roundedRect(
       ctx,
@@ -4050,75 +4002,62 @@ class ShopScene {
 
     this.text(
       ctx,
-      '后厨与经营能力',
+      '经营能力评估',
       22,
-      utilityY +
-        17,
-      8,
-      COLORS.muted,
-      '700'
+      utilityY + 17,
+      7.5,
+      COLORS.text,
+      '800'
     );
 
-    const line1 =
+    this.text(
+      ctx,
       '建议厨房 ' +
-      item.kitchenSuggestedArea +
-      '㎡ · 堂食 ' +
-      item.diningSuggestedArea +
-      '㎡ · 电容量 ' +
-      item.electricCapacityKw +
-      'kW';
+        item.kitchenSuggestedArea +
+        '㎡ · 堂食 ' +
+        item.diningSuggestedArea +
+        '㎡ · 电容量 ' +
+        item.electricCapacityKw +
+        'kW',
+      22,
+      utilityY + 39,
+      5.2,
+      COLORS.text,
+      '600'
+    );
 
-    const line2 =
+    this.text(
+      ctx,
       '可见度 ' +
-      item.visibility +
-      ' · 停车 ' +
-      item.parkingScore +
-      ' · 骑手便利 ' +
-      item.riderAccess +
-      ' · 卸货 ' +
-      item.loadingAccess;
+        item.visibility +
+        ' · 停车 ' +
+        item.parkingScore +
+        ' · 骑手便利 ' +
+        item.riderAccess +
+        ' · 卸货 ' +
+        item.loadingAccess,
+      22,
+      utilityY + 60,
+      5.2,
+      COLORS.text,
+      '600'
+    );
 
-    const line3 =
+    this.text(
+      ctx,
       '水压 ' +
-      item.waterPressure +
-      ' · 夜间容忍 ' +
-      item.noiseTolerance +
-      ' · 独立卫生间 ' +
-      (
-        item.independentToilet
-          ? '有'
-          : '无'
-      );
-
-    this.text(
-      ctx,
-      line1,
+        item.waterPressure +
+        ' · 夜间容忍 ' +
+        item.noiseTolerance +
+        ' · 独立卫生间 ' +
+        (
+          item.independentToilet
+            ? '有'
+            : '无'
+        ),
       22,
-      utilityY +
-        39,
-      7,
-      COLORS.text,
-      '600'
-    );
-
-    this.text(
-      ctx,
-      line2,
-      22,
-      utilityY +
-        60,
-      7,
-      COLORS.text,
-      '600'
-    );
-
-    this.text(
-      ctx,
-      line3,
-      22,
-      utilityY +
-        78,
-      7,
+      utilityY + 78,
+      5.2,
       COLORS.text,
       '600'
     );

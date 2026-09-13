@@ -7,6 +7,7 @@
 // V38_SINGLE_STORE_FIDELITY
 // V39_LIBRARY_ASSET_INTEGRATION
 // V42_STORE_MASTER_REFERENCE_REBUILD
+// V43_REFERENCE_IMAGE_UI
 // 用户定稿门店模式：无门店 / 单店营业 / 多门店总览 / 筹备中。
 
 const runtime = globalThis.GameRuntime;
@@ -89,6 +90,23 @@ const LIBRARY_STORE_RESOURCE_LIST = [
   ['lib_status_signed', 'assets/images/library_store/status/signed.png'],
   ['lib_opening_flow', 'assets/images/library_store/ui/opening_flow_step1.png']
 ];
+
+
+const V43_REFERENCE_ICONS = {
+  rent: 'money',
+  visibility: 'view',
+  hot: 'target',
+  layout: 'renovation',
+  broker: 'people',
+  new: 'restaurant',
+  rider: 'delivery',
+  event: 'bulletin',
+  route: 'route',
+  store: 'shop',
+  warning: 'warning',
+  lease: 'location',
+  contract: 'complete'
+};
 
 const COLORS = {
   navy: '#063C5E',
@@ -316,6 +334,18 @@ class StoreScene {
   }
 
   enter(params) {
+    Object.values(V43_REFERENCE_ICONS)
+      .filter((value, index, list) => list.indexOf(value) === index)
+      .forEach(name => {
+        resourceManager
+          .loadImage(
+            'v43_icon_' + name,
+            'assets/images/v43_reference_icons/' + name + '.png',
+            'v43-reference-icons'
+          )
+          .catch(() => {});
+      });
+
     visualAssetSystem
       .loadGroup(
         'store'
@@ -496,22 +526,36 @@ class StoreScene {
     fallback,
     tint
   ) {
+    const mapped =
+      V43_REFERENCE_ICONS[name];
+
+    const libImage =
+      mapped
+        ? resourceManager.getImage(
+            'v43_icon_' + mapped
+          )
+        : null;
+
+    if (libImage) {
+      ctx.drawImage(
+        libImage,
+        x,
+        y,
+        size,
+        size
+      );
+      return;
+    }
+
     const image =
-      resourceManager
-        .getImage(
-          'property_icons_01'
-        );
+      resourceManager.getImage(
+        'property_icons_01'
+      );
 
     const region =
-      propertyIconAtlas
-        .icons[
-          name
-        ];
+      propertyIconAtlas.icons[name];
 
-    if (
-      image &&
-      region
-    ) {
+    if (image && region) {
       ctx.drawImage(
         image,
         region.x,
@@ -523,12 +567,10 @@ class StoreScene {
         size,
         size
       );
-
       return;
     }
 
     ctx.beginPath();
-
     ctx.arc(
       x + size / 2,
       y + size / 2,
@@ -536,22 +578,15 @@ class StoreScene {
       0,
       Math.PI * 2
     );
-
-    ctx.fillStyle =
-      tint ||
-      '#E8F4F9';
-
+    ctx.fillStyle = tint || '#E8F4F9';
     ctx.fill();
 
-    ui.text(
+    storeText(
       ctx,
       fallback || '·',
       x + size / 2,
       y + size / 2,
-      Math.max(
-        6,
-        size * 0.38
-      ),
+      Math.max(5, size * 0.32),
       COLORS.navy,
       '800',
       'center'
