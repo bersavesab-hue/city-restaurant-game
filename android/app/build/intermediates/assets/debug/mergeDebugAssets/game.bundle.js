@@ -20921,6 +20921,444 @@
         }
         return result + "\u2026";
       }
+      function getBrandState(player) {
+        const reputation = Math.max(
+          0,
+          Number(
+            player && player.reputation
+          ) || 0
+        );
+        const thresholds = [
+          0,
+          80,
+          200,
+          420,
+          760,
+          1200,
+          1800,
+          2600,
+          3600,
+          5e3
+        ];
+        let level = 1;
+        for (let i = 1; i < thresholds.length; i++) {
+          if (reputation >= thresholds[i]) {
+            level = i + 1;
+          }
+        }
+        const currentIndex = Math.min(
+          level - 1,
+          thresholds.length - 1
+        );
+        const current = thresholds[currentIndex];
+        const next = thresholds[Math.min(
+          currentIndex + 1,
+          thresholds.length - 1
+        )];
+        const progress = next <= current ? 1 : Math.max(
+          0,
+          Math.min(
+            1,
+            (reputation - current) / (next - current)
+          )
+        );
+        return {
+          level,
+          reputation,
+          progress
+        };
+      }
+      function drawCityBadge(cityName, x, y, size) {
+        const first = String(
+          cityName || "\u57CE"
+        ).charAt(
+          0
+        ) || "\u57CE";
+        roundedRect(
+          x,
+          y,
+          size,
+          size,
+          10,
+          "rgba(6,49,72,0.96)",
+          "#F6C64E",
+          1.2
+        );
+        roundedRect(
+          x + 4,
+          y + 4,
+          size - 8,
+          size - 8,
+          8,
+          "rgba(255,255,255,0.08)",
+          "rgba(255,255,255,0.28)",
+          0.8
+        );
+        drawText(
+          first,
+          x + size / 2,
+          y + size * 0.47,
+          17,
+          "#FFE49A",
+          "800",
+          "center"
+        );
+        drawText(
+          "\u57CE",
+          x + size / 2,
+          y + size * 0.76,
+          6.2,
+          "#E4F0F4",
+          "700",
+          "center"
+        );
+      }
+      function drawDistrictThumb(districtId, x, y, w, h) {
+        const image = resourceManager.getImage(
+          "city_base_01"
+        );
+        const layout = DISTRICT_LAYOUT[districtId] || {
+          x: 0.5,
+          y: 0.5
+        };
+        ctx2.save();
+        roundedPath(
+          ctx2,
+          x,
+          y,
+          w,
+          h,
+          11
+        );
+        ctx2.clip();
+        if (image) {
+          drawImageFocus(
+            ctx2,
+            image,
+            x,
+            y,
+            w,
+            h,
+            2.6,
+            Math.max(
+              0.08,
+              Math.min(
+                0.92,
+                layout.x
+              )
+            ),
+            Math.max(
+              0.08,
+              Math.min(
+                0.92,
+                layout.y
+              )
+            )
+          );
+          const shade = ctx2.createLinearGradient(
+            x,
+            y,
+            x,
+            y + h
+          );
+          shade.addColorStop(
+            0,
+            "rgba(5,37,55,0.02)"
+          );
+          shade.addColorStop(
+            1,
+            "rgba(5,37,55,0.28)"
+          );
+          ctx2.fillStyle = shade;
+          ctx2.fillRect(
+            x,
+            y,
+            w,
+            h
+          );
+        } else {
+          ctx2.fillStyle = "#D9E8E7";
+          ctx2.fillRect(
+            x,
+            y,
+            w,
+            h
+          );
+        }
+        ctx2.restore();
+        roundedRect(
+          x,
+          y,
+          w,
+          h,
+          11,
+          null,
+          "rgba(8,48,67,0.18)",
+          1
+        );
+      }
+      function drawNavIcon(id, cx, cy, active) {
+        const color = active ? "#173545" : "#E7F2F5";
+        ctx2.save();
+        ctx2.strokeStyle = color;
+        ctx2.fillStyle = color;
+        ctx2.lineWidth = 1.8;
+        ctx2.lineCap = "round";
+        ctx2.lineJoin = "round";
+        if (id === "city") {
+          ctx2.strokeRect(
+            cx - 10,
+            cy - 6,
+            7,
+            13
+          );
+          ctx2.strokeRect(
+            cx - 1,
+            cy - 10,
+            8,
+            17
+          );
+          ctx2.strokeRect(
+            cx + 9,
+            cy - 3,
+            5,
+            10
+          );
+          ctx2.fillRect(
+            cx + 1,
+            cy - 6,
+            2,
+            2
+          );
+          ctx2.fillRect(
+            cx + 1,
+            cy - 1,
+            2,
+            2
+          );
+        } else if (id === "shop") {
+          ctx2.strokeRect(
+            cx - 11,
+            cy - 4,
+            22,
+            12
+          );
+          ctx2.beginPath();
+          ctx2.moveTo(
+            cx - 12,
+            cy - 4
+          );
+          ctx2.lineTo(
+            cx - 9,
+            cy - 10
+          );
+          ctx2.lineTo(
+            cx + 9,
+            cy - 10
+          );
+          ctx2.lineTo(
+            cx + 12,
+            cy - 4
+          );
+          ctx2.stroke();
+          for (let i = -6; i <= 6; i += 6) {
+            ctx2.beginPath();
+            ctx2.moveTo(
+              cx + i,
+              cy - 10
+            );
+            ctx2.lineTo(
+              cx + i,
+              cy - 4
+            );
+            ctx2.stroke();
+          }
+          ctx2.strokeRect(
+            cx - 3,
+            cy + 1,
+            6,
+            7
+          );
+        } else if (id === "renovation") {
+          ctx2.beginPath();
+          ctx2.moveTo(
+            cx - 8,
+            cy + 8
+          );
+          ctx2.lineTo(
+            cx + 4,
+            cy - 4
+          );
+          ctx2.stroke();
+          ctx2.beginPath();
+          ctx2.moveTo(
+            cx,
+            cy - 8
+          );
+          ctx2.lineTo(
+            cx + 8,
+            cy
+          );
+          ctx2.lineTo(
+            cx + 4,
+            cy + 4
+          );
+          ctx2.stroke();
+          ctx2.beginPath();
+          ctx2.moveTo(
+            cx - 10,
+            cy + 5
+          );
+          ctx2.lineTo(
+            cx - 5,
+            cy + 10
+          );
+          ctx2.stroke();
+        } else if (id === "research") {
+          ctx2.beginPath();
+          ctx2.arc(
+            cx - 1,
+            cy,
+            8,
+            0,
+            Math.PI * 2
+          );
+          ctx2.stroke();
+          ctx2.beginPath();
+          ctx2.moveTo(
+            cx + 9,
+            cy - 10
+          );
+          ctx2.lineTo(
+            cx + 4,
+            cy + 10
+          );
+          ctx2.moveTo(
+            cx + 13,
+            cy - 9
+          );
+          ctx2.lineTo(
+            cx + 8,
+            cy + 10
+          );
+          ctx2.stroke();
+        } else if (id === "supply") {
+          ctx2.strokeRect(
+            cx - 12,
+            cy - 7,
+            14,
+            11
+          );
+          ctx2.beginPath();
+          ctx2.moveTo(
+            cx + 2,
+            cy - 4
+          );
+          ctx2.lineTo(
+            cx + 8,
+            cy - 4
+          );
+          ctx2.lineTo(
+            cx + 12,
+            cy
+          );
+          ctx2.lineTo(
+            cx + 12,
+            cy + 4
+          );
+          ctx2.lineTo(
+            cx + 2,
+            cy + 4
+          );
+          ctx2.stroke();
+          ctx2.beginPath();
+          ctx2.arc(
+            cx - 6,
+            cy + 7,
+            2.4,
+            0,
+            Math.PI * 2
+          );
+          ctx2.arc(
+            cx + 8,
+            cy + 7,
+            2.4,
+            0,
+            Math.PI * 2
+          );
+          ctx2.stroke();
+        } else if (id === "business") {
+          ctx2.fillRect(
+            cx - 11,
+            cy + 1,
+            4,
+            8
+          );
+          ctx2.fillRect(
+            cx - 3,
+            cy - 4,
+            4,
+            13
+          );
+          ctx2.fillRect(
+            cx + 5,
+            cy - 9,
+            4,
+            18
+          );
+          ctx2.beginPath();
+          ctx2.moveTo(
+            cx - 12,
+            cy + 10
+          );
+          ctx2.lineTo(
+            cx + 12,
+            cy + 10
+          );
+          ctx2.stroke();
+        } else {
+          ctx2.beginPath();
+          ctx2.arc(
+            cx,
+            cy,
+            5.5,
+            0,
+            Math.PI * 2
+          );
+          ctx2.stroke();
+          ctx2.beginPath();
+          ctx2.arc(
+            cx,
+            cy,
+            1.7,
+            0,
+            Math.PI * 2
+          );
+          ctx2.fill();
+          for (let i = 0; i < 8; i++) {
+            const a = i * Math.PI / 4;
+            ctx2.beginPath();
+            ctx2.moveTo(
+              cx + Math.cos(
+                a
+              ) * 7,
+              cy + Math.sin(
+                a
+              ) * 7
+            );
+            ctx2.lineTo(
+              cx + Math.cos(
+                a
+              ) * 10,
+              cy + Math.sin(
+                a
+              ) * 10
+            );
+            ctx2.stroke();
+          }
+        }
+        ctx2.restore();
+      }
       function addButton(id, x, y, w, h) {
         const hitW = Math.max(
           40,
@@ -21116,22 +21554,22 @@
         if (!cityName || cityName === "\u672A\u547D\u540D\u57CE\u5E02") {
           cityName = "\u4E91\u5DDE\u5E02";
         }
-        const headerImage = resourceManager.getImage(
-          "city_header_thumb"
+        const cityImage = resourceManager.getImage(
+          "city_base_01"
         );
-        if (headerImage) {
+        if (cityImage) {
           drawImageFocus(
             ctx2,
-            headerImage,
+            cityImage,
             0,
             0,
             VIEW_W,
             TOP_H,
-            1.3,
-            0.5,
-            0.52
+            1.65,
+            0.53,
+            0.16
           );
-          ctx2.fillStyle = "rgba(4,35,58,0.61)";
+          ctx2.fillStyle = "rgba(4,35,58,0.67)";
           ctx2.fillRect(
             0,
             0,
@@ -21147,40 +21585,19 @@
             TOP_H
           );
         }
-        roundedRect(
+        drawCityBadge(
+          cityName,
           10,
           8 + SAFE_TOP,
-          45,
-          45,
-          10,
-          "rgba(255,255,255,0.92)",
-          "#F4C349"
+          45
         );
-        if (headerImage) {
-          drawImageFocus(
-            ctx2,
-            headerImage,
-            13,
-            11 + SAFE_TOP,
-            39,
-            39,
-            1.75,
-            0.18,
-            0.54
-          );
-        } else {
-          drawText(
-            "\u57CE",
-            32.5,
-            30 + SAFE_TOP,
-            15,
-            COLORS.navy,
-            "800",
-            "center"
-          );
-        }
         drawText(
-          cityName,
+          fitText(
+            cityName,
+            102,
+            15.5,
+            "800"
+          ),
           66,
           20 + SAFE_TOP,
           15.5,
@@ -21197,7 +21614,7 @@
         );
         drawText(
           WEATHER_NAMES[world.weather] || "\u6674",
-          184,
+          181,
           21 + SAFE_TOP,
           7.7,
           "#FFF1B2",
@@ -21209,8 +21626,8 @@
             Number(
               world.temperature
             )
-          ) ? world.temperature + "\u2103" : "",
-          184,
+          ) ? world.temperature + "\u2103" : "--\u2103",
+          181,
           42 + SAFE_TOP,
           6.8,
           "#D7E8EE",
@@ -21218,17 +21635,22 @@
           "center"
         );
         roundedRect(
-          217,
+          211,
           9 + SAFE_TOP,
-          101,
+          105,
           45,
           12,
-          "rgba(5,39,60,0.86)",
+          "rgba(5,39,60,0.88)",
           "rgba(255,255,255,0.30)"
         );
         drawText(
-          "\xA5" + player.cash.toLocaleString(),
-          267.5,
+          fitText(
+            "\xA5" + player.cash.toLocaleString(),
+            91,
+            11,
+            "800"
+          ),
+          263.5,
           24 + SAFE_TOP,
           11,
           "#FFF0A8",
@@ -21237,43 +21659,49 @@
         );
         drawText(
           "\u53EF\u7528\u8D44\u91D1",
-          267.5,
+          263.5,
           42 + SAFE_TOP,
           6.3,
           "#D6E7ED",
           "600",
           "center"
         );
+        const brand = getBrandState(
+          player
+        );
         roundedRect(
-          325,
+          323,
           9 + SAFE_TOP,
-          55,
+          58,
           45,
           12,
-          "rgba(5,39,60,0.86)",
+          "rgba(5,39,60,0.88)",
           "rgba(255,255,255,0.30)"
         );
         drawText(
-          "\u265B Lv.1",
-          352.5,
+          "\u265B Lv." + brand.level,
+          352,
           23 + SAFE_TOP,
-          8.2,
+          7.8,
           "#FFE081",
           "800",
           "center"
         );
         roundedRect(
-          334,
+          333,
           42 + SAFE_TOP,
-          37,
+          38,
           3,
           1.5,
           "rgba(255,255,255,0.24)"
         );
         roundedRect(
-          334,
+          333,
           42 + SAFE_TOP,
-          9,
+          Math.max(
+            3,
+            38 * brand.progress
+          ),
           3,
           1.5,
           COLORS.gold
@@ -21315,7 +21743,7 @@
             39,
             21,
             8,
-            active ? COLORS.gold : "rgba(4,40,60,0.82)",
+            active ? COLORS.gold : "rgba(4,40,60,0.84)",
             active ? "#FFE38D" : "rgba(255,255,255,0.20)"
           );
           drawText(
@@ -21336,8 +21764,13 @@
           );
         }
         drawText(
-          display.date + " \xB7 " + display.time + " \xB7 " + (MEAL_NAMES[display.mealPeriod] || ""),
-          375,
+          fitText(
+            display.date + " \xB7 " + display.time + " \xB7 " + (MEAL_NAMES[display.mealPeriod] || ""),
+            148,
+            6.5,
+            "600"
+          ),
+          376,
           y + 10.5,
           6.5,
           "#DCEBF0",
@@ -21416,6 +21849,8 @@
         const x = point.x;
         const y = point.y;
         const selected = selectedDistrictId === district.id;
+        const animated = districtFx.id === district.id;
+        const markerScale = animated ? districtFx.scale : 1;
         const markerKeys = {
           university: "district_marker_gold",
           hightech: "district_marker_blue",
@@ -21433,26 +21868,35 @@
           ctx2.arc(
             x,
             y,
-            20 + districtFx.flash * 4,
+            21 + districtFx.flash * 5,
             0,
             Math.PI * 2
           );
-          ctx2.fillStyle = "rgba(255,191,45,0.22)";
+          ctx2.fillStyle = "rgba(255,191,45,0.24)";
           ctx2.fill();
         }
+        ctx2.save();
+        ctx2.translate(
+          x,
+          y
+        );
+        ctx2.scale(
+          markerScale,
+          markerScale
+        );
         if (image) {
           ctx2.drawImage(
             image,
-            x - 16,
-            y - 23,
+            -16,
+            -23,
             32,
             44
           );
         } else {
           ctx2.beginPath();
           ctx2.arc(
-            x,
-            y,
+            0,
+            0,
             8,
             0,
             Math.PI * 2
@@ -21460,34 +21904,72 @@
           ctx2.fillStyle = COLORS.gold;
           ctx2.fill();
         }
+        ctx2.restore();
         const labelW = Math.max(
           63,
-          31 + district.name.length * 10
+          Math.min(
+            94,
+            31 + district.name.length * 10
+          )
+        );
+        const preferLeft = x > VIEW_W * 0.64;
+        let labelX = preferLeft ? x - labelW - 10 : x + 10;
+        labelX = Math.max(
+          6,
+          Math.min(
+            VIEW_W - labelW - 6,
+            labelX
+          )
+        );
+        const labelY = Math.max(
+          MAP_Y + 43,
+          Math.min(
+            CARD_Y - 31,
+            y - 11
+          )
         );
         roundedRect(
-          x + 8,
-          y - 11,
+          labelX,
+          labelY,
           labelW,
           23,
           11,
-          "#063C5B",
-          "#F0BA37"
+          selected ? "#0A4969" : "#063C5B",
+          selected ? "#FFD25A" : "#F0BA37",
+          selected ? 1.4 : 1
         );
         drawText(
           district.name + "  \u203A",
-          x + 8 + labelW / 2,
-          y + 0.5,
+          labelX + labelW / 2,
+          labelY + 11.5,
           7.6,
           "#F8FBFC",
           "800",
           "center"
         );
+        const hitLeft = Math.min(
+          x - 20,
+          labelX - 3
+        );
+        const hitRight = Math.max(
+          x + 20,
+          labelX + labelW + 3
+        );
         addButton(
           "district:" + district.id,
-          x - 20,
-          y - 28,
-          labelW + 42,
-          56
+          hitLeft,
+          Math.min(
+            y - 28,
+            labelY - 6
+          ),
+          hitRight - hitLeft,
+          Math.max(
+            56,
+            labelY + 29 - Math.min(
+              y - 28,
+              labelY - 6
+            )
+          )
         );
       }
       function startDistrictFx(districtId) {
@@ -21617,7 +22099,7 @@
           w,
           h,
           16,
-          "rgba(255,253,247,0.985)",
+          "rgba(255,253,247,0.988)",
           "rgba(17,53,72,0.25)",
           1
         );
@@ -21673,45 +22155,65 @@
         const currentDemand = demandSystem.getTotalDemand(
           district.id
         );
-        const thumb = resourceManager.getImage(
-          "city_header_thumb"
+        drawDistrictThumb(
+          district.id,
+          x + 9,
+          y + 9,
+          93,
+          h - 18
         );
-        if (thumb) {
-          drawImageFocus(
-            ctx2,
-            thumb,
-            x + 9,
-            y + 9,
-            91,
-            h - 18,
-            1.45,
-            0.5,
-            0.55
-          );
-          roundedRect(
-            x + 9,
-            y + 9,
-            91,
-            h - 18,
-            11,
-            null,
-            "rgba(9,45,63,0.16)"
-          );
-        }
+        roundedRect(
+          x + 17,
+          y + h - 34,
+          77,
+          19,
+          9,
+          "rgba(5,42,61,0.86)",
+          "rgba(255,220,122,0.55)"
+        );
         drawText(
           district.name,
-          x + 112,
+          x + 55.5,
+          y + h - 24.5,
+          6.7,
+          "#FFF7D4",
+          "800",
+          "center"
+        );
+        drawText(
+          fitText(
+            district.name,
+            118,
+            13.4,
+            "800"
+          ),
+          x + 113,
           y + 22,
           13.4,
           COLORS.text,
           "800"
         );
+        const demandDelta = Number(
+          district.demandDeltaRatio
+        ) || 0;
+        let statusText = "\u5BA2\u7FA4\u6D3B\u8DC3 \xB7 \u4ECD\u6709\u7ECF\u8425\u673A\u4F1A";
+        let statusColor = COLORS.blue;
+        if (district.saturation >= 95) {
+          statusText = "\u7ADE\u4E89\u6FC0\u70C8 \xB7 \u5EFA\u8BAE\u8C28\u614E\u9009\u5740";
+          statusColor = COLORS.danger;
+        } else if (demandDelta >= 0.04) {
+          statusText = "\u9700\u6C42\u5347\u6E29 \xB7 \u5F53\u524D\u673A\u4F1A\u8F83\u597D";
+          statusColor = COLORS.green;
+        } else if (demandDelta <= -0.04) {
+          statusText = "\u9700\u6C42\u56DE\u843D \xB7 \u6CE8\u610F\u7ECF\u8425\u98CE\u9669";
+          statusColor = COLORS.orange;
+        }
         drawText(
-          district.saturation >= 95 ? "\u7ADE\u4E89\u6FC0\u70C8 \xB7 \u4ECD\u9700\u8C28\u614E\u9009\u5740" : "\u5BA2\u7FA4\u6D3B\u8DC3 \xB7 \u4ECD\u6709\u7ECF\u8425\u673A\u4F1A",
-          x + 112,
+          statusText,
+          x + 113,
           y + 42,
           6.3,
-          district.saturation >= 95 ? COLORS.danger : COLORS.blue,
+          statusColor,
           "600"
         );
         const metrics = [
@@ -21750,26 +22252,26 @@
         ];
         for (let i = 0; i < metrics.length; i++) {
           drawMetricChip(
-            x + 111 + i * 43,
+            x + 112 + i * 42,
             y + 53,
-            40,
+            39,
             metrics[i][0],
             metrics[i][1],
             metrics[i][2]
           );
         }
         drawText(
-          "\u5B9E\u65F6\u6570\u636E\u4F1A\u968F\u4EBA\u53E3\u3001\u57CE\u5E02\u4E8B\u4EF6\u3001\u7ADE\u4E89\u548C\u79DF\u91D1\u53D8\u5316",
-          x + 112,
+          "\u5B9E\u65F6\u6570\u636E\u968F\u4EBA\u53E3\u3001\u4E8B\u4EF6\u3001\u7ADE\u4E89\u4E0E\u79DF\u91D1\u53D8\u5316",
+          x + 113,
           y + 107,
           5.8,
           COLORS.muted,
           "600"
         );
         roundedRect(
-          x + 263,
+          x + 258,
           y + h - 39,
-          101,
+          106,
           31,
           15,
           COLORS.gold,
@@ -21777,7 +22279,7 @@
         );
         drawText(
           "\u8FDB\u5165\u5546\u5708  \u203A",
-          x + 313.5,
+          x + 311,
           y + h - 23.5,
           8,
           "#213541",
@@ -21786,9 +22288,9 @@
         );
         addButton(
           "district:details",
-          x + 255,
+          x + 250,
           y + h - 45,
-          117,
+          122,
           44
         );
       }
@@ -21838,19 +22340,16 @@
               "#FFE09A"
             );
           }
-          drawText(
-            item.icon,
+          drawNavIcon(
+            item.id,
             cx,
             NAV_Y + NAV_H * 0.34,
-            10.2,
-            active ? "#163445" : "#E7F1F4",
-            "800",
-            "center"
+            active
           );
           drawText(
             item.name,
             cx,
-            NAV_Y + NAV_H * 0.72,
+            NAV_Y + NAV_H * 0.73,
             6.4,
             active ? "#153342" : "#E0EBEF",
             active ? "800" : "600",
@@ -22073,6 +22572,17 @@
           const toolId = target.id.split(":")[1];
           if (toolId === "news") {
             const bulletin = simulationSystem.getBulletin();
+            if (bulletin && bulletin.districtId && citySystem.getDistrict(
+              bulletin.districtId
+            )) {
+              selectedDistrictId = bulletin.districtId;
+              citySystem.setCurrentDistrict(
+                bulletin.districtId
+              );
+              startDistrictFx(
+                bulletin.districtId
+              );
+            }
             showToast(
               bulletin.title + "\uFF1A" + bulletin.detail
             );
@@ -22251,7 +22761,7 @@
         gameLoop
       );
       console.log(
-        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V18 \u6838\u5FC3\u56DB\u9875\u5168\u91CF\u91CD\u6784\u7248\u542F\u52A8\u6210\u529F"
+        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V19 \u57CE\u5E02\u9996\u9875\u7CBE\u4FEE\u7248\u542F\u52A8\u6210\u529F"
       );
     }
   });
