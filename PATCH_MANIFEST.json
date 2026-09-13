@@ -1,0 +1,24 @@
+{
+  "patch": "city-restaurant-v0.2-foundation-step1",
+  "target": "bersavesab-hue/city-restaurant-game",
+  "type": "additive-foundation-refactor",
+  "safeForExistingUI": true,
+  "runtimeIntegration": "not-yet-enabled",
+  "adds": [
+    "foundation/rng.js",
+    "foundation/packRegistry.js",
+    "foundation/compositionEngine.js",
+    "foundation/createFoundation.js",
+    "foundation/index.js",
+    "entities/entityFactory.js",
+    "packs/base/foundationPacks.js",
+    "systems/pricingEngine.js",
+    "systems/competitionEngine.js",
+    "systems/reviewEngine.js",
+    "systems/eventEngine.js",
+    "tests/foundationV02.test.js",
+    "docs/V0.2_FOUNDATION_STEP1.md"
+  ],
+  "changes": ["package.json: 0.2.0 + foundation test"],
+  "next": "migrate current property market to the new property/entity composition system"
+}
