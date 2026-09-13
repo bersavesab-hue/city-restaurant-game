@@ -9598,6 +9598,200 @@ if (cityScene && typeof cityScene.enter === 'function' && !cityScene.__v32Wrappe
 }
 
 console.log('V32_REFERENCE_HOME_REBUILD loaded');
+
+/* V33_GLOBAL_NAV_UNIFICATION */
+
+const V33_NAV_ITEMS = [
+  { id: 'city', label: '城市', scene: 'city', normal: 'v33_nav_city', active: 'v33_nav_city_active' },
+  { id: 'shop', label: '门店', scene: 'shop', normal: 'v33_nav_store', active: 'v33_nav_store_active' },
+  { id: 'renovation', label: '装修', scene: 'renovation', normal: 'v33_nav_renovation', active: 'v33_nav_renovation_active' },
+  { id: 'research', label: '菜单', scene: 'research', normal: 'v33_nav_menu', active: 'v33_nav_menu_active' },
+  { id: 'supply', label: '供应链', scene: 'supply', normal: 'v33_nav_supply', active: 'v33_nav_supply_active' },
+  { id: 'business', label: '数据', scene: 'business', normal: 'v33_nav_data', active: 'v33_nav_data_active' },
+  { id: 'system', label: '系统', scene: 'system', normal: 'v33_nav_system', active: 'v33_nav_system_active' }
+];
+
+const v33PreviousLoadResources = loadResources;
+
+loadResources = function () {
+  const navTasks = [
+    resourceManager.loadImage('v33_nav_city', 'assets/images/v29/nav_city.png', 'v33-nav'),
+    resourceManager.loadImage('v33_nav_city_active', 'assets/images/v29/nav_city_active.png', 'v33-nav'),
+    resourceManager.loadImage('v33_nav_store', 'assets/images/v29/nav_store.png', 'v33-nav'),
+    resourceManager.loadImage('v33_nav_store_active', 'assets/images/v29/nav_store_active.png', 'v33-nav'),
+    resourceManager.loadImage('v33_nav_renovation', 'assets/images/v32_home/nav_renovation.png', 'v33-nav'),
+    resourceManager.loadImage('v33_nav_renovation_active', 'assets/images/v33_nav/renovation_active.png', 'v33-nav'),
+    resourceManager.loadImage('v33_nav_menu', 'assets/images/v29/nav_menu.png', 'v33-nav'),
+    resourceManager.loadImage('v33_nav_menu_active', 'assets/images/v29/nav_menu_active.png', 'v33-nav'),
+    resourceManager.loadImage('v33_nav_supply', 'assets/images/v29/nav_supply.png', 'v33-nav'),
+    resourceManager.loadImage('v33_nav_supply_active', 'assets/images/v29/nav_supply_active.png', 'v33-nav'),
+    resourceManager.loadImage('v33_nav_data', 'assets/images/v29/nav_data.png', 'v33-nav'),
+    resourceManager.loadImage('v33_nav_data_active', 'assets/images/v29/nav_data_active.png', 'v33-nav'),
+    resourceManager.loadImage('v33_nav_system', 'assets/images/v29/nav_system.png', 'v33-nav'),
+    resourceManager.loadImage('v33_nav_system_active', 'assets/images/v29/nav_system_active.png', 'v33-nav')
+  ];
+
+  return Promise.all(navTasks).then(function () {
+    return v33PreviousLoadResources();
+  });
+};
+
+function v33ActiveNavId() {
+  const current = sceneManager.getCurrentId();
+
+  if (
+    current === 'shop' ||
+    current === 'propertyMarket' ||
+    current === 'equipment' ||
+    current === 'license' ||
+    current === 'staff'
+  ) {
+    return 'shop';
+  }
+
+  if (current === 'renovation') return 'renovation';
+  if (current === 'research') return 'research';
+  if (current === 'supply') return 'supply';
+  if (current === 'business') return 'business';
+  if (current === 'city') return 'city';
+
+  return current || 'city';
+}
+
+function v33DrawNavIconImage(key, cx, cy, size) {
+  const image = resourceManager.getImage(key);
+  if (!image) return false;
+
+  const ratio = image.width && image.height
+    ? Math.min(size / image.width, size / image.height)
+    : 1;
+
+  const w = image.width ? image.width * ratio : size;
+  const h = image.height ? image.height * ratio : size;
+
+  ctx.drawImage(
+    image,
+    cx - w / 2,
+    cy - h / 2,
+    w,
+    h
+  );
+
+  return true;
+}
+
+drawBottomNav = function () {
+  const activeId = v33ActiveNavId();
+  const navVisualH = NAV_H - SAFE_BOTTOM;
+  const cellW = VIEW_W / V33_NAV_ITEMS.length;
+
+  // One global navigation skin for every page.
+  const bg = ctx.createLinearGradient(0, NAV_Y, 0, NAV_Y + navVisualH);
+  bg.addColorStop(0, '#075889');
+  bg.addColorStop(0.18, '#07517E');
+  bg.addColorStop(0.62, '#04466E');
+  bg.addColorStop(1, '#033B5D');
+
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, NAV_Y, VIEW_W, NAV_H);
+
+  // Bright top edge and lower blue glow, matching the accepted city homepage.
+  ctx.fillStyle = 'rgba(70,207,255,0.72)';
+  ctx.fillRect(0, NAV_Y, VIEW_W, 1.2);
+
+  const topGlow = ctx.createLinearGradient(0, NAV_Y, 0, NAV_Y + 9);
+  topGlow.addColorStop(0, 'rgba(25,191,255,0.36)');
+  topGlow.addColorStop(1, 'rgba(25,191,255,0)');
+  ctx.fillStyle = topGlow;
+  ctx.fillRect(0, NAV_Y + 1, VIEW_W, 9);
+
+  const bottomGlow = ctx.createLinearGradient(0, NAV_Y + navVisualH - 10, 0, NAV_Y + navVisualH);
+  bottomGlow.addColorStop(0, 'rgba(0,137,221,0)');
+  bottomGlow.addColorStop(1, 'rgba(0,166,255,0.28)');
+  ctx.fillStyle = bottomGlow;
+  ctx.fillRect(0, NAV_Y + navVisualH - 10, VIEW_W, 10);
+
+  for (let i = 0; i < V33_NAV_ITEMS.length; i++) {
+    const item = V33_NAV_ITEMS[i];
+    const cellX = i * cellW;
+    const cx = cellX + cellW / 2;
+    const active = item.id === activeId;
+
+    if (i > 0) {
+      const sep = ctx.createLinearGradient(0, NAV_Y + 9, 0, NAV_Y + navVisualH - 7);
+      sep.addColorStop(0, 'rgba(85,184,232,0)');
+      sep.addColorStop(0.3, 'rgba(85,184,232,0.24)');
+      sep.addColorStop(0.72, 'rgba(85,184,232,0.20)');
+      sep.addColorStop(1, 'rgba(85,184,232,0)');
+      ctx.fillStyle = sep;
+      ctx.fillRect(cellX, NAV_Y + 7, 1, navVisualH - 13);
+    }
+
+    if (active) {
+      const selection = ctx.createLinearGradient(
+        0,
+        NAV_Y + 4,
+        0,
+        NAV_Y + navVisualH - 4
+      );
+
+      selection.addColorStop(0, '#FFF267');
+      selection.addColorStop(0.45, '#FFD83A');
+      selection.addColorStop(1, '#FFC31F');
+
+      ctx.save();
+      ctx.shadowColor = 'rgba(255,210,44,0.50)';
+      ctx.shadowBlur = 9;
+
+      roundedRect(
+        cellX + 4,
+        NAV_Y + 4,
+        cellW - 8,
+        navVisualH - 8,
+        12,
+        selection,
+        '#FFF09A',
+        1.15
+      );
+
+      ctx.restore();
+    }
+
+    const iconY = NAV_Y + navVisualH * 0.36;
+    const iconSize = active ? 27 : 25;
+
+    const iconDrawn = v33DrawNavIconImage(
+      active ? item.active : item.normal,
+      cx,
+      iconY,
+      iconSize
+    );
+
+    if (!iconDrawn) {
+      drawNavIcon(item.id, cx, iconY, active);
+    }
+
+    drawText(
+      item.label,
+      cx,
+      NAV_Y + navVisualH * 0.75,
+      active ? 8.1 : 7.7,
+      active ? '#0D3B56' : '#F1F8FC',
+      '800',
+      'center'
+    );
+
+    addButton(
+      'nav:' + item.scene,
+      cellX,
+      NAV_Y,
+      cellW,
+      NAV_H
+    );
+  }
+};
+
+console.log('V33_GLOBAL_NAV_UNIFICATION loaded');
 /* =========================
    启动
 ========================= */
@@ -9619,5 +9813,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V32 参考图主页重制版启动成功'
+  '城市餐饮经营小游戏 V33 全局统一底栏版启动成功'
 );
