@@ -97,54 +97,6 @@
     "averageScore": 47.064516129032256
   },
   {
-    "id": "META_ACHIEVEMENT",
-    "priority": "P3",
-    "dimension": "content",
-    "title": "缺少明显的长期收集/成就反馈",
-    "detail": "当前经营核心较强，但收藏党缺少跨局目标和里程碑展示。",
-    "evidence": {
-      "sourceScan": "未发现成就/收藏系统"
-    },
-    "remediation": "后续增加经营成就、菜系图鉴、商圈收藏、门店里程碑等长期目标。",
-    "affected": 36,
-    "highConcern": 0,
-    "totalScore": 1549,
-    "platforms": {
-      "douyin": 0,
-      "taptap": 16,
-      "cross": 20
-    },
-    "examples": [
-      {
-        "personaId": "P017",
-        "label": "TapTap经营模拟核心玩家·A",
-        "score": 40
-      },
-      {
-        "personaId": "P018",
-        "label": "TapTap经营模拟核心玩家·B",
-        "score": 38
-      },
-      {
-        "personaId": "P019",
-        "label": "TapTap经营模拟核心玩家·C",
-        "score": 43
-      },
-      {
-        "personaId": "P020",
-        "label": "TapTap经营模拟核心玩家·D",
-        "score": 39
-      },
-      {
-        "personaId": "P025",
-        "label": "TapTap数值硬核玩家·A",
-        "score": 45
-      }
-    ],
-    "affectedRate": 0.36,
-    "averageScore": 43.02777777777778
-  },
-  {
     "id": "ACCESS_COLOR",
     "priority": "P3",
     "dimension": "accessibility",

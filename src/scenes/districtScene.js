@@ -1,5 +1,7 @@
 'use strict';
 
+// V14_GOLDEN_UI_DISTRICT
+
 const runtime =
   globalThis.GameRuntime;
 
@@ -796,20 +798,6 @@ class DistrictScene {
       }
     );
 
-    ui.coverImage(
-      ctx,
-      visualAssetSystem
-        .get(
-          'premium_demand_ambience'
-        ),
-      11,
-      369,
-      368,
-      127,
-      14,
-      'rgba(255,250,241,0.73)'
-    );
-
     ui.text(
       ctx,
       '时段需求结构',
@@ -1031,7 +1019,7 @@ class DistrictScene {
       622;
 
     if (
-      y + 74 >
+      y + 78 >
       this.contentBottom
     ) {
       return;
@@ -1042,14 +1030,14 @@ class DistrictScene {
       10,
       y,
       370,
-      67,
+      72,
       {
         radius:
           15,
         fill:
-          '#FFF6DC',
+          '#FFF8E5',
         stroke:
-          '#EBC873'
+          '#E9C66D'
       }
     );
 
@@ -1057,7 +1045,7 @@ class DistrictScene {
       ctx,
       '经营适配',
       22,
-      y + 19,
+      y + 18,
       9,
       COLORS.orange,
       '800'
@@ -1069,39 +1057,95 @@ class DistrictScene {
         .slice(
           0,
           5
-        )
-        .join(
-          ' / '
         );
 
-    ui.text(
+    for (
+      let i = 0;
+      i <
+      hints.length;
+      i++
+    ) {
+      const x =
+        21 +
+        i * 64;
+
+      ui.pill(
+        ctx,
+        hints[i],
+        x,
+        y + 29,
+        58,
+        22,
+        '#FFF1C8',
+        COLORS.text,
+        '#E9C873'
+      );
+    }
+
+    ui.card(
       ctx,
-      hints ||
-        '等待更多消费数据',
       22,
-      y + 43,
-      7.2,
-      COLORS.text,
-      '700'
+      y + 53,
+      112,
+      28,
+      {
+        radius:
+          14,
+        fill:
+          '#FFFDF7',
+        stroke:
+          '#D8CDBF',
+        shadow:
+          false
+      }
     );
 
     ui.text(
       ctx,
-      '查看房源 ›',
-      358,
-      y + 44,
+      '☆ 收藏商圈',
+      78,
+      y + 67,
       7,
       COLORS.navy,
       '800',
-      'right'
+      'center'
+    );
+
+    ui.card(
+      ctx,
+      145,
+      y + 53,
+      222,
+      28,
+      {
+        radius:
+          14,
+        fill:
+          '#F6B62B',
+        stroke:
+          '#E0A122',
+        shadow:
+          false
+      }
+    );
+
+    ui.text(
+      ctx,
+      '选择该商圈开店  ›',
+      256,
+      y + 67,
+      7.5,
+      COLORS.text,
+      '800',
+      'center'
     );
 
     this.addButton(
-      'market',
-      274,
-      y + 25,
-      95,
-      35
+      'open-here',
+      139,
+      y + 48,
+      234,
+      38
     );
   }
 
@@ -1195,6 +1239,24 @@ class DistrictScene {
       sceneManager
         .switchTo(
           'city'
+        );
+
+      return true;
+    }
+
+    if (
+      item.id ===
+      'open-here'
+    ) {
+      sceneManager
+        .switchTo(
+          'propertyMarket',
+          {
+            districtId:
+              this.districtId,
+            source:
+              'district'
+          }
         );
 
       return true;

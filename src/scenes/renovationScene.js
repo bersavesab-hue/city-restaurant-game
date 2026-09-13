@@ -1,5 +1,7 @@
 'use strict';
 
+// V14_GOLDEN_UI_RENOVATION
+
 const runtime =
   globalThis.GameRuntime;
 
@@ -131,8 +133,21 @@ class RenovationScene {
         );
     }
 
+    const requestedPage =
+      data.page;
+
     this.page =
-      'layout';
+      [
+        'layout',
+        'tables',
+        'rooms',
+        'style',
+        'templates'
+      ].includes(
+        requestedPage
+      )
+        ? requestedPage
+        : 'layout';
   }
 
   exit() {
@@ -449,34 +464,34 @@ class RenovationScene {
       0,
       0,
       DESIGN_W,
-      84,
+      88,
       0,
-      'rgba(3,31,47,0.50)'
+      'rgba(3,31,47,0.48)'
     );
 
     ctx.fillStyle =
-      'rgba(4,35,51,0.32)';
+      'rgba(4,35,51,0.36)';
 
     ctx.fillRect(
       0,
       0,
       DESIGN_W,
-      84
+      88
     );
 
     premiumUi.card(
       ctx,
-      9,
-      15,
+      8,
+      14,
       38,
       38,
       {
         radius:
           11,
         fill:
-          'rgba(5,48,68,0.86)',
+          'rgba(5,48,68,0.88)',
         stroke:
-          'rgba(255,255,255,0.28)',
+          'rgba(255,255,255,0.30)',
         shadow:
           false
       }
@@ -485,18 +500,18 @@ class RenovationScene {
     this.text(
       ctx,
       '‹',
-      28,
-      34,
+      27,
+      33,
       22,
       '#FFE6A0',
-      '700',
+      '800',
       'center'
     );
 
     this.addButton(
       'back',
-      5,
-      11,
+      4,
+      10,
       46,
       46
     );
@@ -505,107 +520,32 @@ class RenovationScene {
       ctx,
       shop.name ||
         '我的酒楼',
-      59,
-      22,
-      16,
+      58,
+      20,
+      15.5,
       COLORS.white,
-      '700'
+      '800'
     );
 
     this.text(
       ctx,
-      shop.address +
-        ' · 自定义空间、桌椅、包厢与风格',
-      59,
-      47,
-      6.8,
-      '#D6E5EA',
-      '500'
+      shop.address,
+      58,
+      42,
+      6.7,
+      '#D8E8ED',
+      '600'
     );
 
     premiumUi.card(
       ctx,
-      198,
+      250,
       12,
-      32,
+      62,
       29,
       {
         radius:
-          12,
-        fill:
-          'rgba(255,255,255,0.88)',
-        stroke:
-          'rgba(255,255,255,0.42)',
-        shadow:
-          false
-      }
-    );
-
-    this.text(
-      ctx,
-      '↶',
-      214,
-      26.5,
-      13,
-      COLORS.navy,
-      '700',
-      'center'
-    );
-
-    this.addButton(
-      'history:undo',
-      194,
-      8,
-      40,
-      37
-    );
-
-    premiumUi.card(
-      ctx,
-      236,
-      12,
-      32,
-      29,
-      {
-        radius:
-          12,
-        fill:
-          'rgba(255,255,255,0.88)',
-        stroke:
-          'rgba(255,255,255,0.42)',
-        shadow:
-          false
-      }
-    );
-
-    this.text(
-      ctx,
-      '↷',
-      252,
-      26.5,
-      13,
-      COLORS.navy,
-      '700',
-      'center'
-    );
-
-    this.addButton(
-      'history:redo',
-      232,
-      8,
-      40,
-      37
-    );
-
-    premiumUi.card(
-      ctx,
-      276,
-      12,
-      103,
-      29,
-      {
-        radius:
-          14,
+          13,
         fill:
           '#F6B62B',
         stroke:
@@ -617,21 +557,132 @@ class RenovationScene {
 
     this.text(
       ctx,
-      '保存装修模板',
-      327.5,
+      '保存模板',
+      281,
       26.5,
       6.8,
       COLORS.text,
-      '700',
+      '800',
       'center'
     );
 
     this.addButton(
-      'page:templates',
-      272,
+      'template:quick-save',
+      246,
       8,
-      111,
+      70,
       37
+    );
+
+    premiumUi.card(
+      ctx,
+      318,
+      12,
+      64,
+      29,
+      {
+        radius:
+          13,
+        fill:
+          '#FFFDF7',
+        stroke:
+          '#D7CDBF',
+        shadow:
+          false
+      }
+    );
+
+    this.text(
+      ctx,
+      '另存模板',
+      350,
+      26.5,
+      6.8,
+      COLORS.navy,
+      '800',
+      'center'
+    );
+
+    this.addButton(
+      'template:save-as',
+      314,
+      8,
+      72,
+      37
+    );
+
+    premiumUi.card(
+      ctx,
+      250,
+      49,
+      30,
+      25,
+      {
+        radius:
+          10,
+        fill:
+          'rgba(255,255,255,0.88)',
+        stroke:
+          'rgba(255,255,255,0.35)',
+        shadow:
+          false
+      }
+    );
+
+    this.text(
+      ctx,
+      '↶',
+      265,
+      61.5,
+      11,
+      COLORS.navy,
+      '800',
+      'center'
+    );
+
+    this.addButton(
+      'history:undo',
+      245,
+      45,
+      40,
+      33
+    );
+
+    premiumUi.card(
+      ctx,
+      286,
+      49,
+      30,
+      25,
+      {
+        radius:
+          10,
+        fill:
+          'rgba(255,255,255,0.88)',
+        stroke:
+          'rgba(255,255,255,0.35)',
+        shadow:
+          false
+      }
+    );
+
+    this.text(
+      ctx,
+      '↷',
+      301,
+      61.5,
+      11,
+      COLORS.navy,
+      '800',
+      'center'
+    );
+
+    this.addButton(
+      'history:redo',
+      281,
+      45,
+      40,
+      33
     );
 
     this.text(
@@ -642,11 +693,19 @@ class RenovationScene {
           .cash
       ),
       377,
-      61,
-      8,
+      62,
+      7.5,
       '#FFE8AE',
-      '700',
+      '800',
       'right'
+    );
+
+    this.addButton(
+      'shop:rename',
+      55,
+      8,
+      166,
+      45
     );
   }
 
@@ -3328,6 +3387,65 @@ class RenovationScene {
 
     const id =
       item.id;
+
+    if (
+      id ===
+        'template:quick-save' ||
+      id ===
+        'template:save-as'
+    ) {
+      const templates =
+        customizationSystem
+          .getTemplateList();
+
+      textInput
+        .requestText({
+          title:
+            id ===
+              'template:save-as'
+              ? '另存装修模板'
+              : '保存装修模板',
+          value:
+            renovationConfig
+              .templateRules
+              .defaultNamePrefix +
+            (
+              templates.length +
+              1
+            ),
+          placeholder:
+            '请输入模板名称',
+          maxLength:
+            renovationConfig
+              .nameRules
+              .templateMaxLength
+        })
+        .then(
+          value => {
+            if (!value) {
+              return;
+            }
+
+            const result =
+              customizationSystem
+                .saveTemplate(
+                  this.shopId,
+                  value
+                );
+
+            this.showToast(
+              result.ok
+                ? '模板已保存'
+                : result.message
+            );
+
+            textInput
+              .requestRender();
+          }
+        );
+
+      return true;
+    }
 
     if (
       id ===

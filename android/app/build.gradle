@@ -36,18 +36,18 @@ dependencies {
 }
 
 /**
- * GitHub 的一键更新工作流会先把整个 assets/ 复制到 Android assets。
- * 打包前只清理“设计参考大图”，保留真正运行时图片。
+ * V14：不再为了缩包把高清运行图删掉。
+ * 只删除设计参考大图与旧压缩运行目录。
  */
 def prepareRuntimeAssetsTask = tasks.register('prepareRuntimeAssets') {
     doLast {
         def runtimeRoot = file('src/main/assets/assets')
 
-        // 这些整张大效果图和原始大图只留仓库，不进入 APK。
         delete file("${runtimeRoot}/images/generated")
-        delete file("${runtimeRoot}/images/map/city_base_01.png")
+        delete file("${runtimeRoot}/images/map/city_base_01.webp")
+        delete file("${runtimeRoot}/images/runtime")
 
-        println "Runtime asset filter applied. Runtime images retained; large design references removed."
+        println "V14 runtime asset filter applied. Original PNG map, premium images and split PNG sprites retained."
     }
 }
 

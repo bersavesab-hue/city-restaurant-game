@@ -102,28 +102,47 @@ for (
   );
 }
 
+assert.strictEqual(
+  manifest.policy,
+  'full-quality-ui-v14',
+  'V14必须使用高清运行资源策略'
+);
+
 assert.ok(
   manifest.core.some(
     file =>
       file.endsWith(
-        'city_base_01.webp'
+        'city_base_01.png'
       )
   ),
-  '主包必须使用压缩后的城市地图'
+  'V14主包必须使用原始PNG城市地图'
 );
 
 assert.ok(
   !manifest.core.some(
     file =>
       file.endsWith(
-        'city_base_01.png'
+        'city_base_01.webp'
       )
   ),
-  '原始大地图不能进入运行主包'
+  'V14运行主包不能继续依赖压缩WebP地图'
+);
+
+assert.ok(
+  manifest.modules.renovation.some(
+    file =>
+      file.includes(
+        '/split/renovation/'
+      ) &&
+      file.endsWith(
+        '.png'
+      )
+  ),
+  '装修模块必须使用拆分后的PNG组件'
 );
 
 console.log(
-  'asset pipeline tests passed; core runtime assets = ' +
+  'V14 asset pipeline tests passed; core runtime assets = ' +
   (
     coreBytes /
     1024 /

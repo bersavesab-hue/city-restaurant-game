@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-09-13T02:13:05.911Z",
+  "generatedAt": "2026-09-13T02:39:37.572Z",
   "personaCount": 100,
-  "issueCount": 4,
+  "issueCount": 3,
   "personaRisk": {
     "极高": 0,
     "高": 0,
-    "中": 7,
-    "低": 93
+    "中": 35,
+    "低": 65
   },
   "topIssues": [
     {
@@ -32,17 +32,6 @@
       "remediation": "系统设置加入标准/大字两档，重点页面动态适配。"
     },
     {
-      "id": "META_ACHIEVEMENT",
-      "priority": "P3",
-      "dimension": "content",
-      "title": "缺少明显的长期收集/成就反馈",
-      "affected": 36,
-      "affectedRate": 0.36,
-      "highConcern": 0,
-      "averageScore": 43.02777777777778,
-      "remediation": "后续增加经营成就、菜系图鉴、商圈收藏、门店里程碑等长期目标。"
-    },
-    {
       "id": "ACCESS_COLOR",
       "priority": "P3",
       "dimension": "accessibility",
@@ -66,12 +55,6 @@
       "affectedTotal": 35,
       "highConcern": 0,
       "maxPriority": "P2"
-    },
-    "content": {
-      "issueCount": 1,
-      "affectedTotal": 36,
-      "highConcern": 0,
-      "maxPriority": "P3"
     }
   },
   "platforms": {
@@ -86,15 +69,15 @@
       "total": 24,
       "extreme": 0,
       "high": 0,
-      "medium": 0,
-      "low": 24
+      "medium": 15,
+      "low": 9
     },
     "cross": {
       "total": 52,
       "extreme": 0,
       "high": 0,
-      "medium": 7,
-      "low": 45
+      "medium": 20,
+      "low": 32
     }
   },
   "devices": {
@@ -102,36 +85,36 @@
       "total": 18,
       "extreme": 0,
       "high": 0,
-      "medium": 1,
-      "low": 17
+      "medium": 2,
+      "low": 16
     },
     "small_android": {
       "total": 29,
       "extreme": 0,
       "high": 0,
-      "medium": 0,
-      "low": 29
+      "medium": 5,
+      "low": 24
     },
     "low_android": {
       "total": 27,
       "extreme": 0,
       "high": 0,
-      "medium": 4,
-      "low": 23
+      "medium": 11,
+      "low": 16
     },
     "high_android": {
       "total": 18,
       "extreme": 0,
       "high": 0,
-      "medium": 2,
-      "low": 16
+      "medium": 9,
+      "low": 9
     },
     "tablet": {
       "total": 8,
       "extreme": 0,
       "high": 0,
-      "medium": 0,
-      "low": 8
+      "medium": 8,
+      "low": 0
     }
   }
 }

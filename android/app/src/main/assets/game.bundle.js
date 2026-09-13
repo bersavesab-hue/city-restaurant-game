@@ -14346,7 +14346,7 @@
           );
           ui.text(
             ctx2,
-            "\u5305\u53A2",
+            "\u5305\u53A2\u540D\u79F0",
             20,
             249,
             10,
@@ -14355,62 +14355,175 @@
           );
           ui.text(
             ctx2,
-            rooms.length ? "\u540D\u79F0\u548C\u98CE\u683C\u5747\u53EF\u5728\u88C5\u4FEE\u9875\u81EA\u5B9A\u4E49" : "\u65B0\u589E\u5305\u53A2\u540E\u4F1A\u5728\u8FD9\u91CC\u5C55\u793A",
-            59,
+            "\u7CBE\u81F4\u5305\u53A2 \xB7 \u540D\u79F0\u3001\u4EBA\u6570\u3001\u98CE\u683C\u5747\u53EF\u81EA\u5B9A\u4E49",
+            82,
             249,
             6.5,
             COLORS.muted,
             "500"
+          );
+          ui.card(
+            ctx2,
+            297,
+            237,
+            70,
+            24,
+            {
+              radius: 12,
+              fill: "#FFF4D8",
+              stroke: "#E7C46F",
+              shadow: false
+            }
+          );
+          ui.text(
+            ctx2,
+            "\u7BA1\u7406\u5305\u53A2 \u203A",
+            332,
+            249,
+            6.4,
+            COLORS.navy,
+            "800",
+            "center"
+          );
+          this.addButton(
+            "room:manage",
+            292,
+            233,
+            80,
+            32
           );
           const images = [
             "premium_room_1",
             "premium_room_2",
             "premium_room_3"
           ];
-          for (let i = 0; i < 3; i++) {
-            const x = 18 + i * 112;
+          const cardW = 82;
+          const gap = 8;
+          for (let i = 0; i < 4; i++) {
+            const x = 18 + i * (cardW + gap);
             ui.card(
               ctx2,
               x,
-              263,
-              104,
-              72,
+              265,
+              cardW,
+              70,
               {
-                radius: 10,
-                fill: "#F6F1E8",
+                radius: 9,
+                fill: "#F8F3EA",
+                stroke: "#DED3C5",
                 shadow: false
               }
             );
-            ui.coverImage(
-              ctx2,
-              visualAssetSystem.get(
-                images[i]
-              ),
-              x,
-              263,
-              104,
-              51,
-              9,
-              null
-            );
-            const name = rooms[i] ? rooms[i].name || "\u5305\u53A2" + (i + 1) : i < 2 ? "\u5F85\u89C4\u5212" : "+ \u65B0\u589E\u5305\u53A2";
-            ui.text(
-              ctx2,
-              name,
-              x + 7,
-              325,
-              6.8,
-              rooms[i] ? COLORS.text : COLORS.muted,
-              "700"
-            );
+            if (i < 3 && rooms[i]) {
+              ui.coverImage(
+                ctx2,
+                visualAssetSystem.get(
+                  images[i]
+                ),
+                x + 2,
+                267,
+                cardW - 4,
+                46,
+                8,
+                null
+              );
+              ui.text(
+                ctx2,
+                rooms[i].name || "\u5305\u53A2" + (i + 1),
+                x + 5,
+                325,
+                6.3,
+                COLORS.text,
+                "700"
+              );
+              ui.card(
+                ctx2,
+                x + cardW - 22,
+                315,
+                17,
+                17,
+                {
+                  radius: 6,
+                  fill: "#FFF1C8",
+                  stroke: "#E2BF66",
+                  shadow: false
+                }
+              );
+              ui.text(
+                ctx2,
+                "\u270E",
+                x + cardW - 13.5,
+                323.5,
+                6.4,
+                COLORS.navy,
+                "800",
+                "center"
+              );
+              this.addButton(
+                "room:rename:" + rooms[i].id,
+                x + cardW - 27,
+                310,
+                27,
+                27
+              );
+            } else if (i < 3) {
+              ui.text(
+                ctx2,
+                "\u5F85\u89C4\u5212",
+                x + cardW / 2,
+                299,
+                7.2,
+                COLORS.muted,
+                "700",
+                "center"
+              );
+              ui.text(
+                ctx2,
+                "\u8FDB\u5165\u88C5\u4FEE\u6DFB\u52A0",
+                x + cardW / 2,
+                320,
+                5.5,
+                COLORS.muted,
+                "600",
+                "center"
+              );
+              this.addButton(
+                "room:manage",
+                x,
+                265,
+                cardW,
+                70
+              );
+            } else {
+              ui.text(
+                ctx2,
+                "+",
+                x + cardW / 2,
+                292,
+                17,
+                "#9D8D7C",
+                "500",
+                "center"
+              );
+              ui.text(
+                ctx2,
+                "\u6DFB\u52A0\u5305\u53A2",
+                x + cardW / 2,
+                318,
+                6.2,
+                COLORS.navy,
+                "700",
+                "center"
+              );
+              this.addButton(
+                "room:manage",
+                x,
+                265,
+                cardW,
+                70
+              );
+            }
           }
-          this.addButton(
-            "module:renovation",
-            14,
-            258,
-            344,
-            82
-          );
         }
         renderNoShop(ctx2) {
           this.drawHeader(
@@ -14932,6 +15045,56 @@
                 textInput.requestRender();
               }
             );
+            return true;
+          }
+          if (item.id === "room:manage") {
+            const shop = this.getCurrentShop();
+            if (shop) {
+              sceneManager.switchTo(
+                "renovation",
+                {
+                  shopId: shop.id,
+                  page: "rooms"
+                }
+              );
+            }
+            return true;
+          }
+          if (item.id.indexOf(
+            "room:rename:"
+          ) === 0) {
+            const shop = this.getCurrentShop();
+            if (!shop) {
+              return true;
+            }
+            const roomId = item.id.slice(
+              "room:rename:".length
+            );
+            const room = this.getRooms(
+              shop.id
+            ).find(
+              (roomItem) => roomItem.id === roomId
+            );
+            if (room) {
+              textInput.requestText({
+                title: "\u4FEE\u6539\u5305\u53A2\u540D\u79F0",
+                value: room.name || "",
+                placeholder: "\u4F8B\u5982\uFF1A\u7261\u4E39\u5385",
+                maxLength: 12
+              }).then(
+                (value) => {
+                  if (!value) {
+                    return;
+                  }
+                  customizationSystem.renameRoom(
+                    shop.id,
+                    roomId,
+                    value
+                  );
+                  textInput.requestRender();
+                }
+              );
+            }
             return true;
           }
           if (item.id.indexOf(
@@ -15743,18 +15906,6 @@
               radius: 15
             }
           );
-          ui.coverImage(
-            ctx2,
-            visualAssetSystem.get(
-              "premium_demand_ambience"
-            ),
-            11,
-            369,
-            368,
-            127,
-            14,
-            "rgba(255,250,241,0.73)"
-          );
           ui.text(
             ctx2,
             "\u65F6\u6BB5\u9700\u6C42\u7ED3\u6784",
@@ -15881,7 +16032,7 @@
         }
         drawFit(ctx2, insight) {
           const y = 622;
-          if (y + 74 > this.contentBottom) {
+          if (y + 78 > this.contentBottom) {
             return;
           }
           ui.card(
@@ -15889,18 +16040,18 @@
             10,
             y,
             370,
-            67,
+            72,
             {
               radius: 15,
-              fill: "#FFF6DC",
-              stroke: "#EBC873"
+              fill: "#FFF8E5",
+              stroke: "#E9C66D"
             }
           );
           ui.text(
             ctx2,
             "\u7ECF\u8425\u9002\u914D",
             22,
-            y + 19,
+            y + 18,
             9,
             COLORS.orange,
             "800"
@@ -15908,34 +16059,73 @@
           const hints = insight.businessHints.slice(
             0,
             5
-          ).join(
-            " / "
           );
-          ui.text(
+          for (let i = 0; i < hints.length; i++) {
+            const x = 21 + i * 64;
+            ui.pill(
+              ctx2,
+              hints[i],
+              x,
+              y + 29,
+              58,
+              22,
+              "#FFF1C8",
+              COLORS.text,
+              "#E9C873"
+            );
+          }
+          ui.card(
             ctx2,
-            hints || "\u7B49\u5F85\u66F4\u591A\u6D88\u8D39\u6570\u636E",
             22,
-            y + 43,
-            7.2,
-            COLORS.text,
-            "700"
+            y + 53,
+            112,
+            28,
+            {
+              radius: 14,
+              fill: "#FFFDF7",
+              stroke: "#D8CDBF",
+              shadow: false
+            }
           );
           ui.text(
             ctx2,
-            "\u67E5\u770B\u623F\u6E90 \u203A",
-            358,
-            y + 44,
+            "\u2606 \u6536\u85CF\u5546\u5708",
+            78,
+            y + 67,
             7,
             COLORS.navy,
             "800",
-            "right"
+            "center"
+          );
+          ui.card(
+            ctx2,
+            145,
+            y + 53,
+            222,
+            28,
+            {
+              radius: 14,
+              fill: "#F6B62B",
+              stroke: "#E0A122",
+              shadow: false
+            }
+          );
+          ui.text(
+            ctx2,
+            "\u9009\u62E9\u8BE5\u5546\u5708\u5F00\u5E97  \u203A",
+            256,
+            y + 67,
+            7.5,
+            COLORS.text,
+            "800",
+            "center"
           );
           this.addButton(
-            "market",
-            274,
-            y + 25,
-            95,
-            35
+            "open-here",
+            139,
+            y + 48,
+            234,
+            38
           );
         }
         render(ctx2) {
@@ -15998,6 +16188,16 @@
           if (item.id === "back") {
             sceneManager.switchTo(
               "city"
+            );
+            return true;
+          }
+          if (item.id === "open-here") {
+            sceneManager.switchTo(
+              "propertyMarket",
+              {
+                districtId: this.districtId,
+                source: "district"
+              }
             );
             return true;
           }
@@ -16092,7 +16292,16 @@
               "premiumRenovation"
             );
           }
-          this.page = "layout";
+          const requestedPage = data.page;
+          this.page = [
+            "layout",
+            "tables",
+            "rooms",
+            "style",
+            "templates"
+          ].includes(
+            requestedPage
+          ) ? requestedPage : "layout";
         }
         exit() {
           this.buttons = [];
@@ -16261,133 +16470,73 @@
             0,
             0,
             DESIGN_W,
-            84,
+            88,
             0,
-            "rgba(3,31,47,0.50)"
+            "rgba(3,31,47,0.48)"
           );
-          ctx2.fillStyle = "rgba(4,35,51,0.32)";
+          ctx2.fillStyle = "rgba(4,35,51,0.36)";
           ctx2.fillRect(
             0,
             0,
             DESIGN_W,
-            84
+            88
           );
           premiumUi.card(
             ctx2,
-            9,
-            15,
+            8,
+            14,
             38,
             38,
             {
               radius: 11,
-              fill: "rgba(5,48,68,0.86)",
-              stroke: "rgba(255,255,255,0.28)",
+              fill: "rgba(5,48,68,0.88)",
+              stroke: "rgba(255,255,255,0.30)",
               shadow: false
             }
           );
           this.text(
             ctx2,
             "\u2039",
-            28,
-            34,
+            27,
+            33,
             22,
             "#FFE6A0",
-            "700",
+            "800",
             "center"
           );
           this.addButton(
             "back",
-            5,
-            11,
+            4,
+            10,
             46,
             46
           );
           this.text(
             ctx2,
             shop.name || "\u6211\u7684\u9152\u697C",
-            59,
-            22,
-            16,
+            58,
+            20,
+            15.5,
             COLORS.white,
-            "700"
+            "800"
           );
           this.text(
             ctx2,
-            shop.address + " \xB7 \u81EA\u5B9A\u4E49\u7A7A\u95F4\u3001\u684C\u6905\u3001\u5305\u53A2\u4E0E\u98CE\u683C",
-            59,
-            47,
-            6.8,
-            "#D6E5EA",
-            "500"
+            shop.address,
+            58,
+            42,
+            6.7,
+            "#D8E8ED",
+            "600"
           );
           premiumUi.card(
             ctx2,
-            198,
+            250,
             12,
-            32,
+            62,
             29,
             {
-              radius: 12,
-              fill: "rgba(255,255,255,0.88)",
-              stroke: "rgba(255,255,255,0.42)",
-              shadow: false
-            }
-          );
-          this.text(
-            ctx2,
-            "\u21B6",
-            214,
-            26.5,
-            13,
-            COLORS.navy,
-            "700",
-            "center"
-          );
-          this.addButton(
-            "history:undo",
-            194,
-            8,
-            40,
-            37
-          );
-          premiumUi.card(
-            ctx2,
-            236,
-            12,
-            32,
-            29,
-            {
-              radius: 12,
-              fill: "rgba(255,255,255,0.88)",
-              stroke: "rgba(255,255,255,0.42)",
-              shadow: false
-            }
-          );
-          this.text(
-            ctx2,
-            "\u21B7",
-            252,
-            26.5,
-            13,
-            COLORS.navy,
-            "700",
-            "center"
-          );
-          this.addButton(
-            "history:redo",
-            232,
-            8,
-            40,
-            37
-          );
-          premiumUi.card(
-            ctx2,
-            276,
-            12,
-            103,
-            29,
-            {
-              radius: 14,
+              radius: 13,
               fill: "#F6B62B",
               stroke: "#FFE0A0",
               shadow: false
@@ -16395,20 +16544,110 @@
           );
           this.text(
             ctx2,
-            "\u4FDD\u5B58\u88C5\u4FEE\u6A21\u677F",
-            327.5,
+            "\u4FDD\u5B58\u6A21\u677F",
+            281,
             26.5,
             6.8,
             COLORS.text,
-            "700",
+            "800",
             "center"
           );
           this.addButton(
-            "page:templates",
-            272,
+            "template:quick-save",
+            246,
             8,
-            111,
+            70,
             37
+          );
+          premiumUi.card(
+            ctx2,
+            318,
+            12,
+            64,
+            29,
+            {
+              radius: 13,
+              fill: "#FFFDF7",
+              stroke: "#D7CDBF",
+              shadow: false
+            }
+          );
+          this.text(
+            ctx2,
+            "\u53E6\u5B58\u6A21\u677F",
+            350,
+            26.5,
+            6.8,
+            COLORS.navy,
+            "800",
+            "center"
+          );
+          this.addButton(
+            "template:save-as",
+            314,
+            8,
+            72,
+            37
+          );
+          premiumUi.card(
+            ctx2,
+            250,
+            49,
+            30,
+            25,
+            {
+              radius: 10,
+              fill: "rgba(255,255,255,0.88)",
+              stroke: "rgba(255,255,255,0.35)",
+              shadow: false
+            }
+          );
+          this.text(
+            ctx2,
+            "\u21B6",
+            265,
+            61.5,
+            11,
+            COLORS.navy,
+            "800",
+            "center"
+          );
+          this.addButton(
+            "history:undo",
+            245,
+            45,
+            40,
+            33
+          );
+          premiumUi.card(
+            ctx2,
+            286,
+            49,
+            30,
+            25,
+            {
+              radius: 10,
+              fill: "rgba(255,255,255,0.88)",
+              stroke: "rgba(255,255,255,0.35)",
+              shadow: false
+            }
+          );
+          this.text(
+            ctx2,
+            "\u21B7",
+            301,
+            61.5,
+            11,
+            COLORS.navy,
+            "800",
+            "center"
+          );
+          this.addButton(
+            "history:redo",
+            281,
+            45,
+            40,
+            33
           );
           this.text(
             ctx2,
@@ -16416,11 +16655,18 @@
               gameState.getPlayer().cash
             ),
             377,
-            61,
-            8,
+            62,
+            7.5,
             "#FFE8AE",
-            "700",
+            "800",
             "right"
+          );
+          this.addButton(
+            "shop:rename",
+            55,
+            8,
+            166,
+            45
           );
         }
         drawTemplateStrip(ctx2) {
@@ -18162,6 +18408,30 @@
             return false;
           }
           const id = item.id;
+          if (id === "template:quick-save" || id === "template:save-as") {
+            const templates = customizationSystem.getTemplateList();
+            textInput.requestText({
+              title: id === "template:save-as" ? "\u53E6\u5B58\u88C5\u4FEE\u6A21\u677F" : "\u4FDD\u5B58\u88C5\u4FEE\u6A21\u677F",
+              value: renovationConfig.templateRules.defaultNamePrefix + (templates.length + 1),
+              placeholder: "\u8BF7\u8F93\u5165\u6A21\u677F\u540D\u79F0",
+              maxLength: renovationConfig.nameRules.templateMaxLength
+            }).then(
+              (value) => {
+                if (!value) {
+                  return;
+                }
+                const result = customizationSystem.saveTemplate(
+                  this.shopId,
+                  value
+                );
+                this.showToast(
+                  result.ok ? "\u6A21\u677F\u5DF2\u4FDD\u5B58" : result.message
+                );
+                textInput.requestRender();
+              }
+            );
+            return true;
+          }
           if (id === "back") {
             sceneManager.switchTo(
               "shop"
@@ -20415,14 +20685,6 @@
         green: "#34A66A",
         line: "rgba(255,255,255,0.20)"
       };
-      var ATLAS = {
-        hud: [0, 0, 1024, 220],
-        goal: [0, 240, 600, 150],
-        side: [620, 240, 160, 150],
-        card: [0, 410, 1024, 240],
-        nav: [0, 670, 1024, 180],
-        navActive: [0, 870, 160, 150]
-      };
       var WEATHER_NAMES = {
         sunny: "\u6674",
         cloudy: "\u591A\u4E91",
@@ -20469,70 +20731,13 @@
         }
       };
       var NAV_ITEMS = [
-        {
-          id: "city",
-          name: "\u57CE\u5E02",
-          icon: "\u57CE"
-        },
-        {
-          id: "shop",
-          name: "\u95E8\u5E97",
-          icon: "\u5E97"
-        },
-        {
-          id: "research",
-          name: "\u83DC\u54C1",
-          icon: "\u7814"
-        },
-        {
-          id: "supply",
-          name: "\u4F9B\u5E94\u94FE",
-          icon: "\u4F9B"
-        },
-        {
-          id: "business",
-          name: "\u6570\u636E",
-          icon: "\u6570"
-        },
-        {
-          id: "system",
-          name: "\u7CFB\u7EDF",
-          icon: "\u8BBE"
-        }
-      ];
-      var LEFT_TOOLS = [
-        {
-          id: "overview",
-          label: "\u6982\u89C8",
-          icon: "\u89C8"
-        },
-        {
-          id: "dynamic",
-          label: "\u52A8\u6001",
-          icon: "\u52BF"
-        },
-        {
-          id: "event",
-          label: "\u4E8B\u4EF6",
-          icon: "\u4E8B"
-        }
-      ];
-      var RIGHT_TOOLS = [
-        {
-          id: "land",
-          label: "\u5730\u5757",
-          icon: "\u5730"
-        },
-        {
-          id: "population",
-          label: "\u4EBA\u53E3",
-          icon: "\u4EBA"
-        },
-        {
-          id: "rank",
-          label: "\u6392\u884C",
-          icon: "\u699C"
-        }
+        { id: "city", name: "\u57CE\u5E02", icon: "\u57CE" },
+        { id: "shop", name: "\u95E8\u5E97", icon: "\u5E97" },
+        { id: "renovation", name: "\u88C5\u4FEE", icon: "\u88C5" },
+        { id: "research", name: "\u83DC\u5355", icon: "\u83DC" },
+        { id: "supply", name: "\u4F9B\u5E94\u94FE", icon: "\u4F9B" },
+        { id: "business", name: "\u6570\u636E", icon: "\u6570" },
+        { id: "system", name: "\u7CFB\u7EDF", icon: "\u8BBE" }
       ];
       var selectedDistrictId = null;
       var districtFx = {
@@ -20551,17 +20756,17 @@
         };
       }
       function updateLayout() {
-        TOP_H = (VIEW_H < 740 ? 84 : 90) + SAFE_TOP;
-        NAV_H = (VIEW_H < 740 ? 60 : 64) + SAFE_BOTTOM;
+        TOP_H = (VIEW_H < 740 ? 88 : 94) + SAFE_TOP;
+        NAV_H = (VIEW_H < 740 ? 61 : 66) + SAFE_BOTTOM;
         MAP_X = 0;
         MAP_Y = TOP_H;
         MAP_W = VIEW_W;
         NAV_Y = VIEW_H - NAV_H;
         MAP_H = NAV_Y - MAP_Y;
-        CARD_H = VIEW_H < 740 ? 116 : 126;
-        CARD_X = 8;
-        CARD_W = VIEW_W - 16;
-        CARD_Y = NAV_Y - CARD_H - 8;
+        CARD_H = VIEW_H < 740 ? 128 : 150;
+        CARD_X = 7;
+        CARD_W = VIEW_W - 14;
+        CARD_Y = NAV_Y - CARD_H - 7;
       }
       function resizeCanvas() {
         const info = getSystemInfo();
@@ -20578,7 +20783,7 @@
           ) || 780
         );
         pixelRatio = Math.min(
-          2,
+          3,
           Math.max(
             1,
             Number(
@@ -20774,30 +20979,6 @@
           });
         }
       }
-      function getAtlas() {
-        return resourceManager.getImage(
-          "ui_atlas_01"
-        );
-      }
-      function drawAtlas(name, dx, dy, dw, dh) {
-        const atlas = getAtlas();
-        const region = ATLAS[name];
-        if (!atlas || !region) {
-          return false;
-        }
-        ctx2.drawImage(
-          atlas,
-          region[0],
-          region[1],
-          region[2],
-          region[3],
-          dx,
-          dy,
-          dw,
-          dh
-        );
-        return true;
-      }
       function drawImageFocus(target, image, dx, dy, dw, dh, zoom, focusX, focusY) {
         const iw = image.naturalWidth || image.width;
         const ih = image.naturalHeight || image.height;
@@ -20961,199 +21142,234 @@
         return true;
       }
       function drawTopHud() {
-        if (!drawAtlas(
-          "hud",
-          0,
-          0,
-          VIEW_W,
-          TOP_H
-        )) {
-          const gradient = ctx2.createLinearGradient(
-            0,
-            0,
-            0,
-            TOP_H
-          );
-          gradient.addColorStop(
-            0,
-            "#163F59"
-          );
-          gradient.addColorStop(
-            1,
-            "#09293D"
-          );
-          ctx2.fillStyle = gradient;
-          ctx2.fillRect(
-            0,
-            0,
-            VIEW_W,
-            TOP_H
-          );
-        }
         const player = gameState.getPlayer();
         const world = gameState.getWorld();
         const display = timeSystem.getDisplayState();
         let cityName = gameState.getCityName();
         if (cityName === "\u672A\u547D\u540D\u57CE\u5E02") {
-          cityName = "\u57CE\u5E02\u540D\u79F0";
+          cityName = "\u4E91\u5DDE\u5E02";
+        }
+        const gradient = ctx2.createLinearGradient(
+          0,
+          0,
+          VIEW_W,
+          TOP_H
+        );
+        gradient.addColorStop(
+          0,
+          "#0A4166"
+        );
+        gradient.addColorStop(
+          0.55,
+          "#164F72"
+        );
+        gradient.addColorStop(
+          1,
+          "#0A2C45"
+        );
+        ctx2.fillStyle = gradient;
+        ctx2.fillRect(
+          0,
+          0,
+          VIEW_W,
+          TOP_H
+        );
+        const cityThumb = resourceManager.getImage(
+          "city_header_thumb"
+        );
+        if (cityThumb) {
+          drawImageFocus(
+            ctx2,
+            cityThumb,
+            12,
+            9 + SAFE_TOP,
+            43,
+            43,
+            1,
+            0.5,
+            0.5
+          );
+          roundedRect(
+            12,
+            9 + SAFE_TOP,
+            43,
+            43,
+            10,
+            null,
+            "rgba(255,255,255,0.58)",
+            1
+          );
+        } else {
+          roundedRect(
+            12,
+            9 + SAFE_TOP,
+            43,
+            43,
+            10,
+            "#E7F0F3",
+            "rgba(255,255,255,0.5)"
+          );
+          drawText(
+            "\u57CE",
+            33.5,
+            30 + SAFE_TOP,
+            16,
+            COLORS.navy,
+            "800",
+            "center"
+          );
         }
         drawText(
           cityName,
-          14,
-          18,
-          17,
+          64,
+          19 + SAFE_TOP,
+          15.5,
           COLORS.white,
-          "700"
+          "800"
         );
         drawText(
-          "\u4E00\u5EA7\u6709\u5473\u9053\u7684\u57CE\u5E02",
-          14,
-          39,
-          9,
-          "rgba(255,255,255,0.70)",
-          "500"
-        );
-        drawText(
-          display.date,
-          164,
-          13,
-          9,
-          "#E9F0F4",
+          "\u6253\u9020\u5C5E\u4E8E\u4F60\u7684\u7F8E\u98DF\u5E1D\u56FD",
+          64,
+          40 + SAFE_TOP,
+          7.3,
+          "rgba(255,255,255,0.79)",
           "600"
         );
+        const weather = WEATHER_NAMES[world.weather] || "\u591A\u4E91";
         drawText(
-          display.time,
-          164,
-          33,
-          20,
-          COLORS.white,
-          "700"
-        );
-        const weather = WEATHER_NAMES[world.weather] || "\u66F4\u65B0\u4E2D";
-        const temperatureText = Number.isFinite(
-          Number(
-            world.temperature
-          )
-        ) ? " " + world.temperature + "\u2103" : "";
-        drawText(
-          weather + temperatureText,
-          164,
-          53,
-          10,
-          "#E9F0F4",
-          "600"
-        );
-        drawText(
-          "\xA5 " + player.cash.toLocaleString(),
-          376,
-          19,
-          18,
-          "#FFF1C2",
-          "700",
-          "right"
-        );
-        drawText(
-          "\u54C1\u724C Lv.1",
-          376,
-          43,
-          10,
-          "#F4F1E8",
-          "600",
-          "right"
-        );
-        roundedRect(
-          306,
-          55,
-          68,
-          7,
-          4,
-          "rgba(255,255,255,0.16)"
-        );
-        roundedRect(
-          306,
-          55,
-          Math.max(
-            7,
-            Math.min(
-              68,
-              player.reputation / 100 * 68
+          weather + " " + (Number.isFinite(
+            Number(
+              world.temperature
             )
-          ),
+          ) ? world.temperature + "\u2103" : ""),
+          188,
+          20 + SAFE_TOP,
+          7.8,
+          "#FFF0B5",
+          "700",
+          "center"
+        );
+        drawText(
+          display.date + " \xB7 " + display.time,
+          188,
+          40 + SAFE_TOP,
           7,
-          4,
+          "#D7E8EE",
+          "600",
+          "center"
+        );
+        roundedRect(
+          225,
+          8 + SAFE_TOP,
+          95,
+          46,
+          12,
+          "rgba(5,36,54,0.78)",
+          "rgba(255,255,255,0.28)"
+        );
+        drawText(
+          "\xA5" + player.cash.toLocaleString(),
+          272.5,
+          24 + SAFE_TOP,
+          11.5,
+          "#FFF2B3",
+          "800",
+          "center"
+        );
+        drawText(
+          "\u53EF\u7528\u8D44\u91D1",
+          272.5,
+          42 + SAFE_TOP,
+          6.5,
+          "#D7E8EE",
+          "600",
+          "center"
+        );
+        roundedRect(
+          326,
+          8 + SAFE_TOP,
+          52,
+          46,
+          12,
+          "rgba(5,36,54,0.78)",
+          "rgba(255,255,255,0.28)"
+        );
+        drawText(
+          "\u265B Lv.1",
+          352,
+          24 + SAFE_TOP,
+          8.5,
+          "#FFE393",
+          "800",
+          "center"
+        );
+        roundedRect(
+          334,
+          41 + SAFE_TOP,
+          36,
+          3,
+          1.5,
+          "rgba(255,255,255,0.23)"
+        );
+        roundedRect(
+          334,
+          41 + SAFE_TOP,
+          8,
+          3,
+          1.5,
           COLORS.gold
         );
-        const paused = timeSystem.isPaused();
-        const speed = timeSystem.getSpeed();
         const speedItems = [
-          [
-            "time:pause",
-            paused ? "\u25B6" : "\u2161",
-            202
-          ],
-          [
-            "time:speed:1",
-            "1\xD7",
-            235
-          ],
-          [
-            "time:speed:2",
-            "2\xD7",
-            268
-          ],
-          [
-            "time:speed:5",
-            "5\xD7",
-            301
-          ],
-          [
-            "time:speed:10",
-            "10\xD7",
-            334
-          ]
+          ["time:pause", timeSystem.isPaused() ? "\u25B6" : "\u2161"],
+          ["time:speed:1", "1\xD7"],
+          ["time:speed:2", "2\xD7"],
+          ["time:speed:5", "5\xD7"],
+          ["time:speed:10", "10\xD7"]
         ];
-        const buttonY = TOP_H - 23;
+        const speedY = TOP_H - 28;
+        const startX = 13;
         for (let i = 0; i < speedItems.length; i++) {
           const item = speedItems[i];
           const id = item[0];
-          const label = item[1];
-          const x = item[2];
+          const speed = timeSystem.getSpeed();
+          const paused = timeSystem.isPaused();
           const active = id === "time:pause" ? paused : !paused && Number(
             id.split(":")[2]
           ) === speed;
+          const x = startX + i * 45;
           roundedRect(
             x,
-            buttonY,
-            29,
-            19,
-            6,
-            active ? "rgba(240,173,52,0.97)" : "rgba(255,255,255,0.10)",
-            active ? "#FFD886" : "rgba(255,255,255,0.16)"
+            speedY,
+            39,
+            22,
+            8,
+            active ? COLORS.gold : "rgba(3,35,52,0.62)",
+            active ? "#FFE29C" : "rgba(255,255,255,0.22)"
           );
           drawText(
-            label,
-            x + 14.5,
-            buttonY + 9.5,
-            9,
-            COLORS.white,
-            "700",
+            item[1],
+            x + 19.5,
+            speedY + 11,
+            8.3,
+            active ? "#22353F" : COLORS.white,
+            "800",
             "center"
           );
           addButton(
             id,
-            x - 1,
-            buttonY - 2,
-            31,
-            23
+            x - 3,
+            speedY - 5,
+            45,
+            32
           );
         }
         drawText(
           MEAL_NAMES[display.mealPeriod] || "",
-          193,
-          buttonY + 9.5,
-          9,
-          "#DCEAF1",
-          "600",
+          375,
+          speedY + 11,
+          7.1,
+          "#D6E7ED",
+          "700",
           "right"
         );
       }
@@ -21208,47 +21424,6 @@
           world.currentCityId
         );
       }
-      function getDistrictColor(district) {
-        const bands = simulationConfig.city.competitionBands;
-        if (district.saturation >= bands.extreme) {
-          return COLORS.danger;
-        }
-        if (district.saturation >= bands.high) {
-          return COLORS.orange;
-        }
-        if (district.saturation >= bands.medium) {
-          return COLORS.gold;
-        }
-        return COLORS.blue;
-      }
-      function hexToRgba(hex, alpha) {
-        const value = hex.replace(
-          "#",
-          ""
-        );
-        const r = parseInt(
-          value.slice(
-            0,
-            2
-          ),
-          16
-        );
-        const g = parseInt(
-          value.slice(
-            2,
-            4
-          ),
-          16
-        );
-        const b = parseInt(
-          value.slice(
-            4,
-            6
-          ),
-          16
-        );
-        return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
-      }
       function getDistrictPoint(districtId) {
         const layout = DISTRICT_LAYOUT[districtId];
         if (!layout) {
@@ -21271,9 +21446,7 @@
         const selected = selectedDistrictId === district.id;
         const animated = districtFx.id === district.id;
         const markerScale = animated ? districtFx.scale : 1;
-        const color = getDistrictColor(
-          district
-        );
+        const color = selected ? "#FFC73D" : "#F1B22D";
         ctx2.save();
         ctx2.translate(
           x,
@@ -21287,81 +21460,79 @@
           ctx2.beginPath();
           ctx2.arc(
             0,
-            0,
-            14 + districtFx.flash * 4,
+            1,
+            18 + districtFx.flash * 4,
             0,
             Math.PI * 2
           );
-          ctx2.fillStyle = hexToRgba(
-            color,
-            0.16 + districtFx.flash * 0.12
-          );
+          ctx2.fillStyle = "rgba(255,193,52,0.20)";
           ctx2.fill();
-          ctx2.beginPath();
-          ctx2.arc(
-            0,
-            0,
-            12,
-            0,
-            Math.PI * 2
-          );
-          ctx2.strokeStyle = "rgba(255,255,255,0.92)";
-          ctx2.lineWidth = 1.2;
-          ctx2.stroke();
         }
         ctx2.beginPath();
+        ctx2.moveTo(
+          0,
+          13
+        );
+        ctx2.lineTo(
+          -7,
+          0
+        );
         ctx2.arc(
           0,
           0,
-          selected ? 8 : 7,
+          8,
+          Math.PI,
           0,
-          Math.PI * 2
+          false
         );
-        ctx2.fillStyle = "rgba(10,38,55,0.90)";
+        ctx2.closePath();
+        ctx2.fillStyle = color;
+        ctx2.shadowColor = "rgba(0,0,0,0.30)";
+        ctx2.shadowBlur = 5;
         ctx2.fill();
-        ctx2.strokeStyle = "rgba(255,255,255,0.92)";
-        ctx2.lineWidth = 1.5;
-        ctx2.stroke();
+        ctx2.shadowColor = "transparent";
         ctx2.beginPath();
         ctx2.arc(
           0,
           0,
-          selected ? 3.8 : 3.2,
+          4,
           0,
           Math.PI * 2
         );
-        ctx2.fillStyle = color;
+        ctx2.fillStyle = COLORS.navy;
         ctx2.fill();
         ctx2.restore();
         const labelW = Math.max(
-          38,
-          district.name.length * 10 + 10
+          55,
+          Math.min(
+            82,
+            24 + district.name.length * 11
+          )
         );
-        const labelY = y + 11;
         roundedRect(
-          x - labelW / 2,
-          labelY,
+          x + 8,
+          y - 11,
           labelW,
-          18,
-          6,
-          selected ? "rgba(9,37,54,0.94)" : "rgba(9,37,54,0.72)",
-          selected ? "rgba(255,220,140,0.60)" : null
+          22,
+          11,
+          "rgba(6,45,66,0.90)",
+          "rgba(255,255,255,0.28)"
         );
         drawText(
-          district.name,
-          x,
-          labelY + 9,
-          8,
+          district.name + " \u203A",
+          x + 8 + labelW / 2,
+          y,
+          7.7,
           COLORS.white,
-          "700",
+          "800",
           "center"
         );
         addButton(
           "district:" + district.id,
-          x - 24,
-          y - 22,
-          48,
-          54
+          x - 17,
+          y - 23,
+          labelW + 35,
+          50
         );
       }
       function startDistrictFx(districtId) {
@@ -21400,69 +21571,47 @@
       }
       function drawNewsTicker() {
         const bulletin = simulationSystem.getBulletin();
-        const x = 10;
-        const y = MAP_Y + 9;
-        const w = VIEW_W - 20;
-        const h = VIEW_H < 740 ? 42 : 46;
-        const severityColor = bulletin.severity === "warning" ? COLORS.danger : bulletin.severity === "good" ? COLORS.green : COLORS.gold;
+        const x = 8;
+        const y = MAP_Y + 7;
+        const w = VIEW_W - 16;
+        const h = 31;
         roundedRect(
           x,
           y,
           w,
           h,
-          12,
-          "rgba(8,35,50,0.93)",
-          "rgba(255,255,255,0.18)"
-        );
-        roundedRect(
-          x + 7,
-          y + 7,
-          4,
-          h - 14,
-          2,
-          severityColor
+          15,
+          "rgba(5,40,61,0.88)",
+          "rgba(74,184,235,0.45)"
         );
         drawText(
-          "\u57CE\u5E02\u901A\u62A5",
-          x + 20,
-          y + 14,
-          8.5,
-          severityColor,
-          "700"
+          "\u{1F4E3} \u57CE\u5E02\u901A\u62A5",
+          x + 13,
+          y + 15.5,
+          7.4,
+          "#FFD25C",
+          "800"
         );
         drawText(
           fitText(
-            bulletin.title,
-            w - 112,
-            9.5,
-            "700"
+            bulletin.title + " \xB7 " + bulletin.detail,
+            w - 118,
+            6.8,
+            "600"
           ),
-          x + 76,
-          y + 14,
-          9.5,
+          x + 86,
+          y + 15.5,
+          6.8,
           COLORS.white,
-          "700"
-        );
-        drawText(
-          fitText(
-            bulletin.detail,
-            w - 45,
-            8,
-            "500"
-          ),
-          x + 20,
-          y + 31,
-          8,
-          "rgba(255,255,255,0.78)",
-          "500"
+          "600"
         );
         drawText(
           "\u203A",
           x + w - 14,
-          y + h / 2,
-          18,
-          "#FFE3A3",
-          "700",
+          y + 15.5,
+          14,
+          "#FFE49F",
+          "800",
           "center"
         );
         addButton(
@@ -21473,105 +21622,33 @@
           h
         );
       }
-      function drawToolButton(x, y, item) {
-        const size = VIEW_H < 740 ? 39 : 42;
-        if (!drawAtlas(
-          "side",
-          x,
-          y,
-          size,
-          size
-        )) {
-          roundedRect(
-            x,
-            y,
-            size,
-            size,
-            10,
-            "rgba(8,33,49,0.88)",
-            "rgba(255,255,255,0.18)"
-          );
-        }
-        drawText(
-          item.icon,
-          x + size / 2,
-          y + 13,
-          12,
-          "#F7EACD",
-          "700",
-          "center"
-        );
-        drawText(
-          item.label,
-          x + size / 2,
-          y + 29,
-          8.2,
-          COLORS.white,
-          "600",
-          "center"
-        );
-        addButton(
-          "tool:" + item.id,
-          x,
-          y,
-          size,
-          size
-        );
-        return size;
-      }
       function drawSideTools() {
-        const top = MAP_Y + 78;
-        const gap = VIEW_H < 740 ? 45 : 48;
-        for (let i = 0; i < LEFT_TOOLS.length; i++) {
-          drawToolButton(
-            7,
-            top + i * gap,
-            LEFT_TOOLS[i]
-          );
-        }
-        for (let i = 0; i < RIGHT_TOOLS.length; i++) {
-          const size = VIEW_H < 740 ? 39 : 42;
-          drawToolButton(
-            VIEW_W - size - 7,
-            top + i * gap,
-            RIGHT_TOOLS[i]
-          );
-        }
       }
-      function drawMetricChip(x, y, w, icon, label, value, color) {
-        const h = 38;
+      function drawMetricChip(x, y, w, label, value, color) {
         roundedRect(
           x,
           y,
           w,
-          h,
+          37,
           9,
-          "rgba(255,255,255,0.48)"
-        );
-        drawText(
-          icon,
-          x + 14,
-          y + 14,
-          12,
-          color,
-          "700",
-          "center"
+          "rgba(246,244,238,0.95)",
+          "rgba(16,54,74,0.08)"
         );
         drawText(
           label,
-          x + 27,
+          x + 8,
           y + 10,
-          8,
+          6.1,
           COLORS.muted,
-          "600"
+          "700"
         );
         drawText(
           value,
-          x + 27,
-          y + 25,
-          10,
-          COLORS.text,
-          "700"
+          x + 8,
+          y + 26,
+          8.2,
+          color,
+          "800"
         );
       }
       function drawDistrictCard() {
@@ -21579,74 +21656,53 @@
         const y = CARD_Y;
         const w = CARD_W;
         const h = CARD_H;
-        if (!drawAtlas(
-          "card",
+        roundedRect(
           x,
           y,
           w,
-          h
-        )) {
-          roundedRect(
-            x,
-            y,
-            w,
-            h,
-            15,
-            "rgba(248,244,235,0.97)",
-            "rgba(22,51,67,0.42)",
-            1.2
-          );
-        }
+          h,
+          16,
+          "rgba(255,253,247,0.97)",
+          "rgba(15,52,73,0.24)",
+          1
+        );
         if (!selectedDistrictId) {
           drawText(
-            "\u25CF",
-            29,
-            y + 24,
-            15,
-            COLORS.navy,
-            "700",
-            "center"
-          );
-          drawText(
-            "\u8BF7\u9009\u62E9\u4E00\u4E2A\u533A\u57DF",
-            47,
-            y + 22,
-            15,
+            "\u9009\u62E9\u4E00\u4E2A\u5546\u5708",
+            18,
+            y + 23,
+            12.5,
             COLORS.text,
-            "700"
+            "800"
           );
           drawText(
-            "\u70B9\u51FB\u5730\u56FE\u5730\u70B9\u67E5\u770B\u7ECF\u8425\u6570\u636E",
-            47,
-            y + 41,
-            9,
+            "\u70B9\u51FB\u5730\u56FE\u5730\u70B9\u67E5\u770B\u4EBA\u53E3\u3001\u9700\u6C42\u3001\u5BA2\u5355\u3001\u7ADE\u4E89\u548C\u79DF\u91D1",
+            18,
+            y + 44,
+            7,
             COLORS.muted,
-            "500"
+            "600"
           );
-          const chipY2 = y + 58;
           drawMetricChip(
-            16,
-            chipY2,
-            110,
-            "\u4EBA",
+            18,
+            y + 57,
+            108,
             "\u4EBA\u53E3",
             "--",
             COLORS.blue
           );
           drawMetricChip(
-            140,
-            chipY2,
-            110,
-            "\u9910",
+            141,
+            y + 57,
+            108,
             "\u9700\u6C42",
             "--",
             COLORS.danger
           );
           drawMetricChip(
             264,
-            chipY2,
-            110,
-            "\xA5",
+            y + 57,
+            108,
             "\u5BA2\u5355",
             "--",
             COLORS.green
@@ -21662,158 +21718,178 @@
         const currentDemand = demandSystem.getTotalDemand(
           district.id
         );
+        const thumb = resourceManager.getImage(
+          "city_header_thumb"
+        );
+        if (thumb) {
+          drawImageFocus(
+            ctx2,
+            thumb,
+            x + 10,
+            y + 10,
+            92,
+            h - 20,
+            1.2,
+            0.5,
+            0.45
+          );
+          roundedRect(
+            x + 10,
+            y + 10,
+            92,
+            h - 20,
+            11,
+            null,
+            "rgba(8,43,62,0.15)"
+          );
+        }
         drawText(
           district.name,
-          17,
-          y + 21,
-          16,
+          x + 114,
+          y + 23,
+          14,
           COLORS.text,
-          "700"
+          "800"
         );
         drawText(
-          "\u5E02\u573A\u9971\u548C " + district.saturation + "%",
-          17,
-          y + 41,
-          9,
-          district.saturation >= simulationConfig.city.saturatedThreshold ? COLORS.danger : COLORS.muted,
+          (district.saturation >= simulationConfig.city.competitionBands.high ? "\u7ADE\u4E89\u8F83\u5F3A" : "\u4ECD\u6709\u673A\u4F1A") + " \xB7 \u6D88\u8D39\u529B " + (district.avgSpend >= 60 ? "\u8F83\u9AD8" : district.avgSpend >= 40 ? "\u4E2D\u7B49" : "\u4EB2\u6C11"),
+          x + 114,
+          y + 43,
+          6.8,
+          COLORS.muted,
           "600"
         );
+        const metrics = [
+          ["\u4EBA\u53E3", district.population.toLocaleString(), COLORS.blue],
+          ["\u9700\u6C42", currentDemand.toLocaleString(), COLORS.danger],
+          ["\u5BA2\u5355", "\xA5" + district.avgSpend, COLORS.green],
+          ["\u9910\u996E\u5E97", district.restaurantCount + "\u5BB6", COLORS.navy],
+          ["\u9971\u548C\u5EA6", district.saturation + "%", COLORS.orange],
+          ["\u79DF\u91D1", district.rentIndex.toFixed(2), COLORS.navy]
+        ];
+        const metricY = y + 54;
+        const metricW = 41;
+        for (let i = 0; i < metrics.length; i++) {
+          const mx = x + 113 + i * 43;
+          roundedRect(
+            mx,
+            metricY,
+            metricW,
+            45,
+            8,
+            "#F6F3ED",
+            "rgba(16,54,74,0.07)"
+          );
+          drawText(
+            metrics[i][0],
+            mx + 5,
+            metricY + 11,
+            5.4,
+            COLORS.muted,
+            "700"
+          );
+          drawText(
+            fitText(
+              metrics[i][1],
+              metricW - 9,
+              7.2,
+              "800"
+            ),
+            mx + 5,
+            metricY + 29,
+            7.2,
+            metrics[i][2],
+            "800"
+          );
+        }
         roundedRect(
-          295,
-          y + 10,
-          74,
-          29,
-          9,
-          COLORS.gold
+          x + 205,
+          y + h - 38,
+          158,
+          31,
+          15,
+          COLORS.gold,
+          "#DBA324"
         );
         drawText(
-          "\u67E5\u770B\u8BE6\u60C5 \u203A",
-          332,
-          y + 24.5,
-          8.5,
-          "#26343B",
-          "700",
+          "\u8FDB\u5165\u5546\u5708  \u203A",
+          x + 284,
+          y + h - 22.5,
+          8.4,
+          "#23343D",
+          "800",
           "center"
         );
         addButton(
           "district:details",
-          290,
-          y + 6,
-          84,
-          36
-        );
-        const chipY = y + 53;
-        const populationTrend = district.populationDelta > 0 ? " \u2191" : district.populationDelta < 0 ? " \u2193" : "";
-        const demandTrend = district.demandDeltaRatio > 5e-3 ? " \u2191" : district.demandDeltaRatio < -5e-3 ? " \u2193" : "";
-        drawMetricChip(
-          16,
-          chipY,
-          110,
-          "\u4EBA",
-          "\u6D3B\u8DC3\u4EBA\u53E3",
-          district.population.toLocaleString() + populationTrend,
-          COLORS.blue
-        );
-        drawMetricChip(
-          140,
-          chipY,
-          110,
-          "\u9910",
-          MEAL_NAMES[timeSystem.getMealPeriod()] + "\u9700\u6C42",
-          currentDemand.toLocaleString() + demandTrend,
-          COLORS.danger
-        );
-        drawMetricChip(
-          264,
-          chipY,
-          110,
-          "\xA5",
-          "\u5BA2\u5355",
-          "\xA5" + district.avgSpend,
-          COLORS.green
-        );
-        drawText(
-          "\u9910\u996E\u5E97 " + district.restaurantCount + "\u5BB6",
-          17,
-          y + h - 14,
-          8,
-          COLORS.muted,
-          "600"
-        );
-        drawText(
-          "\u79DF\u91D1\u6307\u6570 " + district.rentIndex.toFixed(2),
-          135,
-          y + h - 14,
-          8,
-          COLORS.muted,
-          "600"
-        );
-        drawText(
-          district.saturation >= simulationConfig.city.competitionBands.extreme ? "\u9AD8\u5EA6\u9971\u548C" : district.saturation >= simulationConfig.city.competitionBands.high ? "\u7ADE\u4E89\u6FC0\u70C8" : "\u4ECD\u6709\u7A7A\u95F4",
-          366,
-          y + h - 14,
-          8,
-          district.saturation >= 85 ? COLORS.danger : COLORS.green,
-          "700",
-          "right"
+          x + 196,
+          y + h - 44,
+          176,
+          43
         );
       }
       function drawBottomNav() {
-        if (!drawAtlas(
-          "nav",
+        const gradient = ctx2.createLinearGradient(
+          0,
+          NAV_Y,
+          0,
+          VIEW_H
+        );
+        gradient.addColorStop(
+          0,
+          "#0B3B57"
+        );
+        gradient.addColorStop(
+          1,
+          "#06263A"
+        );
+        ctx2.fillStyle = gradient;
+        ctx2.fillRect(
           0,
           NAV_Y,
           VIEW_W,
           NAV_H
-        )) {
-          ctx2.fillStyle = COLORS.navy2;
-          ctx2.fillRect(
-            0,
-            NAV_Y,
-            VIEW_W,
-            NAV_H
-          );
-        }
+        );
+        ctx2.fillStyle = "rgba(75,190,240,0.30)";
+        ctx2.fillRect(
+          0,
+          NAV_Y,
+          VIEW_W,
+          1
+        );
         const current = sceneManager.getCurrentId();
         const cellW = VIEW_W / NAV_ITEMS.length;
         for (let i = 0; i < NAV_ITEMS.length; i++) {
           const item = NAV_ITEMS[i];
           const cx = i * cellW + cellW / 2;
-          const active = item.id === current || item.id === "city" && current === "district" || item.id === "shop" && (current === "propertyMarket" || current === "renovation" || current === "equipment" || current === "license" || current === "staff");
+          const active = item.id === current || item.id === "city" && current === "district" || item.id === "shop" && (current === "propertyMarket" || current === "equipment" || current === "license" || current === "staff") || item.id === "renovation" && current === "renovation";
           if (active) {
-            if (!drawAtlas(
-              "navActive",
-              i * cellW + 4,
-              NAV_Y + 4,
-              cellW - 8,
-              NAV_H - 8
-            )) {
-              roundedRect(
-                i * cellW + 4,
-                NAV_Y + 4,
-                cellW - 8,
-                NAV_H - 8,
-                11,
-                COLORS.gold
-              );
-            }
+            roundedRect(
+              i * cellW + 3,
+              NAV_Y + 5,
+              cellW - 6,
+              NAV_H - 10,
+              11,
+              COLORS.gold,
+              "#FFE29A"
+            );
           }
           drawText(
             item.icon,
             cx,
-            NAV_Y + NAV_H * 0.35,
-            15,
-            active ? "#23323A" : COLORS.white,
-            "700",
+            NAV_Y + NAV_H * 0.34,
+            10.5,
+            active ? "#163445" : "#E6F0F4",
+            "800",
             "center"
           );
           drawText(
             item.name,
             cx,
-            NAV_Y + NAV_H * 0.73,
-            8.5,
-            active ? "#23323A" : "#E3E9EC",
-            active ? "700" : "500",
+            NAV_Y + NAV_H * 0.72,
+            6.7,
+            active ? "#153342" : "#E0EBEF",
+            active ? "800" : "600",
             "center"
           );
           addButton(
@@ -22138,7 +22214,7 @@
         return Promise.all([
           resourceManager.loadImage(
             "city_base_01",
-            "assets/images/map/city_base_01.webp",
+            "assets/images/map/city_base_01.png",
             "city"
           ),
           resourceManager.loadImage(
@@ -22150,6 +22226,11 @@
             "property_icons_01",
             "assets/images/ui/property_icons_01.png",
             "property"
+          ),
+          resourceManager.loadImage(
+            "city_header_thumb",
+            "assets/images/premium/district/header_city.jpg",
+            "city"
           )
         ]).then(
           function() {
@@ -22176,7 +22257,7 @@
         gameLoop
       );
       console.log(
-        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V12 \u73A9\u5BB6\u62A5\u544A\u4F18\u5316\u4E0E\u9AD8\u4FDD\u771FUI\u7248\u542F\u52A8\u6210\u529F"
+        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V14 \u91D1\u84DD\u9AD8\u4FDD\u771FUI\u5B9E\u88C5\u7248\u542F\u52A8\u6210\u529F"
       );
     }
   });

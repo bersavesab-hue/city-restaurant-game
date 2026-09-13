@@ -1,5 +1,7 @@
 'use strict';
 
+// V14_GOLDEN_UI_STORE
+
 const runtime =
   globalThis.GameRuntime;
 
@@ -572,7 +574,7 @@ class StoreScene {
 
     ui.text(
       ctx,
-      '包厢',
+      '包厢名称',
       20,
       249,
       10,
@@ -582,14 +584,49 @@ class StoreScene {
 
     ui.text(
       ctx,
-      rooms.length
-        ? '名称和风格均可在装修页自定义'
-        : '新增包厢后会在这里展示',
-      59,
+      '精致包厢 · 名称、人数、风格均可自定义',
+      82,
       249,
       6.5,
       COLORS.muted,
       '500'
+    );
+
+    ui.card(
+      ctx,
+      297,
+      237,
+      70,
+      24,
+      {
+        radius:
+          12,
+        fill:
+          '#FFF4D8',
+        stroke:
+          '#E7C46F',
+        shadow:
+          false
+      }
+    );
+
+    ui.text(
+      ctx,
+      '管理包厢 ›',
+      332,
+      249,
+      6.4,
+      COLORS.navy,
+      '800',
+      'center'
+    );
+
+    this.addButton(
+      'room:manage',
+      292,
+      233,
+      80,
+      32
     );
 
     const images = [
@@ -598,84 +635,178 @@ class StoreScene {
       'premium_room_3'
     ];
 
+    const cardW =
+      82;
+
+    const gap =
+      8;
+
     for (
       let i = 0;
-      i < 3;
+      i < 4;
       i++
     ) {
       const x =
         18 +
         i *
-        112;
+        (
+          cardW +
+          gap
+        );
 
       ui.card(
         ctx,
         x,
-        263,
-        104,
-        72,
+        265,
+        cardW,
+        70,
         {
           radius:
-            10,
+            9,
           fill:
-            '#F6F1E8',
+            '#F8F3EA',
+          stroke:
+            '#DED3C5',
           shadow:
             false
         }
       );
 
-      ui.coverImage(
-        ctx,
-        visualAssetSystem
-          .get(
-            images[i]
-          ),
-        x,
-        263,
-        104,
-        51,
-        9,
-        null
-      );
-
-      const name =
+      if (
+        i < 3 &&
         rooms[i]
-          ? (
-              rooms[i].name ||
+      ) {
+        ui.coverImage(
+          ctx,
+          visualAssetSystem
+            .get(
+              images[i]
+            ),
+          x + 2,
+          267,
+          cardW - 4,
+          46,
+          8,
+          null
+        );
+
+        ui.text(
+          ctx,
+          rooms[i].name ||
+            (
+              '包厢' +
               (
-                '包厢' +
-                (
-                  i + 1
-                )
+                i + 1
               )
-            )
-          : (
-              i <
-              2
-                ? '待规划'
-                : '+ 新增包厢'
-            );
+            ),
+          x + 5,
+          325,
+          6.3,
+          COLORS.text,
+          '700'
+        );
 
-      ui.text(
-        ctx,
-        name,
-        x + 7,
-        325,
-        6.8,
-        rooms[i]
-          ? COLORS.text
-          : COLORS.muted,
-        '700'
-      );
+        ui.card(
+          ctx,
+          x + cardW - 22,
+          315,
+          17,
+          17,
+          {
+            radius:
+              6,
+            fill:
+              '#FFF1C8',
+            stroke:
+              '#E2BF66',
+            shadow:
+              false
+          }
+        );
+
+        ui.text(
+          ctx,
+          '✎',
+          x + cardW - 13.5,
+          323.5,
+          6.4,
+          COLORS.navy,
+          '800',
+          'center'
+        );
+
+        this.addButton(
+          'room:rename:' +
+            rooms[i].id,
+          x + cardW - 27,
+          310,
+          27,
+          27
+        );
+      } else if (
+        i < 3
+      ) {
+        ui.text(
+          ctx,
+          '待规划',
+          x + cardW / 2,
+          299,
+          7.2,
+          COLORS.muted,
+          '700',
+          'center'
+        );
+
+        ui.text(
+          ctx,
+          '进入装修添加',
+          x + cardW / 2,
+          320,
+          5.5,
+          COLORS.muted,
+          '600',
+          'center'
+        );
+
+        this.addButton(
+          'room:manage',
+          x,
+          265,
+          cardW,
+          70
+        );
+      } else {
+        ui.text(
+          ctx,
+          '+',
+          x + cardW / 2,
+          292,
+          17,
+          '#9D8D7C',
+          '500',
+          'center'
+        );
+
+        ui.text(
+          ctx,
+          '添加包厢',
+          x + cardW / 2,
+          318,
+          6.2,
+          COLORS.navy,
+          '700',
+          'center'
+        );
+
+        this.addButton(
+          'room:manage',
+          x,
+          265,
+          cardW,
+          70
+        );
+      }
     }
-
-    this.addButton(
-      'module:renovation',
-      14,
-      258,
-      344,
-      82
-    );
   }
 
   renderNoShop(
@@ -1489,6 +1620,92 @@ class StoreScene {
               .requestRender();
           }
         );
+
+      return true;
+    }
+
+    if (
+      item.id ===
+      'room:manage'
+    ) {
+      const shop =
+        this.getCurrentShop();
+
+      if (shop) {
+        sceneManager
+          .switchTo(
+            'renovation',
+            {
+              shopId:
+                shop.id,
+              page:
+                'rooms'
+            }
+          );
+      }
+
+      return true;
+    }
+
+    if (
+      item.id.indexOf(
+        'room:rename:'
+      ) ===
+      0
+    ) {
+      const shop =
+        this.getCurrentShop();
+
+      if (!shop) {
+        return true;
+      }
+
+      const roomId =
+        item.id.slice(
+          'room:rename:'.length
+        );
+
+      const room =
+        this.getRooms(
+          shop.id
+        )
+        .find(
+          roomItem =>
+            roomItem.id ===
+            roomId
+        );
+
+      if (room) {
+        textInput
+          .requestText({
+            title:
+              '修改包厢名称',
+            value:
+              room.name ||
+              '',
+            placeholder:
+              '例如：牡丹厅',
+            maxLength:
+              12
+          })
+          .then(
+            value => {
+              if (!value) {
+                return;
+              }
+
+              customizationSystem
+                .renameRoom(
+                  shop.id,
+                  roomId,
+                  value
+                );
+
+              textInput
+                .requestRender();
+            }
+          );
+      }
 
       return true;
     }
