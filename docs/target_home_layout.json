@@ -1,0 +1,144 @@
+{
+  "sourceScreenshot": {
+    "width": 691,
+    "height": 1536,
+    "gameTop": 153,
+    "gameBottom": 1384
+  },
+  "homeCanvasReference": {
+    "width": 691,
+    "height": 1231
+  },
+  "regions": {
+    "topHud": {
+      "x": 0,
+      "y": 0,
+      "w": 691,
+      "h": 171
+    },
+    "newsBar": {
+      "x": 14,
+      "y": 172,
+      "w": 663,
+      "h": 44
+    },
+    "goalBar": {
+      "x": 14,
+      "y": 220,
+      "w": 663,
+      "h": 42
+    },
+    "map": {
+      "x": 0,
+      "y": 263,
+      "w": 691,
+      "h": 578
+    },
+    "districtCard": {
+      "x": 8,
+      "y": 841,
+      "w": 675,
+      "h": 249
+    },
+    "bottomNav": {
+      "x": 0,
+      "y": 1095,
+      "w": 691,
+      "h": 136
+    }
+  },
+  "districtAnchorsScreenshotPx": {
+    "university": {
+      "x": 128,
+      "y": 467
+    },
+    "hightech": {
+      "x": 537,
+      "y": 471
+    },
+    "cbd": {
+      "x": 322,
+      "y": 607
+    },
+    "oldtown": {
+      "x": 49,
+      "y": 670
+    },
+    "village": {
+      "x": 538,
+      "y": 674
+    },
+    "industry": {
+      "x": 129,
+      "y": 825
+    },
+    "market": {
+      "x": 507,
+      "y": 802
+    }
+  },
+  "districtAnchorsGamePx": {
+    "university": {
+      "x": 128,
+      "y": 314
+    },
+    "hightech": {
+      "x": 537,
+      "y": 318
+    },
+    "cbd": {
+      "x": 322,
+      "y": 454
+    },
+    "oldtown": {
+      "x": 49,
+      "y": 517
+    },
+    "village": {
+      "x": 538,
+      "y": 521
+    },
+    "industry": {
+      "x": 129,
+      "y": 672
+    },
+    "market": {
+      "x": 507,
+      "y": 649
+    }
+  },
+  "navCentersGamePx": {
+    "city": {
+      "x": 63,
+      "y": 1129
+    },
+    "store": {
+      "x": 150,
+      "y": 1129
+    },
+    "renovation": {
+      "x": 246,
+      "y": 1129
+    },
+    "menu": {
+      "x": 351,
+      "y": 1129
+    },
+    "supply": {
+      "x": 447,
+      "y": 1129
+    },
+    "data": {
+      "x": 539,
+      "y": 1129
+    },
+    "system": {
+      "x": 635,
+      "y": 1129
+    }
+  },
+  "targetScale": {
+    "referenceWidth": 691,
+    "formula": "scale = runtimeWidth / 691"
+  }
+}

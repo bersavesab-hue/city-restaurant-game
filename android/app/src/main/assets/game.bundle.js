@@ -25972,6 +25972,278 @@
         cityScene.__v26Wrapped = true;
       }
       console.log("V26_HARD_REBUILD_HOME loaded");
+      var V27_REF_W = 691;
+      var V27_REF_H = 1231;
+      var V27_DISTRICT_HOTSPOTS = {
+        university: { x: 128, y: 314 },
+        hightech: { x: 537, y: 318 },
+        cbd: { x: 322, y: 454 },
+        oldtown: { x: 49, y: 517 },
+        village: { x: 538, y: 521 },
+        industry: { x: 129, y: 672 },
+        market: { x: 507, y: 649 }
+      };
+      var v27OriginalLoadResources = loadResources;
+      var v27OriginalDrawDistrictCard = drawDistrictCard;
+      function v27Scale() {
+        return Math.min(VIEW_W / V27_REF_W, VIEW_H / V27_REF_H);
+      }
+      function v27HomeX() {
+        return (VIEW_W - V27_REF_W * v27Scale()) / 2;
+      }
+      function v27HomeY() {
+        return (VIEW_H - V27_REF_H * v27Scale()) / 2;
+      }
+      function v27X(value) {
+        return v27HomeX() + value * v27Scale();
+      }
+      function v27Y(value) {
+        return v27HomeY() + value * v27Scale();
+      }
+      function v27W(value) {
+        return value * v27Scale();
+      }
+      function v27Mask(x, y, w, h, fill) {
+        ctx2.fillStyle = fill || "rgba(4,49,73,0.96)";
+        ctx2.fillRect(v27X(x), v27Y(y), v27W(w), v27W(h));
+      }
+      function v27SelectedDistrict() {
+        const districts = getDistricts() || [];
+        let current = districts.find(function(item) {
+          return item.id === selectedDistrictId;
+        });
+        if (!current) {
+          current = districts.find(function(item) {
+            return item.id === "market";
+          }) || districts[0] || null;
+          if (current) selectedDistrictId = current.id;
+        }
+        return current;
+      }
+      loadResources = function() {
+        return Promise.all([
+          resourceManager.loadImage(
+            "v27_target_home_full",
+            "assets/images/target_home/reference/target_game_ui.png",
+            "v27-target-home"
+          ),
+          resourceManager.loadImage(
+            "v27_market_preview",
+            "assets/images/target_home/detail/market_preview.png",
+            "v27-target-home"
+          )
+        ]).then(function() {
+          return v27OriginalLoadResources();
+        });
+      };
+      updateLayout = function() {
+        const s = v27Scale();
+        const ox = v27HomeX();
+        const oy = v27HomeY();
+        TOP_H = 171 * s;
+        MAP_X = ox;
+        MAP_Y = oy + 263 * s;
+        MAP_W = 691 * s;
+        MAP_H = 578 * s;
+        CARD_X = ox + 8 * s;
+        CARD_Y = oy + 841 * s;
+        CARD_W = 675 * s;
+        CARD_H = 249 * s;
+        NAV_Y = oy + 1095 * s;
+        NAV_H = 136 * s;
+      };
+      drawMapBase = function() {
+        ctx2.fillStyle = "#000000";
+        ctx2.fillRect(0, 0, VIEW_W, VIEW_H);
+        const image = resourceManager.getImage("v27_target_home_full");
+        if (image) {
+          ctx2.drawImage(
+            image,
+            v27HomeX(),
+            v27HomeY(),
+            V27_REF_W * v27Scale(),
+            V27_REF_H * v27Scale()
+          );
+          return;
+        }
+        const fallback = resourceManager.getImage("city_base_01");
+        if (fallback) {
+          drawImageFocus(ctx2, fallback, MAP_X, MAP_Y, MAP_W, MAP_H, 1.5, 0.52, 0.54);
+        }
+      };
+      drawTopHud = function() {
+        const player = gameState.getPlayer();
+        const world = gameState.getWorld();
+        const display = timeSystem.getDisplayState();
+        const brand = getBrandState(player);
+        const cityName = gameState.getCityName() || "\u7F8E\u98DF\u5E02";
+        if (cityName !== "\u7F8E\u98DF\u5E02") {
+          v27Mask(103, 46, 129, 36, "rgba(4,49,73,0.94)");
+          drawText(fitText(cityName, v27W(115), v27W(18), "800"), v27X(110), v27Y(64), v27W(18), "#FFFFFF", "800");
+        }
+        v27Mask(421, 53, 90, 28, "rgba(4,58,88,0.96)");
+        drawText(
+          fitText("\xA5" + player.cash.toLocaleString(), v27W(88), v27W(12), "800"),
+          v27X(466),
+          v27Y(67),
+          v27W(12),
+          "#FFFFFF",
+          "800",
+          "center"
+        );
+        v27Mask(571, 48, 76, 51, "rgba(4,55,83,0.96)");
+        drawText("Lv." + brand.level, v27X(605), v27Y(63), v27W(10), "#FFE26B", "800", "center");
+        roundedRect(v27X(579), v27Y(76), v27W(58), v27W(6), v27W(3), "rgba(255,255,255,0.18)");
+        roundedRect(v27X(579), v27Y(76), Math.max(v27W(4), v27W(58) * brand.progress), v27W(6), v27W(3), "#F7CA32");
+        drawText(brand.reputation + "/100", v27X(608), v27Y(93), v27W(6), "#EAF5F8", "700", "center");
+        v27Mask(289, 81, 76, 38, "rgba(4,49,73,0.88)");
+        drawText(
+          (WEATHER_NAMES[world.weather] || "\u591A\u4E91") + " " + (Number.isFinite(Number(world.temperature)) ? world.temperature : 22) + "\u2103",
+          v27X(326),
+          v27Y(101),
+          v27W(7.5),
+          "#FFFFFF",
+          "700",
+          "center"
+        );
+        v27Mask(470, 137, 212, 28, "rgba(4,49,73,0.90)");
+        drawText(
+          fitText(display.date + " \xB7 " + display.time + " \xB7 " + (MEAL_NAMES[display.mealPeriod] || ""), v27W(205), v27W(6.7), "600"),
+          v27X(678),
+          v27Y(151),
+          v27W(6.7),
+          "#FFFFFF",
+          "600",
+          "right"
+        );
+        addButton("city:rename", v27X(184), v27Y(45), v27W(38), v27W(36));
+        addButton("brand:status", v27X(545), v27Y(38), v27W(132), v27W(72));
+        const speedButtons = [
+          ["time:pause", 17, 118, 60, 43],
+          ["time:speed:1", 83, 116, 64, 47],
+          ["time:speed:2", 154, 118, 61, 43],
+          ["time:speed:5", 221, 118, 61, 43],
+          ["time:speed:10", 288, 118, 67, 43]
+        ];
+        for (let i = 0; i < speedButtons.length; i++) {
+          const b = speedButtons[i];
+          addButton(b[0], v27X(b[1]), v27Y(b[2]), v27W(b[3]), v27W(b[4]));
+        }
+      };
+      drawNewsTicker = function() {
+        const feed = simulationSystem.getNewsFeed();
+        const bulletin = simulationSystem.getBulletin();
+        const items = (feed && feed.length ? feed : [bulletin]).slice(0, 3);
+        v27Mask(136, 178, 518, 31, "rgba(2,49,76,0.95)");
+        const zones = [
+          { x: 145, w: 159 },
+          { x: 323, w: 167 },
+          { x: 507, w: 139 }
+        ];
+        for (let i = 0; i < zones.length; i++) {
+          const item = items[i];
+          const value = item && item.title ? item.title : i === 0 ? "\u7F8E\u98DF\u8282\u5373\u5C06\u76DB\u5927\u5F00\u5E55" : i === 1 ? "\u65B0\u6D3B\u52A8\uFF1A\u820C\u5C16\u4E0A\u7684\u57CE\u5E02" : "\u9910\u996E\u54C1\u724C\u7EB7\u7EB7\u5165\u9A7B";
+          drawText(
+            fitText(value, v27W(zones[i].w), v27W(7.2), "600"),
+            v27X(zones[i].x),
+            v27Y(194),
+            v27W(7.2),
+            "#FFFFFF",
+            "600"
+          );
+        }
+        addButton("tool:news", v27X(14), v27Y(172), v27W(663), v27W(44));
+      };
+      drawGoalBar = function() {
+        const goal = getHomeGoalState();
+        v27Mask(177, 227, 451, 27, "rgba(2,49,76,0.95)");
+        drawText(goal.title === "\u7B79\u5907\u9996\u5E97" ? "\u5F00\u8BBE\u9910\u5385" : goal.title, v27X(174), v27Y(240), v27W(8.4), "#FFFFFF", "800");
+        const labels = ["\u9009\u5740", "\u88C5\u4FEE", "\u8BD5\u8425\u4E1A", "\u7ECF\u8425", "\u7B7E\u7EA6"];
+        const currentIndex = Math.max(0, Math.min(labels.length - 1, Number(goal.current) || 0));
+        const centers = [365, 435, 506, 574, 636];
+        for (let i = 0; i < centers.length; i++) {
+          const cx = centers[i];
+          ctx2.beginPath();
+          ctx2.arc(v27X(cx), v27Y(240), v27W(7), 0, Math.PI * 2);
+          ctx2.fillStyle = i < currentIndex ? "#F5C433" : i === currentIndex ? "#FFF8CF" : "#174E70";
+          ctx2.fill();
+          ctx2.strokeStyle = i <= currentIndex ? "#FFE585" : "#8CB5C9";
+          ctx2.lineWidth = Math.max(1, v27W(1.2));
+          ctx2.stroke();
+          drawText(labels[i], v27X(cx), v27Y(258), v27W(6.3), i === currentIndex ? "#FFE174" : "#EAF5F8", i === currentIndex ? "800" : "600", "center");
+        }
+      };
+      drawDistrictMarker = function(district) {
+        const point = V27_DISTRICT_HOTSPOTS[district.id];
+        if (!point) return;
+        if (selectedDistrictId === district.id) {
+          ctx2.beginPath();
+          ctx2.arc(v27X(point.x), v27Y(point.y), v27W(29), 0, Math.PI * 2);
+          ctx2.strokeStyle = "rgba(255,220,77,0.90)";
+          ctx2.lineWidth = Math.max(1.5, v27W(2.3));
+          ctx2.stroke();
+        }
+        addButton(
+          "district:" + district.id,
+          v27X(point.x - 65),
+          v27Y(point.y - 46),
+          v27W(145),
+          v27W(90)
+        );
+      };
+      drawDistrictCard = function() {
+        const district = v27SelectedDistrict();
+        if (!district) return;
+        if (district.id !== "market") {
+          return v27OriginalDrawDistrictCard();
+        }
+        const metrics = [
+          district.population.toLocaleString(),
+          demandSystem.getTotalDemand(district.id).toLocaleString(),
+          "\xA5" + district.avgSpend,
+          district.restaurantCount + "\u5BB6",
+          district.saturation + "%",
+          district.rentIndex.toFixed(2)
+        ];
+        const centers = [289, 374, 459, 542, 625, 665];
+        for (let i = 0; i < metrics.length; i++) {
+          const cx = centers[i];
+          v27Mask(cx - 31, 1011, 62, 31, "rgba(249,247,241,0.98)");
+          drawText(metrics[i], v27X(cx), v27Y(1030), v27W(8.5), i === 1 ? "#1F9B56" : "#154A82", "800", "center");
+        }
+        addButton("district:details", v27X(490), v27Y(1031), v27W(178), v27W(57));
+      };
+      drawBottomNav = function() {
+        const current = sceneManager.getCurrentId();
+        roundedRect(v27X(198), v27Y(1098), v27W(98), v27W(127), v27W(4), "rgba(4,53,83,0.98)");
+        const trafficActive = current === "city" && trafficMode;
+        if (trafficActive) {
+          roundedRect(v27X(202), v27Y(1102), v27W(90), v27W(119), v27W(13), "#F7C72E", "#FFE58A", 1.1);
+        }
+        drawNavIcon("traffic", v27X(247), v27Y(1130), trafficActive);
+        drawText("\u5BA2\u6D41", v27X(247), v27Y(1178), v27W(10.3), trafficActive ? "#163A50" : "#FFFFFF", "800", "center");
+        const navItems = [
+          ["city", 14, 97],
+          ["shop", 111, 87],
+          ["traffic", 198, 98],
+          ["research", 296, 104],
+          ["supply", 400, 94],
+          ["business", 494, 92],
+          ["system", 586, 105]
+        ];
+        for (let i = 0; i < navItems.length; i++) {
+          addButton("nav:" + navItems[i][0], v27X(navItems[i][1]), v27Y(1095), v27W(navItems[i][2]), v27W(136));
+        }
+      };
+      if (cityScene && typeof cityScene.enter === "function" && !cityScene.__v27Wrapped) {
+        const originalEnter = cityScene.enter;
+        cityScene.enter = function() {
+          originalEnter.call(this);
+          v27SelectedDistrict();
+        };
+        cityScene.__v27Wrapped = true;
+      }
+      console.log("V27_TARGET_REFERENCE_SKIN loaded");
       simulationSystem.initialize();
       sceneManager.switchTo(
         "city"
@@ -25982,7 +26254,7 @@
         gameLoop
       );
       console.log(
-        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V26 \u4E3B\u9875\u786C\u91CD\u6784\u7248\u542F\u52A8\u6210\u529F"
+        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V27.1 \u76EE\u6807\u56FE\u76F4\u63A5\u63A5\u5165\u7248\u542F\u52A8\u6210\u529F"
       );
     }
   });
