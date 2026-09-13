@@ -3,6 +3,7 @@
 // V16_STORE_UI_REWRITE
 // V36_STORE_THREE_STATE_PHASE1
 // V37_STORE_FINAL_FOUR_MODE
+// V37_2_NO_SHOP_FIDELITY
 // 用户定稿门店模式：无门店 / 单店营业 / 多门店总览 / 筹备中。
 
 const runtime = globalThis.GameRuntime;
@@ -24,6 +25,12 @@ const simulationSystem =
 
 const sceneManager =
   require('../core/sceneManager.js');
+
+const resourceManager =
+  require('../core/resourceManager.js');
+
+const propertyIconAtlas =
+  require('../property/propertyIconAtlas.js');
 
 const propertyMarketSystem =
   require('../property/propertyMarketSystem.js');
@@ -224,6 +231,27 @@ class StoreScene {
         'renovation'
       );
 
+    resourceManager
+      .loadImage(
+        'property_icons_01',
+        propertyIconAtlas.image,
+        'store-property-icons'
+      )
+      .then(
+        () => {
+          if (
+            runtime &&
+            typeof runtime.requestRender ===
+              'function'
+          ) {
+            runtime.requestRender();
+          }
+        }
+      )
+      .catch(
+        () => {}
+      );
+
     if (
       params &&
       params.shopId
@@ -301,6 +329,176 @@ class StoreScene {
     }
 
     return null;
+  }
+
+  drawPropertyIcon(
+    ctx,
+    name,
+    x,
+    y,
+    size,
+    fallback,
+    tint
+  ) {
+    const image =
+      resourceManager
+        .getImage(
+          'property_icons_01'
+        );
+
+    const region =
+      propertyIconAtlas
+        .icons[
+          name
+        ];
+
+    if (
+      image &&
+      region
+    ) {
+      ctx.drawImage(
+        image,
+        region.x,
+        region.y,
+        region.w,
+        region.h,
+        x,
+        y,
+        size,
+        size
+      );
+
+      return;
+    }
+
+    ctx.beginPath();
+
+    ctx.arc(
+      x + size / 2,
+      y + size / 2,
+      size / 2,
+      0,
+      Math.PI * 2
+    );
+
+    ctx.fillStyle =
+      tint ||
+      '#E8F4F9';
+
+    ctx.fill();
+
+    ui.text(
+      ctx,
+      fallback || '·',
+      x + size / 2,
+      y + size / 2,
+      Math.max(
+        6,
+        size * 0.38
+      ),
+      COLORS.navy,
+      '800',
+      'center'
+    );
+  }
+
+  getListingScore(
+    listing
+  ) {
+    if (!listing) {
+      return 0;
+    }
+
+    let score = 2.55;
+
+    if (listing.exhaust) {
+      score += 0.55;
+    }
+
+    if (listing.gas) {
+      score += 0.32;
+    }
+
+    if (
+      listing.power ||
+      listing.threePhasePower
+    ) {
+      score += 0.28;
+    }
+
+    if (listing.drainage) {
+      score += 0.30;
+    }
+
+    if (
+      Number(
+        listing.competitorCount
+      ) <= 2
+    ) {
+      score += 0.28;
+    }
+
+    const rent =
+      Number(
+        listing.askingMonthlyRent ||
+        listing.monthlyRent
+      ) || 0;
+
+    const area =
+      Math.max(
+        1,
+        Number(
+          listing.usableArea ||
+          listing.grossArea
+        ) || 1
+      );
+
+    const rentPerArea =
+      rent / area;
+
+    if (rentPerArea <= 80) {
+      score += 0.35;
+    } else if (
+      rentPerArea >= 180
+    ) {
+      score -= 0.35;
+    }
+
+    return clamp(
+      score,
+      1,
+      5
+    );
+  }
+
+  drawScoreStars(
+    ctx,
+    score,
+    x,
+    y
+  ) {
+    const rounded =
+      Math.round(
+        clamp(score, 0, 5)
+      );
+
+    for (
+      let i = 0;
+      i < 5;
+      i++
+    ) {
+      ui.text(
+        ctx,
+        '★',
+        x + i * 10,
+        y,
+        7,
+        i < rounded
+          ? '#F7B916'
+          : '#D7D9D9',
+        '800'
+      );
+    }
   }
 
   getShops() {
@@ -1426,15 +1624,19 @@ class StoreScene {
         first
       );
 
-    // 横幅
+    /*
+     * V37.2：
+     * 参考用户定稿母版，把“横幅 + 经营信息 + 双按钮”
+     * 合并成一个完整大卡，避免页面像多个独立白块拼接。
+     */
     ui.card(
       ctx,
       10,
       96,
       370,
-      78,
+      188,
       {
-        radius: 14,
+        radius: 15,
         fill: COLORS.panel,
         stroke: '#DDD4C8'
       }
@@ -1448,17 +1650,17 @@ class StoreScene {
       18,
       103,
       354,
-      64,
+      70,
       11,
-      'rgba(5,34,49,0.42)'
+      'rgba(3,30,45,0.42)'
     );
 
     ui.text(
       ctx,
       '还没有自己的门店',
       28,
-      122,
-      15,
+      123,
+      14.2,
       COLORS.white,
       '800'
     );
@@ -1467,52 +1669,47 @@ class StoreScene {
       ctx,
       '先选址、看房源，再一步步完成筹备',
       28,
-      147,
-      6.2,
-      '#EEF6F9',
+      149,
+      6.1,
+      '#EFF7FA',
       '600'
     );
 
-    // 三个经营信息
-    ui.card(
-      ctx,
-      10,
-      180,
-      370,
-      59,
-      {
-        radius: 14,
-        fill: COLORS.panel,
-        stroke: '#DED5C8'
-      }
-    );
-
     const info = [
-      [
-        '可用资金',
-        compactMoney(
-          gameState
-            .getPlayer()
-            .cash
-        ),
-        COLORS.goldDeep
-      ],
-      [
-        '推荐预算',
-        budget.total
-          ? compactMoney(
-              budget.total
-            )
-          : '--',
-        COLORS.blue
-      ],
-      [
-        '推荐商圈',
-        rec
-          ? rec.district.name
-          : '--',
-        COLORS.green
-      ]
+      {
+        icon: 'rent',
+        fallback: '¥',
+        title: '可用资金',
+        value:
+          compactMoney(
+            gameState
+              .getPlayer()
+              .cash
+          ),
+        tone: '#FFF0C9'
+      },
+      {
+        icon: 'visibility',
+        fallback: '▥',
+        title: '推荐预算',
+        value:
+          budget.total
+            ? compactMoney(
+                budget.total
+              )
+            : '--',
+        tone: '#E9F5FF'
+      },
+      {
+        icon: 'hot',
+        fallback: '⌖',
+        title: '推荐商圈',
+        value:
+          rec
+            ? rec.district.name
+            : '--',
+        tone: '#E7F8EF'
+      }
     ];
 
     for (
@@ -1521,37 +1718,47 @@ class StoreScene {
       i++
     ) {
       const x =
-        22 +
-        i * 119;
+        26 +
+        i * 118;
 
       if (i > 0) {
         ctx.fillStyle =
-          '#E5DED5';
+          '#E5DDD1';
 
         ctx.fillRect(
-          x - 9,
-          190,
+          x - 12,
+          181,
           1,
-          38
+          43
         );
       }
 
+      this.drawPropertyIcon(
+        ctx,
+        info[i].icon,
+        x,
+        186,
+        23,
+        info[i].fallback,
+        info[i].tone
+      );
+
       ui.text(
         ctx,
-        info[i][0],
-        x,
-        195,
-        5.7,
+        info[i].title,
+        x + 31,
+        192,
+        5.5,
         COLORS.muted,
         '700'
       );
 
       ui.text(
         ctx,
-        info[i][1],
-        x,
-        216,
-        8.6,
+        info[i].value,
+        x + 31,
+        211,
+        7.8,
         COLORS.text,
         '800'
       );
@@ -1560,10 +1767,10 @@ class StoreScene {
     this.drawActionButton(
       ctx,
       'go-property',
-      '前往选址',
-      18,
-      246,
-      170,
+      '🔎  前往选址',
+      21,
+      235,
+      171,
       38,
       'gold'
     );
@@ -1571,21 +1778,24 @@ class StoreScene {
     this.drawActionButton(
       ctx,
       'go-city',
-      '查看商圈',
-      202,
-      246,
-      170,
+      '⌖  查看商圈',
+      199,
+      235,
+      171,
       38,
       'blue'
     );
 
-    // 开店流程
+    /*
+     * 开店流程：压缩为目标图的横向轻卡，
+     * 图标比编号更醒目。
+     */
     ui.card(
       ctx,
       10,
       292,
       370,
-      66,
+      67,
       {
         radius: 14,
         fill: COLORS.panel,
@@ -1604,11 +1814,11 @@ class StoreScene {
     );
 
     const steps = [
-      ['选址', COLORS.gold],
-      ['签约', COLORS.blue],
-      ['装修', COLORS.purple],
-      ['招聘', COLORS.green],
-      ['开业', COLORS.orange]
+      ['visibility', '选址', COLORS.gold],
+      ['lease', '签约', '#66A9D4'],
+      ['layout', '装修', '#8D70C8'],
+      ['broker', '招聘', '#66A28C'],
+      ['new', '开业', '#6A8798']
     ];
 
     for (
@@ -1617,56 +1827,38 @@ class StoreScene {
       i++
     ) {
       const x =
-        98 +
+        99 +
         i * 60;
 
       if (i < 4) {
         ctx.fillStyle =
-          '#D8D8D5';
+          '#D6D9DA';
 
         ctx.fillRect(
           x + 11,
-          330,
+          331,
           38,
           2
         );
       }
 
-      ctx.beginPath();
-
-      ctx.arc(
-        x,
-        331,
-        8.5,
-        0,
-        Math.PI * 2
-      );
-
-      ctx.fillStyle =
-        i === 0
-          ? steps[i][1]
-          : '#DDE4E7';
-
-      ctx.fill();
-
-      ui.text(
-        ctx,
-        String(i + 1),
-        x,
-        331,
-        5.2,
-        i === 0
-          ? COLORS.white
-          : COLORS.text,
-        '800',
-        'center'
-      );
-
-      ui.text(
+      this.drawPropertyIcon(
         ctx,
         steps[i][0],
+        x - 10,
+        321,
+        20,
+        String(i + 1),
+        i === 0
+          ? '#FFF1B8'
+          : '#E8EEF1'
+      );
+
+      ui.text(
+        ctx,
+        steps[i][1],
         x,
-        349,
+        350,
         5.4,
         COLORS.text,
         '700',
@@ -1674,13 +1866,16 @@ class StoreScene {
       );
     }
 
-    // 推荐房源
+    /*
+     * 推荐房源：三张卡继续保持三列，
+     * 但不再拿包厢内景当铺面图。
+     */
     ui.card(
       ctx,
       10,
-      366,
+      367,
       370,
-      174,
+      185,
       {
         radius: 14,
         fill: COLORS.panel,
@@ -1692,7 +1887,7 @@ class StoreScene {
       ctx,
       '推荐房源',
       22,
-      385,
+      386,
       9.5,
       COLORS.text,
       '800'
@@ -1700,9 +1895,9 @@ class StoreScene {
 
     ui.text(
       ctx,
-      '查看更多房源 ›',
+      '查看更多房源  ›',
       367,
-      385,
+      386,
       5.5,
       COLORS.navy,
       '800',
@@ -1711,16 +1906,22 @@ class StoreScene {
 
     this.addButton(
       'go-property',
-      292,
-      368,
-      82,
+      287,
+      369,
+      88,
       32
     );
 
     const imageKeys = [
       'premium_store_hero',
-      'premium_room_1',
-      'premium_room_2'
+      'visual_storefront_hero',
+      'premium_explore_banner'
+    ];
+
+    const badges = [
+      ['热门', '#EF653E'],
+      ['推荐', '#2FA56E'],
+      ['潜力', '#358FD0']
     ];
 
     for (
@@ -1741,13 +1942,13 @@ class StoreScene {
       ui.card(
         ctx,
         x,
-        399,
+        400,
         cardW,
-        130,
+        141,
         {
           radius: 9,
           fill: '#FCF8F1',
-          stroke: '#E4DBD0',
+          stroke: '#E2D8CC',
           shadow: false
         }
       );
@@ -1758,14 +1959,25 @@ class StoreScene {
           imageKeys[i]
         ),
         x + 3,
-        402,
+        403,
         cardW - 6,
-        51,
+        50,
         7,
         null
       );
 
       if (listing) {
+        ui.pill(
+          ctx,
+          badges[i][0],
+          x + 6,
+          405,
+          31,
+          16,
+          badges[i][1],
+          COLORS.white
+        );
+
         ui.text(
           ctx,
           shortText(
@@ -1776,7 +1988,7 @@ class StoreScene {
           ),
           x + 7,
           466,
-          6.2,
+          6.3,
           COLORS.text,
           '800'
         );
@@ -1803,22 +2015,33 @@ class StoreScene {
           '600'
         );
 
-        const suitable =
-          listing.exhaust &&
-          listing.drainage
-            ? '条件较好'
-            : '需查看硬件';
+        const score =
+          this.getListingScore(
+            listing
+          );
+
+        this.drawScoreStars(
+          ctx,
+          score,
+          x + 7,
+          500
+        );
 
         ui.text(
           ctx,
-          suitable,
+          score >= 4.2
+            ? '首店适配高'
+            : score >= 3.5
+              ? '值得实地看铺'
+              : '需谨慎评估',
           x + 7,
-          500,
-          5.1,
-          listing.exhaust &&
-          listing.drainage
+          516,
+          5.0,
+          score >= 4.2
             ? COLORS.green
-            : COLORS.orange,
+            : score >= 3.5
+              ? COLORS.orange
+              : COLORS.red,
           '700'
         );
 
@@ -1832,9 +2055,9 @@ class StoreScene {
             ),
           '查看房源',
           x + 6,
-          506,
+          520,
           cardW - 12,
-          18,
+          17,
           'gold'
         );
       } else {
@@ -1842,7 +2065,7 @@ class StoreScene {
           ctx,
           '暂无推荐',
           x + cardW / 2,
-          480,
+          481,
           6,
           COLORS.muted,
           '700',
@@ -1851,13 +2074,26 @@ class StoreScene {
       }
     }
 
-    // 今日机会 + 市场动态
+    /*
+     * 充分利用长屏：底部两张卡动态拉伸至底栏，
+     * 消除当前实机截图中接近 1/4 页的空白。
+     */
+    const bottomY = 560;
+
+    const bottomH =
+      Math.max(
+        118,
+        this.contentBottom -
+        bottomY -
+        10
+      );
+
     ui.card(
       ctx,
       10,
-      548,
+      bottomY,
       181,
-      82,
+      bottomH,
       {
         radius: 14,
         fill: COLORS.panel,
@@ -1867,9 +2103,9 @@ class StoreScene {
 
     ui.text(
       ctx,
-      '今日机会',
+      '📣  今日机会',
       22,
-      566,
+      bottomY + 20,
       8.7,
       COLORS.text,
       '800'
@@ -1881,40 +2117,88 @@ class StoreScene {
           first
         );
 
+      ui.coverImage(
+        ctx,
+        visualAssetSystem.get(
+          'visual_storefront_hero'
+        ) ||
+        visualAssetSystem.get(
+          'premium_store_hero'
+        ),
+        20,
+        bottomY + 35,
+        65,
+        52,
+        8,
+        null
+      );
+
       ui.text(
         ctx,
         shortText(
           first.address ||
           '优质挂牌房源',
-          13
+          11
         ),
-        22,
-        586,
+        94,
+        bottomY + 45,
         6.1,
         COLORS.text,
-        '700'
+        '800'
       );
 
       ui.text(
+        ctx,
+        Math.round(
+          Number(
+            first.usableArea ||
+            first.grossArea
+          ) || 0
+        ) +
+        '㎡ · 月租 ' +
+        compactMoney(
+          first.askingMonthlyRent ||
+          first.monthlyRent ||
+          0
+        ),
+        94,
+        bottomY + 65,
+        5.0,
+        COLORS.muted,
+        '600'
+      );
+
+      ui.pill(
         ctx,
         '预计启动 ' +
         compactMoney(
           firstBudget.total
         ),
+        20,
+        bottomY + 96,
+        148,
         22,
-        607,
-        5.7,
-        COLORS.red,
-        '700'
+        '#FFF0E8',
+        '#D95745'
+      );
+
+      ui.text(
+        ctx,
+        '优先看铺，避免优质挂牌被竞争者抢走',
+        20,
+        bottomY + 130,
+        5.2,
+        COLORS.muted,
+        '600'
       );
     }
 
     ui.card(
       ctx,
       199,
-      548,
+      bottomY,
       181,
-      82,
+      bottomH,
       {
         radius: 14,
         fill: COLORS.panel,
@@ -1924,41 +2208,131 @@ class StoreScene {
 
     ui.text(
       ctx,
-      '市场动态',
+      '📈  市场动态',
       211,
-      566,
+      bottomY + 20,
       8.7,
       COLORS.text,
       '800'
     );
 
     if (rec) {
-      ui.text(
-        ctx,
-        rec.district.name +
-        '挂牌 ' +
-        rec.market
-          .activeListingCount +
-        ' 套',
-        211,
-        587,
-        5.8,
-        COLORS.text,
-        '700'
-      );
+      const dynamics = [
+        [
+          '挂牌房源',
+          rec.market.activeListingCount +
+          '套',
+          COLORS.blue
+        ],
+        [
+          '平均租金',
+          compactMoney(
+            rec.market
+              .averageAskingRent
+          ),
+          COLORS.red
+        ],
+        [
+          '竞争门店',
+          (
+            Number(
+              rec.district
+                .restaurantCount
+            ) || 0
+          ) + '家',
+          COLORS.purple
+        ],
+        [
+          '餐饮需求',
+          Number(
+            rec.district
+              .baseDemand || 0
+          ).toLocaleString(),
+          COLORS.green
+        ]
+      ];
+
+      for (
+        let i = 0;
+        i < dynamics.length;
+        i++
+      ) {
+        const col =
+          i % 2;
+
+        const row =
+          Math.floor(
+            i / 2
+          );
+
+        const x =
+          208 +
+          col * 82;
+
+        const y =
+          bottomY +
+          36 +
+          row * 54;
+
+        ui.card(
+          ctx,
+          x,
+          y,
+          76,
+          47,
+          {
+            radius: 9,
+            fill: '#F9F6F0',
+            stroke: '#E6DDD2',
+            shadow: false
+          }
+        );
+
+        ctx.beginPath();
+
+        ctx.arc(
+          x + 12,
+          y + 13,
+          5,
+          0,
+          Math.PI * 2
+        );
+
+        ctx.fillStyle =
+          dynamics[i][2];
+
+        ctx.fill();
+
+        ui.text(
+          ctx,
+          dynamics[i][0],
+          x + 22,
+          y + 12,
+          5.0,
+          COLORS.muted,
+          '700'
+        );
+
+        ui.text(
+          ctx,
+          dynamics[i][1],
+          x + 10,
+          y + 32,
+          6.3,
+          COLORS.text,
+          '800'
+        );
+      }
 
       ui.text(
         ctx,
-        '均租 ' +
-        compactMoney(
-          rec.market
-            .averageAskingRent
-        ),
+        rec.district.name +
+        ' · 实时市场数据',
         211,
-        607,
-        5.7,
-        COLORS.orange,
-        '700'
+        bottomY + 154,
+        5.2,
+        COLORS.muted,
+        '600'
       );
     }
   }
