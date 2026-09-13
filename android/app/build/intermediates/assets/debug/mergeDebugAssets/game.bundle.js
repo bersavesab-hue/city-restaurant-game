@@ -26103,6 +26103,84 @@
         addButton("district:" + district.id, hitLeft, hitTop, hitRight - hitLeft, hitBottom - hitTop);
       };
       console.log("V28_TARGET_MARKERS_AND_BADGES loaded");
+      var V29_NAV_KEYS = {
+        city: ["v29_nav_city", "v29_nav_city_active"],
+        shop: ["v29_nav_store", "v29_nav_store_active"],
+        traffic: ["v29_nav_traffic", "v29_nav_traffic_active"],
+        research: ["v29_nav_menu", "v29_nav_menu_active"],
+        supply: ["v29_nav_supply", "v29_nav_supply_active"],
+        business: ["v29_nav_data", "v29_nav_data_active"],
+        system: ["v29_nav_system", "v29_nav_system_active"]
+      };
+      var V29_METRIC_KEYS = {
+        "\u4EBA\u53E3": "v29_metric_population",
+        "\u9700\u6C42": "v29_metric_demand",
+        "\u5BA2\u5355": "v29_metric_spend",
+        "\u9910\u996E\u5E97": "v29_metric_restaurants",
+        "\u9971\u548C\u5EA6": "v29_metric_saturation",
+        "\u79DF\u91D1": "v29_metric_rent"
+      };
+      var v29OriginalLoadResources = loadResources;
+      function v29Img(key, cx, cy, w, h, alpha) {
+        const img = resourceManager.getImage(key);
+        if (!img) return false;
+        ctx2.save();
+        ctx2.globalAlpha = alpha == null ? 1 : alpha;
+        ctx2.drawImage(img, cx - w / 2, cy - h / 2, w, h);
+        ctx2.restore();
+        return true;
+      }
+      loadResources = function() {
+        const assets = [
+          ["v29_hud_money", "hud_money.png"],
+          ["v29_hud_crown", "hud_crown.png"],
+          ["v29_hud_weather", "hud_weather.png"],
+          ["v29_hud_broadcast", "hud_broadcast.png"],
+          ["v29_hud_target", "hud_target.png"],
+          ["v29_hud_gift", "hud_gift.png"],
+          ["v29_hud_plus", "hud_plus.png"],
+          ["v29_hud_edit", "hud_edit.png"],
+          ["v29_nav_city", "nav_city.png"],
+          ["v29_nav_city_active", "nav_city_active.png"],
+          ["v29_nav_store", "nav_store.png"],
+          ["v29_nav_store_active", "nav_store_active.png"],
+          ["v29_nav_traffic", "nav_traffic.png"],
+          ["v29_nav_traffic_active", "nav_traffic_active.png"],
+          ["v29_nav_menu", "nav_menu.png"],
+          ["v29_nav_menu_active", "nav_menu_active.png"],
+          ["v29_nav_supply", "nav_supply.png"],
+          ["v29_nav_supply_active", "nav_supply_active.png"],
+          ["v29_nav_data", "nav_data.png"],
+          ["v29_nav_data_active", "nav_data_active.png"],
+          ["v29_nav_system", "nav_system.png"],
+          ["v29_nav_system_active", "nav_system_active.png"],
+          ["v29_metric_population", "metric_population.png"],
+          ["v29_metric_demand", "metric_demand.png"],
+          ["v29_metric_spend", "metric_spend.png"],
+          ["v29_metric_restaurants", "metric_restaurants.png"],
+          ["v29_metric_saturation", "metric_saturation.png"],
+          ["v29_metric_rent", "metric_rent.png"]
+        ];
+        return Promise.all(assets.map((a) => resourceManager.loadImage(a[0], "assets/images/v29/" + a[1], "v29-icons"))).then(() => v29OriginalLoadResources());
+      };
+      drawWeatherGlyph = function(weather, x, y) {
+        if (v29Img("v29_hud_weather", x, y, 34, 28)) return;
+      };
+      drawCashGlyph = function(x, y) {
+        if (v29Img("v29_hud_money", x, y, 35, 28)) return;
+      };
+      drawCrownGlyph = function(x, y) {
+        if (v29Img("v29_hud_crown", x, y, 31, 25)) return;
+      };
+      drawMetricSymbol = function(label, x, y, color) {
+        const key = V29_METRIC_KEYS[label];
+        if (key && v29Img(key, x, y, 18, 18)) return;
+      };
+      drawNavIcon = function(id, cx, cy, active) {
+        const keys = V29_NAV_KEYS[id];
+        if (keys && v29Img(active ? keys[1] : keys[0], cx, cy, active ? 29 : 26, active ? 29 : 26, 1)) return;
+      };
+      console.log("V29_CRISP_ICON_PASS loaded");
       simulationSystem.initialize();
       sceneManager.switchTo(
         "city"
@@ -26113,7 +26191,7 @@
         gameLoop
       );
       console.log(
-        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V28 \u76EE\u6807\u56FE\u9488\u6807\u5FBD\u8BB0\u7248\u542F\u52A8\u6210\u529F"
+        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V29 \u9AD8\u6E05\u56FE\u6807\u7248\u542F\u52A8\u6210\u529F"
       );
     }
   });

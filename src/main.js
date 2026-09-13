@@ -8535,6 +8535,45 @@ drawDistrictMarker = function (district) {
 };
 
 console.log('V28_TARGET_MARKERS_AND_BADGES loaded');
+
+/* V29_CRISP_ICON_PASS */
+const V29_NAV_KEYS={
+  city:['v29_nav_city','v29_nav_city_active'],
+  shop:['v29_nav_store','v29_nav_store_active'],
+  traffic:['v29_nav_traffic','v29_nav_traffic_active'],
+  research:['v29_nav_menu','v29_nav_menu_active'],
+  supply:['v29_nav_supply','v29_nav_supply_active'],
+  business:['v29_nav_data','v29_nav_data_active'],
+  system:['v29_nav_system','v29_nav_system_active']
+};
+const V29_METRIC_KEYS={
+  '人口':'v29_metric_population','需求':'v29_metric_demand','客单':'v29_metric_spend',
+  '餐饮店':'v29_metric_restaurants','饱和度':'v29_metric_saturation','租金':'v29_metric_rent'
+};
+const v29OriginalLoadResources=loadResources;
+function v29Img(key,cx,cy,w,h,alpha){
+  const img=resourceManager.getImage(key); if(!img) return false;
+  ctx.save(); ctx.globalAlpha=alpha==null?1:alpha; ctx.drawImage(img,cx-w/2,cy-h/2,w,h); ctx.restore(); return true;
+}
+loadResources=function(){
+  const assets=[
+    ['v29_hud_money','hud_money.png'],['v29_hud_crown','hud_crown.png'],['v29_hud_weather','hud_weather.png'],
+    ['v29_hud_broadcast','hud_broadcast.png'],['v29_hud_target','hud_target.png'],['v29_hud_gift','hud_gift.png'],['v29_hud_plus','hud_plus.png'],['v29_hud_edit','hud_edit.png'],
+    ['v29_nav_city','nav_city.png'],['v29_nav_city_active','nav_city_active.png'],['v29_nav_store','nav_store.png'],['v29_nav_store_active','nav_store_active.png'],
+    ['v29_nav_traffic','nav_traffic.png'],['v29_nav_traffic_active','nav_traffic_active.png'],['v29_nav_menu','nav_menu.png'],['v29_nav_menu_active','nav_menu_active.png'],
+    ['v29_nav_supply','nav_supply.png'],['v29_nav_supply_active','nav_supply_active.png'],['v29_nav_data','nav_data.png'],['v29_nav_data_active','nav_data_active.png'],
+    ['v29_nav_system','nav_system.png'],['v29_nav_system_active','nav_system_active.png'],
+    ['v29_metric_population','metric_population.png'],['v29_metric_demand','metric_demand.png'],['v29_metric_spend','metric_spend.png'],
+    ['v29_metric_restaurants','metric_restaurants.png'],['v29_metric_saturation','metric_saturation.png'],['v29_metric_rent','metric_rent.png']
+  ];
+  return Promise.all(assets.map(a=>resourceManager.loadImage(a[0],'assets/images/v29/'+a[1],'v29-icons'))).then(()=>v29OriginalLoadResources());
+};
+drawWeatherGlyph=function(weather,x,y){ if(v29Img('v29_hud_weather',x,y,34,28)) return; };
+drawCashGlyph=function(x,y){ if(v29Img('v29_hud_money',x,y,35,28)) return; };
+drawCrownGlyph=function(x,y){ if(v29Img('v29_hud_crown',x,y,31,25)) return; };
+drawMetricSymbol=function(label,x,y,color){ const key=V29_METRIC_KEYS[label]; if(key&&v29Img(key,x,y,18,18)) return; };
+drawNavIcon=function(id,cx,cy,active){ const keys=V29_NAV_KEYS[id]; if(keys&&v29Img(active?keys[1]:keys[0],cx,cy,active?29:26,active?29:26,1)) return; };
+console.log('V29_CRISP_ICON_PASS loaded');
 /* =========================
    启动
 ========================= */
@@ -8556,5 +8595,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V28 目标图针标徽记版启动成功'
+  '城市餐饮经营小游戏 V29 高清图标版启动成功'
 );
