@@ -1,23 +1,16 @@
 {
-  "patch": "person-npc-final-v1.0.0",
-  "projectVersion": "0.4.0",
-  "cumulative": true,
-  "base": "property-full-v1.0.0",
-  "adds": [
-    "person/personPackV10.js",
-    "person/personRulesV10.js",
-    "systems/personEngine.js",
-    "tests/personNpcFullPackV100.test.js",
-    "docs/PERSON_NPC_PACK_V1_FINAL.md"
+  "patch": "competitor-pack-expanded-final-v1.1.0",
+  "type": "additive-foundation-pack",
+  "safe": true,
+  "overwrites_existing_runtime_files": false,
+  "replaces_only_competitor_foundation": true,
+  "files": [
+    "src/competitor/competitorPackV10.js",
+    "src/competitor/competitorRulesV10.js",
+    "src/competitor/competitorEngineV10.js",
+    "src/competitor/index.js",
+    "tests/competitorFullPackV110.test.js",
+    "docs/COMPETITOR_PACK_V1_1_FINAL.md"
   ],
-  "updates": [
-    "entities/entityFactory.js",
-    "packs/base/foundationPacks.js",
-    "package.json"
-  ],
-  "notes": [
-    "保留旧人物背景ID、旧性格ID映射、旧NPC角色ID兼容",
-    "人物与角色分离",
-    "无多余顶层目录"
-  ]
+  "notes": "不修改房源页、人物包、main、Android入口与package.json。只升级竞对底座，保持V1.0 API兼容。"
 }
