@@ -27165,6 +27165,36 @@
         }
       };
       console.log("V33_GLOBAL_NAV_UNIFICATION loaded");
+      function v34TrimMoneyNumber(value, decimals) {
+        return Number(value).toFixed(decimals).replace(/\.0+$/, "").replace(/(\.\d*?[1-9])0+$/, "$1");
+      }
+      v32FormatMoney = function(value) {
+        const n = Number(value) || 0;
+        const abs = Math.abs(n);
+        if (abs >= 1e12) {
+          const v = n / 1e12;
+          return "\xA5" + v34TrimMoneyNumber(
+            v,
+            Math.abs(v) >= 100 ? 0 : Math.abs(v) >= 10 ? 1 : 2
+          ) + "\u4E07\u4EBF";
+        }
+        if (abs >= 1e8) {
+          const v = n / 1e8;
+          return "\xA5" + v34TrimMoneyNumber(
+            v,
+            Math.abs(v) >= 100 ? 0 : Math.abs(v) >= 10 ? 1 : 2
+          ) + "\u4EBF";
+        }
+        if (abs >= 1e4) {
+          const v = n / 1e4;
+          return "\xA5" + v34TrimMoneyNumber(
+            v,
+            Math.abs(v) >= 100 ? 0 : Math.abs(v) >= 10 ? 1 : 2
+          ) + "\u4E07";
+        }
+        return "\xA5" + Math.round(n).toLocaleString();
+      };
+      console.log("V34_MONEY_FORMAT_FIX loaded");
       simulationSystem.initialize();
       sceneManager.switchTo(
         "city"
@@ -27175,7 +27205,7 @@
         gameLoop
       );
       console.log(
-        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V33 \u5168\u5C40\u7EDF\u4E00\u5E95\u680F\u7248\u542F\u52A8\u6210\u529F"
+        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V34 \u8D44\u91D1\u663E\u793A\u4FEE\u6B63\u7248\u542F\u52A8\u6210\u529F"
       );
     }
   });

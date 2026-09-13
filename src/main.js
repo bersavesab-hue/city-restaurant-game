@@ -9792,6 +9792,48 @@ drawBottomNav = function () {
 };
 
 console.log('V33_GLOBAL_NAV_UNIFICATION loaded');
+
+/* V34_MONEY_FORMAT_FIX */
+
+function v34TrimMoneyNumber(value, decimals) {
+  return Number(value)
+    .toFixed(decimals)
+    .replace(/\.0+$/, '')
+    .replace(/(\.\d*?[1-9])0+$/, '$1');
+}
+
+v32FormatMoney = function (value) {
+  const n = Number(value) || 0;
+  const abs = Math.abs(n);
+
+  if (abs >= 1000000000000) {
+    const v = n / 1000000000000;
+    return '¥' + v34TrimMoneyNumber(
+      v,
+      Math.abs(v) >= 100 ? 0 : Math.abs(v) >= 10 ? 1 : 2
+    ) + '万亿';
+  }
+
+  if (abs >= 100000000) {
+    const v = n / 100000000;
+    return '¥' + v34TrimMoneyNumber(
+      v,
+      Math.abs(v) >= 100 ? 0 : Math.abs(v) >= 10 ? 1 : 2
+    ) + '亿';
+  }
+
+  if (abs >= 10000) {
+    const v = n / 10000;
+    return '¥' + v34TrimMoneyNumber(
+      v,
+      Math.abs(v) >= 100 ? 0 : Math.abs(v) >= 10 ? 1 : 2
+    ) + '万';
+  }
+
+  return '¥' + Math.round(n).toLocaleString();
+};
+
+console.log('V34_MONEY_FORMAT_FIX loaded');
 /* =========================
    启动
 ========================= */
@@ -9813,5 +9855,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V33 全局统一底栏版启动成功'
+  '城市餐饮经营小游戏 V34 资金显示修正版启动成功'
 );
