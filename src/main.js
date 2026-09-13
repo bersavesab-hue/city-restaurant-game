@@ -8380,6 +8380,161 @@ if (cityScene && typeof cityScene.enter === 'function' && !cityScene.__v26Wrappe
 
 console.log('V26_HARD_REBUILD_HOME loaded');
 
+
+/* V28_TARGET_MARKERS_AND_BADGES */
+
+const V28_MARKER_IMAGE_KEYS = {
+ university: 'v28_marker_university',
+ hightech: 'v28_marker_hightech',
+ cbd: 'v28_marker_cbd',
+ oldtown: 'v28_marker_oldtown',
+ village: 'v28_marker_village',
+ industry: 'v28_marker_industry',
+ market: 'v28_marker_market'
+};
+
+const V28_BADGE_IMAGE_KEYS = {
+ '需求↑': 'v28_badge_high_popularity',
+ '竞争高': 'v28_badge_high_competition',
+ '租金低': 'v28_badge_low_rent'
+};
+
+const V28_MARKER_DISPLAY = {
+ university: { w: 43, h: 56, dy: -2 },
+ hightech: { w: 43, h: 56, dy: -2 },
+ cbd: { w: 44, h: 58, dy: -2 },
+ oldtown: { w: 43, h: 56, dy: -2 },
+ village: { w: 45, h: 60, dy: -2 },
+ industry: { w: 43, h: 58, dy: -2 },
+ market: { w: 44, h: 60, dy: -2 }
+};
+
+const v28OriginalLoadResources = loadResources;
+
+function v28DrawRawImage(image, x, y, w, h, alpha) {
+ if (!image) return false;
+ ctx.save();
+ ctx.globalAlpha = alpha == null ? 1 : alpha;
+ ctx.drawImage(image, x, y, w, h);
+ ctx.restore();
+ return true;
+}
+
+loadResources = function () {
+ return Promise.all([
+   resourceManager.loadImage('v28_marker_university', 'assets/images/target_home/markers/university.png', 'v28-home'),
+   resourceManager.loadImage('v28_marker_hightech', 'assets/images/target_home/markers/hightech.png', 'v28-home'),
+   resourceManager.loadImage('v28_marker_cbd', 'assets/images/target_home/markers/cbd.png', 'v28-home'),
+   resourceManager.loadImage('v28_marker_oldtown', 'assets/images/target_home/markers/oldtown.png', 'v28-home'),
+   resourceManager.loadImage('v28_marker_village', 'assets/images/target_home/markers/village.png', 'v28-home'),
+   resourceManager.loadImage('v28_marker_industry', 'assets/images/target_home/markers/industry.png', 'v28-home'),
+   resourceManager.loadImage('v28_marker_market', 'assets/images/target_home/markers/market.png', 'v28-home'),
+   resourceManager.loadImage('v28_badge_high_popularity', 'assets/images/target_home/status/high_popularity.png', 'v28-home'),
+   resourceManager.loadImage('v28_badge_high_competition', 'assets/images/target_home/status/high_competition.png', 'v28-home'),
+   resourceManager.loadImage('v28_badge_low_rent', 'assets/images/target_home/status/low_rent.png', 'v28-home'),
+   resourceManager.loadImage('v28_badge_my_store', 'assets/images/target_home/status/my_store.png', 'v28-home')
+ ]).then(function () {
+   return v28OriginalLoadResources();
+ });
+};
+
+drawDistrictMarker = function (district) {
+ const point = v26GetPoint(district.id);
+ if (!point) return;
+
+ const x = point.x;
+ const y = point.y;
+ const selected = selectedDistrictId === district.id;
+ const meta = getDistrictVisualMeta(district);
+ const config = V26_HOME_POINTS[district.id] || { side: 'right' };
+ const animated = districtFx.id === district.id;
+ const markerScale = animated ? districtFx.scale : 1;
+
+ if (selected) {
+   ctx.beginPath();
+   ctx.arc(x, y, 24 + districtFx.flash * 4, 0, Math.PI * 2);
+   ctx.fillStyle = 'rgba(255,195,54,0.16)';
+   ctx.fill();
+ }
+
+ ctx.save();
+ ctx.translate(x, y);
+ ctx.scale(markerScale, markerScale);
+
+ const markerSpec = V28_MARKER_DISPLAY[district.id] || { w: 44, h: 58, dy: -2 };
+ const markerImage = resourceManager.getImage(V28_MARKER_IMAGE_KEYS[district.id]);
+
+ if (markerImage) {
+   v28DrawRawImage(
+     markerImage,
+     -markerSpec.w / 2,
+     -markerSpec.h / 2 + markerSpec.dy,
+     markerSpec.w,
+     markerSpec.h
+   );
+ } else {
+   const key = V21_DISTRICT_ICON_KEYS && V21_DISTRICT_ICON_KEYS[district.id];
+   if (!key || !(typeof v21DrawImage === 'function' && v21DrawImage(key, 0, -4, 44, 56))) {
+     drawDistrictPictogram(district.id, 0, -4);
+   }
+ }
+
+ ctx.restore();
+
+ const boxW = Math.max(94, Math.min(112, 45 + district.name.length * 10));
+ const boxXBase = config.side === 'left' ? x - boxW - 12 : x + 12;
+ const boxX = Math.max(6, Math.min(VIEW_W - boxW - 6, boxXBase));
+ const boxY = Math.max(MAP_Y + 74, Math.min(CARD_Y - 58, y - 14));
+
+ roundedRect(boxX, boxY, boxW, 27, 12, 'rgba(5,53,79,0.97)', selected ? '#FFE06C' : 'rgba(255,218,93,0.82)', selected ? 1.25 : 1);
+ drawText(district.name, boxX + 10, boxY + 13.5, 9.1, '#FFFFFF', '800');
+ drawText('›', boxX + boxW - 9, boxY + 13.5, 10.1, '#FFE49C', '800', 'center');
+
+ roundedRect(boxX + 5, boxY + 27, boxW - 10, 18, 8, 'rgba(255,253,247,0.98)', 'rgba(11,55,76,0.12)');
+ drawText(fitText(meta.subtitle, boxW - 18, 6.0, '700'), boxX + boxW / 2, boxY + 36.5, 6.0, '#23455B', '700', 'center');
+
+ if (meta.badge) {
+   const badgeImage = resourceManager.getImage(V28_BADGE_IMAGE_KEYS[meta.badge]);
+   const badgeW = meta.badge === '需求↑' ? 39 : (meta.badge === '竞争高' ? 46 : 36);
+   const badgeH = 17;
+   const badgeX = Math.max(6, Math.min(VIEW_W - badgeW - 6, boxX + boxW - badgeW + 6));
+
+   if (badgeImage) {
+     v28DrawRawImage(badgeImage, badgeX, boxY - 9, badgeW, badgeH);
+   } else {
+     const fallbackW = Math.max(37, 15 + meta.badge.length * 6.0);
+     const fallbackX = Math.max(6, Math.min(VIEW_W - fallbackW - 6, boxX + boxW - fallbackW + 6));
+     roundedRect(fallbackX, boxY - 9, fallbackW, 17, 8, meta.badgeColor, 'rgba(255,245,218,0.98)');
+     drawText(meta.badge, fallbackX + fallbackW / 2, boxY - 0.4, 5.4, '#FFFFFF', '800', 'center');
+   }
+ }
+
+ if (meta.myShopCount > 0) {
+   const storeImage = resourceManager.getImage('v28_badge_my_store');
+   const sw = meta.myShopCount > 1 ? 58 : 46;
+   const sh = 18;
+   const sx = Math.max(6, Math.min(VIEW_W - sw - 6, boxX + boxW - sw + 4));
+
+   if (storeImage) {
+     v28DrawRawImage(storeImage, sx, boxY - 29, sw, sh);
+     if (meta.myShopCount > 1) {
+       drawText('×' + meta.myShopCount, sx + sw - 8, boxY - 19.4, 5.2, '#FFFFFF', '800', 'center');
+     }
+   } else {
+     const txt = meta.myShopCount > 1 ? '✓ 我的店×' + meta.myShopCount : '✓ 我的店';
+     roundedRect(sx, boxY - 28, sw, 16, 8, '#1E9A5E', '#B9F0C8');
+     drawText(txt, sx + sw / 2, boxY - 20, 5.0, '#FFFFFF', '800', 'center');
+   }
+ }
+
+ const hitLeft = Math.min(x - 22, boxX - 4);
+ const hitRight = Math.max(x + 22, boxX + boxW + 4);
+ const hitTop = Math.min(y - 30, boxY - 29);
+ const hitBottom = Math.max(y + 28, boxY + 46);
+ addButton('district:' + district.id, hitLeft, hitTop, hitRight - hitLeft, hitBottom - hitTop);
+};
+
+console.log('V28_TARGET_MARKERS_AND_BADGES loaded');
 /* =========================
    启动
 ========================= */
@@ -8401,5 +8556,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V26 主页硬重构版启动成功'
+  '城市餐饮经营小游戏 V28 目标图针标徽记版启动成功'
 );
