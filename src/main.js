@@ -6832,6 +6832,572 @@ if (cityScene && typeof cityScene.enter === 'function') {
 
 console.log('V22_HOME_MATCH loaded');
 
+/* V23_HOME_REMAP */
+
+const V23_DISTRICT_LAYOUT = {
+  university: {
+    px: 0.17,
+    py: 0.34,
+    cardFocusX: 0.23,
+    cardFocusY: 0.30,
+    labelSide: 'right'
+  },
+  hightech: {
+    px: 0.79,
+    py: 0.36,
+    cardFocusX: 0.76,
+    cardFocusY: 0.31,
+    labelSide: 'left'
+  },
+  cbd: {
+    px: 0.50,
+    py: 0.49,
+    cardFocusX: 0.52,
+    cardFocusY: 0.46,
+    labelSide: 'right'
+  },
+  oldtown: {
+    px: 0.10,
+    py: 0.63,
+    cardFocusX: 0.17,
+    cardFocusY: 0.58,
+    labelSide: 'right'
+  },
+  village: {
+    px: 0.36,
+    py: 0.71,
+    cardFocusX: 0.41,
+    cardFocusY: 0.66,
+    labelSide: 'right'
+  },
+  market: {
+    px: 0.16,
+    py: 0.85,
+    cardFocusX: 0.19,
+    cardFocusY: 0.79,
+    labelSide: 'right'
+  },
+  industry: {
+    px: 0.80,
+    py: 0.61,
+    cardFocusX: 0.79,
+    cardFocusY: 0.58,
+    labelSide: 'left'
+  }
+};
+
+const v23OriginalDrawMapBase = drawMapBase;
+const v23OriginalDrawDistrictMarker = drawDistrictMarker;
+const v23OriginalDrawDistrictCard = drawDistrictCard;
+const v23OriginalDrawTopHud = drawTopHud;
+const v23OriginalDrawNewsTicker = drawNewsTicker;
+const v23OriginalDrawGoalBar = drawGoalBar;
+const v23OriginalDrawBottomNav = drawBottomNav;
+
+function v23EnsureSelectedDistrict() {
+  const districts = getDistricts();
+  if (!districts || !districts.length) return null;
+
+  for (let i = 0; i < districts.length; i++) {
+    if (districts[i].id === selectedDistrictId) {
+      return districts[i];
+    }
+  }
+
+  const fallback = districts.find(function (item) {
+    return item.id === 'market';
+  }) || districts[0];
+
+  if (fallback) {
+    selectedDistrictId = fallback.id;
+  }
+
+  return fallback || null;
+}
+
+function v23GetMapPoint(districtId) {
+  const config = V23_DISTRICT_LAYOUT[districtId];
+  if (!config) {
+    return getDistrictPoint(districtId);
+  }
+
+  const top = MAP_Y + 84;
+  const bottom = CARD_Y - 44;
+  const usableH = Math.max(120, bottom - top);
+
+  return {
+    x: Math.round(MAP_X + MAP_W * config.px),
+    y: Math.round(top + usableH * config.py)
+  };
+}
+
+function v23GetCardFocus(districtId) {
+  const config = V23_DISTRICT_LAYOUT[districtId] || {};
+  return {
+    x: config.cardFocusX == null ? 0.56 : config.cardFocusX,
+    y: config.cardFocusY == null ? 0.60 : config.cardFocusY
+  };
+}
+
+updateLayout = function () {
+  TOP_H = (VIEW_H < 740 ? 93 : 96) + SAFE_TOP;
+  NAV_H = (VIEW_H < 740 ? 58 : 62) + SAFE_BOTTOM;
+
+  MAP_X = 0;
+  MAP_Y = TOP_H;
+  MAP_W = VIEW_W;
+
+  NAV_Y = VIEW_H - NAV_H;
+  MAP_H = NAV_Y - MAP_Y;
+
+  CARD_H = VIEW_H < 740 ? 122 : 132;
+  CARD_X = 6;
+  CARD_W = VIEW_W - 12;
+  CARD_Y = NAV_Y - CARD_H - 4;
+};
+
+drawMapBase = function () {
+  const image = resourceManager.getImage('city_base_01');
+  if (!image) {
+    return v23OriginalDrawMapBase();
+  }
+
+  drawImageFocus(
+    ctx,
+    image,
+    MAP_X,
+    MAP_Y,
+    MAP_W,
+    MAP_H,
+    1.72,
+    0.56,
+    0.57
+  );
+
+  const topFade = ctx.createLinearGradient(0, MAP_Y, 0, MAP_Y + 120);
+  topFade.addColorStop(0, 'rgba(6,39,61,0.24)');
+  topFade.addColorStop(1, 'rgba(6,39,61,0.01)');
+  ctx.fillStyle = topFade;
+  ctx.fillRect(MAP_X, MAP_Y, MAP_W, 120);
+
+  const bottomFade = ctx.createLinearGradient(0, CARD_Y - 50, 0, CARD_Y + 10);
+  bottomFade.addColorStop(0, 'rgba(255,255,255,0.00)');
+  bottomFade.addColorStop(1, 'rgba(255,255,255,0.10)');
+  ctx.fillStyle = bottomFade;
+  ctx.fillRect(MAP_X, CARD_Y - 50, MAP_W, 60);
+};
+
+drawTopHud = function () {
+  v23OriginalDrawTopHud();
+  drawText('品牌：' + ((gameState.getPlayer() && gameState.getPlayer().brandName) || '未命名品牌'), 66, 50 + SAFE_TOP, 6.2, '#EAF5FA', '600');
+};
+
+drawNewsTicker = function () {
+  const feed = simulationSystem.getNewsFeed();
+  const bulletin = simulationSystem.getBulletin();
+  const x = 8;
+  const y = MAP_Y + 6;
+  const w = VIEW_W - 16;
+  const h = 29;
+
+  roundedRect(x, y, w, h, 14, 'rgba(2,42,67,0.96)', 'rgba(82,199,243,0.50)');
+  drawText('📣', x + 16, y + 14.5, 9.5, '#FFD75F', '800', 'center');
+  drawText('城市通报', x + 31, y + 14.5, 7.4, '#FFD75F', '800');
+
+  const items = ((feed && feed.length ? feed : [bulletin])).slice(0, 2);
+  const startX = x + 84;
+  const sectionW = (w - 107) / Math.max(1, items.length);
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (i > 0) {
+      ctx.fillStyle = 'rgba(235,245,248,0.28)';
+      ctx.fillRect(startX + i * sectionW - 7, y + 8, 1, 13);
+    }
+
+    drawText(
+      fitText(item && item.title ? item.title : '城市运行平稳', sectionW - 16, 6.5, '600'),
+      startX + i * sectionW,
+      y + 14.5,
+      6.5,
+      '#F5FBFD',
+      '600'
+    );
+  }
+
+  drawText('›', x + w - 13, y + 14.5, 13, '#FFD75F', '800', 'center');
+  addButton('tool:news', x, y, w, h);
+};
+
+drawGoalBar = function () {
+  const goal = getHomeGoalState();
+  const x = 8;
+  const y = MAP_Y + 41;
+  const w = VIEW_W - 16;
+  const h = 30;
+
+  roundedRect(x, y, w, h, 14, 'rgba(2,42,67,0.96)', 'rgba(82,199,243,0.45)');
+  drawText('◎', x + 15, y + 14.5, 12.5, '#FFD85C', '800', 'center');
+  drawText('当前目标：', x + 28, y + 14.5, 7.3, '#FFD85C', '800');
+  drawText(goal.title === '筹备首店' ? '开设首家餐厅' : goal.title, x + 83, y + 14.5, 7.3, '#FFFFFF', '800');
+
+  const labels = goal.title === '筹备首店'
+    ? ['选址', '看铺', '谈判', '签约', '装修']
+    : goal.steps;
+  const currentIndex = Math.max(0, Math.min(labels.length - 1, goal.current));
+  const startX = x + 164;
+  const usable = w - 197;
+  const gap = usable / Math.max(1, labels.length - 1);
+
+  for (let i = 0; i < labels.length; i++) {
+    const cx = startX + i * gap;
+    const done = i < currentIndex;
+    const active = i === currentIndex && !goal.completed;
+
+    if (i < labels.length - 1) {
+      ctx.strokeStyle = i < currentIndex ? '#F3C644' : 'rgba(227,237,241,0.40)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(cx + 8, y + 10.5);
+      ctx.lineTo(cx + gap - 8, y + 10.5);
+      ctx.stroke();
+    }
+
+    ctx.beginPath();
+    ctx.arc(cx, y + 10.5, 5.1, 0, Math.PI * 2);
+    ctx.fillStyle = done ? '#F2C745' : (active ? '#FFF6C7' : 'rgba(225,239,244,0.18)');
+    ctx.fill();
+    ctx.strokeStyle = done || active ? '#FFE58B' : '#9DB8C5';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    drawText(labels[i], cx, y + 22.5, 5.8, active ? '#FFE08A' : '#E8F3F7', active ? '800' : '600', 'center');
+  }
+
+  drawText('🎁', x + w - 13, y + 15, 10.5, '#FFD85C', '800', 'center');
+};
+
+drawDistrictMarker = function (district) {
+  const config = V23_DISTRICT_LAYOUT[district.id];
+  if (!config) {
+    return v23OriginalDrawDistrictMarker(district);
+  }
+
+  const point = v23GetMapPoint(district.id);
+  const x = point.x;
+  const y = point.y;
+  const selected = selectedDistrictId === district.id;
+  const meta = getDistrictVisualMeta(district);
+  const animated = districtFx.id === district.id;
+  const markerScale = animated ? districtFx.scale : 1;
+
+  if (selected) {
+    ctx.beginPath();
+    ctx.arc(x, y, 23 + districtFx.flash * 4, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,199,65,0.16)';
+    ctx.fill();
+  }
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(markerScale, markerScale);
+
+  const key = V21_DISTRICT_ICON_KEYS && V21_DISTRICT_ICON_KEYS[district.id];
+  if (!key || !(typeof v21DrawImage === 'function' && v21DrawImage(key, 0, -3, 40, 50))) {
+    drawDistrictPictogram(district.id, 0, -3);
+  }
+
+  ctx.restore();
+
+  const boxW = Math.max(82, Math.min(106, 44 + district.name.length * 10));
+  const boxH = 25;
+  const subH = 17;
+  const side = config.labelSide || 'right';
+  let boxX = side === 'left' ? x - boxW - 13 : x + 14;
+  boxX = Math.max(6, Math.min(VIEW_W - boxW - 6, boxX));
+
+  let boxY = y - 14;
+  boxY = Math.max(MAP_Y + 84, Math.min(CARD_Y - 52, boxY));
+
+  roundedRect(boxX, boxY, boxW, boxH, 11, 'rgba(5,53,79,0.98)', selected ? '#FFE06C' : 'rgba(255,218,93,0.82)', selected ? 1.25 : 1);
+  drawText(district.name, boxX + 10, boxY + 12.3, 8.5, '#FFFFFF', '800');
+  drawText('›', boxX + boxW - 9, boxY + 12.3, 9.6, '#FFE49C', '800', 'center');
+
+  roundedRect(boxX + 5, boxY + boxH, boxW - 10, subH, 7, 'rgba(255,253,247,0.99)', 'rgba(11,55,76,0.10)');
+  drawText(fitText(meta.subtitle, boxW - 16, 5.7, '700'), boxX + boxW / 2, boxY + boxH + 8.6, 5.7, '#23455B', '700', 'center');
+
+  if (meta.badge) {
+    const badgeW = Math.max(35, 16 + meta.badge.length * 5.8);
+    const badgeX = Math.max(6, Math.min(VIEW_W - badgeW - 6, boxX + boxW - badgeW + 4));
+    roundedRect(badgeX, boxY - 8, badgeW, 16, 8, meta.badgeColor, 'rgba(255,245,218,0.98)');
+    drawText(meta.badge, badgeX + badgeW / 2, boxY + 0.8, 5.1, '#FFFFFF', '800', 'center');
+  }
+
+  if (meta.myShopCount > 0) {
+    const textValue = meta.myShopCount > 1 ? '✓ 我的店×' + meta.myShopCount : '✓ 我的店';
+    const shopW = meta.myShopCount > 1 ? 52 : 42;
+    const sx = Math.max(6, Math.min(VIEW_W - shopW - 6, boxX + boxW - shopW + 2));
+    roundedRect(sx, boxY - 26, shopW, 15, 7, '#1E9A5E', '#B9F0C8');
+    drawText(textValue, sx + shopW / 2, boxY - 18.5, 4.8, '#FFFFFF', '800', 'center');
+  }
+
+  const hitLeft = Math.min(x - 20, boxX - 4);
+  const hitRight = Math.max(x + 22, boxX + boxW + 4);
+  const hitTop = Math.min(y - 28, boxY - 26);
+  const hitBottom = Math.max(y + 25, boxY + 44);
+  addButton('district:' + district.id, hitLeft, hitTop, hitRight - hitLeft, hitBottom - hitTop);
+};
+
+drawDistrictCard = function () {
+  const district = v23EnsureSelectedDistrict();
+  if (!district) {
+    return v23OriginalDrawDistrictCard();
+  }
+
+  const meta = getDistrictVisualMeta(district);
+  const x = CARD_X;
+  const y = CARD_Y;
+  const w = CARD_W;
+  const h = CARD_H;
+
+  roundedRect(x, y, w, h, 17, 'rgba(255,255,255,0.985)', 'rgba(10,56,79,0.16)', 1.1);
+
+  const preview = resourceManager.getImage('city_base_01');
+  const px = x + 11;
+  const py = y + 10;
+  const pw = 88;
+  const ph = h - 20;
+  if (preview) {
+    const focus = v23GetCardFocus(district.id);
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(px + 14, py);
+    ctx.arcTo(px + pw, py, px + pw, py + ph, 14);
+    ctx.arcTo(px + pw, py + ph, px, py + ph, 14);
+    ctx.arcTo(px, py + ph, px, py, 14);
+    ctx.arcTo(px, py, px + pw, py, 14);
+    ctx.closePath();
+    ctx.clip();
+    drawImageFocus(ctx, preview, px, py, pw, ph, 2.15, focus.x, focus.y);
+    ctx.restore();
+  } else {
+    roundedRect(px, py, pw, ph, 14, '#C5D7E1');
+  }
+
+  const iconKey = V21_DISTRICT_ICON_KEYS && V21_DISTRICT_ICON_KEYS[district.id];
+  if (iconKey && typeof v21DrawImage === 'function') {
+    v21DrawImage(iconKey, x + 118, y + 19, 19, 24);
+  }
+
+  drawText(district.name, x + 130, y + 18, 13.2, '#103655', '800');
+  drawText('›', x + 194, y + 18, 12.4, '#2F5673', '800', 'center');
+
+  let summary = '客群活跃 · 仍有经营机会';
+  if (meta.badge === '租金低') summary = '租金较低 · 适合抢先布局';
+  if (meta.badge === '竞争高') summary = '竞争激烈 · 适合差异化经营';
+  if (meta.badge === '需求↑') summary = '需求上涨 · 可优先进入';
+  if (meta.badge === '人气高') summary = '客群活跃 · 仍有经营机会';
+  if (meta.myShopCount > 0) summary = '已开门店 · 可继续深耕经营';
+
+  drawText(summary, x + 110, y + 35, 6.2, '#39627E', '700');
+
+  const metrics = [
+    ['人口', district.population.toLocaleString(), '#1E76C5'],
+    ['需求', demandSystem.getTotalDemand(district.id).toLocaleString(), '#1E9A5E'],
+    ['客单', '¥' + district.avgSpend, '#164A86'],
+    ['餐饮店', district.restaurantCount + '家', '#164A86'],
+    ['饱和度', district.saturation + '%', '#1E76C5'],
+    ['租金', district.rentIndex.toFixed(2), '#164A86']
+  ];
+
+  const metricX = x + 103;
+  const metricY = y + 47;
+  const metricGap = 4;
+  const metricW = Math.floor((w - 220 - metricGap * 5) / 6);
+  for (let i = 0; i < metrics.length; i++) {
+    const mx = metricX + i * (metricW + metricGap);
+    roundedRect(mx, metricY, metricW, 39, 8, '#FAF8F3', 'rgba(17,62,92,0.10)');
+    drawMetricSymbol(metrics[i][0], mx + metricW / 2, metricY + 9.5, metrics[i][2]);
+    drawText(metrics[i][0], mx + metricW / 2, metricY + 20.5, 4.9, '#245276', '700', 'center');
+    drawText(metrics[i][1], mx + metricW / 2, metricY + 33.5, 6.2, metrics[i][2], '800', 'center');
+  }
+
+  drawText('实时数据会随人口、城市事件、竞争和租金变化', x + 109, y + h - 17, 5.5, '#607D92', '600');
+
+  roundedRect(x + w - 116, y + h - 42, 106, 34, 18, '#FFC22D', '#DFA01B', 1.2);
+  drawText('进入商圈  ›', x + w - 63, y + h - 25, 8.4, '#123A53', '800', 'center');
+  addButton('district:details', x + w - 120, y + h - 46, 112, 42);
+};
+
+drawBottomNav = function () {
+  v23OriginalDrawBottomNav();
+  ctx.strokeStyle = 'rgba(86,190,244,0.26)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(0.5, NAV_Y + 0.5, VIEW_W - 1, NAV_H - 1);
+};
+
+if (cityScene && typeof cityScene.enter === 'function') {
+  const v23OriginalCityEnter = cityScene.enter;
+  cityScene.enter = function () {
+    v23OriginalCityEnter.call(this);
+    v23EnsureSelectedDistrict();
+  };
+}
+
+console.log('V23_HOME_REMAP loaded');
+
+/* V24_FINAL_HOME_PACK */
+
+const V24_DISTRICT_PREVIEW_KEYS = {
+  university: 'v24_preview_university',
+  hightech: 'v24_preview_hightech',
+  cbd: 'v24_preview_cbd',
+  oldtown: 'v24_preview_oldtown',
+  village: 'v24_preview_village',
+  market: 'v24_preview_market',
+  industry: 'v24_preview_industry'
+};
+
+const v24OriginalLoadResources = loadResources;
+const v24OriginalDrawDistrictCard = drawDistrictCard;
+const v24OriginalDrawMapBase = drawMapBase;
+
+loadResources = function () {
+  const previews = [
+    ['v24_preview_university', 'district_preview_university.png'],
+    ['v24_preview_hightech', 'district_preview_hightech.png'],
+    ['v24_preview_cbd', 'district_preview_cbd.png'],
+    ['v24_preview_oldtown', 'district_preview_oldtown.png'],
+    ['v24_preview_village', 'district_preview_village.png'],
+    ['v24_preview_market', 'district_preview_market.png'],
+    ['v24_preview_industry', 'district_preview_industry.png']
+  ];
+
+  const tasks = [];
+  for (let i = 0; i < previews.length; i++) {
+    tasks.push(
+      resourceManager.loadImage(
+        previews[i][0],
+        'assets/images/v24/' + previews[i][1],
+        'v24-ui'
+      )
+    );
+  }
+
+  return Promise.all(tasks).then(function () {
+    return v24OriginalLoadResources();
+  });
+};
+
+drawMapBase = function () {
+  const image = resourceManager.getImage('city_base_01');
+  if (!image) {
+    return v24OriginalDrawMapBase();
+  }
+
+  drawImageFocus(
+    ctx,
+    image,
+    MAP_X,
+    MAP_Y,
+    MAP_W,
+    MAP_H,
+    1.58,
+    0.51,
+    0.52
+  );
+
+  const topFade = ctx.createLinearGradient(0, MAP_Y, 0, MAP_Y + 120);
+  topFade.addColorStop(0, 'rgba(5,35,54,0.20)');
+  topFade.addColorStop(1, 'rgba(5,35,54,0.00)');
+  ctx.fillStyle = topFade;
+  ctx.fillRect(MAP_X, MAP_Y, MAP_W, 120);
+};
+
+drawDistrictCard = function () {
+  const district = (typeof v23EnsureSelectedDistrict === 'function')
+    ? v23EnsureSelectedDistrict()
+    : ((getDistricts() || [])[0] || null);
+
+  if (!district) {
+    return v24OriginalDrawDistrictCard();
+  }
+
+  const meta = getDistrictVisualMeta(district);
+  const x = CARD_X;
+  const y = CARD_Y;
+  const w = CARD_W;
+  const h = CARD_H;
+
+  roundedRect(x, y, w, h, 17, 'rgba(255,255,255,0.988)', 'rgba(10,56,79,0.16)', 1.1);
+
+  const previewKey = V24_DISTRICT_PREVIEW_KEYS[district.id];
+  const preview = resourceManager.getImage(previewKey);
+  const px = x + 11;
+  const py = y + 10;
+  const pw = 88;
+  const ph = h - 20;
+  if (preview) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(px + 14, py);
+    ctx.arcTo(px + pw, py, px + pw, py + ph, 14);
+    ctx.arcTo(px + pw, py + ph, px, py + ph, 14);
+    ctx.arcTo(px, py + ph, px, py, 14);
+    ctx.arcTo(px, py, px + pw, py, 14);
+    ctx.closePath();
+    ctx.clip();
+    drawImageFocus(ctx, preview, px, py, pw, ph, 1.02, 0.5, 0.5);
+    ctx.restore();
+  } else {
+    return v24OriginalDrawDistrictCard();
+  }
+
+  const iconKey = V21_DISTRICT_ICON_KEYS && V21_DISTRICT_ICON_KEYS[district.id];
+  if (iconKey && typeof v21DrawImage === 'function') {
+    v21DrawImage(iconKey, x + 118, y + 19, 19, 24);
+  }
+
+  drawText(district.name, x + 130, y + 18, 13.2, '#103655', '800');
+  drawText('›', x + 194, y + 18, 12.4, '#2F5673', '800', 'center');
+
+  let summary = '客群活跃 · 仍有经营机会';
+  if (meta.badge === '租金低') summary = '租金较低 · 适合抢先布局';
+  if (meta.badge === '竞争高') summary = '竞争激烈 · 适合差异化经营';
+  if (meta.badge === '需求↑') summary = '需求上涨 · 可优先进入';
+  if (meta.badge === '人气高') summary = '客群活跃 · 仍有经营机会';
+  if (meta.myShopCount > 0) summary = '已开门店 · 可继续深耕经营';
+
+  drawText(summary, x + 110, y + 35, 6.2, '#39627E', '700');
+
+  const metrics = [
+    ['人口', district.population.toLocaleString(), '#1E76C5'],
+    ['需求', demandSystem.getTotalDemand(district.id).toLocaleString(), '#1E9A5E'],
+    ['客单', '¥' + district.avgSpend, '#164A86'],
+    ['餐饮店', district.restaurantCount + '家', '#164A86'],
+    ['饱和度', district.saturation + '%', '#1E76C5'],
+    ['租金', district.rentIndex.toFixed(2), '#164A86']
+  ];
+
+  const metricX = x + 103;
+  const metricY = y + 47;
+  const metricGap = 4;
+  const metricW = Math.floor((w - 220 - metricGap * 5) / 6);
+  for (let i = 0; i < metrics.length; i++) {
+    const mx = metricX + i * (metricW + metricGap);
+    roundedRect(mx, metricY, metricW, 39, 8, '#FAF8F3', 'rgba(17,62,92,0.10)');
+    drawMetricSymbol(metrics[i][0], mx + metricW / 2, metricY + 9.5, metrics[i][2]);
+    drawText(metrics[i][0], mx + metricW / 2, metricY + 20.5, 4.9, '#245276', '700', 'center');
+    drawText(metrics[i][1], mx + metricW / 2, metricY + 33.5, 6.2, metrics[i][2], '800', 'center');
+  }
+
+  drawText('实时数据会随人口、城市事件、竞争和租金变化', x + 109, y + h - 17, 5.5, '#607D92', '600');
+  roundedRect(x + w - 116, y + h - 42, 106, 34, 18, '#FFC22D', '#DFA01B', 1.2);
+  drawText('进入商圈  ›', x + w - 63, y + h - 25, 8.4, '#123A53', '800', 'center');
+  addButton('district:details', x + w - 120, y + h - 46, 112, 42);
+};
+
+console.log('V24_FINAL_HOME_PACK loaded');
+
 /* =========================
    启动
 ========================= */
@@ -6853,5 +7419,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V22 主页一对一复刻版启动成功'
+  '城市餐饮经营小游戏 V24 最终主页资源版启动成功'
 );
