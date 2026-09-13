@@ -1,5 +1,7 @@
 'use strict';
 
+// V46_RENOVATION_PLAYABILITY_SYSTEM
+
 const gameState =
   require('../core/gameState.js');
 
@@ -209,6 +211,13 @@ class RenovationSystem {
         lightingLevel:
           'basic',
 
+        decorCounts: {
+          plant: 0,
+          pendant: 0,
+          screen: 0,
+          sofa: 0
+        },
+
         floors,
 
         selectedContractorId:
@@ -217,6 +226,19 @@ class RenovationSystem {
         construction:
           null
       };
+    }
+
+    if (
+      !store[shopId]
+        .decorCounts
+    ) {
+      store[shopId]
+        .decorCounts = {
+          plant: 0,
+          pendant: 0,
+          screen: 0,
+          sofa: 0
+        };
     }
 
     return clone(
@@ -530,6 +552,50 @@ class RenovationSystem {
               ) +
               delta
             )
+          );
+      }
+    );
+  }
+
+  adjustDecor(
+    shopId,
+    decorId,
+    delta
+  ) {
+    const item =
+      config.decorItems
+        .find(
+          value =>
+            value.id ===
+            decorId
+        );
+
+    if (!item) {
+      return null;
+    }
+
+    return this.mutatePlan(
+      shopId,
+      plan => {
+        if (!plan.decorCounts) {
+          plan.decorCounts = {};
+        }
+
+        const current =
+          Number(
+            plan.decorCounts[
+              decorId
+            ]
+          ) || 0;
+
+        plan.decorCounts[
+          decorId
+        ] =
+          clamp(
+            current +
+              Number(delta || 0),
+            0,
+            item.max
           );
       }
     );
@@ -1093,13 +1159,60 @@ class RenovationSystem {
           1.8
       );
 
+    const decorCounts =
+      plan.decorCounts ||
+      {};
+
+    let decorCost =
+      0;
+
+    let decorComfortBonus =
+      0;
+
+    let decorAppealBonus =
+      0;
+
+    for (
+      let i = 0;
+      i <
+      config.decorItems.length;
+      i++
+    ) {
+      const item =
+        config.decorItems[i];
+
+      const count =
+        clamp(
+          Number(
+            decorCounts[
+              item.id
+            ]
+          ) || 0,
+          0,
+          item.max
+        );
+
+      decorCost +=
+        count *
+        item.cost;
+
+      decorComfortBonus +=
+        count *
+        item.comfort;
+
+      decorAppealBonus +=
+        count *
+        item.appeal;
+    }
+
     const totalCost =
       Math.round(
         constructionBase +
         lightingCost +
         furnitureCost +
         roomCost +
-        kitchenComplexity
+        kitchenComplexity +
+        decorCost
       );
 
     const averageComfort =
@@ -1130,6 +1243,10 @@ class RenovationSystem {
         material.quality *
         lighting.appeal *
         (
+          1 +
+          decorComfortBonus
+        ) *
+        (
           1 -
           Math.max(
             0,
@@ -1154,6 +1271,10 @@ class RenovationSystem {
         hallStyle.appeal *
         lighting.appeal *
         material.quality *
+        (
+          1 +
+          decorAppealBonus
+        ) *
         (
           roomCount
             ? roomAppeal /
@@ -1188,6 +1309,69 @@ class RenovationSystem {
         0.45,
         1.35
       );
+
+    const renovationScore =
+      Math.round(
+        clamp(
+          (
+            comfort /
+            1.35
+          ) *
+            32 +
+          (
+            appeal /
+            1.55
+          ) *
+            32 +
+          (
+            operationalEfficiency /
+            1.35
+          ) *
+            26 +
+          (
+            invalidFloorCount === 0
+              ? 10
+              : 0
+          ),
+          0,
+          100
+        )
+      );
+
+    const operatingImpact = {
+      trafficFactor:
+        Number(
+          clamp(
+            0.86 +
+              appeal *
+                0.14,
+            0.90,
+            1.18
+          ).toFixed(3)
+        ),
+
+      spendFactor:
+        Number(
+          clamp(
+            0.92 +
+              comfort *
+                0.08,
+            0.95,
+            1.12
+          ).toFixed(3)
+        ),
+
+      serviceFactor:
+        Number(
+          clamp(
+            0.88 +
+              operationalEfficiency *
+                0.12,
+            0.92,
+            1.10
+          ).toFixed(3)
+        )
+    };
 
     const buildDays =
       Math.max(
@@ -1234,6 +1418,21 @@ class RenovationSystem {
         Number(
           totalDiningArea.toFixed(1)
         ),
+
+      decorCost:
+        Math.round(
+          decorCost
+        ),
+
+      decorCounts:
+        clone(
+          decorCounts
+        ),
+
+      renovationScore,
+
+      operatingImpact,
+
       invalidFloorCount,
       valid:
         invalidFloorCount ===

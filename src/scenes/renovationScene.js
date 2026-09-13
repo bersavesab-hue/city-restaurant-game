@@ -1,6 +1,8 @@
 'use strict';
 
 // V17_RENOVATION_UI_REWRITE
+// V45_LIBRARY_RENOVATION_PHASE1
+// V46_RENOVATION_PLAYABILITY_UI
 // 装修页全量重做，不再叠旧页面布局。
 
 const runtime =
@@ -36,11 +38,72 @@ const textInput =
 const visualAssetSystem =
   require('../ui/visualAssetSystem.js');
 
+const resourceManager =
+  require('../core/resourceManager.js');
+
 const ui =
   require('../ui/premiumUi.js');
 
 const DESIGN_W =
   390;
+
+const V45_RENO_RESOURCES = [
+  ['v45_store_hero', 'assets/images/library_store/store/storefront_hero_clean.png'],
+
+  ['v45_style_natural', 'assets/images/library_store/renovation/styles/natural.png'],
+  ['v45_style_chinese', 'assets/images/library_store/renovation/styles/chinese.png'],
+  ['v45_style_modern', 'assets/images/library_store/renovation/styles/modern.png'],
+  ['v45_style_night', 'assets/images/library_store/renovation/styles/night_market.png'],
+  ['v45_style_business', 'assets/images/library_store/renovation/styles/business.png'],
+
+  ['v45_table_2', 'assets/images/library_store/renovation/furniture/table_2.png'],
+  ['v45_table_4', 'assets/images/library_store/renovation/furniture/table_4.png'],
+  ['v45_table_6', 'assets/images/library_store/renovation/furniture/table_6_rect.png'],
+  ['v45_table_8', 'assets/images/library_store/renovation/furniture/table_6_long.png'],
+  ['v45_stove', 'assets/images/library_store/renovation/furniture/stove.png'],
+  ['v45_fridge', 'assets/images/library_store/renovation/furniture/fridge.png'],
+  ['v45_sink', 'assets/images/library_store/renovation/furniture/sink.png'],
+  ['v45_cashier', 'assets/images/library_store/renovation/furniture/cashier.png'],
+  ['v45_waiting_sofa', 'assets/images/library_store/renovation/furniture/waiting_sofa.png'],
+  ['v45_plant', 'assets/images/library_store/renovation/furniture/plant_1.png'],
+  ['v45_pendant', 'assets/images/library_store/renovation/furniture/pendant_gold.png'],
+  ['v45_screen', 'assets/images/library_store/renovation/furniture/screen_round.png'],
+
+  ['v45_layout_kitchen', 'assets/images/library_store/renovation/layouts/kitchen.png'],
+  ['v45_layout_storage', 'assets/images/library_store/renovation/layouts/storage.png'],
+  ['v45_layout_service', 'assets/images/library_store/renovation/layouts/service.png'],
+  ['v45_layout_dining', 'assets/images/library_store/renovation/layouts/dining.png'],
+  ['v45_layout_private_small', 'assets/images/library_store/renovation/layouts/private_small.png'],
+  ['v45_layout_private_medium', 'assets/images/library_store/renovation/layouts/private_medium.png'],
+  ['v45_layout_private_large', 'assets/images/library_store/renovation/layouts/private_large.png'],
+  ['v45_layout_private_luxury', 'assets/images/library_store/renovation/layouts/private_luxury.png'],
+  ['v45_layout_corridor', 'assets/images/library_store/renovation/layouts/corridor.png'],
+
+  ['v45_advice_renovation', 'assets/images/library_store/store/advice_renovation.png']
+];
+
+const V45_RENO_VISUAL_MAP = {
+  premium_template_1: 'v45_style_natural',
+  premium_template_2: 'v45_style_chinese',
+  premium_template_3: 'v45_style_modern',
+
+  visual_table_2: 'v45_table_2',
+  visual_table_4: 'v45_table_4',
+  visual_table_6: 'v45_table_6',
+  visual_table_8: 'v45_table_8',
+
+  visual_stove: 'v45_stove',
+  visual_fridge: 'v45_fridge'
+};
+
+const V45_HALL_STYLE_VISUAL = {
+  simple: 'v45_style_modern',
+  wood: 'v45_style_natural',
+  modern_cn: 'v45_style_chinese',
+  industrial: 'v45_style_modern',
+  retro: 'v45_style_night',
+  premium: 'v45_style_business'
+};
 
 const COLORS = {
   navy:
@@ -70,18 +133,84 @@ const COLORS = {
 };
 
 function money(value) {
+  const n =
+    Number(value) || 0;
+
+  const sign =
+    n < 0
+      ? '-'
+      : '';
+
+  const abs =
+    Math.abs(n);
+
+  function trim(
+    v,
+    decimals
+  ) {
+    return Number(v)
+      .toFixed(decimals)
+      .replace(/\.0+$/, '')
+      .replace(
+        /(\.\d*?[1-9])0+$/,
+        '$1'
+      );
+  }
+
+  if (
+    abs >=
+    100000000
+  ) {
+    const v =
+      abs /
+      100000000;
+
+    return (
+      sign +
+      '¥' +
+      trim(
+        v,
+        v >= 100
+          ? 0
+          : v >= 10
+            ? 1
+            : 2
+      ) +
+      '亿'
+    );
+  }
+
+  if (
+    abs >=
+    10000
+  ) {
+    const v =
+      abs /
+      10000;
+
+    return (
+      sign +
+      '¥' +
+      trim(
+        v,
+        v >= 100
+          ? 0
+          : v >= 10
+            ? 1
+            : 2
+      ) +
+      '万'
+    );
+  }
+
   return (
+    sign +
     '¥' +
-    Math.max(
-      0,
-      Math.round(
-        Number(value) ||
-        0
-      )
+    Math.round(
+      abs
     ).toLocaleString()
   );
 }
-
 function clamp(
   value,
   min,
@@ -121,6 +250,36 @@ class RenovationScene {
   }
 
   enter(payload) {
+    for (
+      let i = 0;
+      i < V45_RENO_RESOURCES.length;
+      i++
+    ) {
+      const item =
+        V45_RENO_RESOURCES[i];
+
+      resourceManager
+        .loadImage(
+          item[0],
+          item[1],
+          'v45-renovation-library'
+        )
+        .then(
+          () => {
+            if (
+              runtime &&
+              typeof runtime.requestRender ===
+                'function'
+            ) {
+              runtime.requestRender();
+            }
+          }
+        )
+        .catch(
+          () => {}
+        );
+    }
+
     const data =
       payload ||
       {};
@@ -150,9 +309,12 @@ class RenovationScene {
     this.page =
       [
         'layout',
+        'zones',
+        'furniture',
         'rooms',
         'style',
-        'templates'
+        'templates',
+        'contractors'
       ].includes(
         data.page
       )
@@ -391,7 +553,20 @@ class RenovationScene {
     h,
     alpha
   ) {
+    const mappedKey =
+      V45_RENO_VISUAL_MAP[
+        key
+      ] ||
+      key;
+
+    const libraryImage =
+      resourceManager
+        .getImage(
+          mappedKey
+        );
+
     const image =
+      libraryImage ||
       visualAssetSystem
         .get(
           key
@@ -405,9 +580,7 @@ class RenovationScene {
 
     if (
       Number.isFinite(
-        Number(
-          alpha
-        )
+        Number(alpha)
       )
     ) {
       ctx.globalAlpha =
@@ -429,13 +602,16 @@ class RenovationScene {
 
     return true;
   }
-
   drawHeader(
     ctx,
     shop
   ) {
     ui.coverImage(
       ctx,
+      resourceManager
+        .getImage(
+          'v45_store_hero'
+        ) ||
       visualAssetSystem
         .get(
           'premium_reno_header'
@@ -508,7 +684,7 @@ class RenovationScene {
 
     ui.text(
       ctx,
-      '📍 ' +
+      '位置 · ' +
         shop.address,
       56,
       42,
@@ -555,7 +731,7 @@ class RenovationScene {
 
     ui.text(
       ctx,
-      '💾 保存模板',
+      '保存模板',
       339,
       24.5,
       6.6,
@@ -681,9 +857,9 @@ class RenovationScene {
         .getTemplateList();
 
     const keys = [
-      'premium_template_1',
-      'premium_template_2',
-      'premium_template_3'
+      'v45_style_natural',
+      'v45_style_chinese',
+      'v45_style_business'
     ];
 
     const cardY =
@@ -1039,7 +1215,7 @@ class RenovationScene {
 
     ui.text(
       ctx,
-      '👨‍🍳 后厨',
+      '后厨',
       px +
         serviceW /
         2,
@@ -1052,7 +1228,7 @@ class RenovationScene {
 
     ui.text(
       ctx,
-      '⬡ 仓储',
+      '仓储',
       px +
         serviceW +
         (
@@ -1070,7 +1246,7 @@ class RenovationScene {
 
     ui.text(
       ctx,
-      '♟ 服务区',
+      '服务区',
       px + 45,
       py +
         ph *
@@ -1083,7 +1259,7 @@ class RenovationScene {
 
     ui.text(
       ctx,
-      '🍴 堂食区',
+      '堂食区',
       px + 146,
       py +
         ph *
@@ -1092,6 +1268,16 @@ class RenovationScene {
       COLORS.text,
       '800',
       'center'
+    );
+
+    this.drawVisual(
+      ctx,
+      'v45_layout_kitchen',
+      px + 6,
+      py + 25,
+      serviceW - 12,
+      ph * 0.27,
+      0.88
     );
 
     this.drawVisual(
@@ -1118,6 +1304,16 @@ class RenovationScene {
       ph *
         0.23,
       0.98
+    );
+
+    this.drawVisual(
+      ctx,
+      'v45_layout_dining',
+      px + 78,
+      py + ph * 0.44,
+      107,
+      ph * 0.47,
+      0.30
     );
 
     const rooms =
@@ -1317,33 +1513,33 @@ class RenovationScene {
 
     const toolbox = [
       [
-        'style:hall',
-        '🛋',
-        '大厅风格'
+        'page:zones',
+        'v45_layout_kitchen',
+        '区域'
       ],
       [
-        'style:lighting',
-        '💡',
-        '灯光'
+        'page:furniture',
+        'v45_table_4',
+        '家具'
       ],
       [
-        'style:material',
-        '▱',
-        '材料'
+        'page:style',
+        'v45_style_chinese',
+        '风格'
       ],
       [
         'page:rooms',
-        '🚪',
+        'v45_layout_private_medium',
         '包厢'
       ],
       [
-        'page:layout',
-        '🪑',
-        '桌椅'
+        'aisle:cycle',
+        'v45_layout_corridor',
+        '动线'
       ],
       [
         'floor:next',
-        '▰',
+        'v45_layout_corridor',
         (
           '楼层 ' +
           (
@@ -1401,23 +1597,23 @@ class RenovationScene {
         }
       );
 
-      ui.text(
+      this.drawVisual(
         ctx,
         toolbox[i][1],
-        toolX + 17,
-        ty +
-          toolH /
-          2,
-        9.2,
-        COLORS.navy,
-        '800',
-        'center'
+        toolX + 5,
+        ty + 4,
+        24,
+        Math.max(
+          18,
+          toolH - 8
+        ),
+        1
       );
 
       ui.text(
         ctx,
         toolbox[i][2],
-        toolX + 45,
+        toolX + 47,
         ty +
           toolH /
           2,
@@ -1751,7 +1947,7 @@ class RenovationScene {
 
     ui.text(
       ctx,
-      '◉ 效果预览',
+      '效果预览',
       57,
       y + 17,
       7,
@@ -1793,7 +1989,7 @@ class RenovationScene {
     ui.text(
       ctx,
       metrics.valid
-        ? '🔨 确认方案并开始施工  ›'
+        ? '选择施工队并开始施工  ›'
         : '当前布局存在问题，暂不能施工',
       246,
       y + 17,
@@ -1907,6 +2103,1089 @@ class RenovationScene {
     );
 
     return y + 48;
+  }
+
+  renderZones(
+    ctx,
+    metrics,
+    floor
+  ) {
+    const y =
+      this.drawSecondaryHeader(
+        ctx,
+        '区域面积',
+        '调整后厨、仓储、服务区比例，堂食面积自动联动'
+      );
+
+    const rows = [
+      {
+        key:
+          'kitchenRatio',
+        label:
+          '后厨',
+        image:
+          'v45_layout_kitchen',
+        min:
+          renovationConfig
+            .zoneRules
+            .minKitchenRatio,
+        max:
+          renovationConfig
+            .zoneRules
+            .maxKitchenRatio
+      },
+      {
+        key:
+          'storageRatio',
+        label:
+          '仓储',
+        image:
+          'v45_layout_storage',
+        min:
+          renovationConfig
+            .zoneRules
+            .minStorageRatio,
+        max:
+          renovationConfig
+            .zoneRules
+            .maxStorageRatio
+      },
+      {
+        key:
+          'serviceRatio',
+        label:
+          '服务区',
+        image:
+          'v45_layout_service',
+        min:
+          renovationConfig
+            .zoneRules
+            .minServiceRatio,
+        max:
+          renovationConfig
+            .zoneRules
+            .maxServiceRatio
+      }
+    ];
+
+    let drawY =
+      y;
+
+    for (
+      let i = 0;
+      i <
+      rows.length;
+      i++
+    ) {
+      const item =
+        rows[i];
+
+      const ratio =
+        Number(
+          floor[
+            item.key
+          ]
+        ) || 0;
+
+      const area =
+        floor.area *
+        ratio;
+
+      ui.card(
+        ctx,
+        10,
+        drawY,
+        370,
+        74,
+        {
+          radius: 13,
+          fill:
+            COLORS.panel,
+          stroke:
+            '#DDD2C3',
+          shadow: false
+        }
+      );
+
+      this.drawVisual(
+        ctx,
+        item.image,
+        18,
+        drawY + 8,
+        74,
+        58,
+        1
+      );
+
+      ui.text(
+        ctx,
+        item.label,
+        105,
+        drawY + 17,
+        8.5,
+        COLORS.text,
+        '800'
+      );
+
+      ui.text(
+        ctx,
+        Math.round(
+          ratio *
+          100
+        ) +
+        '% · ' +
+        area.toFixed(1) +
+        '㎡',
+        105,
+        drawY + 38,
+        7.1,
+        COLORS.orange,
+        '800'
+      );
+
+      ui.text(
+        ctx,
+        '范围 ' +
+        Math.round(
+          item.min *
+          100
+        ) +
+        '%–' +
+        Math.round(
+          item.max *
+          100
+        ) +
+        '%',
+        105,
+        drawY + 57,
+        5.5,
+        COLORS.muted,
+        '600'
+      );
+
+      ui.card(
+        ctx,
+        283,
+        drawY + 17,
+        32,
+        32,
+        {
+          radius: 15,
+          fill:
+            '#F3EFE7',
+          stroke:
+            '#D3C8B9',
+          shadow: false
+        }
+      );
+
+      ui.text(
+        ctx,
+        '−',
+        299,
+        drawY + 33,
+        11,
+        COLORS.navy,
+        '800',
+        'center'
+      );
+
+      this.addButton(
+        'zone:' +
+          item.key +
+          ':minus',
+        278,
+        drawY + 12,
+        42,
+        42
+      );
+
+      ui.card(
+        ctx,
+        329,
+        drawY + 17,
+        32,
+        32,
+        {
+          radius: 15,
+          fill:
+            COLORS.gold,
+          stroke:
+            '#DDA11F',
+          shadow: false
+        }
+      );
+
+      ui.text(
+        ctx,
+        '+',
+        345,
+        drawY + 33,
+        10,
+        COLORS.text,
+        '800',
+        'center'
+      );
+
+      this.addButton(
+        'zone:' +
+          item.key +
+          ':plus',
+        324,
+        drawY + 12,
+        42,
+        42
+      );
+
+      drawY +=
+        81;
+    }
+
+    const diningRatio =
+      Math.max(
+        0,
+        1 -
+        floor.kitchenRatio -
+        floor.storageRatio -
+        floor.serviceRatio
+      );
+
+    ui.card(
+      ctx,
+      10,
+      drawY,
+      370,
+      72,
+      {
+        radius: 13,
+        fill:
+          '#F5FAF7',
+        stroke:
+          '#C9DFD2',
+        shadow: false
+      }
+    );
+
+    this.drawVisual(
+      ctx,
+      'v45_layout_dining',
+      18,
+      drawY + 8,
+      84,
+      56,
+      1
+    );
+
+    ui.text(
+      ctx,
+      '堂食区',
+      114,
+      drawY + 19,
+      8.5,
+      COLORS.text,
+      '800'
+    );
+
+    ui.text(
+      ctx,
+      Math.round(
+        diningRatio *
+        100
+      ) +
+      '% · ' +
+      (
+        floor.area *
+        diningRatio
+      ).toFixed(1) +
+      '㎡',
+      114,
+      drawY + 43,
+      7.2,
+      COLORS.green,
+      '800'
+    );
+
+    ui.text(
+      ctx,
+      '餐位与包厢共用堂食面积',
+      250,
+      drawY + 43,
+      5.3,
+      COLORS.muted,
+      '600'
+    );
+
+    drawY +=
+      80;
+
+    const aisle =
+      renovationConfig
+        .aisleModes[
+          floor.aisleMode
+        ];
+
+    ui.card(
+      ctx,
+      10,
+      drawY,
+      370,
+      62,
+      {
+        radius: 13,
+        fill:
+          '#FFF8E8',
+        stroke:
+          '#E5C975',
+        shadow: false
+      }
+    );
+
+    this.drawVisual(
+      ctx,
+      'v45_layout_corridor',
+      18,
+      drawY + 8,
+      70,
+      46,
+      1
+    );
+
+    ui.text(
+      ctx,
+      '动线模式',
+      101,
+      drawY + 18,
+      7.6,
+      COLORS.text,
+      '800'
+    );
+
+    ui.text(
+      ctx,
+      aisle.name +
+        ' · 舒适 ' +
+        Math.round(
+          aisle.comfort *
+          100
+        ) +
+        ' · 效率 ' +
+        Math.round(
+          aisle
+            .serviceEfficiency *
+          100
+        ),
+      101,
+      drawY + 41,
+      5.6,
+      COLORS.muted,
+      '600'
+    );
+
+    ui.card(
+      ctx,
+      300,
+      drawY + 14,
+      62,
+      31,
+      {
+        radius: 15,
+        fill:
+          COLORS.gold,
+        stroke:
+          '#DDA11F',
+        shadow: false
+      }
+    );
+
+    ui.text(
+      ctx,
+      '切换',
+      331,
+      drawY + 29.5,
+      6.2,
+      COLORS.text,
+      '800',
+      'center'
+    );
+
+    this.addButton(
+      'aisle:cycle',
+      294,
+      drawY + 9,
+      74,
+      41
+    );
+  }
+
+  renderFurniture(
+    ctx,
+    metrics,
+    floor
+  ) {
+    const y =
+      this.drawSecondaryHeader(
+        ctx,
+        '家具配置',
+        '餐桌决定餐位，软装影响舒适度、吸引力和预算'
+      );
+
+    ui.text(
+      ctx,
+      '餐桌组合',
+      18,
+      y + 13,
+      8.3,
+      COLORS.text,
+      '800'
+    );
+
+    const tableKeys = [
+      '2',
+      '4',
+      '6',
+      '8'
+    ];
+
+    for (
+      let i = 0;
+      i < 4;
+      i++
+    ) {
+      const key =
+        tableKeys[i];
+
+      const x =
+        10 +
+        i * 93;
+
+      ui.card(
+        ctx,
+        x,
+        y + 27,
+        86,
+        126,
+        {
+          radius: 12,
+          fill:
+            '#FFF9EF',
+          stroke:
+            '#DDD2C3',
+          shadow: false
+        }
+      );
+
+      this.drawVisual(
+        ctx,
+        'visual_table_' +
+          key,
+        x + 8,
+        y + 34,
+        70,
+        63,
+        1
+      );
+
+      ui.text(
+        ctx,
+        key +
+          '人桌',
+        x + 43,
+        y + 103,
+        6.2,
+        COLORS.text,
+        '800',
+        'center'
+      );
+
+      ui.text(
+        ctx,
+        '数量 ' +
+        (
+          floor.tables[
+            key
+          ] || 0
+        ),
+        x + 43,
+        y + 121,
+        5.5,
+        COLORS.muted,
+        '600',
+        'center'
+      );
+
+      ui.card(
+        ctx,
+        x + 7,
+        y + 130,
+        30,
+        18,
+        {
+          radius: 8,
+          fill:
+            '#F2EEE7',
+          stroke:
+            '#D4C9BB',
+          shadow: false
+        }
+      );
+
+      ui.text(
+        ctx,
+        '−',
+        x + 22,
+        y + 139,
+        8,
+        COLORS.navy,
+        '800',
+        'center'
+      );
+
+      this.addButton(
+        'table:' +
+          key +
+          ':minus',
+        x + 4,
+        y + 126,
+        36,
+        26
+      );
+
+      ui.card(
+        ctx,
+        x + 49,
+        y + 130,
+        30,
+        18,
+        {
+          radius: 8,
+          fill:
+            COLORS.gold,
+          stroke:
+            '#DDA11F',
+          shadow: false
+        }
+      );
+
+      ui.text(
+        ctx,
+        '+',
+        x + 64,
+        y + 139,
+        7,
+        COLORS.text,
+        '800',
+        'center'
+      );
+
+      this.addButton(
+        'table:' +
+          key +
+          ':plus',
+        x + 46,
+        y + 126,
+        36,
+        26
+      );
+    }
+
+    const decorY =
+      y + 169;
+
+    ui.text(
+      ctx,
+      '软装配置',
+      18,
+      decorY,
+      8.3,
+      COLORS.text,
+      '800'
+    );
+
+    const decorItems =
+      renovationConfig
+        .decorItems;
+
+    for (
+      let i = 0;
+      i <
+      decorItems.length;
+      i++
+    ) {
+      const item =
+        decorItems[i];
+
+      const x =
+        10 +
+        i * 93;
+
+      const count =
+        Number(
+          metrics
+            .decorCounts[
+              item.id
+            ]
+        ) || 0;
+
+      ui.card(
+        ctx,
+        x,
+        decorY + 14,
+        86,
+        128,
+        {
+          radius: 12,
+          fill:
+            '#FFF9EF',
+          stroke:
+            '#DDD2C3',
+          shadow: false
+        }
+      );
+
+      this.drawVisual(
+        ctx,
+        item.imageKey,
+        x + 8,
+        decorY + 21,
+        70,
+        63,
+        1
+      );
+
+      ui.text(
+        ctx,
+        item.name,
+        x + 43,
+        decorY + 91,
+        6.1,
+        COLORS.text,
+        '800',
+        'center'
+      );
+
+      ui.text(
+        ctx,
+        money(
+          item.cost
+        ) +
+          ' · ' +
+          count +
+          '/' +
+          item.max,
+        x + 43,
+        decorY + 108,
+        4.8,
+        COLORS.muted,
+        '600',
+        'center'
+      );
+
+      ui.card(
+        ctx,
+        x + 7,
+        decorY + 116,
+        30,
+        18,
+        {
+          radius: 8,
+          fill:
+            '#F2EEE7',
+          stroke:
+            '#D4C9BB',
+          shadow: false
+        }
+      );
+
+      ui.text(
+        ctx,
+        '−',
+        x + 22,
+        decorY + 125,
+        8,
+        COLORS.navy,
+        '800',
+        'center'
+      );
+
+      this.addButton(
+        'decor:' +
+          item.id +
+          ':minus',
+        x + 4,
+        decorY + 112,
+        36,
+        26
+      );
+
+      ui.card(
+        ctx,
+        x + 49,
+        decorY + 116,
+        30,
+        18,
+        {
+          radius: 8,
+          fill:
+            COLORS.gold,
+          stroke:
+            '#DDA11F',
+          shadow: false
+        }
+      );
+
+      ui.text(
+        ctx,
+        '+',
+        x + 64,
+        decorY + 125,
+        7,
+        COLORS.text,
+        '800',
+        'center'
+      );
+
+      this.addButton(
+        'decor:' +
+          item.id +
+          ':plus',
+        x + 46,
+        decorY + 112,
+        36,
+        26
+      );
+    }
+
+    const impactY =
+      decorY + 151;
+
+    ui.card(
+      ctx,
+      10,
+      impactY,
+      370,
+      63,
+      {
+        radius: 13,
+        fill:
+          '#F3F8FA',
+        stroke:
+          '#C7DCE6',
+        shadow: false
+      }
+    );
+
+    ui.text(
+      ctx,
+      '当前软装 ' +
+        money(
+          metrics.decorCost
+        ),
+      22,
+      impactY + 19,
+      7.1,
+      COLORS.text,
+      '800'
+    );
+
+    ui.text(
+      ctx,
+      '装修评分 ' +
+        metrics
+          .renovationScore,
+      151,
+      impactY + 19,
+      7.1,
+      COLORS.orange,
+      '800'
+    );
+
+    ui.text(
+      ctx,
+      '客流 ×' +
+        metrics
+          .operatingImpact
+          .trafficFactor
+          .toFixed(2) +
+        ' · 客单 ×' +
+        metrics
+          .operatingImpact
+          .spendFactor
+          .toFixed(2) +
+        ' · 服务 ×' +
+        metrics
+          .operatingImpact
+          .serviceFactor
+          .toFixed(2),
+      22,
+      impactY + 44,
+      5.4,
+      COLORS.muted,
+      '600'
+    );
+  }
+
+  renderContractors(
+    ctx,
+    metrics
+  ) {
+    const y =
+      this.drawSecondaryHeader(
+        ctx,
+        '选择施工队',
+        '报价、工期、可靠度和质量均来自当前装修方案'
+      );
+
+    const plan =
+      metrics.plan;
+
+    const quotes =
+      renovationSystem
+        .getContractorQuotes(
+          this.shopId
+        );
+
+    let drawY =
+      y;
+
+    for (
+      let i = 0;
+      i <
+      quotes.length;
+      i++
+    ) {
+      const quote =
+        quotes[i];
+
+      const selected =
+        plan
+          .selectedContractorId ===
+        quote.id ||
+        (
+          !plan
+            .selectedContractorId &&
+          i === 0
+        );
+
+      ui.card(
+        ctx,
+        10,
+        drawY,
+        370,
+        88,
+        {
+          radius: 13,
+          fill:
+            selected
+              ? '#FFF8DE'
+              : COLORS.panel,
+          stroke:
+            selected
+              ? '#E2B52B'
+              : '#DDD2C3',
+          shadow: false
+        }
+      );
+
+      this.drawVisual(
+        ctx,
+        'v45_advice_renovation',
+        18,
+        drawY + 9,
+        64,
+        70,
+        1
+      );
+
+      ui.text(
+        ctx,
+        quote.name,
+        95,
+        drawY + 19,
+        8.1,
+        COLORS.text,
+        '800'
+      );
+
+      ui.text(
+        ctx,
+        '报价 ' +
+          money(
+            quote.price
+          ) +
+          ' · 工期 ' +
+          quote.days +
+          '天',
+        95,
+        drawY + 41,
+        6.1,
+        COLORS.orange,
+        '800'
+      );
+
+      ui.text(
+        ctx,
+        '可靠度 ' +
+          quote
+            .reliability +
+          ' · 质量 ' +
+          quote
+            .quality,
+        95,
+        drawY + 62,
+        5.5,
+        COLORS.muted,
+        '600'
+      );
+
+      ui.card(
+        ctx,
+        303,
+        drawY + 24,
+        57,
+        32,
+        {
+          radius: 15,
+          fill:
+            selected
+              ? COLORS.gold
+              : '#E7F2F7',
+          stroke:
+            selected
+              ? '#DDA11F'
+              : '#AFCFDD',
+          shadow: false
+        }
+      );
+
+      ui.text(
+        ctx,
+        selected
+          ? '已选'
+          : '选择',
+        331.5,
+        drawY + 40,
+        6.2,
+        COLORS.text,
+        '800',
+        'center'
+      );
+
+      this.addButton(
+        'contractor:select:' +
+          quote.id,
+        296,
+        drawY + 18,
+        71,
+        44
+      );
+
+      drawY +=
+        96;
+    }
+
+    ui.card(
+      ctx,
+      10,
+      drawY,
+      370,
+      73,
+      {
+        radius: 13,
+        fill:
+          metrics.valid
+            ? '#F2F9F4'
+            : '#FFF1EC',
+        stroke:
+          metrics.valid
+            ? '#BDDCC7'
+            : '#E4B6A9',
+        shadow: false
+      }
+    );
+
+    ui.text(
+      ctx,
+      '装修评分 ' +
+        metrics
+          .renovationScore +
+        ' · 预算 ' +
+        money(
+          metrics.totalCost
+        ),
+      22,
+      drawY + 20,
+      7.2,
+      metrics.valid
+        ? COLORS.green
+        : COLORS.red,
+      '800'
+    );
+
+    ui.text(
+      ctx,
+      '预计经营影响：客流 ×' +
+        metrics
+          .operatingImpact
+          .trafficFactor
+          .toFixed(2) +
+        ' · 客单 ×' +
+        metrics
+          .operatingImpact
+          .spendFactor
+          .toFixed(2),
+      22,
+      drawY + 43,
+      5.3,
+      COLORS.muted,
+      '600'
+    );
+
+    ui.card(
+      ctx,
+      252,
+      drawY + 17,
+      108,
+      38,
+      {
+        radius: 18,
+        fill:
+          metrics.valid
+            ? COLORS.gold
+            : '#D9D4CB',
+        stroke:
+          metrics.valid
+            ? '#DDA11F'
+            : '#C4BCAF',
+        shadow: false
+      }
+    );
+
+    ui.text(
+      ctx,
+      metrics.valid
+        ? '确认施工'
+        : '方案无效',
+      306,
+      drawY + 36,
+      7,
+      metrics.valid
+        ? COLORS.text
+        : COLORS.muted,
+      '800',
+      'center'
+    );
+
+    if (
+      metrics.valid
+    ) {
+      this.addButton(
+        'construction:confirm',
+        245,
+        drawY + 11,
+        122,
+        50
+      );
+    }
   }
 
   renderRooms(
@@ -2172,7 +3451,10 @@ class RenovationScene {
             plan.hallStyle
           ),
         key:
-          'premium_template_1'
+          V45_HALL_STYLE_VISUAL[
+            plan.hallStyle
+          ] ||
+          'v45_style_natural'
       },
       {
         id:
@@ -2186,7 +3468,11 @@ class RenovationScene {
             plan.materialGrade
           ),
         key:
-          'premium_template_2'
+          plan.materialGrade === 'premium'
+            ? 'v45_style_business'
+            : plan.materialGrade === 'good'
+              ? 'v45_style_chinese'
+              : 'v45_style_natural'
       },
       {
         id:
@@ -2200,7 +3486,11 @@ class RenovationScene {
             plan.lightingLevel
           ),
         key:
-          'premium_template_3'
+          plan.lightingLevel === 'premium'
+            ? 'v45_style_business'
+            : plan.lightingLevel === 'layered'
+              ? 'v45_style_modern'
+              : 'v45_style_natural'
       }
     ];
 
@@ -2520,15 +3810,25 @@ class RenovationScene {
       }
     );
 
+    this.drawVisual(
+      ctx,
+      'v45_advice_renovation',
+      28,
+      137,
+      78,
+      95,
+      1
+    );
+
     ui.text(
       ctx,
       plan.status ===
         'completed'
         ? '装修已经完工'
         : '装修施工中',
-      195,
+      228,
       157,
-      18,
+      16,
       COLORS.text,
       '800',
       'center'
@@ -2740,6 +4040,32 @@ class RenovationScene {
       ];
 
     if (
+      this.page ===
+        'zones'
+    ) {
+      this.renderZones(
+        ctx,
+        metrics,
+        floor
+      );
+    } else if (
+      this.page ===
+        'furniture'
+    ) {
+      this.renderFurniture(
+        ctx,
+        metrics,
+        floor
+      );
+    } else if (
+      this.page ===
+        'contractors'
+    ) {
+      this.renderContractors(
+        ctx,
+        metrics
+      );
+    } else if (
       this.page ===
         'rooms'
     ) {
@@ -2987,7 +4313,9 @@ class RenovationScene {
 
       if (metrics) {
         this.showToast(
-          '座位 ' +
+          '装修评分 ' +
+            metrics.renovationScore +
+            ' · 座位 ' +
             metrics.totalSeats +
             ' · 舒适度 ' +
             Math.round(
@@ -3020,6 +4348,94 @@ class RenovationScene {
             1
           ) %
           plan.floors.length
+        );
+
+      return true;
+    }
+
+    if (
+      id ===
+      'aisle:cycle'
+    ) {
+      const plan =
+        this.getPlan();
+
+      renovationSystem
+        .cycleAisle(
+          this.shopId,
+          plan.activeFloor
+        );
+
+      return true;
+    }
+
+    if (
+      id.indexOf(
+        'zone:'
+      ) ===
+      0
+    ) {
+      const parts =
+        id.split(':');
+
+      const key =
+        parts[1];
+
+      const delta =
+        parts[2] ===
+          'plus'
+          ? 0.02
+          : -0.02;
+
+      const plan =
+        this.getPlan();
+
+      renovationSystem
+        .adjustZone(
+          this.shopId,
+          plan.activeFloor,
+          key,
+          delta
+        );
+
+      return true;
+    }
+
+    if (
+      id.indexOf(
+        'decor:'
+      ) ===
+      0
+    ) {
+      const parts =
+        id.split(':');
+
+      renovationSystem
+        .adjustDecor(
+          this.shopId,
+          parts[1],
+          parts[2] ===
+            'plus'
+            ? 1
+            : -1
+        );
+
+      return true;
+    }
+
+    if (
+      id.indexOf(
+        'contractor:select:'
+      ) ===
+      0
+    ) {
+      renovationSystem
+        .selectContractor(
+          this.shopId,
+          id.slice(
+            'contractor:select:'
+              .length
+          )
         );
 
       return true;
@@ -3372,88 +4788,51 @@ class RenovationScene {
       id ===
       'construction:start'
     ) {
-      const metrics =
-        this.getMetrics();
+      this.page =
+        'contractors';
 
-      if (!metrics) {
-        return true;
-      }
+      return true;
+    }
 
+    if (
+      id ===
+      'construction:confirm'
+    ) {
       const quotes =
         renovationSystem
           .getContractorQuotes(
             this.shopId
           );
 
-      const quote =
-        quotes[0];
-
-      const start =
-        () => {
-          if (
-            quote
-          ) {
-            renovationSystem
-              .selectContractor(
-                this.shopId,
-                quote.id
-              );
-          }
-
-          const result =
-            renovationSystem
-              .startConstruction(
-                this.shopId
-              );
-
-          this.showToast(
-            result.ok
-              ? '施工已经开始'
-              : result.message
-          );
-
-          textInput
-            .requestRender();
-        };
+      const plan =
+        this.getPlan();
 
       if (
-        api &&
-        typeof api
-          .showModal ===
-          'function' &&
-        quote
+        !plan
+          .selectedContractorId &&
+        quotes[0]
       ) {
-        api.showModal({
-          title:
-            '确认装修施工',
-          content:
-            quote.name +
-            '\n报价 ' +
-            money(
-              quote.price
-            ) +
-            ' · 工期 ' +
-            quote.days +
-            '天 · 可靠度 ' +
-            quote.reliability +
-            '。\n确认开始施工？',
-          confirmText:
-            '开始施工',
-          cancelText:
-            '再调整',
-          success:
-            result => {
-              if (
-                result &&
-                result.confirm
-              ) {
-                start();
-              }
-            }
-        });
-      } else {
-        start();
+        renovationSystem
+          .selectContractor(
+            this.shopId,
+            quotes[0].id
+          );
       }
+
+      const result =
+        renovationSystem
+          .startConstruction(
+            this.shopId
+          );
+
+      this.showToast(
+        result.ok
+          ? '施工已经开始'
+          : result.message
+      );
+
+      textInput
+        .requestRender();
 
       return true;
     }

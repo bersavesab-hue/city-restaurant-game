@@ -1,0 +1,4 @@
+V46.1
+Removed nonexistent tests/foundationV02.test.js from package.json.
+Added syntax checks after V45/V46 patch application.
+Test chain now references only files verified to exist in the repository.

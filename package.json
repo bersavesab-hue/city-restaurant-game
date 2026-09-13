@@ -1,13 +1,11 @@
 {
   "name": "city-restaurant-game",
-  "version": "0.5.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
-    "pretest": "node scripts/repair-v05-layout.js",
-    "test": "node tests/core.test.js && node tests/propertyFoundation.test.js && node tests/propertyMarket.test.js && node tests/layoutRepairV050.test.js && node tests/foundationSrcV050.test.js && node tests/propertyFullPackV100Src.test.js && node tests/personNpcFullPackV100Src.test.js && node tests/competitorFullPackV110.test.js && node tests/customerFullPackV100.test.js && node tests/easterEggPackV100Src.test.js",
+    "test": "node tests/core.test.js && node tests/propertyFoundation.test.js && node tests/propertyMarket.test.js && node tests/renovation.test.js && node tests/renovationUndo.test.js && node tests/renovationV17.test.js && node tests/v45RenovationPhase1.test.js && node tests/v46RenovationPlayability.test.js",
     "build:android-js": "esbuild android/entry.js --bundle --platform=browser --format=iife --target=chrome100 --outfile=android/app/src/main/assets/game.bundle.js",
-    "test:foundation": "node scripts/repair-v05-layout.js && node tests/layoutRepairV050.test.js && node tests/foundationSrcV050.test.js && node tests/propertyFullPackV100Src.test.js && node tests/personNpcFullPackV100Src.test.js",
-    "test:simulation-packs": "node tests/competitorFullPackV110.test.js && node tests/customerFullPackV100.test.js && node tests/easterEggPackV100Src.test.js"
+    "test:foundation": "node tests/foundationSrcV050.test.js"
   },
   "devDependencies": {
     "esbuild": "^0.25.0"

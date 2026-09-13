@@ -1,5 +1,7 @@
 'use strict';
 
+// V46_RENOVATION_DECOR_CONFIG
+
 module.exports = {
   // Furniture footprint includes basic chair pull-out + service clearance.
   tableFootprint: {
@@ -64,6 +66,45 @@ module.exports = {
     { id: 'warm', name: '暖光氛围', costPerSqm: 88, appeal: 1.04 },
     { id: 'layered', name: '分层灯光', costPerSqm: 125, appeal: 1.10 },
     { id: 'premium', name: '设计灯光', costPerSqm: 188, appeal: 1.16 }
+  ],
+
+  decorItems: [
+    {
+      id: 'plant',
+      name: '绿植',
+      imageKey: 'v45_plant',
+      cost: 680,
+      comfort: 0.018,
+      appeal: 0.014,
+      max: 8
+    },
+    {
+      id: 'pendant',
+      name: '吊灯',
+      imageKey: 'v45_pendant',
+      cost: 980,
+      comfort: 0.008,
+      appeal: 0.022,
+      max: 8
+    },
+    {
+      id: 'screen',
+      name: '屏风',
+      imageKey: 'v45_screen',
+      cost: 1680,
+      comfort: 0.014,
+      appeal: 0.028,
+      max: 5
+    },
+    {
+      id: 'sofa',
+      name: '等候沙发',
+      imageKey: 'v45_waiting_sofa',
+      cost: 2280,
+      comfort: 0.030,
+      appeal: 0.020,
+      max: 4
+    }
   ],
 
   privateRoomSeatOptions: [4, 6, 8, 10, 12],
