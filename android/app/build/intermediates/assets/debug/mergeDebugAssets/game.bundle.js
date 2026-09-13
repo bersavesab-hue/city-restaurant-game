@@ -25178,6 +25178,440 @@
         addButton("district:details", x + w - 120, y + h - 46, 112, 42);
       };
       console.log("V24_FINAL_HOME_PACK loaded");
+      var V25_POINTS = {
+        university: { x: 0.17, y: 0.13, side: "right" },
+        hightech: { x: 0.8, y: 0.15, side: "left" },
+        cbd: { x: 0.54, y: 0.36, side: "right" },
+        oldtown: { x: 0.1, y: 0.52, side: "right" },
+        village: { x: 0.38, y: 0.63, side: "right" },
+        industry: { x: 0.81, y: 0.57, side: "left" },
+        market: { x: 0.17, y: 0.8, side: "right" }
+      };
+      function v25SelectedDistrict() {
+        const districts = getDistricts() || [];
+        let selected = districts.find(function(d) {
+          return d.id === selectedDistrictId;
+        });
+        if (!selected) {
+          selected = districts.find(function(d) {
+            return d.id === "market";
+          }) || districts[0] || null;
+          if (selected) selectedDistrictId = selected.id;
+        }
+        return selected;
+      }
+      function v25Point(id) {
+        const p = V25_POINTS[id];
+        if (!p) return getDistrictPoint(id);
+        const top = MAP_Y + 78;
+        const bottom = CARD_Y - 34;
+        const usable = Math.max(160, bottom - top);
+        return {
+          x: Math.round(MAP_X + MAP_W * p.x),
+          y: Math.round(top + usable * p.y)
+        };
+      }
+      updateLayout = function() {
+        TOP_H = (VIEW_H < 740 ? 91 : 94) + SAFE_TOP;
+        NAV_H = (VIEW_H < 740 ? 64 : 68) + SAFE_BOTTOM;
+        MAP_X = 0;
+        MAP_Y = TOP_H;
+        MAP_W = VIEW_W;
+        NAV_Y = VIEW_H - NAV_H;
+        MAP_H = NAV_Y - MAP_Y;
+        CARD_H = VIEW_H < 740 ? 96 : 102;
+        CARD_X = 6;
+        CARD_W = VIEW_W - 12;
+        CARD_Y = NAV_Y - CARD_H - 5;
+      };
+      drawNewsTicker = function() {
+        const feed = simulationSystem.getNewsFeed();
+        const bulletin = simulationSystem.getBulletin();
+        const x = 8;
+        const y = MAP_Y + 5;
+        const w = VIEW_W - 16;
+        const h = 28;
+        roundedRect(x, y, w, h, 14, "rgba(3,42,66,0.965)", "rgba(84,199,243,0.50)");
+        drawText("\u{1F4E3}", x + 16, y + 14, 9.2, "#FFD75F", "800", "center");
+        drawText("\u57CE\u5E02\u901A\u62A5", x + 31, y + 14, 7.5, "#FFD75F", "800");
+        const items = (feed && feed.length ? feed : [bulletin]).slice(0, 3);
+        const startX = x + 84;
+        const sectionW = (w - 106) / Math.max(1, items.length);
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (i > 0) {
+            ctx2.fillStyle = "rgba(235,245,248,0.28)";
+            ctx2.fillRect(startX + i * sectionW - 6, y + 7, 1, 14);
+          }
+          drawText(
+            fitText(item && item.title ? item.title : "\u57CE\u5E02\u8FD0\u884C\u5E73\u7A33", sectionW - 12, 6.1, "600"),
+            startX + i * sectionW,
+            y + 14,
+            6.1,
+            "#F6FBFD",
+            "600"
+          );
+        }
+        drawText("\u203A", x + w - 12, y + 14, 13, "#FFE071", "800", "center");
+        addButton("tool:news", x, y, w, h);
+      };
+      drawGoalBar = function() {
+        const goal = getHomeGoalState();
+        const x = 8;
+        const y = MAP_Y + 38;
+        const w = VIEW_W - 16;
+        const h = 28;
+        roundedRect(x, y, w, h, 14, "rgba(3,42,66,0.965)", "rgba(84,199,243,0.45)");
+        drawText("\u25CE", x + 15, y + 14, 12, "#FFD85C", "800", "center");
+        drawText("\u5F53\u524D\u76EE\u6807\uFF1A", x + 29, y + 14, 7.2, "#FFD85C", "800");
+        drawText(goal.title === "\u7B79\u5907\u9996\u5E97" ? "\u5F00\u8BBE\u9996\u5BB6\u9910\u5385" : goal.title, x + 84, y + 14, 7.2, "#FFFFFF", "800");
+        const labels = goal.title === "\u7B79\u5907\u9996\u5E97" ? ["\u9009\u5740", "\u770B\u94FA", "\u8C08\u5224", "\u7B7E\u7EA6", "\u88C5\u4FEE"] : goal.steps;
+        const currentIndex = Math.max(0, Math.min(labels.length - 1, goal.current));
+        const startX = x + 165;
+        const usable = w - 198;
+        const gap = usable / Math.max(1, labels.length - 1);
+        for (let i = 0; i < labels.length; i++) {
+          const cx = startX + i * gap;
+          const done = i < currentIndex;
+          const active = i === currentIndex && !goal.completed;
+          if (i < labels.length - 1) {
+            ctx2.strokeStyle = i < currentIndex ? "#F5C94A" : "rgba(226,238,243,0.42)";
+            ctx2.lineWidth = 1.15;
+            ctx2.beginPath();
+            ctx2.moveTo(cx + 7, y + 9.5);
+            ctx2.lineTo(cx + gap - 7, y + 9.5);
+            ctx2.stroke();
+          }
+          ctx2.beginPath();
+          ctx2.arc(cx, y + 9.5, 4.8, 0, Math.PI * 2);
+          ctx2.fillStyle = done ? "#F2C744" : active ? "#FFF6CC" : "rgba(225,239,244,0.17)";
+          ctx2.fill();
+          ctx2.strokeStyle = done || active ? "#FFE58B" : "#9DB8C5";
+          ctx2.lineWidth = 1;
+          ctx2.stroke();
+          drawText(labels[i], cx, y + 21.5, 5.9, active ? "#FFE08A" : "#EBF4F7", active ? "800" : "600", "center");
+        }
+        drawText("\u{1F381}", x + w - 13, y + 14, 10, "#FFD85C", "800", "center");
+      };
+      drawDistrictMarker = function(district) {
+        const point = v25Point(district.id);
+        if (!point) return;
+        const x = point.x;
+        const y = point.y;
+        const selected = selectedDistrictId === district.id;
+        const meta = getDistrictVisualMeta(district);
+        const config = V25_POINTS[district.id] || { side: "right" };
+        const animated = districtFx.id === district.id;
+        const markerScale = animated ? districtFx.scale : 1;
+        if (selected) {
+          ctx2.beginPath();
+          ctx2.arc(x, y, 25 + districtFx.flash * 4, 0, Math.PI * 2);
+          ctx2.fillStyle = "rgba(255,196,46,0.18)";
+          ctx2.fill();
+        }
+        ctx2.save();
+        ctx2.translate(x, y);
+        ctx2.scale(markerScale, markerScale);
+        const key = V21_DISTRICT_ICON_KEYS && V21_DISTRICT_ICON_KEYS[district.id];
+        if (!key || !(typeof v21DrawImage === "function" && v21DrawImage(key, 0, -4, 46, 58))) {
+          drawDistrictPictogram(district.id, 0, -4);
+        }
+        ctx2.restore();
+        const boxW = Math.max(90, Math.min(118, 48 + district.name.length * 11));
+        const boxH = 28;
+        const subH = 18;
+        let boxX = config.side === "left" ? x - boxW - 15 : x + 15;
+        boxX = Math.max(6, Math.min(VIEW_W - boxW - 6, boxX));
+        let boxY = y - 15;
+        boxY = Math.max(MAP_Y + 72, Math.min(CARD_Y - 50, boxY));
+        roundedRect(
+          boxX,
+          boxY,
+          boxW,
+          boxH,
+          12,
+          "rgba(4,52,79,0.98)",
+          selected ? "#FFE06C" : "rgba(255,220,97,0.86)",
+          selected ? 1.35 : 1
+        );
+        drawText(
+          district.name,
+          boxX + 11,
+          boxY + 14,
+          9.2,
+          "#FFFFFF",
+          "800"
+        );
+        drawText(
+          "\u203A",
+          boxX + boxW - 10,
+          boxY + 14,
+          10.3,
+          "#FFE49C",
+          "800",
+          "center"
+        );
+        roundedRect(
+          boxX + 6,
+          boxY + boxH,
+          boxW - 12,
+          subH,
+          8,
+          "rgba(255,253,247,0.99)",
+          "rgba(11,55,76,0.10)"
+        );
+        drawText(
+          fitText(meta.subtitle, boxW - 20, 6.1, "700"),
+          boxX + boxW / 2,
+          boxY + boxH + 9,
+          6.1,
+          "#23455B",
+          "700",
+          "center"
+        );
+        if (meta.badge) {
+          const badgeW = Math.max(37, 16 + meta.badge.length * 6.1);
+          const badgeX = Math.max(
+            6,
+            Math.min(VIEW_W - badgeW - 6, boxX + boxW - badgeW + 5)
+          );
+          roundedRect(
+            badgeX,
+            boxY - 9,
+            badgeW,
+            17,
+            8,
+            meta.badgeColor,
+            "rgba(255,245,218,0.98)"
+          );
+          drawText(
+            meta.badge,
+            badgeX + badgeW / 2,
+            boxY - 0.5,
+            5.4,
+            "#FFFFFF",
+            "800",
+            "center"
+          );
+        }
+        if (meta.myShopCount > 0) {
+          const txt = meta.myShopCount > 1 ? "\u2713 \u6211\u7684\u5E97\xD7" + meta.myShopCount : "\u2713 \u6211\u7684\u5E97";
+          const sw = meta.myShopCount > 1 ? 55 : 44;
+          const sx = Math.max(
+            6,
+            Math.min(VIEW_W - sw - 6, boxX + boxW - sw + 3)
+          );
+          roundedRect(
+            sx,
+            boxY - 28,
+            sw,
+            16,
+            8,
+            "#1E9A5E",
+            "#B9F0C8"
+          );
+          drawText(
+            txt,
+            sx + sw / 2,
+            boxY - 20,
+            5,
+            "#FFFFFF",
+            "800",
+            "center"
+          );
+        }
+        const hitLeft = Math.min(x - 24, boxX - 4);
+        const hitRight = Math.max(x + 24, boxX + boxW + 4);
+        const hitTop = Math.min(y - 32, boxY - 28);
+        const hitBottom = Math.max(y + 28, boxY + boxH + subH + 3);
+        addButton(
+          "district:" + district.id,
+          hitLeft,
+          hitTop,
+          hitRight - hitLeft,
+          hitBottom - hitTop
+        );
+      };
+      drawDistrictCard = function() {
+        const district = v25SelectedDistrict();
+        if (!district) return;
+        const meta = getDistrictVisualMeta(district);
+        const x = CARD_X;
+        const y = CARD_Y;
+        const w = CARD_W;
+        const h = CARD_H;
+        roundedRect(x, y, w, h, 17, "rgba(255,255,255,0.99)", "rgba(10,56,79,0.16)", 1.1);
+        const previewKey = typeof V24_DISTRICT_PREVIEW_KEYS !== "undefined" ? V24_DISTRICT_PREVIEW_KEYS[district.id] : null;
+        const preview = previewKey ? resourceManager.getImage(previewKey) : resourceManager.getImage("city_base_01");
+        const px = x + 10;
+        const py = y + 8;
+        const pw = 91;
+        const ph = h - 16;
+        if (preview) {
+          ctx2.save();
+          ctx2.beginPath();
+          ctx2.moveTo(px + 13, py);
+          ctx2.arcTo(px + pw, py, px + pw, py + ph, 13);
+          ctx2.arcTo(px + pw, py + ph, px, py + ph, 13);
+          ctx2.arcTo(px, py + ph, px, py, 13);
+          ctx2.arcTo(px, py, px + pw, py, 13);
+          ctx2.closePath();
+          ctx2.clip();
+          drawImageFocus(ctx2, preview, px, py, pw, ph, 1.02, 0.5, 0.5);
+          ctx2.restore();
+        }
+        const iconKey = V21_DISTRICT_ICON_KEYS && V21_DISTRICT_ICON_KEYS[district.id];
+        if (iconKey && typeof v21DrawImage === "function") {
+          v21DrawImage(iconKey, x + 116, y + 17, 18, 23);
+        }
+        drawText(district.name, x + 129, y + 17, 12.3, "#103655", "800");
+        drawText("\u203A", x + 195, y + 17, 12, "#2F5673", "800", "center");
+        let summary = "\u5BA2\u7FA4\u6D3B\u8DC3 \xB7 \u4ECD\u6709\u7ECF\u8425\u673A\u4F1A";
+        if (meta.badge === "\u79DF\u91D1\u4F4E") summary = "\u79DF\u91D1\u8F83\u4F4E \xB7 \u9002\u5408\u62A2\u5148\u5E03\u5C40";
+        if (meta.badge === "\u7ADE\u4E89\u9AD8") summary = "\u7ADE\u4E89\u6FC0\u70C8 \xB7 \u9002\u5408\u5DEE\u5F02\u5316\u7ECF\u8425";
+        if (meta.badge === "\u9700\u6C42\u2191") summary = "\u9700\u6C42\u4E0A\u6DA8 \xB7 \u53EF\u4F18\u5148\u8FDB\u5165";
+        if (meta.myShopCount > 0) summary = "\u5DF2\u5F00\u95E8\u5E97 \xB7 \u53EF\u7EE7\u7EED\u6DF1\u8015\u7ECF\u8425";
+        drawText(summary, x + 109, y + 32, 5.9, "#39627E", "700");
+        const metrics = [
+          ["\u4EBA\u53E3", district.population.toLocaleString(), "#1E76C5"],
+          ["\u9700\u6C42", demandSystem.getTotalDemand(district.id).toLocaleString(), "#1E9A5E"],
+          ["\u5BA2\u5355", "\xA5" + district.avgSpend, "#164A86"],
+          ["\u9910\u996E\u5E97", district.restaurantCount + "\u5BB6", "#164A86"],
+          ["\u9971\u548C\u5EA6", district.saturation + "%", "#1E76C5"],
+          ["\u79DF\u91D1", district.rentIndex.toFixed(2), "#164A86"]
+        ];
+        const metricX = x + 105;
+        const metricY = y + 40;
+        const metricGap = 3;
+        const metricW = Math.floor((w - 218 - metricGap * 5) / 6);
+        for (let i = 0; i < metrics.length; i++) {
+          const mx = metricX + i * (metricW + metricGap);
+          roundedRect(
+            mx,
+            metricY,
+            metricW,
+            35,
+            8,
+            "#FAF8F3",
+            "rgba(17,62,92,0.10)"
+          );
+          drawMetricSymbol(
+            metrics[i][0],
+            mx + metricW / 2,
+            metricY + 8.5,
+            metrics[i][2]
+          );
+          drawText(
+            metrics[i][0],
+            mx + metricW / 2,
+            metricY + 18.5,
+            4.7,
+            "#245276",
+            "700",
+            "center"
+          );
+          drawText(
+            metrics[i][1],
+            mx + metricW / 2,
+            metricY + 30,
+            5.9,
+            metrics[i][2],
+            "800",
+            "center"
+          );
+        }
+        drawText(
+          "\u5B9E\u65F6\u6570\u636E\u968F\u4EBA\u53E3\u3001\u57CE\u5E02\u4E8B\u4EF6\u3001\u7ADE\u4E89\u548C\u79DF\u91D1\u53D8\u5316",
+          x + 108,
+          y + h - 11,
+          5,
+          "#607D92",
+          "600"
+        );
+        roundedRect(
+          x + w - 104,
+          y + h - 35,
+          95,
+          29,
+          15,
+          "#FFC22D",
+          "#DFA01B",
+          1.15
+        );
+        drawText(
+          "\u8FDB\u5165\u5546\u5708  \u203A",
+          x + w - 57,
+          y + h - 20.5,
+          7.6,
+          "#123A53",
+          "800",
+          "center"
+        );
+        addButton(
+          "district:details",
+          x + w - 108,
+          y + h - 39,
+          103,
+          37
+        );
+      };
+      drawBottomNav = function() {
+        const items = [
+          { id: "city", label: "\u57CE\u5E02" },
+          { id: "shop", label: "\u95E8\u5E97" },
+          { id: "traffic", label: "\u5BA2\u6D41" },
+          { id: "research", label: "\u83DC\u5355" },
+          { id: "supply", label: "\u4F9B\u5E94\u94FE" },
+          { id: "business", label: "\u6570\u636E" },
+          { id: "system", label: "\u7CFB\u7EDF" }
+        ];
+        roundedRect(0, NAV_Y, VIEW_W, NAV_H, 0, "rgba(4,52,79,0.99)");
+        const cellW = VIEW_W / items.length;
+        const current = sceneManager.getCurrentId();
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          const active = item.id === "city" && current === "city" && !trafficMode || item.id === "traffic" && current === "city" && trafficMode || item.id === "shop" && (current === "shop" || current === "propertyMarket" || current === "equipment" || current === "license" || current === "staff" || current === "renovation") || item.id !== "city" && item.id !== "traffic" && item.id !== "shop" && item.id === current;
+          const cellX = i * cellW;
+          if (active) {
+            roundedRect(
+              cellX + 3,
+              NAV_Y + 4,
+              cellW - 6,
+              NAV_H - 8,
+              15,
+              "#F3BF20",
+              "#FFE599",
+              1.1
+            );
+          }
+          drawNavIcon(
+            item.id,
+            cellX + cellW / 2,
+            NAV_Y + 21,
+            active
+          );
+          drawText(
+            item.label,
+            cellX + cellW / 2,
+            NAV_Y + 47,
+            7.5,
+            active ? "#173444" : "#FFFFFF",
+            active ? "800" : "700",
+            "center"
+          );
+          addButton(
+            "nav:" + item.id,
+            cellX,
+            NAV_Y,
+            cellW,
+            NAV_H
+          );
+        }
+        ctx2.strokeStyle = "rgba(86,190,244,0.35)";
+        ctx2.lineWidth = 1;
+        ctx2.strokeRect(0.5, NAV_Y + 0.5, VIEW_W - 1, NAV_H - 1);
+      };
+      console.log("V25_STRICT_HOME_LAYOUT loaded");
       simulationSystem.initialize();
       sceneManager.switchTo(
         "city"
@@ -25188,7 +25622,7 @@
         gameLoop
       );
       console.log(
-        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V24 \u6700\u7EC8\u4E3B\u9875\u8D44\u6E90\u7248\u542F\u52A8\u6210\u529F"
+        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V25 \u4E25\u683C\u4E3B\u9875\u7248\u5F0F\u7248\u542F\u52A8\u6210\u529F"
       );
     }
   });
