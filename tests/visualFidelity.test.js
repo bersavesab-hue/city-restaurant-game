@@ -31,13 +31,10 @@ const requiredAssets = [
   'assets/images/premium/district/avatar_3.jpg',
   'assets/images/premium/district/avatar_4.jpg',
   'assets/images/premium/renovation/header_interior.jpg',
+  'assets/images/premium/renovation/floor_texture.jpg',
   'assets/images/premium/renovation/template_1.jpg',
   'assets/images/premium/renovation/template_2.jpg',
-  'assets/images/premium/renovation/template_3.jpg',
-  'assets/images/premium/renovation/table2.jpg',
-  'assets/images/premium/renovation/table4.jpg',
-  'assets/images/premium/renovation/table6.jpg',
-  'assets/images/premium/renovation/table8.jpg'
+  'assets/images/premium/renovation/template_3.jpg'
 ];
 
 for (
@@ -51,7 +48,7 @@ for (
         asset
       )
     ),
-    '缺少V14高保真运行资源：' +
+    '缺少V18高保真运行资源：' +
       asset
   );
 }
@@ -101,12 +98,8 @@ assert.ok(
 
 assert.ok(
   store.includes(
-    "loadGroup(\n        'premiumStore'"
-  ),
-  '门店页没有加载高保真图片组'
-);
-
-assert.ok(
+    'V16_STORE_UI_REWRITE'
+  ) &&
   store.includes(
     'premium_store_hero'
   ) &&
@@ -116,41 +109,36 @@ assert.ok(
   store.includes(
     'premium_advice_staff'
   ),
-  '门店页没有实际绘制高保真素材'
+  '门店页必须使用V16正式高保真页面'
 );
 
 assert.ok(
   district.includes(
-    "loadGroup(\n        'premiumDistrict'"
-  ),
-  '商圈页没有加载高保真图片组'
-);
-
-assert.ok(
+    'V18_DISTRICT_UI_REWRITE'
+  ) &&
   district.includes(
     'premium_district_header'
   ) &&
   district.includes(
     'premium_avatar_1'
   ),
-  '商圈页没有实际绘制高保真素材'
+  '商圈页必须使用V18正式高保真页面'
 );
 
 assert.ok(
   !district.includes(
     'premium_demand_ambience'
   ),
-  'V14商圈时段需求禁止叠加带字效果图背景，否则会与动态数据重影'
+  '商圈时段需求禁止叠加带字效果图背景'
 );
 
 assert.ok(
   renovation.includes(
-    "loadGroup(\n          'premiumRenovation'"
-  ),
-  '装修页没有加载高保真图片组'
-);
-
-assert.ok(
+    'V17_RENOVATION_UI_REWRITE'
+  ) &&
+  renovation.includes(
+    'premium_reno_header'
+  ) &&
   renovation.includes(
     'premium_floor_texture'
   ) &&
@@ -158,31 +146,27 @@ assert.ok(
     'premium_template_1'
   ) &&
   renovation.includes(
-    'premium_table_4'
+    "'visual_table_'"
   ),
-  '装修页没有实际绘制高保真素材'
+  '装修页必须使用V17正式高保真页面'
 );
 
 assert.ok(
   renovation.includes(
-    'template:apply:'
+    "'template:save'"
   ) &&
   renovation.includes(
-    'room:rename:'
+    "'template:save-as'"
+  ) &&
+  renovation.includes(
+    "'template:apply:'"
+  ) &&
+  renovation.includes(
+    "'room:rename:'"
   ),
   '视觉重构不能破坏模板与包厢自定义功能'
 );
 
-assert.ok(
-  renovation.includes(
-    'template:quick-save'
-  ) &&
-  renovation.includes(
-    'template:save-as'
-  ),
-  'V14保存模板和另存模板必须是真实可交互按钮'
-);
-
 console.log(
-  'V14 premium visual fidelity tests passed'
+  'V18 premium visual fidelity tests passed'
 );

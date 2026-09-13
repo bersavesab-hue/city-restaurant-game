@@ -57,7 +57,7 @@ for (
     'visual_district_banner',
     'visual_table_2',
     'visual_stove',
-    'visual_register'
+    'visual_fridge'
   ]
 ) {
   assert.ok(
@@ -71,35 +71,50 @@ for (
 
 assert.ok(
   storeText.includes(
-    "loadGroup(\n        'store'"
+    ".loadGroup(\n        'store'"
+  ) ||
+  storeText.includes(
+    ".loadGroup(\n          'store'"
   ),
   '门店页必须主动加载门店图片'
 );
 
 assert.ok(
   storeText.includes(
-    'visual_storefront_hero'
+    'premium_store_hero'
+  ) &&
+  storeText.includes(
+    'premium_room_1'
   ),
-  '门店页必须实际绘制门店图片'
+  '门店页必须实际绘制门店高保真图片'
 );
 
 assert.ok(
   districtText.includes(
-    "loadGroup(\n          'district'"
+    ".loadGroup(\n        'district'"
+  ) ||
+  districtText.includes(
+    ".loadGroup(\n          'district'"
   ),
   '商圈页必须主动加载商圈图片'
 );
 
 assert.ok(
   districtText.includes(
-    'visual_district_banner'
+    'premium_district_header'
+  ) &&
+  districtText.includes(
+    'premium_avatar_1'
   ),
-  '商圈页必须实际绘制商圈图片'
+  '商圈页必须实际绘制商圈高保真素材'
 );
 
 assert.ok(
   renovationText.includes(
-    "loadGroup(\n          'renovation'"
+    ".loadGroup(\n        'renovation'"
+  ) ||
+  renovationText.includes(
+    ".loadGroup(\n          'renovation'"
   ),
   '装修页必须主动加载装修素材'
 );
@@ -107,6 +122,14 @@ assert.ok(
 assert.ok(
   renovationText.includes(
     "'visual_table_'"
+  ) ||
+  (
+    renovationText.includes(
+      "'visual_table_2'"
+    ) &&
+    renovationText.includes(
+      "'visual_table_8'"
+    )
   ),
   '装修平面图必须实际使用桌椅图片'
 );
@@ -116,11 +139,11 @@ assert.ok(
     'visual_stove'
   ) &&
   renovationText.includes(
-    'visual_register'
+    'visual_fridge'
   ),
-  '装修平面图必须实际使用设备图片'
+  '装修平面图必须实际使用后厨设备图片'
 );
 
 console.log(
-  'visual runtime loading tests passed'
+  'V18 visual runtime loading tests passed'
 );

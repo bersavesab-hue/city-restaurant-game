@@ -14049,6 +14049,7 @@
       var api = runtime.api || {};
       var gameState = require_gameState();
       var citySystem = require_citySystem();
+      var simulationSystem = require_simulationSystem();
       var sceneManager = require_sceneManager();
       var renovationSystem = require_renovationSystem();
       var openingPrepSystem = require_openingPrepSystem();
@@ -14059,17 +14060,17 @@
       var ui = require_premiumUi();
       var DESIGN_W = 390;
       var COLORS = {
-        navy: "#07344B",
-        navy2: "#082A3D",
-        paper: "#F7EEDD",
-        panel: "rgba(255,252,246,0.96)",
-        text: "#14334A",
-        muted: "#6A7B82",
-        gold: "#F3B12B",
-        orange: "#E98827",
-        red: "#D04D45",
-        green: "#269D67",
-        blue: "#2D8EB6",
+        navy: "#0A3A57",
+        navyDeep: "#062A40",
+        paper: "#F6EFE2",
+        panel: "#FFFDF8",
+        text: "#18374B",
+        muted: "#708188",
+        gold: "#F5B62D",
+        orange: "#E57D22",
+        red: "#D75349",
+        green: "#2B9A69",
+        blue: "#2E8FB7",
         white: "#FFFFFF"
       };
       function money(value) {
@@ -14079,6 +14080,15 @@
             Number(value) || 0
           )
         ).toLocaleString();
+      }
+      function clamp(value, min, max) {
+        return Math.max(
+          min,
+          Math.min(
+            max,
+            value
+          )
+        );
       }
       var StoreScene = class {
         constructor() {
@@ -14126,24 +14136,23 @@
         }
         update() {
           const shop = this.getCurrentShop();
-          if (shop) {
-            renovationSystem.updateShop(
-              shop.id
-            );
-            openingPrepSystem.updateShop(
-              shop.id
-            );
+          if (!shop) {
+            return;
           }
+          renovationSystem.updateShop(
+            shop.id
+          );
+          openingPrepSystem.updateShop(
+            shop.id
+          );
         }
         addButton(id, x, y, w, h) {
-          const minW = 40;
-          const minH = 36;
           const hitW = Math.max(
-            minW,
+            42,
             w
           );
           const hitH = Math.max(
-            minH,
+            38,
             h
           );
           this.buttons.push({
@@ -14182,483 +14191,189 @@
           const rooms = [];
           for (const floor of plan.floors) {
             for (const room of floor.privateRooms) {
-              rooms.push(room);
+              rooms.push(
+                room
+              );
             }
           }
           return rooms;
         }
+        getScale() {
+          return clamp(
+            (this.contentBottom - 90) / 560,
+            0.88,
+            1.13
+          );
+        }
         drawHeader(ctx2, shop) {
-          const district = shop ? citySystem.getDistrict(
-            shop.districtId
-          ) : null;
-          const gradient = ctx2.createLinearGradient(
+          const h = 90;
+          ui.coverImage(
+            ctx2,
+            visualAssetSystem.get(
+              "premium_explore_banner"
+            ),
             0,
             0,
-            390,
-            0
-          );
-          gradient.addColorStop(
+            DESIGN_W,
+            h,
             0,
-            COLORS.navy2
+            "rgba(4,31,48,0.50)"
           );
-          gradient.addColorStop(
-            1,
-            "#0E526D"
-          );
-          ctx2.fillStyle = gradient;
+          ctx2.fillStyle = "rgba(4,35,54,0.44)";
           ctx2.fillRect(
             0,
             0,
-            390,
-            73
+            DESIGN_W,
+            h
+          );
+          ui.card(
+            ctx2,
+            8,
+            13,
+            39,
+            39,
+            {
+              radius: 11,
+              fill: "rgba(5,47,67,0.88)",
+              stroke: "rgba(255,255,255,0.30)",
+              shadow: false
+            }
           );
           ui.text(
             ctx2,
-            shop ? shop.name || "\u6211\u7684\u9152\u697C" : "\u95E8\u5E97\u7B79\u5907",
+            "\u2039",
+            27.5,
+            32.5,
+            22,
+            "#FFE59B",
+            "800",
+            "center"
+          );
+          this.addButton(
+            "go-city",
+            4,
+            9,
+            47,
+            47
+          );
+          const cityName = gameState.getCityName() || "\u57CE\u5E02\u540D\u79F0";
+          ui.text(
+            ctx2,
+            cityName,
+            58,
+            22,
             15,
-            21,
-            16,
             COLORS.white,
             "800"
           );
           ui.text(
             ctx2,
-            shop ? (district ? district.name : "\u7ECF\u8425\u533A\u57DF") + " \xB7 " + shop.address : "\u4ECE\u9009\u5740\u5230\u5F00\u4E1A\uFF0C\u6253\u9020\u81EA\u5DF1\u7684\u9910\u996E\u54C1\u724C",
-            15,
-            47,
-            7.2,
-            "#CFE0E7",
-            "500"
+            "\u6253\u9020\u5C5E\u4E8E\u4F60\u7684\u7F8E\u98DF\u5E1D\u56FD",
+            58,
+            44,
+            7,
+            "#DAEAF0",
+            "600"
+          );
+          ui.card(
+            ctx2,
+            285,
+            11,
+            96,
+            43,
+            {
+              radius: 12,
+              fill: "rgba(5,39,59,0.86)",
+              stroke: "rgba(255,255,255,0.30)",
+              shadow: false
+            }
           );
           ui.text(
             ctx2,
             money(
               gameState.getPlayer().cash
             ),
-            376,
-            21,
-            13,
-            "#FFE6A3",
+            333,
+            26,
+            11.4,
+            "#FFF0A9",
             "800",
-            "right"
+            "center"
           );
           ui.text(
             ctx2,
             "\u53EF\u7528\u8D44\u91D1",
-            376,
-            46,
-            6.5,
-            "#CFE0E7",
-            "500",
-            "right"
+            333,
+            44,
+            6.3,
+            "#D9E9EE",
+            "600",
+            "center"
           );
-        }
-        drawProgress(ctx2, active) {
+          const bulletin = simulationSystem.getBulletin();
           ui.card(
             ctx2,
-            9,
-            362,
-            372,
-            91,
+            8,
+            61,
+            374,
+            23,
             {
-              radius: 14
-            }
-          );
-          ui.text(
-            ctx2,
-            "\u5F00\u5E97\u8FDB\u5EA6",
-            21,
-            382,
-            10,
-            COLORS.text,
-            "800"
-          );
-          const labels = [
-            "\u9009\u5740",
-            "\u7B7E\u7EA6",
-            "\u88C5\u4FEE",
-            "\u8BC1\u7167",
-            "\u62DB\u8058",
-            "\u5F00\u4E1A"
-          ];
-          const startX = 36;
-          const gap = 62;
-          for (let i = 0; i < 6; i++) {
-            const x = startX + i * gap;
-            if (i < 5) {
-              ctx2.fillStyle = i < active - 1 ? "#38A56F" : "#D7D0C5";
-              ctx2.fillRect(
-                x + 14,
-                412,
-                gap - 28,
-                3
-              );
-            }
-            const done = i < active - 1;
-            const current = i === active - 1;
-            ctx2.beginPath();
-            ctx2.arc(
-              x,
-              413,
-              12,
-              0,
-              Math.PI * 2
-            );
-            ctx2.fillStyle = done ? "#38A56F" : current ? COLORS.gold : "#E4DED4";
-            ctx2.fill();
-            ui.text(
-              ctx2,
-              done ? "\u2713" : String(
-                i + 1
-              ),
-              x,
-              413,
-              8,
-              done ? COLORS.white : COLORS.text,
-              "800",
-              "center"
-            );
-            ui.text(
-              ctx2,
-              labels[i],
-              x,
-              440,
-              6.5,
-              COLORS.text,
-              "700",
-              "center"
-            );
-          }
-        }
-        drawRoomStrip(ctx2, shop) {
-          const rooms = this.getRooms(
-            shop.id
-          );
-          ui.card(
-            ctx2,
-            9,
-            230,
-            372,
-            120,
-            {
-              radius: 14
-            }
-          );
-          ui.text(
-            ctx2,
-            "\u5305\u53A2\u540D\u79F0",
-            20,
-            249,
-            10,
-            COLORS.text,
-            "800"
-          );
-          ui.text(
-            ctx2,
-            "\u7CBE\u81F4\u5305\u53A2 \xB7 \u540D\u79F0\u3001\u4EBA\u6570\u3001\u98CE\u683C\u5747\u53EF\u81EA\u5B9A\u4E49",
-            82,
-            249,
-            6.5,
-            COLORS.muted,
-            "500"
-          );
-          ui.card(
-            ctx2,
-            297,
-            237,
-            70,
-            24,
-            {
-              radius: 12,
-              fill: "#FFF4D8",
-              stroke: "#E7C46F",
+              radius: 11,
+              fill: "rgba(3,39,59,0.88)",
+              stroke: "rgba(64,183,230,0.35)",
               shadow: false
             }
           );
           ui.text(
             ctx2,
-            "\u7BA1\u7406\u5305\u53A2 \u203A",
-            332,
-            249,
-            6.4,
-            COLORS.navy,
-            "800",
-            "center"
-          );
-          this.addButton(
-            "room:manage",
-            292,
-            233,
-            80,
-            32
-          );
-          const images = [
-            "premium_room_1",
-            "premium_room_2",
-            "premium_room_3"
-          ];
-          const cardW = 82;
-          const gap = 8;
-          for (let i = 0; i < 4; i++) {
-            const x = 18 + i * (cardW + gap);
-            ui.card(
-              ctx2,
-              x,
-              265,
-              cardW,
-              70,
-              {
-                radius: 9,
-                fill: "#F8F3EA",
-                stroke: "#DED3C5",
-                shadow: false
-              }
-            );
-            if (i < 3 && rooms[i]) {
-              ui.coverImage(
-                ctx2,
-                visualAssetSystem.get(
-                  images[i]
-                ),
-                x + 2,
-                267,
-                cardW - 4,
-                46,
-                8,
-                null
-              );
-              ui.text(
-                ctx2,
-                rooms[i].name || "\u5305\u53A2" + (i + 1),
-                x + 5,
-                325,
-                6.3,
-                COLORS.text,
-                "700"
-              );
-              ui.card(
-                ctx2,
-                x + cardW - 22,
-                315,
-                17,
-                17,
-                {
-                  radius: 6,
-                  fill: "#FFF1C8",
-                  stroke: "#E2BF66",
-                  shadow: false
-                }
-              );
-              ui.text(
-                ctx2,
-                "\u270E",
-                x + cardW - 13.5,
-                323.5,
-                6.4,
-                COLORS.navy,
-                "800",
-                "center"
-              );
-              this.addButton(
-                "room:rename:" + rooms[i].id,
-                x + cardW - 27,
-                310,
-                27,
-                27
-              );
-            } else if (i < 3) {
-              ui.text(
-                ctx2,
-                "\u5F85\u89C4\u5212",
-                x + cardW / 2,
-                299,
-                7.2,
-                COLORS.muted,
-                "700",
-                "center"
-              );
-              ui.text(
-                ctx2,
-                "\u8FDB\u5165\u88C5\u4FEE\u6DFB\u52A0",
-                x + cardW / 2,
-                320,
-                5.5,
-                COLORS.muted,
-                "600",
-                "center"
-              );
-              this.addButton(
-                "room:manage",
-                x,
-                265,
-                cardW,
-                70
-              );
-            } else {
-              ui.text(
-                ctx2,
-                "+",
-                x + cardW / 2,
-                292,
-                17,
-                "#9D8D7C",
-                "500",
-                "center"
-              );
-              ui.text(
-                ctx2,
-                "\u6DFB\u52A0\u5305\u53A2",
-                x + cardW / 2,
-                318,
-                6.2,
-                COLORS.navy,
-                "700",
-                "center"
-              );
-              this.addButton(
-                "room:manage",
-                x,
-                265,
-                cardW,
-                70
-              );
-            }
-          }
-        }
-        renderNoShop(ctx2) {
-          this.drawHeader(
-            ctx2,
-            null
-          );
-          ui.card(
-            ctx2,
-            10,
-            88,
-            370,
-            246,
-            {
-              radius: 18
-            }
-          );
-          ui.coverImage(
-            ctx2,
-            visualAssetSystem.get(
-              "premium_explore_banner"
-            ),
-            20,
-            99,
-            350,
-            118,
-            14,
-            "rgba(4,31,46,0.22)"
-          );
-          ui.text(
-            ctx2,
-            "\u8FD8\u6CA1\u6709\u81EA\u5DF1\u7684\u95E8\u5E97",
-            28,
-            239,
+            "\u{1F4E3} \u57CE\u5E02\u52A8\u6001",
             15,
-            COLORS.text,
+            72.5,
+            6.7,
+            "#FFD46B",
             "800"
           );
           ui.text(
             ctx2,
-            "\u5148\u9009\u5546\u5708\uFF0C\u518D\u770B\u94FA\u3001\u8C08\u5224\u3001\u7B7E\u7EA6\u3002",
-            28,
-            268,
-            8,
-            COLORS.muted,
+            (bulletin.title + " \xB7 " + bulletin.detail).slice(
+              0,
+              42
+            ),
+            87,
+            72.5,
+            6.1,
+            COLORS.white,
             "600"
           );
-          ui.card(
-            ctx2,
-            28,
-            286,
-            334,
-            37,
-            {
-              radius: 18,
-              fill: "#F6B428",
-              stroke: "#E6A01B",
-              shadow: false
-            }
-          );
-          ui.text(
-            ctx2,
-            "\u53BB\u57CE\u5E02\u5730\u56FE\u9009\u62E9\u7ECF\u8425\u533A\u57DF  \u203A",
-            195,
-            304.5,
-            8.5,
-            COLORS.text,
-            "800",
-            "center"
-          );
-          this.addButton(
-            "go-city",
-            24,
-            282,
-            342,
-            45
-          );
-          ui.card(
-            ctx2,
-            10,
-            350,
-            370,
-            152,
-            {
-              radius: 16
-            }
-          );
-          ui.text(
-            ctx2,
-            "\u5F00\u5E97\u6D41\u7A0B",
-            22,
-            373,
-            10,
-            COLORS.text,
-            "800"
-          );
-          const steps = [
-            "\u2460 \u67E5\u770B\u5546\u5708\u4EBA\u53E3\u3001\u6D88\u8D39\u4EBA\u7FA4\u548C\u9700\u6C42",
-            "\u2461 \u8FDB\u5165\u623F\u6E90\u5E02\u573A\u5E76\u5B9E\u5730\u770B\u94FA",
-            "\u2462 \u8C08\u5224\u79DF\u91D1\u3001\u8F6C\u8BA9\u8D39\u548C\u514D\u79DF\u671F",
-            "\u2463 \u7B7E\u7EA6\u540E\u8FDB\u5165\u88C5\u4FEE\u4E0E\u5F00\u4E1A\u7B79\u5907"
-          ];
-          for (let i = 0; i < steps.length; i++) {
+          if (shop) {
+            const district = citySystem.getDistrict(
+              shop.districtId
+            );
             ui.text(
               ctx2,
-              steps[i],
-              24,
-              405 + i * 25,
-              7.2,
-              i === 0 ? COLORS.orange : COLORS.text,
-              i === 0 ? "700" : "600"
+              district ? district.name : "",
+              374,
+              72.5,
+              5.8,
+              "#D9E9EE",
+              "600",
+              "right"
             );
           }
         }
-        renderShop(ctx2, shop) {
-          this.drawHeader(
-            ctx2,
-            shop
-          );
-          const plan = renovationSystem.ensurePlan(
-            shop.id
-          );
-          const readiness = openingPrepSystem.getReadiness(
-            shop.id
-          );
-          const finance = openingFinanceSystem.getRecoveryStatus(
-            shop.id
-          );
+        drawStoreHero(ctx2, shop, readiness) {
+          const sy = this.getScale();
+          const y = 96;
+          const h = 140 * sy;
           ui.card(
             ctx2,
             9,
-            87,
+            y,
             372,
-            132,
+            h,
             {
-              radius: 17
+              radius: 17,
+              fill: COLORS.panel
             }
           );
           ui.coverImage(
@@ -14668,64 +14383,56 @@
             ) || visualAssetSystem.get(
               "visual_storefront_hero"
             ),
-            217,
-            95,
-            154,
-            116,
+            211,
+            y + 6,
+            161,
+            h - 12,
             13,
             null
           );
-          ctx2.fillStyle = "rgba(34,24,18,0.62)";
-          ctx2.fillRect(
-            265,
-            108,
-            92,
-            26
-          );
-          ui.text(
-            ctx2,
-            shop.name || "\u6211\u7684\u9152\u697C",
-            311,
-            121,
-            7.2,
-            "#FFE8B0",
-            "800",
-            "center"
-          );
-          const status = shop.status === "open" ? "\u8425\u4E1A\u4E2D" : readiness && readiness.ready ? "\u53EF\u8BD5\u8425\u4E1A" : shop.status === "renovating" ? "\u88C5\u4FEE\u4E2D" : readiness && readiness.renovationReady ? "\u5F00\u4E1A\u7B79\u5907" : "\u5DF2\u7B7E\u7EA6";
+          const status = shop.status === "open" ? "\u8425\u4E1A\u4E2D" : readiness.ready ? "\u53EF\u8BD5\u8425\u4E1A" : shop.status === "renovating" ? "\u88C5\u4FEE\u4E2D" : readiness.renovationReady ? "\u5F00\u4E1A\u7B79\u5907" : "\u5DF2\u7B7E\u7EA6";
           ui.pill(
             ctx2,
             "\u2713 " + status,
             20,
-            101,
+            y + 13,
             72,
-            25,
+            24,
             "#FFF0C1",
-            "#B36B1E"
+            "#A9681F"
           );
           ui.text(
             ctx2,
-            shop.name || shop.address,
+            shop.name || "\u6211\u7684\u9152\u697C",
             20,
-            151,
+            y + 59,
             17,
             COLORS.text,
             "800"
           );
           ui.text(
             ctx2,
-            shop.address,
+            "\u{1F4CD} " + shop.address,
             20,
-            177,
+            y + 85,
             7,
-            COLORS.muted,
+            COLORS.text,
             "600"
+          );
+          ui.text(
+            ctx2,
+            "\u4E00\u5EA7\u597D\u9152\u697C\uFF0C\u4ECE\u8FD9\u91CC\u5F00\u59CB\uFF01",
+            21,
+            y + 111,
+            7.4,
+            COLORS.orange,
+            "700"
           );
           ui.card(
             ctx2,
             20,
-            189,
-            78,
+            y + h - 32,
+            80,
             24,
             {
               radius: 12,
@@ -14736,10 +14443,10 @@
           );
           ui.text(
             ctx2,
-            "\u270E \u6539\u540D",
-            59,
-            201,
-            7,
+            "\u270E \u4FEE\u6539\u540D\u79F0",
+            60,
+            y + h - 20,
+            6.6,
             COLORS.orange,
             "800",
             "center"
@@ -14747,98 +14454,409 @@
           this.addButton(
             "shop:rename",
             16,
-            185,
-            86,
-            32
+            y + h - 37,
+            88,
+            34
           );
-          this.drawRoomStrip(
+          ui.card(
             ctx2,
-            shop
+            111,
+            y + h - 32,
+            80,
+            24,
+            {
+              radius: 12,
+              fill: "#FFFDF7",
+              stroke: "#D8CCBE",
+              shadow: false
+            }
           );
-          let active = 2;
-          if (readiness && readiness.renovationReady) {
-            active = 4;
-          } else if (shop.status === "renovating") {
-            active = 3;
-          }
-          if (readiness && readiness.permitsReady) {
-            active = 5;
-          }
-          if (readiness && readiness.ready) {
-            active = 6;
-          }
-          this.drawProgress(
+          ui.text(
             ctx2,
-            active
+            "\u2699 \u95E8\u5E97\u8BBE\u7F6E",
+            151,
+            y + h - 20,
+            6.4,
+            COLORS.navy,
+            "800",
+            "center"
+          );
+          this.addButton(
+            "store:settings",
+            107,
+            y + h - 37,
+            88,
+            34
+          );
+        }
+        drawRooms(ctx2, shop) {
+          const sy = this.getScale();
+          const y = 243 * sy - 90 * (sy - 1);
+          const h = 102 * sy;
+          const rooms = this.getRooms(
+            shop.id
           );
           ui.card(
             ctx2,
             9,
-            466,
+            y,
             372,
-            152,
+            h,
             {
-              radius: 15
+              radius: 15,
+              fill: COLORS.panel
+            }
+          );
+          ui.text(
+            ctx2,
+            "\u5305\u53A2\u540D\u79F0",
+            20,
+            y + 19,
+            10.2,
+            COLORS.text,
+            "800"
+          );
+          ui.text(
+            ctx2,
+            "\u7CBE\u81F4\u5305\u53A2 \xB7 \u5BB4\u8BF7\u5BBE\u670B \xB7 \u540D\u79F0\u548C\u98CE\u683C\u53EF\u81EA\u5B9A\u4E49",
+            83,
+            y + 19,
+            5.9,
+            COLORS.muted,
+            "500"
+          );
+          ui.card(
+            ctx2,
+            304,
+            y + 8,
+            65,
+            23,
+            {
+              radius: 11,
+              fill: "#FFF6E0",
+              stroke: "#E4C477",
+              shadow: false
+            }
+          );
+          ui.text(
+            ctx2,
+            "\u7BA1\u7406\u5305\u53A2 \u203A",
+            336.5,
+            y + 19.5,
+            6.1,
+            COLORS.navy,
+            "800",
+            "center"
+          );
+          this.addButton(
+            "room:manage",
+            298,
+            y + 4,
+            78,
+            31
+          );
+          const images = [
+            "premium_room_1",
+            "premium_room_2",
+            "premium_room_3"
+          ];
+          const cardW = 82;
+          const gap = 8;
+          const cardY = y + 34;
+          const cardH = h - 42;
+          for (let i = 0; i < 4; i++) {
+            const x = 18 + i * (cardW + gap);
+            ui.card(
+              ctx2,
+              x,
+              cardY,
+              cardW,
+              cardH,
+              {
+                radius: 8,
+                fill: "#FBF7EF",
+                stroke: "#DFD4C5",
+                shadow: false
+              }
+            );
+            if (i < 3 && rooms[i]) {
+              ui.coverImage(
+                ctx2,
+                visualAssetSystem.get(
+                  images[i]
+                ),
+                x + 2,
+                cardY + 2,
+                cardW - 4,
+                Math.max(
+                  33,
+                  cardH - 20
+                ),
+                7,
+                null
+              );
+              ui.text(
+                ctx2,
+                rooms[i].name || "\u5305\u53A2" + (i + 1),
+                x + 5,
+                cardY + cardH - 7,
+                6,
+                COLORS.text,
+                "700"
+              );
+              ui.text(
+                ctx2,
+                "\u270E",
+                x + cardW - 12,
+                cardY + cardH - 7,
+                6.3,
+                COLORS.navy,
+                "800",
+                "center"
+              );
+              this.addButton(
+                "room:rename:" + rooms[i].id,
+                x + cardW - 25,
+                cardY + cardH - 22,
+                28,
+                28
+              );
+            } else if (i === 3) {
+              ui.text(
+                ctx2,
+                "+",
+                x + cardW / 2,
+                cardY + cardH * 0.42,
+                16,
+                "#A29180",
+                "500",
+                "center"
+              );
+              ui.text(
+                ctx2,
+                "\u6DFB\u52A0\u5305\u53A2",
+                x + cardW / 2,
+                cardY + cardH * 0.72,
+                6.1,
+                COLORS.navy,
+                "700",
+                "center"
+              );
+              this.addButton(
+                "room:manage",
+                x,
+                cardY,
+                cardW,
+                cardH
+              );
+            } else {
+              ui.text(
+                ctx2,
+                "\u5F85\u89C4\u5212",
+                x + cardW / 2,
+                cardY + cardH * 0.43,
+                6.5,
+                COLORS.muted,
+                "700",
+                "center"
+              );
+              ui.text(
+                ctx2,
+                "\u8FDB\u5165\u88C5\u4FEE\u6DFB\u52A0",
+                x + cardW / 2,
+                cardY + cardH * 0.7,
+                5.3,
+                COLORS.muted,
+                "500",
+                "center"
+              );
+              this.addButton(
+                "room:manage",
+                x,
+                cardY,
+                cardW,
+                cardH
+              );
+            }
+          }
+        }
+        drawProgress(ctx2, active) {
+          const sy = this.getScale();
+          const y = 352 * sy - 90 * (sy - 1);
+          const h = 83 * sy;
+          ui.card(
+            ctx2,
+            9,
+            y,
+            372,
+            h,
+            {
+              radius: 15,
+              fill: COLORS.panel
+            }
+          );
+          ui.text(
+            ctx2,
+            "\u5F00\u5E97\u8FDB\u5EA6",
+            20,
+            y + 19,
+            10.2,
+            COLORS.text,
+            "800"
+          );
+          ui.card(
+            ctx2,
+            306,
+            y + 7,
+            62,
+            23,
+            {
+              radius: 11,
+              fill: "#FFF6E0",
+              stroke: "#E4C477",
+              shadow: false
+            }
+          );
+          ui.text(
+            ctx2,
+            "\u67E5\u770B\u8BE6\u60C5 \u203A",
+            337,
+            y + 18.5,
+            5.9,
+            COLORS.navy,
+            "800",
+            "center"
+          );
+          const labels = [
+            "\u9009\u5740",
+            "\u7B7E\u7EA6",
+            "\u88C5\u4FEE",
+            "\u8BC1\u7167",
+            "\u62DB\u8058",
+            "\u5F00\u4E1A"
+          ];
+          const startX = 37;
+          const gap = 62;
+          const lineY = y + h * 0.58;
+          for (let i = 0; i < 6; i++) {
+            const x = startX + i * gap;
+            if (i < 5) {
+              ctx2.fillStyle = i < active - 1 ? "#DDA52A" : "#D8D2C9";
+              ctx2.fillRect(
+                x + 13,
+                lineY - 1,
+                gap - 26,
+                3
+              );
+            }
+            const done = i < active - 1;
+            const current = i === active - 1;
+            ctx2.beginPath();
+            ctx2.arc(
+              x,
+              lineY,
+              11.5,
+              0,
+              Math.PI * 2
+            );
+            ctx2.fillStyle = done ? "#DDA52A" : current ? COLORS.gold : "#E7E2DA";
+            ctx2.fill();
+            ui.text(
+              ctx2,
+              done ? "\u2713" : String(
+                i + 1
+              ),
+              x,
+              lineY,
+              7.4,
+              done ? COLORS.white : COLORS.text,
+              "800",
+              "center"
+            );
+            ui.text(
+              ctx2,
+              labels[i],
+              x,
+              lineY + 23,
+              6.4,
+              COLORS.text,
+              "700",
+              "center"
+            );
+          }
+        }
+        drawAdvice(ctx2, shop, readiness) {
+          const sy = this.getScale();
+          const y = 442 * sy - 90 * (sy - 1);
+          const h = 106 * sy;
+          ui.card(
+            ctx2,
+            9,
+            y,
+            372,
+            h,
+            {
+              radius: 15,
+              fill: COLORS.panel
             }
           );
           ui.text(
             ctx2,
             "\u4E0B\u4E00\u6B65\u5EFA\u8BAE",
             20,
-            486,
-            11,
+            y + 20,
+            10.5,
             COLORS.text,
             "800"
           );
+          ui.text(
+            ctx2,
+            "\u7A33\u624E\u7A33\u6253\uFF0C\u5F00\u597D\u6BCF\u4E00\u5BB6\u5E97\uFF01",
+            368,
+            y + 20,
+            6.2,
+            COLORS.orange,
+            "700",
+            "right"
+          );
           const cards = [
             {
-              id: readiness && readiness.ready && shop.status !== "open" ? "trial" : "renovation",
+              id: readiness.ready && shop.status !== "open" ? "trial" : "renovation",
               key: "premium_advice_renovation",
-              title: readiness && readiness.ready && shop.status !== "open" ? "\u5F00\u59CB\u8BD5\u8425\u4E1A" : readiness && readiness.renovationReady ? "\u88C5\u4FEE\u6210\u679C" : "\u5E97\u9762\u88C5\u4FEE",
-              sub: readiness && readiness.ready && shop.status !== "open" ? "\u5F00\u95E8\u8FCE\u5BA2\u5E76\u8FDB\u5165\u7ECF\u8425" : readiness && readiness.renovationReady ? "\u67E5\u770B\u7A7A\u95F4\u4E0E\u5EA7\u4F4D" : "\u5E03\u5C40\u3001\u5305\u53A2\u3001\u98CE\u683C",
-              action: readiness && readiness.ready && shop.status !== "open" ? "\u5F00\u4E1A" : readiness && readiness.renovationReady ? "\u67E5\u770B" : "\u88C5\u4FEE"
-            },
-            {
-              id: "equipment",
-              key: "visual_stove",
-              title: readiness && readiness.equipmentReady ? "\u8BBE\u5907\u5DF2\u5B89\u88C5" : "\u8BBE\u5907\u91C7\u8D2D",
-              sub: readiness && readiness.equipment && readiness.equipment.status === "ordered" ? "\u8FD0\u8F93\u5B89\u88C5\u8FDB\u884C\u4E2D" : "\u540E\u53A8\u3001\u51B7\u94FE\u3001\u6536\u94F6",
-              action: readiness && readiness.equipmentReady ? "\u67E5\u770B" : "\u91C7\u8D2D"
+              title: readiness.ready && shop.status !== "open" ? "\u5F00\u59CB\u8BD5\u8425\u4E1A" : "\u5F00\u59CB\u5E97\u9762\u88C5\u4FEE",
+              sub: readiness.renovationReady ? "\u67E5\u770B\u5E76\u8C03\u6574\u5F53\u524D\u88C5\u4FEE\u65B9\u6848" : "\u9009\u62E9\u88C5\u4FEE\u98CE\u683C\uFF0C\u6253\u9020\u72EC\u7279\u4F53\u9A8C",
+              action: readiness.ready && shop.status !== "open" ? "\u5F00\u4E1A" : "\u53BB\u88C5\u4FEE"
             },
             {
               id: "license",
               key: "premium_advice_permit",
-              title: readiness && readiness.permitsReady ? "\u8BC1\u7167\u5DF2\u9F50" : "\u8BC1\u7167\u529E\u7406",
-              sub: readiness && readiness.permits ? readiness.permits.approved + "/" + readiness.permits.total + " \u5DF2\u5B8C\u6210" : "\u7ECF\u8425\u3001\u6D88\u9632\u3001\u98DF\u54C1",
-              action: "\u529E\u8BC1"
+              title: "\u529E\u7406\u8425\u4E1A\u8BC1\u7167",
+              sub: readiness.permitsReady ? "\u8BC1\u7167\u5DF2\u9F50\uFF0C\u53EF\u67E5\u770B\u529E\u7406\u8BE6\u60C5" : "\u5B8C\u6210\u5404\u7C7B\u8BC1\u7167\u529E\u7406",
+              action: "\u53BB\u529E\u8BC1\u7167"
             },
             {
               id: "staff",
               key: "premium_advice_staff",
-              title: readiness && readiness.staffingReady ? "\u73ED\u7EC4\u5DF2\u9F50" : "\u62DB\u8058\u56E2\u961F",
-              sub: readiness && readiness.staffing ? "\u8986\u76D6\u7387 " + Math.round(
-                readiness.staffing.coverage * 100
-              ) + "%" : "\u5E97\u957F\u3001\u53A8\u5E08\u3001\u670D\u52A1",
-              action: "\u62DB\u8058"
+              title: "\u62DB\u8058\u7ECF\u8425\u56E2\u961F",
+              sub: readiness.staffingReady ? "\u57FA\u7840\u73ED\u7EC4\u5DF2\u9F50" : "\u7EC4\u5EFA\u4E13\u4E1A\u56E2\u961F\u51C6\u5907\u5F00\u4E1A",
+              action: "\u53BB\u62DB\u8058"
             }
           ];
-          for (let i = 0; i < cards.length; i++) {
+          const cardW = 113;
+          for (let i = 0; i < 3; i++) {
             const item = cards[i];
-            const col = i % 2;
-            const row = Math.floor(
-              i / 2
-            );
-            const x = 18 + col * 181;
-            const y = 501 + row * 56;
+            const x = 17 + i * 119;
+            const top = y + 31;
             ui.card(
               ctx2,
               x,
-              y,
-              173,
-              50,
+              top,
+              cardW,
+              h - 38,
               {
-                radius: 11,
-                fill: "#FFFBF4",
+                radius: 10,
+                fill: "#FFF9EF",
+                stroke: "#E2D8CB",
                 shadow: false
               }
             );
@@ -14847,140 +14865,382 @@
               visualAssetSystem.get(
                 item.key
               ),
-              x + 5,
-              y + 5,
-              42,
-              40,
-              8,
+              x + 4,
+              top + 4,
+              44,
+              h - 46,
+              7,
               null
             );
             ui.text(
               ctx2,
               item.title,
-              x + 54,
-              y + 14,
-              8,
+              x + 52,
+              top + 15,
+              6.5,
               COLORS.text,
               "800"
             );
             ui.text(
               ctx2,
               item.sub,
-              x + 54,
-              y + 31,
-              7,
+              x + 52,
+              top + 31,
+              5.2,
               COLORS.muted,
-              "600"
-            );
-            ui.text(
-              ctx2,
-              item.action + " \u203A",
-              x + 160,
-              y + 39,
-              7,
-              COLORS.orange,
-              "800",
-              "right"
-            );
-            this.addButton(
-              "module:" + item.id,
-              x,
-              y,
-              173,
-              50
-            );
-          }
-          if (finance && finance.gap > 0 && finance.offer && !finance.offer.existing) {
-            ui.pill(
-              ctx2,
-              "\u5468\u8F6C\u91D1\u53EF\u8865\u8DB3\u5F00\u5E97\u7F3A\u53E3 " + money(
-                Math.min(
-                  finance.gap,
-                  finance.offer.creditLimit
-                )
-              ),
-              168,
-              473,
-              202,
-              24,
-              "#FFF0D6",
-              COLORS.orange,
-              "#E9C174"
-            );
-            this.addButton(
-              "module:finance",
-              164,
-              469,
-              210,
-              32
-            );
-          }
-          if (this.contentBottom > 684) {
-            const bannerY = Math.min(
-              628,
-              this.contentBottom - 71
-            );
-            ui.coverImage(
-              ctx2,
-              visualAssetSystem.get(
-                "premium_explore_banner"
-              ),
-              10,
-              bannerY,
-              370,
-              60,
-              13,
-              "rgba(4,32,48,0.45)"
-            );
-            ui.text(
-              ctx2,
-              "\u63A2\u7D22\u66F4\u591A\u4F18\u8D28\u5546\u5708",
-              28,
-              bannerY + 21,
-              10,
-              COLORS.white,
-              "800"
-            );
-            ui.text(
-              ctx2,
-              "\u4E3A\u4E0B\u4E00\u5BB6\u95E8\u5E97\u5BFB\u627E\u9EC4\u91D1\u5730\u6BB5",
-              28,
-              bannerY + 42,
-              6.5,
-              "#E6F0F4",
               "500"
             );
             ui.card(
               ctx2,
-              283,
-              bannerY + 14,
-              78,
-              32,
+              x + 51,
+              top + h - 67,
+              55,
+              22,
               {
-                radius: 16,
-                fill: "#F7B628",
-                stroke: "#E3A21B",
+                radius: 11,
+                fill: COLORS.gold,
+                stroke: "#E1A31F",
                 shadow: false
               }
             );
             ui.text(
               ctx2,
-              "\u53BB\u62D3\u5C55 \u203A",
-              322,
-              bannerY + 30,
-              7,
+              item.action + " \u203A",
+              x + 78.5,
+              top + h - 56,
+              5.7,
               COLORS.text,
               "800",
               "center"
             );
             this.addButton(
-              "go-city",
-              278,
-              bannerY + 8,
-              90,
-              44
+              "module:" + item.id,
+              x,
+              top,
+              cardW,
+              h - 38
             );
           }
+        }
+        drawExplore(ctx2) {
+          const y = this.contentBottom - 66;
+          ui.coverImage(
+            ctx2,
+            visualAssetSystem.get(
+              "premium_explore_banner"
+            ),
+            10,
+            y,
+            370,
+            57,
+            13,
+            "rgba(3,34,51,0.44)"
+          );
+          ui.text(
+            ctx2,
+            "\u63A2\u7D22\u66F4\u591A\u4F18\u8D28\u5546\u5708",
+            66,
+            y + 20,
+            9.5,
+            COLORS.white,
+            "800"
+          );
+          ui.text(
+            ctx2,
+            "\u5BFB\u627E\u4E0B\u4E00\u4E2A\u9EC4\u91D1\u5730\u6BB5\uFF0C\u6269\u5C55\u4F60\u7684\u9910\u996E\u7248\u56FE",
+            66,
+            y + 38,
+            5.9,
+            "#E5F0F4",
+            "600"
+          );
+          ui.card(
+            ctx2,
+            295,
+            y + 13,
+            68,
+            31,
+            {
+              radius: 15,
+              fill: COLORS.gold,
+              stroke: "#E1A11D",
+              shadow: false
+            }
+          );
+          ui.text(
+            ctx2,
+            "\u53BB\u62D3\u5C55 \u203A",
+            329,
+            y + 28.5,
+            6.7,
+            COLORS.text,
+            "800",
+            "center"
+          );
+          this.addButton(
+            "go-city",
+            289,
+            y + 7,
+            80,
+            43
+          );
+        }
+        renderNoShop(ctx2) {
+          this.drawHeader(
+            ctx2,
+            null
+          );
+          const available = this.contentBottom - 104;
+          const heroH = Math.max(
+            205,
+            Math.min(
+              292,
+              available * 0.44
+            )
+          );
+          ui.card(
+            ctx2,
+            10,
+            99,
+            370,
+            heroH,
+            {
+              radius: 18,
+              fill: COLORS.panel
+            }
+          );
+          ui.coverImage(
+            ctx2,
+            visualAssetSystem.get(
+              "premium_explore_banner"
+            ),
+            18,
+            107,
+            354,
+            heroH * 0.55,
+            14,
+            "rgba(4,31,46,0.17)"
+          );
+          ui.text(
+            ctx2,
+            "\u8FD8\u6CA1\u6709\u81EA\u5DF1\u7684\u95E8\u5E97",
+            28,
+            126 + heroH * 0.55,
+            15,
+            COLORS.text,
+            "800"
+          );
+          ui.text(
+            ctx2,
+            "\u4ECE\u5546\u5708\u3001\u623F\u6E90\u3001\u8C08\u5224\u5230\u88C5\u4FEE\uFF0C\u7B2C\u4E00\u5BB6\u5E97\u4ECE\u9009\u5740\u5F00\u59CB\u3002",
+            28,
+            151 + heroH * 0.55,
+            7.1,
+            COLORS.muted,
+            "600"
+          );
+          ui.card(
+            ctx2,
+            27,
+            168 + heroH * 0.55,
+            335,
+            38,
+            {
+              radius: 19,
+              fill: COLORS.gold,
+              stroke: "#DEA11F",
+              shadow: false
+            }
+          );
+          ui.text(
+            ctx2,
+            "\u53BB\u57CE\u5E02\u5730\u56FE\u9009\u62E9\u9EC4\u91D1\u5546\u5708  \u203A",
+            194.5,
+            187 + heroH * 0.55,
+            8.2,
+            COLORS.text,
+            "800",
+            "center"
+          );
+          this.addButton(
+            "go-city",
+            22,
+            163 + heroH * 0.55,
+            345,
+            48
+          );
+          const processY = 112 + heroH;
+          const processH = Math.max(
+            118,
+            this.contentBottom - processY - 12
+          );
+          ui.card(
+            ctx2,
+            10,
+            processY,
+            370,
+            processH,
+            {
+              radius: 16,
+              fill: COLORS.panel
+            }
+          );
+          ui.text(
+            ctx2,
+            "\u5F00\u5E97\u6D41\u7A0B",
+            22,
+            processY + 23,
+            10.5,
+            COLORS.text,
+            "800"
+          );
+          const steps = [
+            [
+              "1",
+              "\u9009\u62E9\u5546\u5708",
+              "\u5148\u770B\u4EBA\u53E3\u3001\u9700\u6C42\u3001\u5BA2\u5355\u548C\u7ADE\u4E89"
+            ],
+            [
+              "2",
+              "\u6311\u9009\u623F\u6E90",
+              "\u5B9E\u5730\u770B\u94FA\uFF0C\u786E\u8BA4\u9762\u79EF\u3001\u6392\u70DF\u548C\u98CE\u9669"
+            ],
+            [
+              "3",
+              "\u8C08\u5224\u7B7E\u7EA6",
+              "\u79DF\u91D1\u3001\u8F6C\u8BA9\u8D39\u3001\u514D\u79DF\u671F\u90FD\u80FD\u8C08"
+            ],
+            [
+              "4",
+              "\u88C5\u4FEE\u7B79\u5907",
+              "\u5E03\u5C40\u3001\u8BBE\u5907\u3001\u8BC1\u7167\u3001\u62DB\u8058\u540E\u5F00\u4E1A"
+            ]
+          ];
+          const rowH = Math.max(
+            25,
+            (processH - 38) / 4
+          );
+          for (let i = 0; i < 4; i++) {
+            const cy = processY + 45 + i * rowH;
+            ctx2.beginPath();
+            ctx2.arc(
+              36,
+              cy,
+              10,
+              0,
+              Math.PI * 2
+            );
+            ctx2.fillStyle = i === 0 ? COLORS.gold : "#E3DDD3";
+            ctx2.fill();
+            ui.text(
+              ctx2,
+              steps[i][0],
+              36,
+              cy,
+              6.7,
+              COLORS.text,
+              "800",
+              "center"
+            );
+            ui.text(
+              ctx2,
+              steps[i][1],
+              56,
+              cy - 5,
+              7.5,
+              COLORS.text,
+              "800"
+            );
+            ui.text(
+              ctx2,
+              steps[i][2],
+              56,
+              cy + 10,
+              5.9,
+              COLORS.muted,
+              "500"
+            );
+          }
+        }
+        renderShop(ctx2, shop) {
+          this.drawHeader(
+            ctx2,
+            shop
+          );
+          const readiness = openingPrepSystem.getReadiness(
+            shop.id
+          );
+          const finance = openingFinanceSystem.getRecoveryStatus(
+            shop.id
+          );
+          this.drawStoreHero(
+            ctx2,
+            shop,
+            readiness
+          );
+          this.drawRooms(
+            ctx2,
+            shop
+          );
+          let active = 2;
+          if (readiness.renovationReady) {
+            active = 4;
+          } else if (shop.status === "renovating") {
+            active = 3;
+          }
+          if (readiness.permitsReady) {
+            active = 5;
+          }
+          if (readiness.ready) {
+            active = 6;
+          }
+          this.drawProgress(
+            ctx2,
+            active
+          );
+          this.drawAdvice(
+            ctx2,
+            shop,
+            readiness
+          );
+          if (finance && finance.gap > 0 && finance.offer && !finance.offer.existing) {
+            const y = this.contentBottom - 103;
+            ui.card(
+              ctx2,
+              20,
+              y,
+              176,
+              30,
+              {
+                radius: 14,
+                fill: "#FFF3D8",
+                stroke: "#E6BF69",
+                shadow: false
+              }
+            );
+            ui.text(
+              ctx2,
+              "\u8D44\u91D1\u7F3A\u53E3 " + money(
+                finance.gap
+              ) + " \xB7 \u53EF\u7533\u8BF7\u5468\u8F6C\u91D1 \u203A",
+              108,
+              y + 15,
+              6.1,
+              COLORS.orange,
+              "800",
+              "center"
+            );
+            this.addButton(
+              "module:finance",
+              16,
+              y - 4,
+              184,
+              38
+            );
+          }
+          this.drawExplore(
+            ctx2
+          );
         }
         render(ctx2) {
           if (!ctx2) {
@@ -15009,6 +15269,14 @@
           }
           ctx2.restore();
         }
+        showToast(title) {
+          if (api && typeof api.showToast === "function") {
+            api.showToast({
+              title,
+              icon: "none"
+            });
+          }
+        }
         handleTap(x, y) {
           const item = this.hitButton(
             x,
@@ -15020,6 +15288,30 @@
           if (item.id === "go-city") {
             sceneManager.switchTo(
               "city"
+            );
+            return true;
+          }
+          if (item.id === "store:settings") {
+            const shop = this.getCurrentShop();
+            if (!shop) {
+              return true;
+            }
+            textInput.requestText({
+              title: "\u95E8\u5E97\u8BBE\u7F6E \xB7 \u4FEE\u6539\u540D\u79F0",
+              value: shop.name || "",
+              placeholder: "\u8BF7\u8F93\u5165\u95E8\u5E97\u540D\u79F0",
+              maxLength: 12
+            }).then(
+              (value) => {
+                if (!value) {
+                  return;
+                }
+                customizationSystem.renameShop(
+                  shop.id,
+                  value
+                );
+                textInput.requestRender();
+              }
             );
             return true;
           }
@@ -15126,12 +15418,9 @@
               const result = openingPrepSystem.startTrialOpening(
                 shop.id
               );
-              if (api && typeof api.showToast === "function") {
-                api.showToast({
-                  title: result.ok ? "\u8BD5\u8425\u4E1A\u5F00\u59CB\uFF01" : result.message,
-                  icon: "none"
-                });
-              }
+              this.showToast(
+                result.ok ? "\u8BD5\u8425\u4E1A\u5F00\u59CB\uFF01" : result.message
+              );
               textInput.requestRender();
               return true;
             }
@@ -15143,14 +15432,11 @@
                 const result = openingFinanceSystem.acceptOffer(
                   shop.id
                 );
-                if (api && typeof api.showToast === "function") {
-                  api.showToast({
-                    title: result.ok ? "\u5DF2\u5230\u8D26 " + money(
-                      result.loan.principal
-                    ) : result.message,
-                    icon: "none"
-                  });
-                }
+                this.showToast(
+                  result.ok ? "\u5DF2\u5230\u8D26 " + money(
+                    result.loan.principal
+                  ) : result.message
+                );
                 textInput.requestRender();
               };
               if (offer && offer.available && api && typeof api.showModal === "function") {
@@ -15174,7 +15460,6 @@
               }
               return true;
             }
-            return true;
           }
           return false;
         }
@@ -15452,16 +15737,17 @@
       var ui = require_premiumUi();
       var DESIGN_W = 390;
       var COLORS = {
-        navy: "#07344B",
-        navy2: "#082A3D",
-        paper: "#F7EEDD",
-        text: "#14334A",
-        muted: "#6A7B82",
-        gold: "#F2B12A",
-        orange: "#F17732",
-        red: "#D64A42",
-        green: "#158D70",
-        blue: "#3A9CC4",
+        navy: "#0A3B59",
+        navyDeep: "#062A40",
+        paper: "#F6EFE2",
+        panel: "#FFFDF8",
+        text: "#18374B",
+        muted: "#708188",
+        gold: "#F5B62D",
+        orange: "#E6762B",
+        red: "#D85049",
+        green: "#239B72",
+        blue: "#3A9FC7",
         white: "#FFFFFF"
       };
       var MEAL_NAMES = {
@@ -15470,6 +15756,22 @@
         afternoon: "\u4E0B\u5348\u8336",
         dinner: "\u665A\u9910",
         night: "\u591C\u5BB5"
+      };
+      var MEAL_TIMES = {
+        breakfast: "7:00-10:00",
+        lunch: "11:00-14:00",
+        afternoon: "14:00-17:00",
+        dinner: "17:00-21:00",
+        night: "21:00-24:00"
+      };
+      var CUSTOMER_NOTES = {
+        \u767D\u9886: "\u5468\u8FB9\u5199\u5B57\u697C\uFF0C\u4E0A\u73ED\u65CF\u4E3A\u4E3B",
+        \u5546\u52A1\u5BA2: "\u5546\u52A1\u6D3D\u8C08\u3001\u4F1A\u8BAE\u5BB4\u8BF7",
+        \u6E38\u5BA2: "\u65C5\u6E38\u89C2\u5149\u3001\u4F11\u95F2\u6D88\u8D39",
+        \u5B66\u751F: "\u5468\u8FB9\u9AD8\u6821\u3001\u5E74\u8F7B\u7FA4\u4F53",
+        \u5C45\u6C11: "\u793E\u533A\u5BB6\u5EAD\u4E0E\u65E5\u5E38\u6D88\u8D39",
+        \u5DE5\u4EBA: "\u56ED\u533A\u804C\u5DE5\u4E0E\u5DE5\u4F5C\u9910",
+        \u5BB6\u5EAD: "\u5BB6\u5EAD\u805A\u9910\u4E0E\u5468\u672B\u6D88\u8D39"
       };
       function money(value) {
         return "\xA5" + Math.max(
@@ -15480,9 +15782,19 @@
         ).toLocaleString();
       }
       function pct(value) {
+        const n = Number(value) || 0;
         return Math.round(
-          Number(value) * 100
+          n <= 1 ? n * 100 : n
         ) + "%";
+      }
+      function clamp(value, min, max) {
+        return Math.max(
+          min,
+          Math.min(
+            max,
+            value
+          )
+        );
       }
       var DistrictScene = class {
         constructor() {
@@ -15515,6 +15827,13 @@
           this.navH = height < 740 ? 60 : 64;
           this.contentBottom = height - this.navH;
         }
+        getScale() {
+          return clamp(
+            (this.contentBottom - 93) / 555,
+            0.88,
+            1.13
+          );
+        }
         enter(payload) {
           const data = payload || {};
           const requested = data.districtId || gameState.getWorld().currentDistrictId || "university";
@@ -15540,11 +15859,11 @@
         }
         addButton(id, x, y, w, h) {
           const hitW = Math.max(
-            40,
+            42,
             w
           );
           const hitH = Math.max(
-            36,
+            38,
             h
           );
           this.buttons.push({
@@ -15577,41 +15896,41 @@
             DESIGN_W,
             92,
             0,
-            "rgba(4,34,51,0.50)"
+            "rgba(3,33,50,0.43)"
           );
-          ctx2.fillStyle = "rgba(2,31,47,0.72)";
+          ctx2.fillStyle = "rgba(4,35,54,0.33)";
           ctx2.fillRect(
             0,
-            65,
+            0,
             DESIGN_W,
-            27
+            92
           );
           ui.card(
             ctx2,
-            11,
+            8,
             14,
             39,
             39,
             {
               radius: 11,
-              fill: "rgba(5,46,67,0.86)",
-              stroke: "rgba(255,255,255,0.32)",
+              fill: "rgba(6,48,69,0.88)",
+              stroke: "rgba(255,255,255,0.34)",
               shadow: false
             }
           );
           ui.text(
             ctx2,
             "\u2039",
-            30.5,
+            27.5,
             33.5,
             22,
-            "#FFE8A4",
+            "#FFE69B",
             "800",
             "center"
           );
           this.addButton(
             "back",
-            7,
+            4,
             10,
             47,
             47
@@ -15619,82 +15938,97 @@
           ui.text(
             ctx2,
             insight.name,
-            61,
-            25,
-            17,
+            58,
+            23,
+            16,
             COLORS.white,
             "800"
           );
           ui.text(
             ctx2,
-            "\u6838\u5FC3\u5546\u5708 \xB7 \u4EBA\u6C14\u3001\u6D88\u8D39\u4E0E\u79DF\u91D1\u5B9E\u65F6\u53D8\u5316",
-            61,
-            49,
-            7,
-            "#D8E7EC",
-            "500"
+            "\u{1F4CD} \u57CE\u5E02\u6838\u5FC3\u5546\u5708 \xB7 \u4EBA\u6C14\u65FA\u76DB \xB7 \u6F5C\u529B\u6301\u7EED\u53D8\u5316",
+            58,
+            48,
+            6.6,
+            "#DDEBF0",
+            "600"
           );
           ui.card(
             ctx2,
-            295,
-            15,
-            82,
-            38,
+            298,
+            16,
+            80,
+            37,
             {
-              radius: 19,
-              fill: "#F7B72D",
-              stroke: "#FFE4A5",
+              radius: 18,
+              fill: COLORS.gold,
+              stroke: "#FFE29A",
               shadow: false
             }
           );
           ui.text(
             ctx2,
             "\u67E5\u770B\u623F\u6E90 \u203A",
-            336,
-            34,
-            7.2,
+            338,
+            34.5,
+            7.3,
             COLORS.text,
             "800",
             "center"
           );
           this.addButton(
             "market",
-            289,
+            291,
             9,
-            92,
-            50
+            94,
+            51
+          );
+          ui.card(
+            ctx2,
+            7,
+            64,
+            376,
+            24,
+            {
+              radius: 11,
+              fill: "rgba(4,38,58,0.90)",
+              stroke: "rgba(78,192,235,0.34)",
+              shadow: false
+            }
+          );
+          ui.text(
+            ctx2,
+            "\u{1F4E3} \u57CE\u5E02\u52A8\u6001",
+            14,
+            76,
+            6.7,
+            "#FFD264",
+            "800"
           );
           const event = insight.events && insight.events[0];
           ui.text(
             ctx2,
-            "\u{1F4E3} \u57CE\u5E02\u52A8\u6001",
-            15,
-            78.5,
-            7.2,
-            "#FFE6A7",
-            "800"
-          );
-          ui.text(
-            ctx2,
-            event ? event.name || "\u5546\u5708\u4E8B\u4EF6\u53D8\u5316" : insight.trendScore > 0 ? "\u533A\u57DF\u5BA2\u6D41\u4E0E\u6D88\u8D39\u9700\u6C42\u6B63\u5728\u4E0A\u5347" : "\u5F53\u524D\u5546\u5708\u8FD0\u884C\u5E73\u7A33",
-            94,
-            78.5,
-            6.5,
+            event ? event.name || "\u533A\u57DF\u5BA2\u6D41\u6301\u7EED\u4E0A\u5347" : "\u533A\u57DF\u5BA2\u6D41\u6301\u7EED\u53D8\u5316 \xB7 \u5546\u4E1A\u914D\u5957\u52A8\u6001\u8C03\u6574",
+            86,
+            76,
+            6.1,
             COLORS.white,
             "600"
           );
         }
         drawMetrics(ctx2, insight) {
+          const sy = this.getScale();
+          const y = 96;
+          const h = 82 * sy;
           const cards = [
             {
               label: "\u6D3B\u8DC3\u4EBA\u53E3",
               value: insight.population.toLocaleString(),
-              trend: insight.populationDelta >= 0 ? "\u2191 +" + Math.abs(
-                insight.populationDelta
-              ).toLocaleString() : "\u2193 " + Math.abs(
+              trend: (insight.populationDelta >= 0 ? "\u2191 +" : "\u2193 ") + Math.abs(
                 insight.populationDelta
               ).toLocaleString(),
               color: COLORS.blue,
+              note: "\u5B9E\u65F6\u5BA2\u6D41\u4E0E\u5E38\u4F4F\u4EBA\u53E3\u8054\u52A8",
               icon: "\u{1F465}"
             },
             {
@@ -15706,6 +16040,7 @@
                 )
               ) + "%",
               color: COLORS.red,
+              note: "\u9910\u996E\u9700\u6C42\u968F\u4E8B\u4EF6\u52A8\u6001\u53D8\u5316",
               icon: "\u25A5"
             },
             {
@@ -15715,88 +16050,105 @@
               ),
               trend: insight.competitionLabel,
               color: COLORS.green,
-              icon: "\u25C9"
+              note: "\u6D88\u8D39\u6C34\u5E73\u4E0E\u5BA2\u7FA4\u5B9E\u65F6\u8054\u52A8",
+              icon: "\u25CE"
             }
           ];
-          const gap = 6;
+          const gap = 5;
           const w = (370 - gap * 2) / 3;
-          for (let i = 0; i < cards.length; i++) {
+          for (let i = 0; i < 3; i++) {
             const item = cards[i];
             const x = 10 + i * (w + gap);
             ui.card(
               ctx2,
               x,
-              103,
+              y,
               w,
-              84,
+              h,
               {
-                radius: 13
+                radius: 13,
+                fill: COLORS.panel
               }
             );
             ui.text(
               ctx2,
               item.icon,
-              x + 13,
-              120,
-              13,
+              x + 12,
+              y + 18,
+              12,
               item.color,
               "800"
             );
             ui.text(
               ctx2,
               item.label,
-              x + 34,
-              119,
-              7.2,
+              x + 36,
+              y + 17,
+              7,
               COLORS.text,
               "800"
             );
             ui.text(
               ctx2,
               item.value,
-              x + 12,
-              148,
-              15,
+              x + 11,
+              y + 44,
+              14,
               item.color,
               "800"
             );
             ui.text(
               ctx2,
               item.trend,
-              x + 12,
-              174,
+              x + 11,
+              y + 61,
               6.3,
               item.color,
               "700"
             );
+            if (h > 76) {
+              ui.text(
+                ctx2,
+                item.note,
+                x + 11,
+                y + h - 8,
+                5.1,
+                COLORS.muted,
+                "500"
+              );
+            }
           }
         }
         drawCustomers(ctx2, insight) {
+          const sy = this.getScale();
+          const y = 184 * sy - 82 * (sy - 1);
+          const h = 130 * sy;
           ui.card(
             ctx2,
             10,
-            198,
+            y,
             370,
-            159,
+            h,
             {
-              radius: 15
+              radius: 15,
+              fill: COLORS.panel
             }
           );
           ui.text(
             ctx2,
             "\u6D88\u8D39\u4EBA\u7FA4\u7ED3\u6784",
-            22,
-            220,
-            11,
+            21,
+            y + 20,
+            10.5,
             COLORS.text,
             "800"
           );
           ui.text(
             ctx2,
-            insight.customerDiversity,
-            364,
-            220,
-            7,
+            "\u591A\u5143\u5BA2\u7FA4 \xB7 \u5546\u673A\u6C47\u805A",
+            362,
+            y + 20,
+            6.4,
             COLORS.orange,
             "700",
             "right"
@@ -15811,41 +16163,54 @@
             "premium_avatar_3",
             "premium_avatar_4"
           ];
+          const rowGap = Math.max(
+            24,
+            (h - 42) / 4
+          );
           for (let i = 0; i < groups.length; i++) {
             const g = groups[i];
-            const y = 247 + i * 27;
+            const cy = y + 44 + i * rowGap;
             ui.coverImage(
               ctx2,
               visualAssetSystem.get(
                 avatars[i]
               ),
-              23,
-              y - 11,
-              25,
-              25,
-              13,
+              20,
+              cy - 11,
+              24,
+              24,
+              12,
               null
             );
             ui.text(
               ctx2,
               g.name,
-              57,
-              y,
-              7.8,
+              53,
+              cy,
+              7.7,
               COLORS.text,
               "800"
             );
-            const barX = 128;
-            const barW = 151;
+            ui.text(
+              ctx2,
+              CUSTOMER_NOTES[g.name] || "\u6D88\u8D39\u504F\u597D\u968F\u5546\u5708\u52A8\u6001\u53D8\u5316",
+              91,
+              cy,
+              5.6,
+              COLORS.muted,
+              "500"
+            );
+            const barX = 160;
+            const barW = 120;
             ui.card(
               ctx2,
               barX,
-              y - 6,
+              cy - 5,
               barW,
-              12,
+              10,
               {
-                radius: 6,
-                fill: "#EEE5D7",
+                radius: 5,
+                fill: "#ECE6DC",
                 stroke: false,
                 shadow: false
               }
@@ -15853,18 +16218,18 @@
             ui.card(
               ctx2,
               barX,
-              y - 6,
+              cy - 5,
               Math.max(
-                7,
+                8,
                 barW * Math.min(
                   1,
                   g.share
                 )
               ),
-              12,
+              10,
               {
-                radius: 6,
-                fill: i === 0 ? "#F4B52C" : "#52ABD0",
+                radius: 5,
+                fill: i === 0 ? COLORS.gold : "#53A9CE",
                 stroke: false,
                 shadow: false
               }
@@ -15874,9 +16239,9 @@
               pct(
                 g.share
               ),
-              307,
-              y,
-              6.7,
+              318,
+              cy,
+              6.6,
               COLORS.text,
               "700",
               "right"
@@ -15886,9 +16251,9 @@
               Math.round(
                 g.demand
               ) + "\u4EBA",
-              362,
-              y,
-              6.7,
+              364,
+              cy,
+              6.6,
               COLORS.text,
               "800",
               "right"
@@ -15896,24 +16261,38 @@
           }
         }
         drawMeals(ctx2, insight) {
+          const sy = this.getScale();
+          const y = 321 * sy - 82 * (sy - 1);
+          const h = 113 * sy;
           ui.card(
             ctx2,
             10,
-            368,
+            y,
             370,
-            129,
+            h,
             {
-              radius: 15
+              radius: 15,
+              fill: COLORS.panel
             }
           );
           ui.text(
             ctx2,
             "\u65F6\u6BB5\u9700\u6C42\u7ED3\u6784",
-            22,
-            389,
-            11,
+            21,
+            y + 20,
+            10.5,
             COLORS.text,
             "800"
+          );
+          ui.text(
+            ctx2,
+            "\u5348\u9910\u4E0E\u665A\u9910\u901A\u5E38\u662F\u6838\u5FC3\u65F6\u6BB5",
+            365,
+            y + 20,
+            6.2,
+            COLORS.orange,
+            "700",
+            "right"
           );
           const meals = insight.mealProfile.slice(
             0,
@@ -15925,20 +16304,23 @@
               (item) => item.share
             )
           );
+          const baseY = y + h - 34;
           for (let i = 0; i < meals.length; i++) {
             const m = meals[i];
-            const x = 43 + i * 69;
-            const h = 13 + 42 * (m.share / max);
-            const y = 461 - h;
+            const x = 25 + i * 72;
+            const barH = 17 + Math.min(
+              51,
+              49 * (m.share / max)
+            );
             ui.card(
               ctx2,
               x,
-              y,
-              36,
-              h,
+              baseY - barH,
+              41,
+              barH,
               {
                 radius: 7,
-                fill: i === 1 || i === 3 ? "#EF7B38" : "#4AA8D0",
+                fill: i === 1 || i === 3 ? "#F17B39" : "#4BA8D0",
                 stroke: false,
                 shadow: false
               }
@@ -15948,112 +16330,136 @@
               pct(
                 m.share
               ),
-              x + 18,
-              y - 9,
+              x + 20.5,
+              baseY - barH - 8,
               6.8,
-              i === 1 || i === 3 ? "#B34E21" : COLORS.text,
+              i === 1 || i === 3 ? "#B94E21" : COLORS.text,
               "800",
               "center"
             );
             ui.text(
               ctx2,
               MEAL_NAMES[m.id] || m.id,
-              x + 18,
-              480,
-              6.3,
+              x + 20.5,
+              baseY + 9,
+              6.5,
               COLORS.text,
-              "700",
+              "800",
+              "center"
+            );
+            ui.text(
+              ctx2,
+              MEAL_TIMES[m.id] || "",
+              x + 20.5,
+              baseY + 23,
+              5,
+              COLORS.muted,
+              "500",
               "center"
             );
           }
         }
         drawMarket(ctx2, insight) {
-          ui.card(
-            ctx2,
-            10,
-            508,
-            370,
-            103,
-            {
-              radius: 15
-            }
-          );
-          ui.text(
-            ctx2,
-            "\u7ECF\u8425\u73AF\u5883",
-            22,
-            529,
-            11,
-            COLORS.text,
-            "800"
-          );
-          const market = insight.market || {};
-          const values = [
-            [
-              "\u9910\u996E\u5E97",
-              insight.restaurantCount + "\u5BB6"
-            ],
-            [
-              "\u7ADE\u4E89",
-              insight.competitionLabel
-            ],
-            [
-              "\u79DF\u91D1",
-              insight.rentLevel + "\xB7" + insight.rentIndex.toFixed(
-                2
-              )
-            ],
-            [
-              "\u6302\u724C",
-              (market.activeListingCount || 0) + "\u5957"
-            ]
-          ];
-          for (let i = 0; i < values.length; i++) {
-            const x = 23 + i * 88;
-            ui.text(
-              ctx2,
-              values[i][0],
-              x,
-              558,
-              6.5,
-              COLORS.muted,
-              "600"
-            );
-            ui.text(
-              ctx2,
-              values[i][1],
-              x,
-              581,
-              8.5,
-              i === 1 ? COLORS.red : i === 3 ? COLORS.blue : COLORS.text,
-              "800"
-            );
-          }
-        }
-        drawFit(ctx2, insight) {
-          const y = 622;
-          if (y + 78 > this.contentBottom) {
-            return;
-          }
+          const sy = this.getScale();
+          const y = 440 * sy - 82 * (sy - 1);
+          const h = 76 * sy;
           ui.card(
             ctx2,
             10,
             y,
             370,
-            72,
+            h,
             {
               radius: 15,
-              fill: "#FFF8E5",
-              stroke: "#E9C66D"
+              fill: COLORS.panel
+            }
+          );
+          ui.text(
+            ctx2,
+            "\u7ECF\u8425\u73AF\u5883",
+            21,
+            y + 20,
+            10.5,
+            COLORS.text,
+            "800"
+          );
+          const market = insight.market || {};
+          const items = [
+            [
+              "\u9910\u996E\u5E97",
+              insight.restaurantCount + "\u5BB6",
+              COLORS.navy
+            ],
+            [
+              "\u7ADE\u4E89\u5F3A\u5EA6",
+              insight.competitionLabel,
+              COLORS.red
+            ],
+            [
+              "\u79DF\u91D1",
+              insight.rentLevel + "\xB7" + insight.rentIndex.toFixed(
+                2
+              ),
+              COLORS.navy
+            ],
+            [
+              "\u6302\u724C\u623F\u6E90",
+              (market.activeListingCount || 0) + "\u5957",
+              COLORS.blue
+            ],
+            [
+              "\u5546\u5708\u9971\u548C\u5EA6",
+              insight.saturation + "%",
+              insight.saturation >= 95 ? COLORS.red : COLORS.green
+            ]
+          ];
+          for (let i = 0; i < items.length; i++) {
+            const x = 21 + i * 71;
+            ui.text(
+              ctx2,
+              items[i][0],
+              x,
+              y + 45,
+              5.6,
+              COLORS.muted,
+              "600"
+            );
+            ui.text(
+              ctx2,
+              items[i][1],
+              x,
+              y + 62,
+              7.1,
+              items[i][2],
+              "800"
+            );
+          }
+        }
+        drawFit(ctx2, insight) {
+          const sy = this.getScale();
+          const ctaH = 43;
+          const h = 72 * sy;
+          const ctaY = this.contentBottom - ctaH - 7;
+          const y = ctaY - h - 7;
+          ui.card(
+            ctx2,
+            10,
+            y,
+            370,
+            h,
+            {
+              radius: 15,
+              fill: "#FFF9E9",
+              stroke: "#E9CB78"
             }
           );
           ui.text(
             ctx2,
             "\u7ECF\u8425\u9002\u914D",
-            22,
+            21,
             y + 18,
-            9,
-            COLORS.orange,
+            9.4,
+            COLORS.text,
             "800"
           );
           const hints = insight.businessHints.slice(
@@ -16061,71 +16467,80 @@
             5
           );
           for (let i = 0; i < hints.length; i++) {
-            const x = 21 + i * 64;
+            const x = 18 + i * 72;
             ui.pill(
               ctx2,
               hints[i],
               x,
               y + 29,
-              58,
+              66,
               22,
-              "#FFF1C8",
+              "#FFF1CF",
               COLORS.text,
               "#E9C873"
             );
           }
+          ui.text(
+            ctx2,
+            "\u5339\u914D\u7ED3\u679C\u4F1A\u968F\u5BA2\u7FA4\u3001\u7ADE\u4E89\u3001\u79DF\u91D1\u4E0E\u57CE\u5E02\u4E8B\u4EF6\u6301\u7EED\u53D8\u5316\u3002",
+            22,
+            y + h - 10,
+            5.7,
+            COLORS.muted,
+            "600"
+          );
           ui.card(
             ctx2,
-            22,
-            y + 53,
-            112,
-            28,
+            12,
+            ctaY,
+            113,
+            35,
             {
-              radius: 14,
+              radius: 17,
               fill: "#FFFDF7",
-              stroke: "#D8CDBF",
+              stroke: "#D5C9BA",
               shadow: false
             }
           );
           ui.text(
             ctx2,
             "\u2606 \u6536\u85CF\u5546\u5708",
-            78,
-            y + 67,
-            7,
+            68.5,
+            ctaY + 17.5,
+            7.3,
             COLORS.navy,
             "800",
             "center"
           );
           ui.card(
             ctx2,
-            145,
-            y + 53,
-            222,
-            28,
+            133,
+            ctaY,
+            245,
+            35,
             {
-              radius: 14,
-              fill: "#F6B62B",
-              stroke: "#E0A122",
+              radius: 17,
+              fill: COLORS.gold,
+              stroke: "#DE9F1E",
               shadow: false
             }
           );
           ui.text(
             ctx2,
-            "\u9009\u62E9\u8BE5\u5546\u5708\u5F00\u5E97  \u203A",
-            256,
-            y + 67,
-            7.5,
+            "\u{1F4CD} \u9009\u62E9\u8BE5\u5546\u5708\u5F00\u5E97  \u203A",
+            255.5,
+            ctaY + 17.5,
+            8.1,
             COLORS.text,
             "800",
             "center"
           );
           this.addButton(
             "open-here",
-            139,
-            y + 48,
-            234,
-            38
+            128,
+            ctaY - 4,
+            255,
+            43
           );
         }
         render(ctx2) {
@@ -16191,17 +16606,7 @@
             );
             return true;
           }
-          if (item.id === "open-here") {
-            sceneManager.switchTo(
-              "propertyMarket",
-              {
-                districtId: this.districtId,
-                source: "district"
-              }
-            );
-            return true;
-          }
-          if (item.id === "market") {
+          if (item.id === "market" || item.id === "open-here") {
             sceneManager.switchTo(
               "propertyMarket",
               {
@@ -16236,22 +16641,20 @@
       var customizationSystem = require_customizationSystem();
       var textInput = require_textInput();
       var visualAssetSystem = require_visualAssetSystem();
-      var premiumUi = require_premiumUi();
+      var ui = require_premiumUi();
       var DESIGN_W = 390;
       var COLORS = {
-        navy: "#12384D",
-        navy2: "#0A2A3B",
-        paper: "#F4EBDD",
-        panel: "#FFF9EF",
-        panel2: "#F8F0E4",
-        text: "#24323A",
-        muted: "#718087",
-        gold: "#E4AA48",
-        orange: "#D9853E",
-        red: "#BF584A",
-        green: "#4B9567",
-        blue: "#4C86A6",
-        line: "#DED1C1",
+        navy: "#0A3A57",
+        navyDeep: "#062A40",
+        paper: "#F6EFE2",
+        panel: "#FFFDF8",
+        text: "#18374B",
+        muted: "#708188",
+        gold: "#F5B62D",
+        orange: "#E57D22",
+        red: "#D75349",
+        green: "#2B9A69",
+        blue: "#2E8FB7",
         white: "#FFFFFF"
       };
       function money(value) {
@@ -16262,46 +16665,51 @@
           )
         ).toLocaleString();
       }
-      function pct(value) {
-        return Math.round(
-          Number(value) * 100
-        ) + "%";
+      function clamp(value, min, max) {
+        return Math.max(
+          min,
+          Math.min(
+            max,
+            value
+          )
+        );
       }
       var RenovationScene = class {
         constructor() {
           this.id = "renovation";
           this.shopId = null;
           this.page = "layout";
-          this.buttons = [];
           this.viewH = 780;
           this.navH = 64;
           this.contentBottom = 716;
+          this.buttons = [];
         }
         enter(payload) {
-          const business = gameState.getBusiness();
           const data = payload || {};
-          this.shopId = data.shopId || business.currentShopId;
-          if (this.shopId) {
-            renovationSystem.ensurePlan(
-              this.shopId
-            );
-            visualAssetSystem.loadGroup(
-              "renovation"
-            );
-            visualAssetSystem.loadGroup(
-              "premiumRenovation"
-            );
+          if (data.shopId) {
+            this.shopId = data.shopId;
           }
-          const requestedPage = data.page;
+          const business = gameState.getBusiness();
+          if (!this.shopId && business.currentShopId) {
+            this.shopId = business.currentShopId;
+          }
+          renovationSystem.ensurePlan(
+            this.shopId
+          );
           this.page = [
             "layout",
-            "tables",
             "rooms",
             "style",
             "templates"
           ].includes(
-            requestedPage
-          ) ? requestedPage : "layout";
+            data.page
+          ) ? data.page : "layout";
+          visualAssetSystem.loadGroup(
+            "renovation"
+          );
+          visualAssetSystem.loadGroup(
+            "premiumRenovation"
+          );
         }
         exit() {
           this.buttons = [];
@@ -16317,116 +16725,46 @@
           let height = 780;
           if (api && typeof api.getSystemInfoSync === "function") {
             const info = api.getSystemInfoSync();
-            const screenW = Math.max(
+            const w = Math.max(
               1,
               Number(
                 info.windowWidth
               ) || DESIGN_W
             );
-            const screenH = Math.max(
+            const h = Math.max(
               1,
               Number(
                 info.windowHeight
               ) || 780
             );
-            height = screenH / (screenW / DESIGN_W);
+            height = h / (w / DESIGN_W);
           }
           this.viewH = height;
           this.navH = height < 740 ? 60 : 64;
           this.contentBottom = height - this.navH;
         }
-        showToast(text) {
+        getScale() {
+          return clamp(
+            (this.contentBottom - 82) / 560,
+            0.88,
+            1.13
+          );
+        }
+        showToast(title) {
           if (api && typeof api.showToast === "function") {
             api.showToast({
-              title: String(text),
+              title,
               icon: "none"
             });
           }
         }
-        roundedPath(ctx2, x, y, w, h, r) {
-          const radius = Math.min(
-            r,
-            w / 2,
-            h / 2
-          );
-          ctx2.beginPath();
-          ctx2.moveTo(
-            x + radius,
-            y
-          );
-          ctx2.arcTo(
-            x + w,
-            y,
-            x + w,
-            y + h,
-            radius
-          );
-          ctx2.arcTo(
-            x + w,
-            y + h,
-            x,
-            y + h,
-            radius
-          );
-          ctx2.arcTo(
-            x,
-            y + h,
-            x,
-            y,
-            radius
-          );
-          ctx2.arcTo(
-            x,
-            y,
-            x + w,
-            y,
-            radius
-          );
-          ctx2.closePath();
-        }
-        roundedRect(ctx2, x, y, w, h, r, fill, stroke, width) {
-          this.roundedPath(
-            ctx2,
-            x,
-            y,
-            w,
-            h,
-            r
-          );
-          if (fill) {
-            ctx2.fillStyle = fill;
-            ctx2.fill();
-          }
-          if (stroke) {
-            ctx2.strokeStyle = stroke;
-            ctx2.lineWidth = width || 1;
-            ctx2.stroke();
-          }
-        }
-        text(ctx2, text, x, y, size, color, weight, align) {
-          ctx2.fillStyle = color || COLORS.text;
-          const readableSize = Math.max(
-            7.3,
-            Number(
-              size
-            ) || 7.3
-          );
-          ctx2.font = (weight || "500") + " " + readableSize + "px sans-serif";
-          ctx2.textAlign = align || "left";
-          ctx2.textBaseline = "middle";
-          ctx2.fillText(
-            String(text),
-            x,
-            y
-          );
-        }
         addButton(id, x, y, w, h) {
           const hitW = Math.max(
-            40,
+            42,
             w
           );
           const hitH = Math.max(
-            36,
+            38,
             h
           );
           this.buttons.push({
@@ -16439,15 +16777,21 @@
         }
         hitButton(x, y) {
           for (let i = this.buttons.length - 1; i >= 0; i--) {
-            const item = this.buttons[i];
-            if (x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h) {
-              return item;
+            const b = this.buttons[i];
+            if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+              return b;
             }
           }
           return null;
         }
         getShop() {
-          return renovationSystem.getShop(
+          const business = gameState.getBusiness();
+          return business.shops.find(
+            (item) => item.id === this.shopId
+          ) || null;
+        }
+        getPlan() {
+          return renovationSystem.ensurePlan(
             this.shopId
           );
         }
@@ -16456,13 +16800,42 @@
             this.shopId
           );
         }
-        getPlan() {
-          return renovationSystem.ensurePlan(
-            this.shopId
+        getName(list, id) {
+          const item = list.find(
+            (value) => value.id === id
           );
+          return item ? item.name : id;
+        }
+        drawVisual(ctx2, key, x, y, w, h, alpha) {
+          const image = visualAssetSystem.get(
+            key
+          );
+          if (!image) {
+            return false;
+          }
+          ctx2.save();
+          if (Number.isFinite(
+            Number(
+              alpha
+            )
+          )) {
+            ctx2.globalAlpha = alpha;
+          }
+          ui.coverImage(
+            ctx2,
+            image,
+            x,
+            y,
+            w,
+            h,
+            7,
+            null
+          );
+          ctx2.restore();
+          return true;
         }
         drawHeader(ctx2, shop) {
-          premiumUi.coverImage(
+          ui.coverImage(
             ctx2,
             visualAssetSystem.get(
               "premium_reno_header"
@@ -16470,21 +16843,21 @@
             0,
             0,
             DESIGN_W,
-            88,
+            80,
             0,
-            "rgba(3,31,47,0.48)"
+            "rgba(3,31,47,0.40)"
           );
-          ctx2.fillStyle = "rgba(4,35,51,0.36)";
+          ctx2.fillStyle = "rgba(4,34,50,0.34)";
           ctx2.fillRect(
             0,
             0,
             DESIGN_W,
-            88
+            80
           );
-          premiumUi.card(
+          ui.card(
             ctx2,
             8,
-            14,
+            13,
             38,
             38,
             {
@@ -16494,1822 +16867,1444 @@
               shadow: false
             }
           );
-          this.text(
+          ui.text(
             ctx2,
             "\u2039",
             27,
-            33,
+            32,
             22,
-            "#FFE6A0",
+            "#FFE59B",
             "800",
             "center"
           );
           this.addButton(
             "back",
             4,
-            10,
+            9,
             46,
             46
           );
-          this.text(
+          ui.text(
             ctx2,
             shop.name || "\u6211\u7684\u9152\u697C",
-            58,
+            56,
             20,
             15.5,
             COLORS.white,
             "800"
           );
-          this.text(
+          ui.text(
             ctx2,
-            shop.address,
-            58,
+            "\u{1F4CD} " + shop.address,
+            56,
             42,
             6.7,
-            "#D8E8ED",
+            "#DDEBF0",
             "600"
           );
-          premiumUi.card(
+          ui.text(
             ctx2,
-            250,
-            12,
+            "\u7528\u5FC3\u6253\u9020\uFF0C\u8BA9\u7F8E\u5473\u66F4\u6709\u6E29\u5EA6\uFF01",
+            56,
             62,
+            6.6,
+            "#FFE1A0",
+            "600"
+          );
+          this.addButton(
+            "shop:rename",
+            52,
+            8,
+            186,
+            57
+          );
+          ui.card(
+            ctx2,
+            296,
+            10,
+            86,
             29,
             {
               radius: 13,
-              fill: "#F6B62B",
-              stroke: "#FFE0A0",
+              fill: COLORS.gold,
+              stroke: "#FFE19A",
               shadow: false
             }
           );
-          this.text(
+          ui.text(
             ctx2,
-            "\u4FDD\u5B58\u6A21\u677F",
-            281,
-            26.5,
-            6.8,
+            "\u{1F4BE} \u4FDD\u5B58\u6A21\u677F",
+            339,
+            24.5,
+            6.6,
             COLORS.text,
             "800",
             "center"
           );
           this.addButton(
-            "template:quick-save",
-            246,
-            8,
-            70,
+            "template:save",
+            291,
+            6,
+            96,
             37
           );
-          premiumUi.card(
+          ui.card(
             ctx2,
-            318,
-            12,
-            64,
-            29,
+            296,
+            43,
+            86,
+            27,
             {
-              radius: 13,
+              radius: 12,
               fill: "#FFFDF7",
               stroke: "#D7CDBF",
               shadow: false
             }
           );
-          this.text(
+          ui.text(
             ctx2,
-            "\u53E6\u5B58\u6A21\u677F",
-            350,
-            26.5,
-            6.8,
+            "\u25A7 \u53E6\u5B58\u6A21\u677F",
+            339,
+            56.5,
+            6.4,
             COLORS.navy,
             "800",
             "center"
           );
           this.addButton(
             "template:save-as",
-            314,
-            8,
-            72,
-            37
-          );
-          premiumUi.card(
-            ctx2,
-            250,
-            49,
-            30,
-            25,
-            {
-              radius: 10,
-              fill: "rgba(255,255,255,0.88)",
-              stroke: "rgba(255,255,255,0.35)",
-              shadow: false
-            }
-          );
-          this.text(
-            ctx2,
-            "\u21B6",
-            265,
-            61.5,
-            11,
-            COLORS.navy,
-            "800",
-            "center"
-          );
-          this.addButton(
-            "history:undo",
-            245,
-            45,
-            40,
-            33
-          );
-          premiumUi.card(
-            ctx2,
-            286,
-            49,
-            30,
-            25,
-            {
-              radius: 10,
-              fill: "rgba(255,255,255,0.88)",
-              stroke: "rgba(255,255,255,0.35)",
-              shadow: false
-            }
-          );
-          this.text(
-            ctx2,
-            "\u21B7",
-            301,
-            61.5,
-            11,
-            COLORS.navy,
-            "800",
-            "center"
-          );
-          this.addButton(
-            "history:redo",
-            281,
-            45,
-            40,
-            33
-          );
-          this.text(
-            ctx2,
-            money(
-              gameState.getPlayer().cash
-            ),
-            377,
-            62,
-            7.5,
-            "#FFE8AE",
-            "800",
-            "right"
-          );
-          this.addButton(
-            "shop:rename",
-            55,
-            8,
-            166,
-            45
+            291,
+            39,
+            96,
+            35
           );
         }
         drawTemplateStrip(ctx2) {
+          const sy = this.getScale();
+          const y = 84;
+          const h = 95 * sy;
+          ui.card(
+            ctx2,
+            8,
+            y,
+            374,
+            h,
+            {
+              radius: 14,
+              fill: COLORS.panel
+            }
+          );
+          ui.text(
+            ctx2,
+            "\u88C5\u4FEE\u6A21\u677F",
+            20,
+            y + 19,
+            10.4,
+            COLORS.text,
+            "800"
+          );
+          ui.text(
+            ctx2,
+            "\u9009\u62E9\u5FC3\u4EEA\u98CE\u683C\uFF0C\u6216\u4FDD\u5B58\u60A8\u7684\u4E13\u5C5E\u6A21\u677F",
+            82,
+            y + 19,
+            5.9,
+            COLORS.muted,
+            "500"
+          );
+          ui.text(
+            ctx2,
+            "\u6A21\u677F\u7BA1\u7406 \u203A",
+            370,
+            y + 19,
+            6,
+            COLORS.navy,
+            "700",
+            "right"
+          );
+          this.addButton(
+            "page:templates",
+            305,
+            y + 3,
+            73,
+            29
+          );
           const templates = customizationSystem.getTemplateList();
           const keys = [
             "premium_template_1",
             "premium_template_2",
             "premium_template_3"
           ];
-          for (let i = 0; i < 3; i++) {
-            const x = 10 + i * 123;
-            premiumUi.card(
+          const cardY = y + 28;
+          const cardH = h - 36;
+          for (let i = 0; i < 4; i++) {
+            const x = 14 + i * 91;
+            ui.card(
               ctx2,
               x,
-              91,
-              113,
-              58,
+              cardY,
+              84,
+              cardH,
               {
-                radius: 10,
-                fill: "#FFF9EF",
-                shadowBlur: 5
+                radius: 9,
+                fill: i === 0 ? "#FFF7DD" : "#FFF9F0",
+                stroke: i === 0 ? "#E7B62B" : "#DED4C7",
+                shadow: false
               }
             );
-            premiumUi.coverImage(
-              ctx2,
-              visualAssetSystem.get(
-                keys[i]
-              ),
-              x + 4,
-              95,
-              105,
-              38,
-              7,
-              null
-            );
-            const template = templates[i];
-            this.text(
-              ctx2,
-              template ? template.name : i === 0 ? "\u6696\u6728\u9910\u5385" : i === 1 ? "\u73B0\u4EE3\u8F7B\u5962" : "\u4E2D\u5F0F\u96C5\u5BB4",
-              x + 7,
-              141,
-              6.2,
-              COLORS.text,
-              "700"
-            );
-            this.addButton(
-              template ? "template:apply:" + template.id : "page:templates",
-              x,
-              91,
-              113,
-              58
-            );
+            if (i < 3) {
+              this.drawVisual(
+                ctx2,
+                keys[i],
+                x + 3,
+                cardY + 3,
+                78,
+                Math.max(
+                  33,
+                  cardH - 19
+                ),
+                1
+              );
+              ui.text(
+                ctx2,
+                templates[i] ? templates[i].name : "\u88C5\u4FEE\u6A21\u677F" + String.fromCharCode(
+                  65 + i
+                ),
+                x + 5,
+                cardY + cardH - 7,
+                5.8,
+                COLORS.text,
+                "700"
+              );
+              this.addButton(
+                templates[i] ? "template:apply:" + templates[i].id : "page:templates",
+                x,
+                cardY,
+                84,
+                cardH
+              );
+            } else {
+              ui.text(
+                ctx2,
+                "+",
+                x + 42,
+                cardY + cardH * 0.42,
+                17,
+                "#9B8F83",
+                "500",
+                "center"
+              );
+              ui.text(
+                ctx2,
+                "\u65B0\u5EFA\u6A21\u677F",
+                x + 42,
+                cardY + cardH * 0.72,
+                6,
+                COLORS.navy,
+                "700",
+                "center"
+              );
+              this.addButton(
+                "template:save-as",
+                x,
+                cardY,
+                84,
+                cardH
+              );
+            }
           }
-        }
-        drawFloorTabs(ctx2, plan) {
-          const y = 156;
-          const count = plan.floors.length;
-          const gap = 5;
-          const w = Math.min(
-            82,
-            (DESIGN_W - 20 - (count - 1) * gap) / count
-          );
-          for (let i = 0; i < count; i++) {
-            const active = i === plan.activeFloor;
-            const x = 10 + i * (w + gap);
-            this.roundedRect(
-              ctx2,
-              x,
-              y,
-              w,
-              27,
-              8,
-              active ? COLORS.gold : "#EEE5D8",
-              active ? "#D49434" : "#D4C8BA"
-            );
-            this.text(
-              ctx2,
-              plan.floors[i].name,
-              x + w / 2,
-              y + 13.5,
-              7.5,
-              active ? "#26343B" : COLORS.muted,
-              "700",
-              "center"
-            );
-            this.addButton(
-              "floor:" + i,
-              x,
-              y,
-              w,
-              27
-            );
-          }
-        }
-        drawVisual(ctx2, key, x, y, w, h, alpha) {
-          const image = visualAssetSystem.get(
-            key
-          );
-          if (!image) {
-            return false;
-          }
-          const iw = image.naturalWidth || image.width || 1;
-          const ih = image.naturalHeight || image.height || 1;
-          const scale = Math.min(
-            w / iw,
-            h / ih
-          );
-          const dw = iw * scale;
-          const dh = ih * scale;
-          ctx2.save();
-          ctx2.globalAlpha = alpha == null ? 1 : alpha;
-          ctx2.drawImage(
-            image,
-            x + (w - dw) / 2,
-            y + (h - dh) / 2,
-            dw,
-            dh
-          );
-          ctx2.restore();
-          return true;
         }
         drawFloorPlan(ctx2, metrics, floor) {
-          const x = 10;
-          const y = 190;
-          const w = 370;
-          const h = 208;
-          premiumUi.card(
+          const sy = this.getScale();
+          const y = 184 * sy - 80 * (sy - 1);
+          const h = 256 * sy;
+          ui.card(
             ctx2,
-            x,
+            8,
             y,
-            w,
+            374,
             h,
             {
               radius: 15,
-              fill: "#F7F1E8",
-              shadowBlur: 8
+              fill: COLORS.panel
             }
           );
-          this.text(
+          ui.text(
             ctx2,
-            floor.name + " \xB7 " + floor.area + "\u33A1 \xB7 \u5EA7\u4F4D" + floor.seats + " \xB7 \u5269\u4F59" + floor.remainingArea + "\u33A1",
+            "\u9910\u5385\u5E73\u9762\u56FE",
             20,
-            y + 17,
-            7.3,
+            y + 19,
+            10.5,
             COLORS.text,
-            "700"
+            "800"
           );
-          this.text(
+          ui.text(
             ctx2,
-            floor.valid ? "\u5B9E\u65F6\u5E73\u9762\u9884\u89C8" : "\u9762\u79EF\u8D85\u8F7D",
-            368,
-            y + 17,
-            6.8,
-            floor.valid ? COLORS.green : COLORS.red,
-            "700",
-            "right"
+            "\u8C03\u6574\u533A\u57DF\u4E0E\u5BB6\u5177\uFF0C\u6253\u9020\u7406\u60F3\u9910\u5385\u5E03\u5C40",
+            84,
+            y + 19,
+            5.8,
+            COLORS.muted,
+            "500"
           );
-          const ix = 18;
-          const iy = y + 31;
-          const iw = 354;
-          const ih = 166;
-          premiumUi.coverImage(
+          ui.text(
+            ctx2,
+            "\u21B6",
+            271,
+            y + 19,
+            10,
+            COLORS.navy,
+            "800",
+            "center"
+          );
+          ui.text(
+            ctx2,
+            "\u21B7",
+            299,
+            y + 19,
+            10,
+            COLORS.navy,
+            "800",
+            "center"
+          );
+          this.addButton(
+            "history:undo",
+            257,
+            y + 4,
+            29,
+            29
+          );
+          this.addButton(
+            "history:redo",
+            285,
+            y + 4,
+            29,
+            29
+          );
+          ui.card(
+            ctx2,
+            318,
+            y + 6,
+            55,
+            26,
+            {
+              radius: 10,
+              fill: "#FFF8E6",
+              stroke: "#E5C56F",
+              shadow: false
+            }
+          );
+          ui.text(
+            ctx2,
+            "\u5168\u5C4F\u9884\u89C8",
+            345.5,
+            y + 19,
+            5.8,
+            COLORS.navy,
+            "800",
+            "center"
+          );
+          this.addButton(
+            "preview",
+            314,
+            y + 2,
+            63,
+            34
+          );
+          const px = 15;
+          const py = y + 37;
+          const pw = 286;
+          const ph = h - 45;
+          ui.coverImage(
             ctx2,
             visualAssetSystem.get(
               "premium_floor_texture"
             ),
-            ix,
-            iy,
-            iw,
-            ih,
-            10,
-            "rgba(255,249,240,0.50)"
+            px,
+            py,
+            pw,
+            ph,
+            9,
+            "rgba(255,249,240,0.48)"
           );
-          this.roundedPath(
-            ctx2,
-            ix,
-            iy,
-            iw,
-            ih,
-            10
-          );
+          const serviceW = pw * 0.44;
+          const roomW = pw * 0.3;
           ctx2.save();
+          ctx2.beginPath();
+          ctx2.roundRect(
+            px,
+            py,
+            pw,
+            ph,
+            9
+          );
           ctx2.clip();
-          const serviceBlockW = Math.max(
-            94,
-            Math.min(
-              142,
-              iw * (floor.kitchenRatio + floor.storageRatio + floor.serviceRatio)
-            )
-          );
-          const diningX = ix + serviceBlockW;
-          const diningW = iw - serviceBlockW;
-          const leftTotal = Math.max(
-            0.01,
-            floor.kitchenRatio + floor.storageRatio + floor.serviceRatio
-          );
-          const kitchenH = ih * floor.kitchenRatio / leftTotal;
-          const storageH = ih * floor.storageRatio / leftTotal;
-          const serviceH = ih - kitchenH - storageH;
-          ctx2.fillStyle = "rgba(239,179,137,0.72)";
+          ctx2.fillStyle = "rgba(72,78,79,0.32)";
           ctx2.fillRect(
-            ix,
-            iy,
-            serviceBlockW,
-            kitchenH
+            px,
+            py,
+            serviceW,
+            ph * 0.39
           );
-          ctx2.fillStyle = "rgba(210,196,153,0.72)";
+          ctx2.fillStyle = "rgba(109,104,85,0.28)";
           ctx2.fillRect(
-            ix,
-            iy + kitchenH,
-            serviceBlockW,
-            storageH
+            px + serviceW,
+            py,
+            pw - serviceW - roomW,
+            ph * 0.39
           );
-          ctx2.fillStyle = "rgba(133,193,208,0.68)";
+          ctx2.fillStyle = "rgba(246,240,228,0.68)";
           ctx2.fillRect(
-            ix,
-            iy + kitchenH + storageH,
-            serviceBlockW,
-            serviceH
+            px,
+            py + ph * 0.39,
+            pw - roomW,
+            ph * 0.61
           );
-          ctx2.fillStyle = "rgba(220,240,225,0.50)";
+          ctx2.fillStyle = "rgba(224,197,146,0.40)";
           ctx2.fillRect(
-            diningX,
-            iy,
-            diningW,
-            ih
+            px + pw - roomW,
+            py,
+            roomW,
+            ph
           );
           ctx2.restore();
-          this.text(
+          ui.text(
             ctx2,
-            "\u540E\u53A8",
-            ix + 10,
-            iy + 12,
+            "\u{1F468}\u200D\u{1F373} \u540E\u53A8",
+            px + serviceW / 2,
+            py + 17,
+            7,
+            COLORS.white,
+            "800",
+            "center"
+          );
+          ui.text(
+            ctx2,
+            "\u2B21 \u4ED3\u50A8",
+            px + serviceW + (pw - serviceW - roomW) / 2,
+            py + 17,
+            7,
+            COLORS.white,
+            "800",
+            "center"
+          );
+          ui.text(
+            ctx2,
+            "\u265F \u670D\u52A1\u533A",
+            px + 45,
+            py + ph * 0.56,
             6.5,
-            "#683B2A",
-            "700"
+            COLORS.text,
+            "700",
+            "center"
           );
-          this.text(
+          ui.text(
             ctx2,
-            "\u4ED3\u50A8",
-            ix + 10,
-            iy + kitchenH + 11,
-            6.2,
-            "#655B37",
-            "700"
-          );
-          this.text(
-            ctx2,
-            "\u670D\u52A1",
-            ix + 10,
-            iy + kitchenH + storageH + 11,
-            6.2,
-            "#26586B",
-            "700"
-          );
-          this.text(
-            ctx2,
-            "\u5802\u98DF / \u5305\u53A2",
-            diningX + 10,
-            iy + 12,
-            6.5,
-            COLORS.green,
-            "700"
+            "\u{1F374} \u5802\u98DF\u533A",
+            px + 146,
+            py + ph * 0.73,
+            6.8,
+            COLORS.text,
+            "800",
+            "center"
           );
           this.drawVisual(
             ctx2,
             "visual_stove",
-            ix + 8,
-            iy + 22,
-            serviceBlockW * 0.48,
-            Math.max(
-              36,
-              kitchenH - 27
-            ),
-            0.96
+            px + 11,
+            py + 29,
+            serviceW * 0.52,
+            ph * 0.23,
+            0.98
           );
           this.drawVisual(
             ctx2,
             "visual_fridge",
-            ix + serviceBlockW * 0.5,
-            iy + 22,
-            serviceBlockW * 0.4,
-            Math.max(
-              36,
-              kitchenH - 27
-            ),
-            0.96
+            px + serviceW * 0.6,
+            py + 29,
+            serviceW * 0.29,
+            ph * 0.23,
+            0.98
           );
-          this.drawVisual(
-            ctx2,
-            "visual_register",
-            ix + 8,
-            iy + kitchenH + storageH + 14,
-            serviceBlockW - 16,
-            Math.max(
-              24,
-              serviceH - 19
-            ),
-            0.94
+          const rooms = floor.privateRooms.slice(
+            0,
+            3
           );
-          const roomCount = floor.privateRooms.length;
-          const roomLaneW = roomCount ? Math.min(
-            74,
-            Math.max(
-              54,
-              diningW * 0.33
-            )
-          ) : 0;
-          if (roomCount > 0) {
-            this.drawVisual(
+          for (let i = 0; i < 3; i++) {
+            const ry = py + 6 + i * (ph / 3);
+            ui.card(
               ctx2,
-              "visual_divider",
-              diningX + diningW - roomLaneW - 2,
-              iy + 18,
-              roomLaneW,
-              ih - 22,
-              0.3
-            );
-          }
-          for (let i = 0; i < Math.min(
-            roomCount,
-            4
-          ); i++) {
-            const room = floor.privateRooms[i];
-            const ry = iy + 23 + i * 31;
-            premiumUi.card(
-              ctx2,
-              diningX + diningW - roomLaneW + 5,
+              px + pw - roomW + 5,
               ry,
-              roomLaneW - 10,
-              25,
+              roomW - 10,
+              ph / 3 - 10,
               {
-                radius: 7,
-                fill: "rgba(255,236,194,0.92)",
-                stroke: "#DAB66D",
+                radius: 6,
+                fill: "rgba(255,236,190,0.76)",
+                stroke: "#D5A958",
                 shadow: false
               }
             );
-            this.text(
+            ui.text(
               ctx2,
-              (room.name || "\u5305\u53A2" + (i + 1)).slice(
-                0,
-                6
-              ),
-              diningX + diningW - roomLaneW / 2,
-              ry + 12.5,
+              rooms[i] ? rooms[i].name : "\u5305\u53A2\u540D\u79F0" + (i + 1),
+              px + pw - roomW / 2,
+              ry + 13,
               5.8,
               COLORS.text,
               "700",
               "center"
             );
+            this.drawVisual(
+              ctx2,
+              "visual_table_8",
+              px + pw - roomW / 2 - 20,
+              ry + 20,
+              40,
+              Math.max(
+                27,
+                ph / 3 - 36
+              ),
+              0.98
+            );
+            if (rooms[i]) {
+              this.addButton(
+                "room:rename:" + rooms[i].id,
+                px + pw - roomW + 5,
+                ry,
+                roomW - 10,
+                ph / 3 - 10
+              );
+            }
           }
-          const tableZoneW = diningW - (roomLaneW ? roomLaneW + 2 : 4);
-          let tableIndex = 0;
           const tableKeys = [
             "2",
             "4",
             "6",
             "8"
           ];
+          let tableIndex = 0;
           for (let k = 0; k < tableKeys.length; k++) {
             const key = tableKeys[k];
-            const count = floor.tables[key] || 0;
-            for (let i = 0; i < Math.min(
-              count,
-              16
-            ); i++) {
-              const cols = Math.max(
-                1,
-                Math.floor(
-                  tableZoneW / 43
-                )
-              );
-              const col = tableIndex % cols;
+            const count = Math.min(
+              floor.tables[key] || 0,
+              10
+            );
+            for (let i = 0; i < count; i++) {
+              const col = tableIndex % 3;
               const row = Math.floor(
-                tableIndex / cols
+                tableIndex / 3
               );
-              const tx = diningX + 10 + col * 43;
-              const ty = iy + 32 + row * 36;
-              if (ty > iy + ih - 25) {
+              const tx = px + 91 + col * 47;
+              const ty = py + ph * 0.45 + row * 39;
+              if (ty > py + ph - 31) {
                 break;
               }
-              const tableW = key === "2" ? 25 : key === "4" ? 30 : key === "6" ? 34 : 38;
               this.drawVisual(
                 ctx2,
                 "visual_table_" + key,
                 tx,
                 ty,
-                tableW,
-                25,
+                key === "2" ? 27 : key === "4" ? 31 : key === "6" ? 34 : 37,
+                26,
                 0.98
               );
               tableIndex += 1;
             }
           }
-          this.drawVisual(
-            ctx2,
-            "visual_plant",
-            diningX + 5,
-            iy + ih - 37,
-            29,
-            32,
-            0.95
-          );
-          this.drawVisual(
-            ctx2,
-            "visual_light",
-            diningX + Math.max(
-              35,
-              tableZoneW * 0.44
-            ),
-            iy + 9,
-            24,
-            31,
-            0.8
-          );
-        }
-        drawTopMetrics(ctx2, metrics) {
-          const y = 407;
-          const gap = 6;
-          const w = (DESIGN_W - 20 - gap * 2) / 3;
-          const items = [
+          const toolbox = [
             [
-              "\u603B\u5EA7\u4F4D",
-              metrics.totalSeats + "\u5E2D",
-              COLORS.green
+              "style:hall",
+              "\u{1F6CB}",
+              "\u5927\u5385\u98CE\u683C"
             ],
             [
-              "\u88C5\u4FEE\u9884\u7B97",
-              money(
-                metrics.totalCost
-              ),
-              COLORS.red
+              "style:lighting",
+              "\u{1F4A1}",
+              "\u706F\u5149"
             ],
             [
-              "\u9884\u8BA1\u5DE5\u671F",
-              metrics.buildDays + "\u5929",
-              COLORS.orange
-            ]
-          ];
-          for (let i = 0; i < items.length; i++) {
-            const x = 10 + i * (w + gap);
-            premiumUi.card(
-              ctx2,
-              x,
-              y,
-              w,
-              46,
-              {
-                radius: 12,
-                fill: "#FFF9EF"
-              }
-            );
-            this.text(
-              ctx2,
-              items[i][0],
-              x + 9,
-              y + 13,
-              6.3,
-              COLORS.muted,
-              "600"
-            );
-            this.text(
-              ctx2,
-              items[i][1],
-              x + 9,
-              y + 32,
-              9.4,
-              items[i][2],
-              "700"
-            );
-          }
-        }
-        drawPageTabs(ctx2) {
-          const y = 462;
-          const tabs = [
-            [
-              "layout",
-              "\u7A7A\u95F4"
+              "style:material",
+              "\u25B1",
+              "\u6750\u6599"
             ],
             [
-              "tables",
-              "\u684C\u6905"
-            ],
-            [
-              "rooms",
+              "page:rooms",
+              "\u{1F6AA}",
               "\u5305\u53A2"
             ],
             [
-              "style",
-              "\u98CE\u683C"
+              "page:layout",
+              "\u{1FA91}",
+              "\u684C\u6905"
             ],
             [
-              "templates",
-              "\u6A21\u677F"
+              "floor:next",
+              "\u25B0",
+              "\u697C\u5C42 " + (metrics.plan.activeFloor + 1) + "F"
             ]
           ];
-          const gap = 4;
-          const w = (DESIGN_W - 20 - gap * 4) / 5;
-          for (let i = 0; i < tabs.length; i++) {
-            const active = this.page === tabs[i][0];
-            const x = 10 + i * (w + gap);
-            this.roundedRect(
+          const toolX = 307;
+          const toolW = 67;
+          const toolH = (ph - 25) / 6;
+          for (let i = 0; i < toolbox.length; i++) {
+            const ty = py + i * (toolH + 5);
+            ui.card(
               ctx2,
-              x,
-              y,
-              w,
-              32,
-              9,
-              active ? COLORS.navy : "#EAE1D5",
-              active ? "#244A60" : "#D5C8B9"
+              toolX,
+              ty,
+              toolW,
+              toolH,
+              {
+                radius: 9,
+                fill: "#FFF9EE",
+                stroke: "#DCCFBE",
+                shadow: false
+              }
             );
-            this.text(
+            ui.text(
               ctx2,
-              tabs[i][1],
-              x + w / 2,
-              y + 16,
-              7.5,
-              active ? COLORS.white : COLORS.text,
+              toolbox[i][1],
+              toolX + 17,
+              ty + toolH / 2,
+              9.2,
+              COLORS.navy,
+              "800",
+              "center"
+            );
+            ui.text(
+              ctx2,
+              toolbox[i][2],
+              toolX + 45,
+              ty + toolH / 2,
+              5.4,
+              COLORS.text,
               "700",
               "center"
             );
             this.addButton(
-              "page:" + tabs[i][0],
-              x,
-              y,
-              w,
-              32
+              toolbox[i][0],
+              toolX,
+              ty,
+              toolW,
+              toolH
             );
           }
         }
-        drawAdjustRow(ctx2, id, label, value, sub, y, canMinus, canPlus) {
-          this.roundedRect(
+        drawTablePicker(ctx2, floor) {
+          const sy = this.getScale();
+          const y = 446 * sy - 80 * (sy - 1);
+          const h = 112 * sy;
+          ui.card(
             ctx2,
-            10,
-            y,
-            370,
-            52,
-            11,
-            COLORS.panel,
-            COLORS.line
-          );
-          this.text(
-            ctx2,
-            label,
-            22,
-            y + 17,
-            8.5,
-            COLORS.text,
-            "700"
-          );
-          this.text(
-            ctx2,
-            sub,
-            22,
-            y + 36,
-            6.5,
-            COLORS.muted,
-            "500"
-          );
-          this.roundedRect(
-            ctx2,
-            252,
-            y + 10,
-            32,
-            32,
             8,
-            canMinus ? "#E9E2D8" : "#F0ECE6"
-          );
-          this.text(
-            ctx2,
-            "\u2212",
-            268,
-            y + 26,
-            15,
-            canMinus ? COLORS.navy : "#B6AEA5",
-            "700",
-            "center"
-          );
-          this.addButton(
-            id + ":minus",
-            248,
-            y + 6,
-            40,
-            40
-          );
-          this.text(
-            ctx2,
-            value,
-            312,
-            y + 26,
-            9,
-            COLORS.text,
-            "700",
-            "center"
-          );
-          this.roundedRect(
-            ctx2,
-            340,
-            y + 10,
-            32,
-            32,
-            8,
-            canPlus ? COLORS.gold : "#E3DDD4"
-          );
-          this.text(
-            ctx2,
-            "+",
-            356,
-            y + 26,
-            14,
-            canPlus ? "#26343B" : "#B6AEA5",
-            "700",
-            "center"
-          );
-          this.addButton(
-            id + ":plus",
-            336,
-            y + 6,
-            40,
-            40
-          );
-        }
-        renderLayoutPage(ctx2, floor) {
-          let y = 503;
-          this.drawAdjustRow(
-            ctx2,
-            "zone:kitchen",
-            "\u540E\u53A8\u9762\u79EF",
-            pct(
-              floor.kitchenRatio
-            ),
-            "\u51B3\u5B9A\u51FA\u9910\u627F\u8F7D\u4E0E\u540E\u53A8\u52A8\u7EBF",
             y,
-            true,
-            true
-          );
-          y += 58;
-          this.drawAdjustRow(
-            ctx2,
-            "zone:storage",
-            "\u4ED3\u50A8\u9762\u79EF",
-            pct(
-              floor.storageRatio
-            ),
-            "\u5F71\u54CD\u5907\u8D27\u80FD\u529B\u4E0E\u64CD\u4F5C\u7A7A\u95F4",
-            y,
-            true,
-            true
-          );
-          y += 58;
-          this.drawAdjustRow(
-            ctx2,
-            "zone:service",
-            "\u670D\u52A1/\u6536\u94F6\u533A",
-            pct(
-              floor.serviceRatio
-            ),
-            "\u6536\u94F6\u3001\u7B49\u4F4D\u3001\u4F20\u83DC\u548C\u670D\u52A1\u7AD9",
-            y,
-            true,
-            true
-          );
-          y += 58;
-          const aisle = renovationConfig.aisleModes[floor.aisleMode];
-          this.roundedRect(
-            ctx2,
-            10,
-            y,
-            370,
-            52,
-            11,
-            COLORS.panel,
-            COLORS.line
-          );
-          this.text(
-            ctx2,
-            "\u684C\u95F4\u901A\u9053",
-            22,
-            y + 17,
-            8.5,
-            COLORS.text,
-            "700"
-          );
-          this.text(
-            ctx2,
-            "\u8D8A\u5BBD\u8212\u9002\u5EA6\u8D8A\u9AD8\uFF0C\u4F46\u4F1A\u5360\u7528\u66F4\u591A\u53EF\u6446\u684C\u9762\u79EF",
-            22,
-            y + 36,
-            6.5,
-            COLORS.muted,
-            "500"
-          );
-          this.roundedRect(
-            ctx2,
-            280,
-            y + 10,
-            90,
-            32,
-            8,
-            "#E6EEF1",
-            "#B8CBD3"
-          );
-          this.text(
-            ctx2,
-            aisle.name + " \u203A",
-            325,
-            y + 26,
-            8,
-            COLORS.navy,
-            "700",
-            "center"
-          );
-          this.addButton(
-            "aisle:cycle",
-            276,
-            y + 6,
-            98,
-            40
-          );
-        }
-        renderTablesPage(ctx2, floor) {
-          const options = [
-            2,
-            4,
-            6,
-            8
-          ];
-          const keys = {
-            2: "premium_table_2",
-            4: "premium_table_4",
-            6: "premium_table_6",
-            8: "premium_table_8"
-          };
-          premiumUi.card(
-            ctx2,
-            10,
-            503,
-            370,
-            126,
+            203,
+            h,
             {
-              radius: 13
+              radius: 13,
+              fill: COLORS.panel
             }
           );
-          this.text(
+          ui.text(
             ctx2,
             "\u9910\u684C\u7C7B\u578B",
-            21,
-            520,
-            9,
+            18,
+            y + 18,
+            9.5,
             COLORS.text,
-            "700"
+            "800"
           );
-          this.text(
-            ctx2,
-            "\u6570\u91CF\u53D8\u5316\u4F1A\u7ACB\u5373\u66F4\u65B0\u5EA7\u4F4D\u3001\u62E5\u6324\u5EA6\u548C\u9884\u7B97",
-            92,
-            520,
-            6.2,
-            COLORS.muted,
-            "500"
-          );
-          for (let i = 0; i < options.length; i++) {
-            const seats = options[i];
-            const count = floor.tables[String(
-              seats
-            )] || 0;
-            const x = 18 + i * 91;
-            premiumUi.card(
+          const keys = [
+            "2",
+            "4",
+            "6",
+            "8"
+          ];
+          for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
+            const x = 15 + i * 48;
+            this.drawVisual(
               ctx2,
+              "visual_table_" + key,
               x,
-              535,
-              82,
-              83,
-              {
-                radius: 10,
-                fill: "#FFF8ED",
-                shadow: false
-              }
-            );
-            premiumUi.coverImage(
-              ctx2,
-              visualAssetSystem.get(
-                keys[seats]
-              ),
-              x + 5,
-              540,
-              72,
-              42,
-              7,
-              null
-            );
-            this.text(
-              ctx2,
-              seats + "\u4EBA\u684C",
-              x + 41,
-              590,
-              6.5,
-              COLORS.text,
-              "700",
-              "center"
-            );
-            this.roundedRect(
-              ctx2,
-              x + 5,
-              600,
-              19,
-              16,
-              7,
-              "#EAE3D8"
-            );
-            this.text(
-              ctx2,
-              "\u2212",
-              x + 14.5,
-              608,
-              8,
-              COLORS.navy,
-              "700",
-              "center"
-            );
-            this.addButton(
-              "table:" + seats + ":minus",
-              x + 2,
-              597,
-              25,
-              22
-            );
-            this.text(
-              ctx2,
-              count,
-              x + 41,
-              608,
-              6.8,
-              COLORS.text,
-              "700",
-              "center"
-            );
-            this.roundedRect(
-              ctx2,
-              x + 58,
-              600,
-              19,
-              16,
-              7,
-              COLORS.gold
-            );
-            this.text(
-              ctx2,
-              "+",
-              x + 67.5,
-              608,
-              8,
-              COLORS.text,
-              "700",
-              "center"
-            );
-            this.addButton(
-              "table:" + seats + ":plus",
-              x + 55,
-              597,
-              25,
-              22
-            );
-          }
-        }
-        renderRoomsPage(ctx2, floor) {
-          let y = 503;
-          const rooms = floor.privateRooms;
-          if (!rooms.length) {
-            this.roundedRect(
-              ctx2,
-              10,
-              y,
-              370,
-              84,
-              12,
-              COLORS.panel,
-              COLORS.line
-            );
-            this.text(
-              ctx2,
-              "\u5F53\u524D\u697C\u5C42\u6CA1\u6709\u5305\u53A2",
-              22,
-              y + 25,
-              11,
-              COLORS.text,
-              "700"
-            );
-            this.text(
-              ctx2,
-              "\u65B0\u589E\u540E\u4F1A\u5360\u7528\u5802\u98DF\u9762\u79EF\uFF0C\u540C\u65F6\u63D0\u9AD8\u591A\u4EBA\u805A\u9910\u548C\u9AD8\u5BA2\u5355\u627F\u8F7D\u3002",
-              22,
-              y + 54,
-              7,
-              COLORS.muted,
-              "500"
-            );
-            y += 94;
-          } else {
-            for (let i = 0; i < Math.min(
-              rooms.length,
-              4
-            ); i++) {
-              const room = rooms[i];
-              const style = renovationConfig.privateRoomStyles.find(
-                (item) => item.id === room.style
-              ) || renovationConfig.privateRoomStyles[0];
-              this.roundedRect(
-                ctx2,
-                10,
-                y,
-                370,
-                55,
-                11,
-                COLORS.panel,
-                COLORS.line
-              );
-              this.text(
-                ctx2,
-                room.name || "\u5305\u53A2" + (i + 1),
-                22,
-                y + 17,
-                8.5,
-                COLORS.text,
-                "700"
-              );
-              this.text(
-                ctx2,
-                room.seats + "\u4EBA \xB7 " + style.name,
-                22,
-                y + 38,
-                7,
-                COLORS.muted,
-                "600"
-              );
-              this.roundedRect(
-                ctx2,
-                151,
-                y + 10,
-                52,
-                34,
-                8,
-                "#F5EEE4",
-                "#D8CBBB"
-              );
-              this.text(
-                ctx2,
-                "\u270E \u540D\u79F0",
-                177,
-                y + 27,
-                6.6,
-                COLORS.orange,
-                "700",
-                "center"
-              );
-              this.addButton(
-                "room:rename:" + room.id,
-                147,
-                y + 6,
-                60,
-                42
-              );
-              this.roundedRect(
-                ctx2,
-                211,
-                y + 10,
-                66,
-                34,
-                8,
-                "#E7EEF1"
-              );
-              this.text(
-                ctx2,
-                "\u4EBA\u6570 \u203A",
-                244,
-                y + 27,
-                7,
-                COLORS.navy,
-                "700",
-                "center"
-              );
-              this.addButton(
-                "room:seats:" + room.id,
-                207,
-                y + 6,
-                74,
-                42
-              );
-              this.roundedRect(
-                ctx2,
-                283,
-                y + 10,
-                56,
-                34,
-                8,
-                "#FFF0D6"
-              );
-              this.text(
-                ctx2,
-                "\u98CE\u683C \u203A",
-                311,
-                y + 27,
-                7,
-                COLORS.orange,
-                "700",
-                "center"
-              );
-              this.addButton(
-                "room:style:" + room.id,
-                279,
-                y + 6,
-                64,
-                42
-              );
-              this.roundedRect(
-                ctx2,
-                345,
-                y + 10,
-                27,
-                34,
-                8,
-                "#F2E4E1"
-              );
-              this.text(
-                ctx2,
-                "\xD7",
-                358.5,
-                y + 27,
-                9,
-                COLORS.red,
-                "700",
-                "center"
-              );
-              this.addButton(
-                "room:remove:" + room.id,
-                341,
-                y + 6,
-                35,
-                42
-              );
-              y += 61;
-            }
-          }
-          if (rooms.length < 8 && y < this.contentBottom - 58) {
-            this.roundedRect(
-              ctx2,
-              10,
-              y,
-              370,
+              y + 28,
               40,
-              11,
-              COLORS.gold,
-              "#D49434"
+              Math.max(
+                35,
+                h - 67
+              ),
+              0.98
             );
-            this.text(
+            ui.text(
               ctx2,
-              "+ \u65B0\u589E\u5305\u53A2",
-              195,
-              y + 20,
-              8.5,
-              "#26343B",
+              key + "\u4EBA\u684C",
+              x + 20,
+              y + h - 29,
+              5.7,
+              COLORS.text,
               "700",
               "center"
             );
+            ui.text(
+              ctx2,
+              "\u2212  " + (floor.tables[key] || 0) + "  +",
+              x + 20,
+              y + h - 11,
+              6,
+              COLORS.navy,
+              "800",
+              "center"
+            );
             this.addButton(
-              "room:add",
-              10,
-              y,
-              370,
-              40
+              "table:" + key + ":minus",
+              x - 3,
+              y + h - 25,
+              20,
+              27
+            );
+            this.addButton(
+              "table:" + key + ":plus",
+              x + 24,
+              y + h - 25,
+              20,
+              27
             );
           }
         }
-        drawCycleRow(ctx2, id, label, value, sub, y) {
-          this.roundedRect(
+        drawMetrics(ctx2, metrics) {
+          const sy = this.getScale();
+          const y = 446 * sy - 80 * (sy - 1);
+          const h = 112 * sy;
+          ui.card(
             ctx2,
-            10,
+            218,
             y,
-            370,
-            52,
-            11,
-            COLORS.panel,
-            COLORS.line
+            164,
+            h,
+            {
+              radius: 13,
+              fill: COLORS.panel
+            }
           );
-          this.text(
+          ui.text(
             ctx2,
-            label,
-            22,
-            y + 17,
-            8.5,
+            "\u88C5\u4FEE\u6570\u636E\u9884\u89C8",
+            230,
+            y + 18,
+            9.2,
             COLORS.text,
-            "700"
-          );
-          this.text(
-            ctx2,
-            sub,
-            22,
-            y + 36,
-            6.5,
-            COLORS.muted,
-            "500"
-          );
-          this.text(
-            ctx2,
-            value + " \u203A",
-            365,
-            y + 26,
-            8,
-            COLORS.navy,
-            "700",
-            "right"
-          );
-          this.addButton(
-            id,
-            10,
-            y,
-            370,
-            52
-          );
-        }
-        renderStylePage(ctx2, metrics) {
-          const plan = metrics.plan;
-          const hall = renovationConfig.hallStyles.find(
-            (item) => item.id === plan.hallStyle
-          );
-          const material = renovationConfig.materialGrades.find(
-            (item) => item.id === plan.materialGrade
-          );
-          const lighting = renovationConfig.lightingLevels.find(
-            (item) => item.id === plan.lightingLevel
+            "800"
           );
           const items = [
-            {
-              id: "style:hall",
-              label: "\u5927\u5385\u98CE\u683C",
-              value: hall.name,
-              icon: "\u25A3"
-            },
-            {
-              id: "style:material",
-              label: "\u6750\u6599",
-              value: material.name,
-              icon: "\u25A4"
-            },
-            {
-              id: "style:lighting",
-              label: "\u706F\u5149",
-              value: lighting.name,
-              icon: "\u263C"
-            }
+            [
+              "\u5EA7\u4F4D\u6570",
+              metrics.totalSeats,
+              COLORS.green
+            ],
+            [
+              "\u9884\u7B97",
+              money(
+                metrics.totalCost
+              ),
+              COLORS.orange
+            ],
+            [
+              "\u5DE5\u671F",
+              metrics.buildDays + "\u5929",
+              COLORS.red
+            ],
+            [
+              "\u8212\u9002\u5EA6",
+              Math.round(
+                metrics.comfort * 100
+              ),
+              "#D94E6A"
+            ],
+            [
+              "\u5438\u5F15\u529B",
+              Math.round(
+                metrics.appeal * 100
+              ),
+              "#DCA72B"
+            ],
+            [
+              "\u8FD0\u8425\u6548\u7387",
+              Math.round(
+                metrics.operationalEfficiency * 100
+              ),
+              COLORS.blue
+            ]
           ];
-          const gap = 6;
-          const w = (370 - gap * 2) / 3;
           for (let i = 0; i < items.length; i++) {
-            const item = items[i];
-            const x = 10 + i * (w + gap);
-            premiumUi.card(
+            const col = i % 3;
+            const row = Math.floor(
+              i / 3
+            );
+            const x = 226 + col * 52;
+            const iy = y + 36 + row * ((h - 43) / 2);
+            ui.text(
               ctx2,
+              items[i][0],
               x,
-              503,
-              w,
-              73,
-              {
-                radius: 12,
-                fill: i === 0 ? "#FFF2D3" : "#FFF9EF"
-              }
-            );
-            this.text(
-              ctx2,
-              item.icon,
-              x + 13,
-              522,
-              13,
-              i === 0 ? COLORS.orange : COLORS.blue,
-              "700"
-            );
-            this.text(
-              ctx2,
-              item.label,
-              x + 34,
-              520,
-              6.5,
+              iy,
+              5.4,
               COLORS.muted,
               "600"
             );
-            this.text(
+            ui.text(
               ctx2,
-              item.value,
-              x + 12,
-              551,
-              8,
-              COLORS.text,
-              "700"
-            );
-            this.text(
-              ctx2,
-              "\u70B9\u51FB\u5207\u6362 \u203A",
-              x + w - 10,
-              565,
-              5.5,
-              COLORS.navy,
-              "600",
-              "right"
-            );
-            this.addButton(
-              item.id,
+              String(
+                items[i][1]
+              ),
               x,
-              503,
-              w,
-              73
+              iy + 17,
+              7.4,
+              items[i][2],
+              "800"
             );
           }
-          this.text(
+        }
+        drawFooter(ctx2, metrics) {
+          const y = this.contentBottom - 43;
+          ui.card(
             ctx2,
-            "\u65BD\u5DE5\u961F\u62A5\u4EF7",
-            14,
-            594,
+            10,
+            y,
+            94,
+            34,
+            {
+              radius: 17,
+              fill: "#FFFDF7",
+              stroke: "#D8CABB",
+              shadow: false
+            }
+          );
+          ui.text(
+            ctx2,
+            "\u25C9 \u6548\u679C\u9884\u89C8",
+            57,
+            y + 17,
             7,
+            COLORS.navy,
+            "800",
+            "center"
+          );
+          this.addButton(
+            "preview",
+            6,
+            y - 4,
+            102,
+            42
+          );
+          ui.card(
+            ctx2,
+            112,
+            y,
+            268,
+            34,
+            {
+              radius: 17,
+              fill: metrics.valid ? COLORS.gold : "#D9D4CB",
+              stroke: metrics.valid ? "#DB9F1F" : "#C4BCAF",
+              shadow: false
+            }
+          );
+          ui.text(
+            ctx2,
+            metrics.valid ? "\u{1F528} \u786E\u8BA4\u65B9\u6848\u5E76\u5F00\u59CB\u65BD\u5DE5  \u203A" : "\u5F53\u524D\u5E03\u5C40\u5B58\u5728\u95EE\u9898\uFF0C\u6682\u4E0D\u80FD\u65BD\u5DE5",
+            246,
+            y + 17,
+            8,
+            metrics.valid ? COLORS.text : COLORS.muted,
+            "800",
+            "center"
+          );
+          if (metrics.valid) {
+            this.addButton(
+              "construction:start",
+              106,
+              y - 4,
+              278,
+              42
+            );
+          }
+        }
+        drawSecondaryHeader(ctx2, title, subtitle) {
+          const sy = this.getScale();
+          const y = 184 * sy - 80 * (sy - 1);
+          ui.card(
+            ctx2,
+            8,
+            y,
+            374,
+            41,
+            {
+              radius: 13,
+              fill: COLORS.panel
+            }
+          );
+          ui.text(
+            ctx2,
+            title,
+            20,
+            y + 14,
+            10,
+            COLORS.text,
+            "800"
+          );
+          ui.text(
+            ctx2,
+            subtitle,
+            20,
+            y + 29,
+            5.8,
             COLORS.muted,
-            "700"
+            "500"
           );
-          const quotes = renovationSystem.getContractorQuotes(
-            this.shopId
+          ui.card(
+            ctx2,
+            304,
+            y + 8,
+            65,
+            25,
+            {
+              radius: 12,
+              fill: "#FFF6E0",
+              stroke: "#E4C477",
+              shadow: false
+            }
           );
+          ui.text(
+            ctx2,
+            "\u8FD4\u56DE\u5E73\u9762\u56FE",
+            336.5,
+            y + 20.5,
+            5.9,
+            COLORS.navy,
+            "800",
+            "center"
+          );
+          this.addButton(
+            "page:layout",
+            298,
+            y + 4,
+            78,
+            33
+          );
+          return y + 48;
+        }
+        renderRooms(ctx2, metrics, floor) {
+          const y = this.drawSecondaryHeader(
+            ctx2,
+            "\u5305\u53A2\u7BA1\u7406",
+            "\u6DFB\u52A0\u3001\u6539\u540D\u3001\u8C03\u6574\u4EBA\u6570\u548C\u98CE\u683C"
+          );
+          const bottom = this.contentBottom - 12;
+          const available = bottom - y;
+          const rooms = floor.privateRooms;
+          const rowH = Math.max(
+            56,
+            Math.min(
+              74,
+              available / Math.max(
+                1,
+                Math.min(
+                  rooms.length + 1,
+                  6
+                )
+              )
+            )
+          );
+          let drawY = y;
           for (let i = 0; i < Math.min(
-            3,
-            quotes.length
+            rooms.length,
+            5
           ); i++) {
-            const q = quotes[i];
-            const selected = q.id === plan.selectedContractorId || !plan.selectedContractorId && i === 0;
-            const x = 10 + i * 123;
-            premiumUi.card(
+            const room = rooms[i];
+            ui.card(
               ctx2,
-              x,
-              604,
-              113,
-              52,
+              10,
+              drawY,
+              370,
+              rowH - 6,
               {
-                radius: 10,
-                fill: selected ? "#FFF0D0" : "#FFF9EF",
-                stroke: selected ? "#DFB35B" : "#DED1C1",
+                radius: 12,
+                fill: "#FFF9EF",
+                stroke: "#DDD2C3",
                 shadow: false
               }
             );
-            this.text(
+            this.drawVisual(
               ctx2,
-              q.name.slice(
-                0,
-                7
-              ),
-              x + 8,
-              618,
-              6.5,
+              "visual_table_8",
+              19,
+              drawY + 7,
+              47,
+              rowH - 20,
+              0.98
+            );
+            ui.text(
+              ctx2,
+              room.name,
+              76,
+              drawY + 18,
+              8.2,
               COLORS.text,
-              "700"
+              "800"
             );
-            this.text(
+            ui.text(
               ctx2,
-              money(
-                q.price
-              ) + " \xB7 " + q.days + "\u5929",
-              x + 8,
-              638,
-              5.8,
-              COLORS.muted,
-              "600"
-            );
-            this.text(
-              ctx2,
-              selected ? "\u2713 \u5DF2\u9009" : "\u9009\u62E9",
-              x + 103,
-              647,
-              5.5,
-              selected ? COLORS.orange : COLORS.navy,
-              "700",
-              "right"
-            );
-            this.addButton(
-              "contractor:" + q.id,
-              x,
-              604,
-              113,
-              52
-            );
-          }
-          const actionY = this.contentBottom - 49;
-          this.roundedRect(
-            ctx2,
-            10,
-            actionY,
-            370,
-            39,
-            13,
-            metrics.valid ? COLORS.gold : "#DED7CD",
-            metrics.valid ? "#D49434" : "#C4BAAD"
-          );
-          this.text(
-            ctx2,
-            metrics.valid ? "\u786E\u8BA4\u65B9\u6848\u5E76\u5F00\u59CB\u65BD\u5DE5  \u203A" : "\u5F53\u524D\u5E03\u5C40\u8D85\u8F7D\uFF0C\u4E0D\u80FD\u65BD\u5DE5",
-            195,
-            actionY + 19.5,
-            8.8,
-            metrics.valid ? COLORS.text : COLORS.muted,
-            "700",
-            "center"
-          );
-          this.addButton(
-            "construction:start",
-            10,
-            actionY,
-            370,
-            39
-          );
-        }
-        renderTemplatesPage(ctx2, metrics) {
-          const templates = customizationSystem.getTemplateList();
-          premiumUi.card(
-            ctx2,
-            10,
-            503,
-            370,
-            42,
-            {
-              radius: 12,
-              fill: "#FFF2D3",
-              stroke: "#E5BE63"
-            }
-          );
-          this.text(
-            ctx2,
-            "\uFF0B \u4FDD\u5B58\u5F53\u524D\u88C5\u4FEE\u65B9\u6848\u4E3A\u6A21\u677F",
-            195,
-            524,
-            8,
-            COLORS.text,
-            "700",
-            "center"
-          );
-          this.addButton(
-            "template:save",
-            10,
-            503,
-            370,
-            42
-          );
-          const visualKeys = [
-            "premium_template_1",
-            "premium_template_2",
-            "premium_template_3"
-          ];
-          for (let i = 0; i < 3; i++) {
-            const x = 10 + i * 123;
-            const item = templates[i];
-            premiumUi.card(
-              ctx2,
-              x,
-              556,
-              113,
-              105,
-              {
-                radius: 11,
-                fill: "#FFF9EF"
-              }
-            );
-            premiumUi.coverImage(
-              ctx2,
-              visualAssetSystem.get(
-                visualKeys[i]
+              room.seats + "\u4EBA \xB7 " + this.getName(
+                renovationConfig.privateRoomStyles,
+                room.style
               ),
-              x + 5,
-              561,
-              103,
-              51,
-              8,
-              null
-            );
-            this.text(
-              ctx2,
-              item ? item.name : "\u7075\u611F\u6A21\u677F" + (i + 1),
-              x + 7,
-              622,
-              6.6,
-              COLORS.text,
-              "700"
-            );
-            if (item) {
-              this.roundedRect(
-                ctx2,
-                x + 5,
-                636,
-                48,
-                19,
-                7,
-                "#E5F1E8"
-              );
-              this.text(
-                ctx2,
-                "\u4F7F\u7528",
-                x + 29,
-                645.5,
-                5.8,
-                COLORS.green,
-                "700",
-                "center"
-              );
-              this.addButton(
-                "template:apply:" + item.id,
-                x + 2,
-                633,
-                54,
-                25
-              );
-              this.roundedRect(
-                ctx2,
-                x + 58,
-                636,
-                49,
-                19,
-                7,
-                "#FFF0D6"
-              );
-              this.text(
-                ctx2,
-                "\u6539\u540D",
-                x + 82.5,
-                645.5,
-                5.8,
-                COLORS.orange,
-                "700",
-                "center"
-              );
-              this.addButton(
-                "template:rename:" + item.id,
-                x + 55,
-                633,
-                55,
-                25
-              );
-            } else {
-              this.text(
-                ctx2,
-                "\u4FDD\u5B58\u540E\u53EF\u8DE8\u95E8\u5E97\u9002\u914D",
-                x + 7,
-                646,
-                5.2,
-                COLORS.muted,
-                "500"
-              );
-            }
-          }
-          if (templates.length > 3) {
-            this.text(
-              ctx2,
-              "\u8FD8\u6709 " + (templates.length - 3) + " \u4E2A\u5DF2\u4FDD\u5B58\u6A21\u677F",
-              15,
-              677,
+              76,
+              drawY + 38,
               6.2,
               COLORS.muted,
               "600"
             );
+            const controls = [
+              [
+                "room:rename:" + room.id,
+                "\u6539\u540D"
+              ],
+              [
+                "room:seats:" + room.id,
+                "\u4EBA\u6570"
+              ],
+              [
+                "room:style:" + room.id,
+                "\u98CE\u683C"
+              ],
+              [
+                "room:remove:" + room.id,
+                "\u5220\u9664"
+              ]
+            ];
+            for (let j = 0; j < controls.length; j++) {
+              const x = 196 + j * 43;
+              ui.card(
+                ctx2,
+                x,
+                drawY + 14,
+                38,
+                27,
+                {
+                  radius: 10,
+                  fill: j === 3 ? "#FFF0EB" : "#FFF5D9",
+                  stroke: j === 3 ? "#E8B1A8" : "#E1C16D",
+                  shadow: false
+                }
+              );
+              ui.text(
+                ctx2,
+                controls[j][1],
+                x + 19,
+                drawY + 27.5,
+                5.7,
+                j === 3 ? COLORS.red : COLORS.navy,
+                "800",
+                "center"
+              );
+              this.addButton(
+                controls[j][0],
+                x - 3,
+                drawY + 10,
+                44,
+                35
+              );
+            }
+            drawY += rowH;
           }
-          this.text(
+          if (rooms.length < 8 && drawY < bottom - 45) {
+            ui.card(
+              ctx2,
+              10,
+              drawY,
+              370,
+              39,
+              {
+                radius: 14,
+                fill: "#FFF8E4",
+                stroke: "#E8C874",
+                shadow: false
+              }
+            );
+            ui.text(
+              ctx2,
+              "+ \u6DFB\u52A0\u4E00\u4E2A\u65B0\u5305\u53A2",
+              195,
+              drawY + 19.5,
+              7.4,
+              COLORS.navy,
+              "800",
+              "center"
+            );
+            this.addButton(
+              "room:add",
+              6,
+              drawY - 3,
+              378,
+              45
+            );
+          }
+        }
+        renderStyle(ctx2, metrics) {
+          const y = this.drawSecondaryHeader(
             ctx2,
-            "\u6A21\u677F\u4FDD\u5B58\uFF1A\u7A7A\u95F4\u6BD4\u4F8B\u3001\u684C\u6905\u5BC6\u5EA6\u3001\u5305\u53A2\u540D\u79F0/\u98CE\u683C\u3001\u6750\u6599\u4E0E\u706F\u5149\u3002",
-            15,
-            Math.min(
-              this.contentBottom - 22,
-              699
-            ),
-            6,
-            COLORS.muted,
-            "500"
+            "\u88C5\u4FEE\u98CE\u683C",
+            "\u5927\u5385\u3001\u6750\u6599\u548C\u706F\u5149\u5747\u4F1A\u8054\u52A8\u6210\u672C\u4E0E\u5438\u5F15\u529B"
           );
+          const plan = metrics.plan;
+          const rows = [
+            {
+              id: "style:hall",
+              label: "\u5927\u5385\u98CE\u683C",
+              value: this.getName(
+                renovationConfig.hallStyles,
+                plan.hallStyle
+              ),
+              key: "premium_template_1"
+            },
+            {
+              id: "style:material",
+              label: "\u88C5\u4FEE\u6750\u6599",
+              value: this.getName(
+                renovationConfig.materialGrades,
+                plan.materialGrade
+              ),
+              key: "premium_template_2"
+            },
+            {
+              id: "style:lighting",
+              label: "\u706F\u5149\u6C1B\u56F4",
+              value: this.getName(
+                renovationConfig.lightingLevels,
+                plan.lightingLevel
+              ),
+              key: "premium_template_3"
+            }
+          ];
+          let drawY = y;
+          for (let i = 0; i < rows.length; i++) {
+            const item = rows[i];
+            ui.card(
+              ctx2,
+              10,
+              drawY,
+              370,
+              82,
+              {
+                radius: 14,
+                fill: COLORS.panel
+              }
+            );
+            this.drawVisual(
+              ctx2,
+              item.key,
+              18,
+              drawY + 8,
+              96,
+              66,
+              1
+            );
+            ui.text(
+              ctx2,
+              item.label,
+              128,
+              drawY + 24,
+              8.5,
+              COLORS.text,
+              "800"
+            );
+            ui.text(
+              ctx2,
+              item.value,
+              128,
+              drawY + 50,
+              7.5,
+              COLORS.orange,
+              "700"
+            );
+            ui.card(
+              ctx2,
+              292,
+              drawY + 23,
+              69,
+              34,
+              {
+                radius: 16,
+                fill: COLORS.gold,
+                stroke: "#DDA11F",
+                shadow: false
+              }
+            );
+            ui.text(
+              ctx2,
+              "\u5207\u6362 \u203A",
+              326.5,
+              drawY + 40,
+              6.7,
+              COLORS.text,
+              "800",
+              "center"
+            );
+            this.addButton(
+              item.id,
+              286,
+              drawY + 18,
+              81,
+              44
+            );
+            drawY += 90;
+          }
+        }
+        renderTemplates(ctx2) {
+          const y = this.drawSecondaryHeader(
+            ctx2,
+            "\u6A21\u677F\u7BA1\u7406",
+            "\u4FDD\u5B58\u3001\u5957\u7528\u3001\u6539\u540D\u6216\u5220\u9664\u4F60\u7684\u88C5\u4FEE\u6A21\u677F"
+          );
+          const templates = customizationSystem.getTemplateList();
+          let drawY = y;
+          if (!templates.length) {
+            ui.card(
+              ctx2,
+              10,
+              drawY,
+              370,
+              96,
+              {
+                radius: 14,
+                fill: COLORS.panel
+              }
+            );
+            ui.text(
+              ctx2,
+              "\u6682\u65F6\u8FD8\u6CA1\u6709\u81EA\u5B9A\u4E49\u6A21\u677F",
+              195,
+              drawY + 31,
+              9,
+              COLORS.text,
+              "800",
+              "center"
+            );
+            ui.text(
+              ctx2,
+              "\u70B9\u51FB\u9876\u90E8\u201C\u4FDD\u5B58\u6A21\u677F\u201D\u5373\u53EF\u4FDD\u5B58\u5F53\u524D\u88C5\u4FEE\u65B9\u6848\u3002",
+              195,
+              drawY + 57,
+              6.3,
+              COLORS.muted,
+              "600",
+              "center"
+            );
+            return;
+          }
+          for (let i = 0; i < Math.min(
+            templates.length,
+            6
+          ); i++) {
+            const item = templates[i];
+            ui.card(
+              ctx2,
+              10,
+              drawY,
+              370,
+              57,
+              {
+                radius: 12,
+                fill: "#FFF9EF",
+                stroke: "#DDD2C3",
+                shadow: false
+              }
+            );
+            ui.text(
+              ctx2,
+              item.name,
+              22,
+              drawY + 19,
+              8.1,
+              COLORS.text,
+              "800"
+            );
+            ui.text(
+              ctx2,
+              item.sourceFloorCount + "\u5C42 \xB7 \u539F\u9762\u79EF " + Math.round(
+                item.sourceArea
+              ) + "\u33A1",
+              22,
+              drawY + 38,
+              5.8,
+              COLORS.muted,
+              "600"
+            );
+            const actions = [
+              [
+                "template:apply:" + item.id,
+                "\u5957\u7528"
+              ],
+              [
+                "template:rename:" + item.id,
+                "\u6539\u540D"
+              ],
+              [
+                "template:delete:" + item.id,
+                "\u5220\u9664"
+              ]
+            ];
+            for (let j = 0; j < actions.length; j++) {
+              const x = 239 + j * 44;
+              ui.card(
+                ctx2,
+                x,
+                drawY + 14,
+                39,
+                28,
+                {
+                  radius: 10,
+                  fill: j === 2 ? "#FFF0EB" : "#FFF5D9",
+                  stroke: j === 2 ? "#E7B0A6" : "#E1C16D",
+                  shadow: false
+                }
+              );
+              ui.text(
+                ctx2,
+                actions[j][1],
+                x + 19.5,
+                drawY + 28,
+                5.7,
+                j === 2 ? COLORS.red : COLORS.navy,
+                "800",
+                "center"
+              );
+              this.addButton(
+                actions[j][0],
+                x - 3,
+                drawY + 10,
+                45,
+                36
+              );
+            }
+            drawY += 64;
+          }
         }
         renderConstruction(ctx2, shop, plan) {
-          const construction = plan.construction;
           this.drawHeader(
             ctx2,
             shop
           );
-          this.roundedRect(
+          const construction = plan.construction;
+          ui.card(
             ctx2,
-            12,
-            92,
-            366,
-            166,
             15,
-            COLORS.panel,
-            COLORS.line
+            120,
+            360,
+            258,
+            {
+              radius: 18,
+              fill: COLORS.panel
+            }
           );
-          this.text(
+          ui.text(
             ctx2,
-            plan.status === "completed" ? "\u88C5\u4FEE\u5DF2\u5B8C\u6210" : "\u6B63\u5728\u65BD\u5DE5",
-            24,
-            123,
-            17,
-            plan.status === "completed" ? COLORS.green : COLORS.orange,
-            "700"
-          );
-          this.text(
-            ctx2,
-            construction ? construction.contractor.name : "\u65BD\u5DE5\u8BB0\u5F55",
-            24,
-            154,
-            9,
-            COLORS.text,
-            "700"
-          );
-          this.text(
-            ctx2,
-            construction ? "\u603B\u4EF7 " + money(
-              construction.paid
-            ) + " \xB7 \u7B2C" + construction.startDay + "\u5929\u5F00\u5DE5 \xB7 \u7B2C" + construction.finishDay + "\u5929\u5B8C\u5DE5" : "",
-            24,
-            181,
-            7,
-            COLORS.muted,
-            "600"
-          );
-          if (construction) {
-            const currentDay = require_simulationSystem().getDayOrdinal(
-              gameState.getTime()
-            );
-            const total = Math.max(
-              1,
-              construction.finishDay - construction.startDay
-            );
-            const progress = Math.max(
-              0,
-              Math.min(
-                1,
-                (currentDay - construction.startDay) / total
-              )
-            );
-            this.roundedRect(
-              ctx2,
-              24,
-              209,
-              330,
-              13,
-              7,
-              "#E8E0D5"
-            );
-            this.roundedRect(
-              ctx2,
-              24,
-              209,
-              Math.max(
-                8,
-                330 * (plan.status === "completed" ? 1 : progress)
-              ),
-              13,
-              7,
-              plan.status === "completed" ? COLORS.green : COLORS.gold
-            );
-            this.text(
-              ctx2,
-              plan.status === "completed" ? "100%" : Math.round(
-                progress * 100
-              ) + "%",
-              359,
-              238,
-              7,
-              COLORS.muted,
-              "700",
-              "right"
-            );
-          }
-          this.roundedRect(
-            ctx2,
-            12,
-            278,
-            366,
-            142,
-            14,
-            COLORS.panel,
-            COLORS.line
-          );
-          const metrics = construction ? construction.snapshot : this.getMetrics();
-          this.text(
-            ctx2,
-            "\u5B8C\u5DE5\u65B9\u6848",
-            24,
-            301,
-            10,
-            COLORS.text,
-            "700"
-          );
-          this.text(
-            ctx2,
-            "\u5EA7\u4F4D " + metrics.totalSeats + "\u5E2D \xB7 \u5305\u53A2 " + metrics.roomCount + "\u95F4 \xB7 \u540E\u53A8 " + metrics.kitchenArea + "\u33A1",
-            24,
-            333,
-            8,
-            COLORS.navy,
-            "700"
-          );
-          this.text(
-            ctx2,
-            "\u8212\u9002\u5EA6\xD7" + metrics.comfort.toFixed(2) + " \xB7 \u5438\u5F15\u529B\xD7" + metrics.appeal.toFixed(2) + " \xB7 \u8FD0\u8425\u6548\u7387\xD7" + metrics.operationalEfficiency.toFixed(2),
-            24,
-            362,
-            7.5,
-            COLORS.muted,
-            "600"
-          );
-          this.text(
-            ctx2,
-            plan.status === "completed" ? "\u4E0B\u4E00\u6B65\uFF1A\u8BBE\u5907\u91C7\u8D2D\u3001\u8BC1\u7167\u4E0E\u62DB\u8058" : "\u65F6\u95F4\u7EE7\u7EED\u63A8\u8FDB\uFF0C\u65BD\u5DE5\u8FDB\u5EA6\u4F1A\u968F\u6E38\u620F\u65E5\u671F\u53D8\u5316\u3002",
-            24,
-            397,
-            7,
-            plan.status === "completed" ? COLORS.green : COLORS.orange,
-            "700"
-          );
-          const actionY = this.contentBottom - 50;
-          this.roundedRect(
-            ctx2,
-            12,
-            actionY,
-            366,
-            40,
-            11,
-            COLORS.navy,
-            "#244A60"
-          );
-          this.text(
-            ctx2,
-            "\u8FD4\u56DE\u95E8\u5E97",
+            plan.status === "completed" ? "\u88C5\u4FEE\u5DF2\u7ECF\u5B8C\u5DE5" : "\u88C5\u4FEE\u65BD\u5DE5\u4E2D",
             195,
-            actionY + 20,
-            9,
-            COLORS.white,
+            157,
+            18,
+            COLORS.text,
+            "800",
+            "center"
+          );
+          ui.text(
+            ctx2,
+            construction ? construction.contractor.name : "\u65BD\u5DE5\u56E2\u961F",
+            195,
+            192,
+            8.3,
+            COLORS.orange,
             "700",
+            "center"
+          );
+          ui.text(
+            ctx2,
+            construction ? "\u5DF2\u652F\u4ED8 " + money(
+              construction.paid
+            ) + " \xB7 \u9884\u8BA1 " + construction.contractor.days + " \u5929" : "",
+            195,
+            222,
+            7,
+            COLORS.muted,
+            "600",
+            "center"
+          );
+          ui.card(
+            ctx2,
+            45,
+            256,
+            300,
+            12,
+            {
+              radius: 6,
+              fill: "#E7E0D5",
+              stroke: false,
+              shadow: false
+            }
+          );
+          ui.card(
+            ctx2,
+            45,
+            256,
+            plan.status === "completed" ? 300 : 168,
+            12,
+            {
+              radius: 6,
+              fill: COLORS.gold,
+              stroke: false,
+              shadow: false
+            }
+          );
+          ui.text(
+            ctx2,
+            plan.status === "completed" ? "\u53EF\u4EE5\u8FD4\u56DE\u95E8\u5E97\u7EE7\u7EED\u7B79\u5907\u5F00\u4E1A" : "\u65BD\u5DE5\u671F\u95F4\u4ECD\u53EF\u67E5\u770B\u8FDB\u5EA6\uFF0C\u5B8C\u6210\u540E\u81EA\u52A8\u8FDB\u5165\u4E0B\u4E00\u9636\u6BB5",
+            195,
+            306,
+            6.8,
+            COLORS.muted,
+            "600",
+            "center"
+          );
+          ui.card(
+            ctx2,
+            69,
+            330,
+            252,
+            36,
+            {
+              radius: 18,
+              fill: COLORS.gold,
+              stroke: "#DDA11F",
+              shadow: false
+            }
+          );
+          ui.text(
+            ctx2,
+            "\u8FD4\u56DE\u95E8\u5E97  \u203A",
+            195,
+            348,
+            8,
+            COLORS.text,
+            "800",
             "center"
           );
           this.addButton(
             "back",
-            12,
-            actionY,
-            366,
-            40
+            63,
+            325,
+            264,
+            46
           );
         }
         render(ctx2) {
@@ -18329,6 +18324,9 @@
             shop.id
           );
           const metrics = this.getMetrics();
+          if (!metrics) {
+            return;
+          }
           const plan = metrics.plan;
           ctx2.save();
           ctx2.fillStyle = COLORS.paper;
@@ -18354,50 +18352,65 @@
           this.drawTemplateStrip(
             ctx2
           );
-          this.drawFloorTabs(
-            ctx2,
-            plan
-          );
           const floor = metrics.floors[plan.activeFloor];
-          this.drawFloorPlan(
-            ctx2,
-            metrics,
-            floor
-          );
-          this.drawTopMetrics(
-            ctx2,
-            metrics
-          );
-          this.drawPageTabs(
-            ctx2
-          );
-          if (this.page === "layout") {
-            this.renderLayoutPage(
+          if (this.page === "rooms") {
+            this.renderRooms(
               ctx2,
-              floor
-            );
-          } else if (this.page === "tables") {
-            this.renderTablesPage(
-              ctx2,
-              floor
-            );
-          } else if (this.page === "rooms") {
-            this.renderRoomsPage(
-              ctx2,
+              metrics,
               floor
             );
           } else if (this.page === "style") {
-            this.renderStylePage(
+            this.renderStyle(
               ctx2,
               metrics
             );
+          } else if (this.page === "templates") {
+            this.renderTemplates(
+              ctx2
+            );
           } else {
-            this.renderTemplatesPage(
+            this.drawFloorPlan(
+              ctx2,
+              metrics,
+              floor
+            );
+            this.drawTablePicker(
+              ctx2,
+              floor
+            );
+            this.drawMetrics(
+              ctx2,
+              metrics
+            );
+            this.drawFooter(
               ctx2,
               metrics
             );
           }
           ctx2.restore();
+        }
+        saveTemplate(mode) {
+          const templates = customizationSystem.getTemplateList();
+          textInput.requestText({
+            title: mode === "save-as" ? "\u53E6\u5B58\u88C5\u4FEE\u6A21\u677F" : "\u4FDD\u5B58\u88C5\u4FEE\u6A21\u677F",
+            value: renovationConfig.templateRules.defaultNamePrefix + (templates.length + 1),
+            placeholder: "\u8BF7\u8F93\u5165\u6A21\u677F\u540D\u79F0",
+            maxLength: renovationConfig.nameRules.templateMaxLength
+          }).then(
+            (value) => {
+              if (!value) {
+                return;
+              }
+              const result = customizationSystem.saveTemplate(
+                this.shopId,
+                value
+              );
+              this.showToast(
+                result.ok ? "\u6A21\u677F\u5DF2\u4FDD\u5B58" : result.message
+              );
+              textInput.requestRender();
+            }
+          );
         }
         handleTap(x, y) {
           const item = this.hitButton(
@@ -18408,90 +18421,85 @@
             return false;
           }
           const id = item.id;
-          if (id === "template:quick-save" || id === "template:save-as") {
-            const templates = customizationSystem.getTemplateList();
-            textInput.requestText({
-              title: id === "template:save-as" ? "\u53E6\u5B58\u88C5\u4FEE\u6A21\u677F" : "\u4FDD\u5B58\u88C5\u4FEE\u6A21\u677F",
-              value: renovationConfig.templateRules.defaultNamePrefix + (templates.length + 1),
-              placeholder: "\u8BF7\u8F93\u5165\u6A21\u677F\u540D\u79F0",
-              maxLength: renovationConfig.nameRules.templateMaxLength
-            }).then(
-              (value) => {
-                if (!value) {
-                  return;
-                }
-                const result = customizationSystem.saveTemplate(
-                  this.shopId,
-                  value
-                );
-                this.showToast(
-                  result.ok ? "\u6A21\u677F\u5DF2\u4FDD\u5B58" : result.message
-                );
-                textInput.requestRender();
-              }
-            );
-            return true;
-          }
           if (id === "back") {
             sceneManager.switchTo(
               "shop"
             );
             return true;
           }
-          if (id === "history:undo") {
-            const result = renovationSystem.undo(
-              this.shopId
+          if (id === "shop:rename") {
+            const shop = this.getShop();
+            if (!shop) {
+              return true;
+            }
+            textInput.requestText({
+              title: "\u4FEE\u6539\u9152\u697C\u540D\u79F0",
+              value: shop.name || "",
+              placeholder: "\u8BF7\u8F93\u5165\u9152\u697C\u540D\u79F0",
+              maxLength: renovationConfig.nameRules.shopMaxLength
+            }).then(
+              (value) => {
+                if (!value) {
+                  return;
+                }
+                const result = customizationSystem.renameShop(
+                  this.shopId,
+                  value
+                );
+                this.showToast(
+                  result.ok ? "\u9152\u697C\u540D\u79F0\u5DF2\u4FDD\u5B58" : result.message
+                );
+                textInput.requestRender();
+              }
             );
+            return true;
+          }
+          if (id === "template:save") {
+            this.saveTemplate(
+              "save"
+            );
+            return true;
+          }
+          if (id === "template:save-as") {
+            this.saveTemplate(
+              "save-as"
+            );
+            return true;
+          }
+          if (id === "history:undo") {
             this.showToast(
-              result ? "\u5DF2\u64A4\u9500\u4E0A\u4E00\u6B65" : "\u6CA1\u6709\u53EF\u64A4\u9500\u64CD\u4F5C"
+              renovationSystem.undo(
+                this.shopId
+              ) ? "\u5DF2\u64A4\u9500" : "\u6CA1\u6709\u53EF\u64A4\u9500\u64CD\u4F5C"
             );
             return true;
           }
           if (id === "history:redo") {
-            const result = renovationSystem.redo(
-              this.shopId
-            );
             this.showToast(
-              result ? "\u5DF2\u91CD\u505A" : "\u6CA1\u6709\u53EF\u91CD\u505A\u64CD\u4F5C"
+              renovationSystem.redo(
+                this.shopId
+              ) ? "\u5DF2\u91CD\u505A" : "\u6CA1\u6709\u53EF\u91CD\u505A\u64CD\u4F5C"
             );
             return true;
           }
-          if (id === "shop:rename") {
-            const shop = this.getShop();
-            if (shop) {
-              textInput.requestText({
-                title: "\u4FEE\u6539\u9152\u697C\u540D\u79F0",
-                value: shop.name || "",
-                placeholder: "\u8BF7\u8F93\u5165\u9152\u697C\u540D\u79F0",
-                maxLength: renovationConfig.nameRules.shopMaxLength
-              }).then(
-                (value) => {
-                  if (!value) {
-                    return;
-                  }
-                  const result = customizationSystem.renameShop(
-                    this.shopId,
-                    value
-                  );
-                  this.showToast(
-                    result.ok ? "\u9152\u697C\u540D\u79F0\u5DF2\u4FDD\u5B58" : result.message
-                  );
-                  textInput.requestRender();
-                }
+          if (id === "preview") {
+            const metrics = this.getMetrics();
+            if (metrics) {
+              this.showToast(
+                "\u5EA7\u4F4D " + metrics.totalSeats + " \xB7 \u8212\u9002\u5EA6 " + Math.round(
+                  metrics.comfort * 100
+                ) + " \xB7 \u5438\u5F15\u529B " + Math.round(
+                  metrics.appeal * 100
+                )
               );
             }
             return true;
           }
-          const plan = this.getPlan();
-          const floorIndex = plan.activeFloor;
-          if (id.indexOf(
-            "floor:"
-          ) === 0) {
+          if (id === "floor:next") {
+            const plan2 = this.getPlan();
             renovationSystem.setActiveFloor(
               this.shopId,
-              Number(
-                id.split(":")[1]
-              )
+              (plan2.activeFloor + 1) % plan2.floors.length
             );
             return true;
           }
@@ -18501,30 +18509,8 @@
             this.page = id.split(":")[1];
             return true;
           }
-          if (id.indexOf(
-            "zone:"
-          ) === 0) {
-            const parts = id.split(":");
-            const map = {
-              kitchen: "kitchenRatio",
-              storage: "storageRatio",
-              service: "serviceRatio"
-            };
-            renovationSystem.adjustZone(
-              this.shopId,
-              floorIndex,
-              map[parts[1]],
-              parts[2] === "plus" ? 0.02 : -0.02
-            );
-            return true;
-          }
-          if (id === "aisle:cycle") {
-            renovationSystem.cycleAisle(
-              this.shopId,
-              floorIndex
-            );
-            return true;
-          }
+          const plan = this.getPlan();
+          const floorIndex = plan.activeFloor;
           if (id.indexOf(
             "table:"
           ) === 0) {
@@ -18537,6 +18523,30 @@
               ),
               parts[2] === "plus" ? 1 : -1
             );
+            return true;
+          }
+          if (id === "style:hall") {
+            renovationSystem.cycleGlobal(
+              this.shopId,
+              "hallStyle"
+            );
+            this.page = "style";
+            return true;
+          }
+          if (id === "style:material") {
+            renovationSystem.cycleGlobal(
+              this.shopId,
+              "materialGrade"
+            );
+            this.page = "style";
+            return true;
+          }
+          if (id === "style:lighting") {
+            renovationSystem.cycleGlobal(
+              this.shopId,
+              "lightingLevel"
+            );
+            this.page = "style";
             return true;
           }
           if (id === "room:add") {
@@ -18553,7 +18563,7 @@
               "room:rename:".length
             );
             const room = plan.floors[floorIndex].privateRooms.find(
-              (item2) => item2.id === roomId
+              (value) => value.id === roomId
             );
             if (room) {
               textInput.requestText({
@@ -18616,30 +18626,6 @@
             );
             return true;
           }
-          if (id === "template:save") {
-            const templates = customizationSystem.getTemplateList();
-            textInput.requestText({
-              title: "\u4FDD\u5B58\u88C5\u4FEE\u6A21\u677F",
-              value: renovationConfig.templateRules.defaultNamePrefix + (templates.length + 1),
-              placeholder: "\u8BF7\u8F93\u5165\u6A21\u677F\u540D\u79F0",
-              maxLength: renovationConfig.nameRules.templateMaxLength
-            }).then(
-              (value) => {
-                if (!value) {
-                  return;
-                }
-                const result = customizationSystem.saveTemplate(
-                  this.shopId,
-                  value
-                );
-                this.showToast(
-                  result.ok ? "\u88C5\u4FEE\u6A21\u677F\u5DF2\u4FDD\u5B58" : result.message
-                );
-                textInput.requestRender();
-              }
-            );
-            return true;
-          }
           if (id.indexOf(
             "template:apply:"
           ) === 0) {
@@ -18650,11 +18636,9 @@
               )
             );
             this.showToast(
-              result.ok ? result.metrics.valid ? "\u6A21\u677F\u5DF2\u5957\u7528\u5E76\u81EA\u52A8\u9002\u914D\u5F53\u524D\u95E8\u5E97" : "\u6A21\u677F\u5DF2\u5957\u7528\uFF0C\u4F46\u5F53\u524D\u9762\u79EF\u9700\u8981\u7EE7\u7EED\u8C03\u6574" : result.message
+              result.ok ? "\u6A21\u677F\u5DF2\u5957\u7528" : result.message
             );
-            if (result.ok) {
-              this.page = "layout";
-            }
+            this.page = "layout";
             return true;
           }
           if (id.indexOf(
@@ -18663,13 +18647,13 @@
             const templateId = id.slice(
               "template:rename:".length
             );
-            const template = customizationSystem.getTemplateList().find(
-              (item2) => item2.id === templateId
+            const item2 = customizationSystem.getTemplateList().find(
+              (value) => value.id === templateId
             );
-            if (template) {
+            if (item2) {
               textInput.requestText({
                 title: "\u4FEE\u6539\u6A21\u677F\u540D\u79F0",
-                value: template.name,
+                value: item2.name,
                 placeholder: "\u8BF7\u8F93\u5165\u6A21\u677F\u540D\u79F0",
                 maxLength: renovationConfig.nameRules.templateMaxLength
               }).then(
@@ -18682,7 +18666,7 @@
                     value
                   );
                   this.showToast(
-                    result.ok ? "\u6A21\u677F\u540D\u79F0\u5DF2\u66F4\u65B0" : result.message
+                    result.ok ? "\u6A21\u677F\u540D\u79F0\u5DF2\u4FDD\u5B58" : result.message
                   );
                   textInput.requestRender();
                 }
@@ -18693,74 +18677,57 @@
           if (id.indexOf(
             "template:delete:"
           ) === 0) {
-            const templateId = id.slice(
-              "template:delete:".length
-            );
-            const remove = () => {
-              const result = customizationSystem.deleteTemplate(
-                templateId
-              );
-              this.showToast(
-                result.ok ? "\u6A21\u677F\u5DF2\u5220\u9664" : result.message
-              );
-              textInput.requestRender();
-            };
-            if (api && typeof api.showModal === "function") {
-              api.showModal({
-                title: "\u5220\u9664\u88C5\u4FEE\u6A21\u677F",
-                content: "\u5220\u9664\u540E\u4E0D\u80FD\u6062\u590D\uFF0C\u786E\u5B9A\u5220\u9664\u5417\uFF1F",
-                confirmText: "\u5220\u9664",
-                cancelText: "\u53D6\u6D88",
-                success: (result) => {
-                  if (result && result.confirm) {
-                    remove();
-                  }
-                }
-              });
-            } else {
-              remove();
-            }
-            return true;
-          }
-          if (id === "style:hall") {
-            renovationSystem.cycleGlobal(
-              this.shopId,
-              "hallStyle"
-            );
-            return true;
-          }
-          if (id === "style:material") {
-            renovationSystem.cycleGlobal(
-              this.shopId,
-              "materialGrade"
-            );
-            return true;
-          }
-          if (id === "style:lighting") {
-            renovationSystem.cycleGlobal(
-              this.shopId,
-              "lightingLevel"
-            );
-            return true;
-          }
-          if (id.indexOf(
-            "contractor:"
-          ) === 0) {
-            renovationSystem.selectContractor(
-              this.shopId,
+            const result = customizationSystem.deleteTemplate(
               id.slice(
-                "contractor:".length
+                "template:delete:".length
               )
+            );
+            this.showToast(
+              result.ok ? "\u6A21\u677F\u5DF2\u5220\u9664" : result.message
             );
             return true;
           }
           if (id === "construction:start") {
-            const result = renovationSystem.startConstruction(
+            const metrics = this.getMetrics();
+            if (!metrics) {
+              return true;
+            }
+            const quotes = renovationSystem.getContractorQuotes(
               this.shopId
             );
-            this.showToast(
-              result.ok ? "\u5DF2\u5F00\u5DE5\uFF0C\u9884\u8BA1\u7B2C" + result.finishDay + "\u5929\u5B8C\u6210" : result.message
-            );
+            const quote = quotes[0];
+            const start = () => {
+              if (quote) {
+                renovationSystem.selectContractor(
+                  this.shopId,
+                  quote.id
+                );
+              }
+              const result = renovationSystem.startConstruction(
+                this.shopId
+              );
+              this.showToast(
+                result.ok ? "\u65BD\u5DE5\u5DF2\u7ECF\u5F00\u59CB" : result.message
+              );
+              textInput.requestRender();
+            };
+            if (api && typeof api.showModal === "function" && quote) {
+              api.showModal({
+                title: "\u786E\u8BA4\u88C5\u4FEE\u65BD\u5DE5",
+                content: quote.name + "\n\u62A5\u4EF7 " + money(
+                  quote.price
+                ) + " \xB7 \u5DE5\u671F " + quote.days + "\u5929 \xB7 \u53EF\u9760\u5EA6 " + quote.reliability + "\u3002\n\u786E\u8BA4\u5F00\u59CB\u65BD\u5DE5\uFF1F",
+                confirmText: "\u5F00\u59CB\u65BD\u5DE5",
+                cancelText: "\u518D\u8C03\u6574",
+                success: (result) => {
+                  if (result && result.confirm) {
+                    start();
+                  }
+                }
+              });
+            } else {
+              start();
+            }
             return true;
           }
           return false;
@@ -20756,14 +20723,14 @@
         };
       }
       function updateLayout() {
-        TOP_H = (VIEW_H < 740 ? 88 : 94) + SAFE_TOP;
+        TOP_H = (VIEW_H < 740 ? 91 : 97) + SAFE_TOP;
         NAV_H = (VIEW_H < 740 ? 61 : 66) + SAFE_BOTTOM;
         MAP_X = 0;
         MAP_Y = TOP_H;
         MAP_W = VIEW_W;
         NAV_Y = VIEW_H - NAV_H;
         MAP_H = NAV_Y - MAP_Y;
-        CARD_H = VIEW_H < 740 ? 128 : 150;
+        CARD_H = VIEW_H < 740 ? 126 : 144;
         CARD_X = 7;
         CARD_W = VIEW_W - 14;
         CARD_Y = NAV_Y - CARD_H - 7;
@@ -21146,74 +21113,67 @@
         const world = gameState.getWorld();
         const display = timeSystem.getDisplayState();
         let cityName = gameState.getCityName();
-        if (cityName === "\u672A\u547D\u540D\u57CE\u5E02") {
+        if (!cityName || cityName === "\u672A\u547D\u540D\u57CE\u5E02") {
           cityName = "\u4E91\u5DDE\u5E02";
         }
-        const gradient = ctx2.createLinearGradient(
-          0,
-          0,
-          VIEW_W,
-          TOP_H
-        );
-        gradient.addColorStop(
-          0,
-          "#0A4166"
-        );
-        gradient.addColorStop(
-          0.55,
-          "#164F72"
-        );
-        gradient.addColorStop(
-          1,
-          "#0A2C45"
-        );
-        ctx2.fillStyle = gradient;
-        ctx2.fillRect(
-          0,
-          0,
-          VIEW_W,
-          TOP_H
-        );
-        const cityThumb = resourceManager.getImage(
+        const headerImage = resourceManager.getImage(
           "city_header_thumb"
         );
-        if (cityThumb) {
+        if (headerImage) {
           drawImageFocus(
             ctx2,
-            cityThumb,
-            12,
-            9 + SAFE_TOP,
-            43,
-            43,
-            1,
+            headerImage,
+            0,
+            0,
+            VIEW_W,
+            TOP_H,
+            1.3,
             0.5,
-            0.5
+            0.52
           );
-          roundedRect(
-            12,
-            9 + SAFE_TOP,
-            43,
-            43,
-            10,
-            null,
-            "rgba(255,255,255,0.58)",
-            1
+          ctx2.fillStyle = "rgba(4,35,58,0.61)";
+          ctx2.fillRect(
+            0,
+            0,
+            VIEW_W,
+            TOP_H
           );
         } else {
-          roundedRect(
-            12,
-            9 + SAFE_TOP,
-            43,
-            43,
-            10,
-            "#E7F0F3",
-            "rgba(255,255,255,0.5)"
+          ctx2.fillStyle = COLORS.navy;
+          ctx2.fillRect(
+            0,
+            0,
+            VIEW_W,
+            TOP_H
           );
+        }
+        roundedRect(
+          10,
+          8 + SAFE_TOP,
+          45,
+          45,
+          10,
+          "rgba(255,255,255,0.92)",
+          "#F4C349"
+        );
+        if (headerImage) {
+          drawImageFocus(
+            ctx2,
+            headerImage,
+            13,
+            11 + SAFE_TOP,
+            39,
+            39,
+            1.75,
+            0.18,
+            0.54
+          );
+        } else {
           drawText(
             "\u57CE",
-            33.5,
+            32.5,
             30 + SAFE_TOP,
-            16,
+            15,
             COLORS.navy,
             "800",
             "center"
@@ -21221,155 +21181,167 @@
         }
         drawText(
           cityName,
-          64,
-          19 + SAFE_TOP,
+          66,
+          20 + SAFE_TOP,
           15.5,
           COLORS.white,
           "800"
         );
         drawText(
           "\u6253\u9020\u5C5E\u4E8E\u4F60\u7684\u7F8E\u98DF\u5E1D\u56FD",
-          64,
-          40 + SAFE_TOP,
-          7.3,
-          "rgba(255,255,255,0.79)",
+          66,
+          42 + SAFE_TOP,
+          7.2,
+          "#DFEEF4",
           "600"
         );
-        const weather = WEATHER_NAMES[world.weather] || "\u591A\u4E91";
         drawText(
-          weather + " " + (Number.isFinite(
-            Number(
-              world.temperature
-            )
-          ) ? world.temperature + "\u2103" : ""),
-          188,
-          20 + SAFE_TOP,
-          7.8,
-          "#FFF0B5",
+          WEATHER_NAMES[world.weather] || "\u6674",
+          184,
+          21 + SAFE_TOP,
+          7.7,
+          "#FFF1B2",
           "700",
           "center"
         );
         drawText(
-          display.date + " \xB7 " + display.time,
-          188,
-          40 + SAFE_TOP,
-          7,
+          Number.isFinite(
+            Number(
+              world.temperature
+            )
+          ) ? world.temperature + "\u2103" : "",
+          184,
+          42 + SAFE_TOP,
+          6.8,
           "#D7E8EE",
           "600",
           "center"
         );
         roundedRect(
-          225,
-          8 + SAFE_TOP,
-          95,
-          46,
+          217,
+          9 + SAFE_TOP,
+          101,
+          45,
           12,
-          "rgba(5,36,54,0.78)",
-          "rgba(255,255,255,0.28)"
+          "rgba(5,39,60,0.86)",
+          "rgba(255,255,255,0.30)"
         );
         drawText(
           "\xA5" + player.cash.toLocaleString(),
-          272.5,
+          267.5,
           24 + SAFE_TOP,
-          11.5,
-          "#FFF2B3",
+          11,
+          "#FFF0A8",
           "800",
           "center"
         );
         drawText(
           "\u53EF\u7528\u8D44\u91D1",
-          272.5,
+          267.5,
           42 + SAFE_TOP,
-          6.5,
-          "#D7E8EE",
+          6.3,
+          "#D6E7ED",
           "600",
           "center"
         );
         roundedRect(
-          326,
-          8 + SAFE_TOP,
-          52,
-          46,
+          325,
+          9 + SAFE_TOP,
+          55,
+          45,
           12,
-          "rgba(5,36,54,0.78)",
-          "rgba(255,255,255,0.28)"
+          "rgba(5,39,60,0.86)",
+          "rgba(255,255,255,0.30)"
         );
         drawText(
           "\u265B Lv.1",
-          352,
-          24 + SAFE_TOP,
-          8.5,
-          "#FFE393",
+          352.5,
+          23 + SAFE_TOP,
+          8.2,
+          "#FFE081",
           "800",
           "center"
         );
         roundedRect(
           334,
-          41 + SAFE_TOP,
-          36,
+          42 + SAFE_TOP,
+          37,
           3,
           1.5,
-          "rgba(255,255,255,0.23)"
+          "rgba(255,255,255,0.24)"
         );
         roundedRect(
           334,
-          41 + SAFE_TOP,
-          8,
+          42 + SAFE_TOP,
+          9,
           3,
           1.5,
           COLORS.gold
         );
         const speedItems = [
-          ["time:pause", timeSystem.isPaused() ? "\u25B6" : "\u2161"],
-          ["time:speed:1", "1\xD7"],
-          ["time:speed:2", "2\xD7"],
-          ["time:speed:5", "5\xD7"],
-          ["time:speed:10", "10\xD7"]
+          [
+            "time:pause",
+            timeSystem.isPaused() ? "\u25B6" : "\u2161"
+          ],
+          [
+            "time:speed:1",
+            "1\xD7"
+          ],
+          [
+            "time:speed:2",
+            "2\xD7"
+          ],
+          [
+            "time:speed:5",
+            "5\xD7"
+          ],
+          [
+            "time:speed:10",
+            "10\xD7"
+          ]
         ];
-        const speedY = TOP_H - 28;
-        const startX = 13;
+        const y = TOP_H - 27;
         for (let i = 0; i < speedItems.length; i++) {
-          const item = speedItems[i];
-          const id = item[0];
+          const id = speedItems[i][0];
           const speed = timeSystem.getSpeed();
           const paused = timeSystem.isPaused();
           const active = id === "time:pause" ? paused : !paused && Number(
             id.split(":")[2]
           ) === speed;
-          const x = startX + i * 45;
+          const x = 12 + i * 45;
           roundedRect(
             x,
-            speedY,
+            y,
             39,
-            22,
+            21,
             8,
-            active ? COLORS.gold : "rgba(3,35,52,0.62)",
-            active ? "#FFE29C" : "rgba(255,255,255,0.22)"
+            active ? COLORS.gold : "rgba(4,40,60,0.82)",
+            active ? "#FFE38D" : "rgba(255,255,255,0.20)"
           );
           drawText(
-            item[1],
+            speedItems[i][1],
             x + 19.5,
-            speedY + 11,
-            8.3,
-            active ? "#22353F" : COLORS.white,
+            y + 10.5,
+            8,
+            active ? "#173444" : COLORS.white,
             "800",
             "center"
           );
           addButton(
             id,
             x - 3,
-            speedY - 5,
+            y - 5,
             45,
-            32
+            31
           );
         }
         drawText(
-          MEAL_NAMES[display.mealPeriod] || "",
+          display.date + " \xB7 " + display.time + " \xB7 " + (MEAL_NAMES[display.mealPeriod] || ""),
           375,
-          speedY + 11,
-          7.1,
-          "#D6E7ED",
-          "700",
+          y + 10.5,
+          6.5,
+          "#DCEBF0",
+          "600",
           "right"
         );
       }
@@ -21444,95 +21416,78 @@
         const x = point.x;
         const y = point.y;
         const selected = selectedDistrictId === district.id;
-        const animated = districtFx.id === district.id;
-        const markerScale = animated ? districtFx.scale : 1;
-        const color = selected ? "#FFC73D" : "#F1B22D";
-        ctx2.save();
-        ctx2.translate(
-          x,
-          y
-        );
-        ctx2.scale(
-          markerScale,
-          markerScale
+        const markerKeys = {
+          university: "district_marker_gold",
+          hightech: "district_marker_blue",
+          cbd: "district_marker_orange",
+          oldtown: "district_marker_purple",
+          village: "district_marker_green",
+          market: "district_marker_red",
+          industry: "district_marker_blue"
+        };
+        const image = resourceManager.getImage(
+          markerKeys[district.id]
         );
         if (selected) {
           ctx2.beginPath();
           ctx2.arc(
-            0,
-            1,
-            18 + districtFx.flash * 4,
+            x,
+            y,
+            20 + districtFx.flash * 4,
             0,
             Math.PI * 2
           );
-          ctx2.fillStyle = "rgba(255,193,52,0.20)";
+          ctx2.fillStyle = "rgba(255,191,45,0.22)";
           ctx2.fill();
         }
-        ctx2.beginPath();
-        ctx2.moveTo(
-          0,
-          13
-        );
-        ctx2.lineTo(
-          -7,
-          0
-        );
-        ctx2.arc(
-          0,
-          0,
-          8,
-          Math.PI,
-          0,
-          false
-        );
-        ctx2.closePath();
-        ctx2.fillStyle = color;
-        ctx2.shadowColor = "rgba(0,0,0,0.30)";
-        ctx2.shadowBlur = 5;
-        ctx2.fill();
-        ctx2.shadowColor = "transparent";
-        ctx2.beginPath();
-        ctx2.arc(
-          0,
-          0,
-          4,
-          0,
-          Math.PI * 2
-        );
-        ctx2.fillStyle = COLORS.navy;
-        ctx2.fill();
-        ctx2.restore();
+        if (image) {
+          ctx2.drawImage(
+            image,
+            x - 16,
+            y - 23,
+            32,
+            44
+          );
+        } else {
+          ctx2.beginPath();
+          ctx2.arc(
+            x,
+            y,
+            8,
+            0,
+            Math.PI * 2
+          );
+          ctx2.fillStyle = COLORS.gold;
+          ctx2.fill();
+        }
         const labelW = Math.max(
-          55,
-          Math.min(
-            82,
-            24 + district.name.length * 11
-          )
+          63,
+          31 + district.name.length * 10
         );
         roundedRect(
           x + 8,
           y - 11,
           labelW,
-          22,
+          23,
           11,
-          "rgba(6,45,66,0.90)",
-          "rgba(255,255,255,0.28)"
+          "#063C5B",
+          "#F0BA37"
         );
         drawText(
-          district.name + " \u203A",
+          district.name + "  \u203A",
           x + 8 + labelW / 2,
-          y,
-          7.7,
-          COLORS.white,
+          y + 0.5,
+          7.6,
+          "#F8FBFC",
           "800",
           "center"
         );
         addButton(
           "district:" + district.id,
-          x - 17,
-          y - 23,
-          labelW + 35,
-          50
+          x - 20,
+          y - 28,
+          labelW + 42,
+          56
         );
       }
       function startDistrictFx(districtId) {
@@ -21581,28 +21536,28 @@
           w,
           h,
           15,
-          "rgba(5,40,61,0.88)",
-          "rgba(74,184,235,0.45)"
+          "rgba(3,40,62,0.92)",
+          "rgba(73,192,239,0.52)"
         );
         drawText(
           "\u{1F4E3} \u57CE\u5E02\u901A\u62A5",
           x + 13,
           y + 15.5,
-          7.4,
-          "#FFD25C",
+          7,
+          "#FFD66B",
           "800"
         );
         drawText(
           fitText(
-            bulletin.title + " \xB7 " + bulletin.detail,
-            w - 118,
-            6.8,
+            bulletin.title + "  \xB7  " + bulletin.detail,
+            w - 116,
+            6.5,
             "600"
           ),
-          x + 86,
+          x + 87,
           y + 15.5,
-          6.8,
-          COLORS.white,
+          6.5,
+          "#F3FAFC",
           "600"
         );
         drawText(
@@ -21610,7 +21565,7 @@
           x + w - 14,
           y + 15.5,
           14,
-          "#FFE49F",
+          "#FFE49C",
           "800",
           "center"
         );
@@ -21629,24 +21584,24 @@
           x,
           y,
           w,
-          37,
+          38,
           9,
-          "rgba(246,244,238,0.95)",
-          "rgba(16,54,74,0.08)"
+          "#F7F4EE",
+          "rgba(15,53,73,0.08)"
         );
         drawText(
           label,
           x + 8,
           y + 10,
-          6.1,
+          5.8,
           COLORS.muted,
           "700"
         );
         drawText(
           value,
           x + 8,
-          y + 26,
-          8.2,
+          y + 27,
+          8.1,
           color,
           "800"
         );
@@ -21662,30 +21617,30 @@
           w,
           h,
           16,
-          "rgba(255,253,247,0.97)",
-          "rgba(15,52,73,0.24)",
+          "rgba(255,253,247,0.985)",
+          "rgba(17,53,72,0.25)",
           1
         );
         if (!selectedDistrictId) {
           drawText(
-            "\u9009\u62E9\u4E00\u4E2A\u5546\u5708",
+            "\u8BF7\u9009\u62E9\u4E00\u4E2A\u5546\u5708",
             18,
-            y + 23,
-            12.5,
+            y + 22,
+            12.3,
             COLORS.text,
             "800"
           );
           drawText(
-            "\u70B9\u51FB\u5730\u56FE\u5730\u70B9\u67E5\u770B\u4EBA\u53E3\u3001\u9700\u6C42\u3001\u5BA2\u5355\u3001\u7ADE\u4E89\u548C\u79DF\u91D1",
+            "\u70B9\u51FB\u5730\u56FE\u5730\u70B9\uFF0C\u67E5\u770B\u7ECF\u8425\u6570\u636E\u4E0E\u5F00\u5E97\u673A\u4F1A",
             18,
-            y + 44,
-            7,
+            y + 43,
+            6.8,
             COLORS.muted,
             "600"
           );
           drawMetricChip(
             18,
-            y + 57,
+            y + 58,
             108,
             "\u4EBA\u53E3",
             "--",
@@ -21693,17 +21648,17 @@
           );
           drawMetricChip(
             141,
-            y + 57,
+            y + 58,
             108,
-            "\u9700\u6C42",
+            "\u65E5\u9700\u6C42",
             "--",
             COLORS.danger
           );
           drawMetricChip(
             264,
-            y + 57,
+            y + 58,
             108,
-            "\u5BA2\u5355",
+            "\u5BA2\u5355\u4EF7",
             "--",
             COLORS.green
           );
@@ -21725,107 +21680,116 @@
           drawImageFocus(
             ctx2,
             thumb,
-            x + 10,
-            y + 10,
-            92,
-            h - 20,
-            1.2,
+            x + 9,
+            y + 9,
+            91,
+            h - 18,
+            1.45,
             0.5,
-            0.45
+            0.55
           );
           roundedRect(
-            x + 10,
-            y + 10,
-            92,
-            h - 20,
+            x + 9,
+            y + 9,
+            91,
+            h - 18,
             11,
             null,
-            "rgba(8,43,62,0.15)"
+            "rgba(9,45,63,0.16)"
           );
         }
         drawText(
           district.name,
-          x + 114,
-          y + 23,
-          14,
+          x + 112,
+          y + 22,
+          13.4,
           COLORS.text,
           "800"
         );
         drawText(
-          (district.saturation >= simulationConfig.city.competitionBands.high ? "\u7ADE\u4E89\u8F83\u5F3A" : "\u4ECD\u6709\u673A\u4F1A") + " \xB7 \u6D88\u8D39\u529B " + (district.avgSpend >= 60 ? "\u8F83\u9AD8" : district.avgSpend >= 40 ? "\u4E2D\u7B49" : "\u4EB2\u6C11"),
-          x + 114,
-          y + 43,
-          6.8,
-          COLORS.muted,
+          district.saturation >= 95 ? "\u7ADE\u4E89\u6FC0\u70C8 \xB7 \u4ECD\u9700\u8C28\u614E\u9009\u5740" : "\u5BA2\u7FA4\u6D3B\u8DC3 \xB7 \u4ECD\u6709\u7ECF\u8425\u673A\u4F1A",
+          x + 112,
+          y + 42,
+          6.3,
+          district.saturation >= 95 ? COLORS.danger : COLORS.blue,
           "600"
         );
         const metrics = [
-          ["\u4EBA\u53E3", district.population.toLocaleString(), COLORS.blue],
-          ["\u9700\u6C42", currentDemand.toLocaleString(), COLORS.danger],
-          ["\u5BA2\u5355", "\xA5" + district.avgSpend, COLORS.green],
-          ["\u9910\u996E\u5E97", district.restaurantCount + "\u5BB6", COLORS.navy],
-          ["\u9971\u548C\u5EA6", district.saturation + "%", COLORS.orange],
-          ["\u79DF\u91D1", district.rentIndex.toFixed(2), COLORS.navy]
-        ];
-        const metricY = y + 54;
-        const metricW = 41;
-        for (let i = 0; i < metrics.length; i++) {
-          const mx = x + 113 + i * 43;
-          roundedRect(
-            mx,
-            metricY,
-            metricW,
-            45,
-            8,
-            "#F6F3ED",
-            "rgba(16,54,74,0.07)"
-          );
-          drawText(
-            metrics[i][0],
-            mx + 5,
-            metricY + 11,
-            5.4,
-            COLORS.muted,
-            "700"
-          );
-          drawText(
-            fitText(
-              metrics[i][1],
-              metricW - 9,
-              7.2,
-              "800"
+          [
+            "\u4EBA\u53E3",
+            district.population.toLocaleString(),
+            COLORS.blue
+          ],
+          [
+            "\u9700\u6C42",
+            currentDemand.toLocaleString(),
+            COLORS.green
+          ],
+          [
+            "\u5BA2\u5355",
+            "\xA5" + district.avgSpend,
+            COLORS.navy
+          ],
+          [
+            "\u9910\u996E\u5E97",
+            district.restaurantCount + "\u5BB6",
+            COLORS.navy
+          ],
+          [
+            "\u9971\u548C\u5EA6",
+            district.saturation + "%",
+            district.saturation >= 95 ? COLORS.danger : COLORS.blue
+          ],
+          [
+            "\u79DF\u91D1",
+            district.rentIndex.toFixed(
+              2
             ),
-            mx + 5,
-            metricY + 29,
-            7.2,
-            metrics[i][2],
-            "800"
+            COLORS.navy
+          ]
+        ];
+        for (let i = 0; i < metrics.length; i++) {
+          drawMetricChip(
+            x + 111 + i * 43,
+            y + 53,
+            40,
+            metrics[i][0],
+            metrics[i][1],
+            metrics[i][2]
           );
         }
+        drawText(
+          "\u5B9E\u65F6\u6570\u636E\u4F1A\u968F\u4EBA\u53E3\u3001\u57CE\u5E02\u4E8B\u4EF6\u3001\u7ADE\u4E89\u548C\u79DF\u91D1\u53D8\u5316",
+          x + 112,
+          y + 107,
+          5.8,
+          COLORS.muted,
+          "600"
+        );
         roundedRect(
-          x + 205,
-          y + h - 38,
-          158,
+          x + 263,
+          y + h - 39,
+          101,
           31,
           15,
           COLORS.gold,
-          "#DBA324"
+          "#D99E22"
         );
         drawText(
           "\u8FDB\u5165\u5546\u5708  \u203A",
-          x + 284,
-          y + h - 22.5,
-          8.4,
-          "#23343D",
+          x + 313.5,
+          y + h - 23.5,
+          8,
+          "#213541",
           "800",
           "center"
         );
         addButton(
           "district:details",
-          x + 196,
-          y + h - 44,
-          176,
-          43
+          x + 255,
+          y + h - 45,
+          117,
+          44
         );
       }
       function drawBottomNav() {
@@ -21837,11 +21801,11 @@
         );
         gradient.addColorStop(
           0,
-          "#0B3B57"
+          "#0A405E"
         );
         gradient.addColorStop(
           1,
-          "#06263A"
+          "#05263A"
         );
         ctx2.fillStyle = gradient;
         ctx2.fillRect(
@@ -21850,7 +21814,7 @@
           VIEW_W,
           NAV_H
         );
-        ctx2.fillStyle = "rgba(75,190,240,0.30)";
+        ctx2.fillStyle = "rgba(84,194,237,0.28)";
         ctx2.fillRect(
           0,
           NAV_Y,
@@ -21865,21 +21829,21 @@
           const active = item.id === current || item.id === "city" && current === "district" || item.id === "shop" && (current === "propertyMarket" || current === "equipment" || current === "license" || current === "staff") || item.id === "renovation" && current === "renovation";
           if (active) {
             roundedRect(
-              i * cellW + 3,
-              NAV_Y + 5,
-              cellW - 6,
-              NAV_H - 10,
+              i * cellW + 4,
+              NAV_Y + 6,
+              cellW - 8,
+              NAV_H - 12,
               11,
               COLORS.gold,
-              "#FFE29A"
+              "#FFE09A"
             );
           }
           drawText(
             item.icon,
             cx,
             NAV_Y + NAV_H * 0.34,
-            10.5,
-            active ? "#163445" : "#E6F0F4",
+            10.2,
+            active ? "#163445" : "#E7F1F4",
             "800",
             "center"
           );
@@ -21887,7 +21851,7 @@
             item.name,
             cx,
             NAV_Y + NAV_H * 0.72,
-            6.7,
+            6.4,
             active ? "#153342" : "#E0EBEF",
             active ? "800" : "600",
             "center"
@@ -22231,6 +22195,36 @@
             "city_header_thumb",
             "assets/images/premium/district/header_city.jpg",
             "city"
+          ),
+          resourceManager.loadImage(
+            "district_marker_gold",
+            "assets/images/split/ui/marker_gold.png",
+            "city"
+          ),
+          resourceManager.loadImage(
+            "district_marker_blue",
+            "assets/images/split/ui/marker_blue.png",
+            "city"
+          ),
+          resourceManager.loadImage(
+            "district_marker_orange",
+            "assets/images/split/ui/marker_orange.png",
+            "city"
+          ),
+          resourceManager.loadImage(
+            "district_marker_purple",
+            "assets/images/split/ui/marker_purple.png",
+            "city"
+          ),
+          resourceManager.loadImage(
+            "district_marker_green",
+            "assets/images/split/ui/marker_green.png",
+            "city"
+          ),
+          resourceManager.loadImage(
+            "district_marker_red",
+            "assets/images/split/ui/marker_red.png",
+            "city"
           )
         ]).then(
           function() {
@@ -22257,7 +22251,7 @@
         gameLoop
       );
       console.log(
-        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V14 \u91D1\u84DD\u9AD8\u4FDD\u771FUI\u5B9E\u88C5\u7248\u542F\u52A8\u6210\u529F"
+        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V18 \u6838\u5FC3\u56DB\u9875\u5168\u91CF\u91CD\u6784\u7248\u542F\u52A8\u6210\u529F"
       );
     }
   });

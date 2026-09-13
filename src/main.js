@@ -1,5 +1,7 @@
 'use strict';
 
+// V18_CITY_UI_REWRITE
+
 // V14_GOLDEN_UI_MAIN
 
 const runtime = globalThis.GameRuntime;
@@ -334,8 +336,8 @@ function updateLayout() {
   TOP_H =
     (
       VIEW_H < 740
-        ? 88
-        : 94
+        ? 91
+        : 97
     ) +
     SAFE_TOP;
 
@@ -361,8 +363,8 @@ function updateLayout() {
 
   CARD_H =
     VIEW_H < 740
-      ? 128
-      : 150;
+      ? 126
+      : 144;
 
   CARD_X = 7;
   CARD_W =
@@ -1186,91 +1188,82 @@ function drawTopHud() {
       .getCityName();
 
   if (
+    !cityName ||
     cityName ===
-    '未命名城市'
+      '未命名城市'
   ) {
     cityName =
       '云州市';
   }
 
-  const gradient =
-    ctx.createLinearGradient(
-      0,
-      0,
-      VIEW_W,
-      TOP_H
-    );
-
-  gradient.addColorStop(
-    0,
-    '#0A4166'
-  );
-
-  gradient.addColorStop(
-    0.55,
-    '#164F72'
-  );
-
-  gradient.addColorStop(
-    1,
-    '#0A2C45'
-  );
-
-  ctx.fillStyle =
-    gradient;
-
-  ctx.fillRect(
-    0,
-    0,
-    VIEW_W,
-    TOP_H
-  );
-
-  const cityThumb =
+  const headerImage =
     resourceManager
       .getImage(
         'city_header_thumb'
       );
 
-  if (cityThumb) {
+  if (headerImage) {
     drawImageFocus(
       ctx,
-      cityThumb,
-      12,
-      9 + SAFE_TOP,
-      43,
-      43,
-      1,
+      headerImage,
+      0,
+      0,
+      VIEW_W,
+      TOP_H,
+      1.30,
       0.5,
-      0.5
+      0.52
     );
 
-    roundedRect(
-      12,
-      9 + SAFE_TOP,
-      43,
-      43,
-      10,
-      null,
-      'rgba(255,255,255,0.58)',
-      1
+    ctx.fillStyle =
+      'rgba(4,35,58,0.61)';
+
+    ctx.fillRect(
+      0,
+      0,
+      VIEW_W,
+      TOP_H
     );
   } else {
-    roundedRect(
-      12,
-      9 + SAFE_TOP,
-      43,
-      43,
-      10,
-      '#E7F0F3',
-      'rgba(255,255,255,0.5)'
-    );
+    ctx.fillStyle =
+      COLORS.navy;
 
+    ctx.fillRect(
+      0,
+      0,
+      VIEW_W,
+      TOP_H
+    );
+  }
+
+  roundedRect(
+    10,
+    8 + SAFE_TOP,
+    45,
+    45,
+    10,
+    'rgba(255,255,255,0.92)',
+    '#F4C349'
+  );
+
+  if (headerImage) {
+    drawImageFocus(
+      ctx,
+      headerImage,
+      13,
+      11 + SAFE_TOP,
+      39,
+      39,
+      1.75,
+      0.18,
+      0.54
+    );
+  } else {
     drawText(
       '城',
-      33.5,
+      32.5,
       30 + SAFE_TOP,
-      16,
+      15,
       COLORS.navy,
       '800',
       'center'
@@ -1279,8 +1272,8 @@ function drawTopHud() {
 
   drawText(
     cityName,
-    64,
-    19 + SAFE_TOP,
+    66,
+    20 + SAFE_TOP,
     15.5,
     COLORS.white,
     '800'
@@ -1288,136 +1281,144 @@ function drawTopHud() {
 
   drawText(
     '打造属于你的美食帝国',
-    64,
-    40 + SAFE_TOP,
-    7.3,
-    'rgba(255,255,255,0.79)',
+    66,
+    42 + SAFE_TOP,
+    7.2,
+    '#DFEEF4',
     '600'
   );
 
-  const weather =
+  drawText(
     WEATHER_NAMES[
       world.weather
     ] ||
-    '多云';
-
-  drawText(
-    weather +
-      ' ' +
-      (
-        Number.isFinite(
-          Number(
-            world.temperature
-          )
-        )
-          ? world.temperature +
-            '℃'
-          : ''
-      ),
-    188,
-    20 + SAFE_TOP,
-    7.8,
-    '#FFF0B5',
+    '晴',
+    184,
+    21 + SAFE_TOP,
+    7.7,
+    '#FFF1B2',
     '700',
     'center'
   );
 
   drawText(
-    display.date +
-      ' · ' +
-      display.time,
-    188,
-    40 + SAFE_TOP,
-    7,
+    (
+      Number.isFinite(
+        Number(
+          world.temperature
+        )
+      )
+        ? world.temperature +
+          '℃'
+        : ''
+    ),
+    184,
+    42 + SAFE_TOP,
+    6.8,
     '#D7E8EE',
     '600',
     'center'
   );
 
   roundedRect(
-    225,
-    8 + SAFE_TOP,
-    95,
-    46,
+    217,
+    9 + SAFE_TOP,
+    101,
+    45,
     12,
-    'rgba(5,36,54,0.78)',
-    'rgba(255,255,255,0.28)'
+    'rgba(5,39,60,0.86)',
+    'rgba(255,255,255,0.30)'
   );
 
   drawText(
     '¥' +
       player.cash
         .toLocaleString(),
-    272.5,
+    267.5,
     24 + SAFE_TOP,
-    11.5,
-    '#FFF2B3',
+    11,
+    '#FFF0A8',
     '800',
     'center'
   );
 
   drawText(
     '可用资金',
-    272.5,
+    267.5,
     42 + SAFE_TOP,
-    6.5,
-    '#D7E8EE',
+    6.3,
+    '#D6E7ED',
     '600',
     'center'
   );
 
   roundedRect(
-    326,
-    8 + SAFE_TOP,
-    52,
-    46,
+    325,
+    9 + SAFE_TOP,
+    55,
+    45,
     12,
-    'rgba(5,36,54,0.78)',
-    'rgba(255,255,255,0.28)'
+    'rgba(5,39,60,0.86)',
+    'rgba(255,255,255,0.30)'
   );
 
   drawText(
     '♛ Lv.1',
-    352,
-    24 + SAFE_TOP,
-    8.5,
-    '#FFE393',
+    352.5,
+    23 + SAFE_TOP,
+    8.2,
+    '#FFE081',
     '800',
     'center'
   );
 
   roundedRect(
     334,
-    41 + SAFE_TOP,
-    36,
+    42 + SAFE_TOP,
+    37,
     3,
     1.5,
-    'rgba(255,255,255,0.23)'
+    'rgba(255,255,255,0.24)'
   );
 
   roundedRect(
     334,
-    41 + SAFE_TOP,
-    8,
+    42 + SAFE_TOP,
+    9,
     3,
     1.5,
     COLORS.gold
   );
 
   const speedItems = [
-    ['time:pause', timeSystem.isPaused() ? '▶' : 'Ⅱ'],
-    ['time:speed:1', '1×'],
-    ['time:speed:2', '2×'],
-    ['time:speed:5', '5×'],
-    ['time:speed:10', '10×']
+    [
+      'time:pause',
+      timeSystem
+        .isPaused()
+        ? '▶'
+        : 'Ⅱ'
+    ],
+    [
+      'time:speed:1',
+      '1×'
+    ],
+    [
+      'time:speed:2',
+      '2×'
+    ],
+    [
+      'time:speed:5',
+      '5×'
+    ],
+    [
+      'time:speed:10',
+      '10×'
+    ]
   ];
 
-  const speedY =
+  const y =
     TOP_H -
-    28;
-
-  const startX =
-    13;
+    27;
 
   for (
     let i = 0;
@@ -1425,11 +1426,8 @@ function drawTopHud() {
     speedItems.length;
     i++
   ) {
-    const item =
-      speedItems[i];
-
     const id =
-      item[0];
+      speedItems[i][0];
 
     const speed =
       timeSystem
@@ -1451,30 +1449,30 @@ function drawTopHud() {
           );
 
     const x =
-      startX +
+      12 +
       i * 45;
 
     roundedRect(
       x,
-      speedY,
+      y,
       39,
-      22,
+      21,
       8,
       active
         ? COLORS.gold
-        : 'rgba(3,35,52,0.62)',
+        : 'rgba(4,40,60,0.82)',
       active
-        ? '#FFE29C'
-        : 'rgba(255,255,255,0.22)'
+        ? '#FFE38D'
+        : 'rgba(255,255,255,0.20)'
     );
 
     drawText(
-      item[1],
+      speedItems[i][1],
       x + 19.5,
-      speedY + 11,
-      8.3,
+      y + 10.5,
+      8,
       active
-        ? '#22353F'
+        ? '#173444'
         : COLORS.white,
       '800',
       'center'
@@ -1483,22 +1481,28 @@ function drawTopHud() {
     addButton(
       id,
       x - 3,
-      speedY - 5,
+      y - 5,
       45,
-      32
+      31
     );
   }
 
   drawText(
-    MEAL_NAMES[
-      display.mealPeriod
-    ] ||
-    '',
+    display.date +
+      ' · ' +
+      display.time +
+      ' · ' +
+      (
+        MEAL_NAMES[
+          display.mealPeriod
+        ] ||
+        ''
+      ),
     375,
-    speedY + 11,
-    7.1,
-    '#D6E7ED',
-    '700',
+    y + 10.5,
+    6.5,
+    '#DCEBF0',
+    '600',
     'right'
   );
 }
@@ -1713,138 +1717,105 @@ function drawDistrictMarker(
 
   const selected =
     selectedDistrictId ===
-    district.id;
+      district.id;
 
-  const animated =
-    districtFx.id ===
-    district.id;
+  const markerKeys = {
+    university:
+      'district_marker_gold',
+    hightech:
+      'district_marker_blue',
+    cbd:
+      'district_marker_orange',
+    oldtown:
+      'district_marker_purple',
+    village:
+      'district_marker_green',
+    market:
+      'district_marker_red',
+    industry:
+      'district_marker_blue'
+  };
 
-  const markerScale =
-    animated
-      ? districtFx.scale
-      : 1;
-
-  const color =
-    selected
-      ? '#FFC73D'
-      : '#F1B22D';
-
-  ctx.save();
-
-  ctx.translate(
-    x,
-    y
-  );
-
-  ctx.scale(
-    markerScale,
-    markerScale
-  );
+  const image =
+    resourceManager
+      .getImage(
+        markerKeys[
+          district.id
+        ]
+      );
 
   if (selected) {
     ctx.beginPath();
 
     ctx.arc(
-      0,
-      1,
-      18 +
+      x,
+      y,
+      20 +
         districtFx.flash *
-        4,
+          4,
       0,
       Math.PI *
         2
     );
 
     ctx.fillStyle =
-      'rgba(255,193,52,0.20)';
+      'rgba(255,191,45,0.22)';
 
     ctx.fill();
   }
 
-  ctx.beginPath();
+  if (image) {
+    ctx.drawImage(
+      image,
+      x - 16,
+      y - 23,
+      32,
+      44
+    );
+  } else {
+    ctx.beginPath();
 
-  ctx.moveTo(
-    0,
-    13
-  );
+    ctx.arc(
+      x,
+      y,
+      8,
+      0,
+      Math.PI *
+        2
+    );
 
-  ctx.lineTo(
-    -7,
-    0
-  );
+    ctx.fillStyle =
+      COLORS.gold;
 
-  ctx.arc(
-    0,
-    0,
-    8,
-    Math.PI,
-    0,
-    false
-  );
-
-  ctx.closePath();
-
-  ctx.fillStyle =
-    color;
-
-  ctx.shadowColor =
-    'rgba(0,0,0,0.30)';
-
-  ctx.shadowBlur =
-    5;
-
-  ctx.fill();
-
-  ctx.shadowColor =
-    'transparent';
-
-  ctx.beginPath();
-
-  ctx.arc(
-    0,
-    0,
-    4,
-    0,
-    Math.PI *
-      2
-  );
-
-  ctx.fillStyle =
-    COLORS.navy;
-
-  ctx.fill();
-
-  ctx.restore();
+    ctx.fill();
+  }
 
   const labelW =
     Math.max(
-      55,
-      Math.min(
-        82,
-        24 +
-          district.name.length *
-            11
-      )
+      63,
+      31 +
+        district.name.length *
+          10
     );
 
   roundedRect(
     x + 8,
     y - 11,
     labelW,
-    22,
+    23,
     11,
-    'rgba(6,45,66,0.90)',
-    'rgba(255,255,255,0.28)'
+    '#063C5B',
+    '#F0BA37'
   );
 
   drawText(
     district.name +
-      ' ›',
+      '  ›',
     x + 8 +
       labelW / 2,
-    y,
-    7.7,
-    COLORS.white,
+    y + 0.5,
+    7.6,
+    '#F8FBFC',
     '800',
     'center'
   );
@@ -1852,10 +1823,10 @@ function drawDistrictMarker(
   addButton(
     'district:' +
       district.id,
-    x - 17,
-    y - 23,
-    labelW + 35,
-    50
+    x - 20,
+    y - 28,
+    labelW + 42,
+    56
   );
 }
 
@@ -1969,32 +1940,32 @@ function drawNewsTicker() {
     w,
     h,
     15,
-    'rgba(5,40,61,0.88)',
-    'rgba(74,184,235,0.45)'
+    'rgba(3,40,62,0.92)',
+    'rgba(73,192,239,0.52)'
   );
 
   drawText(
     '📣 城市通报',
     x + 13,
     y + 15.5,
-    7.4,
-    '#FFD25C',
+    7,
+    '#FFD66B',
     '800'
   );
 
   drawText(
     fitText(
       bulletin.title +
-        ' · ' +
+        '  ·  ' +
         bulletin.detail,
-      w - 118,
-      6.8,
+      w - 116,
+      6.5,
       '600'
     ),
-    x + 86,
+    x + 87,
     y + 15.5,
-    6.8,
-    COLORS.white,
+    6.5,
+    '#F3FAFC',
     '600'
   );
 
@@ -2003,7 +1974,7 @@ function drawNewsTicker() {
     x + w - 14,
     y + 15.5,
     14,
-    '#FFE49F',
+    '#FFE49C',
     '800',
     'center'
   );
@@ -2026,8 +1997,7 @@ function drawToolButton() {
 }
 
 function drawSideTools() {
-  // V14：首页取消两侧六个大按钮。
-  // 地图操作只保留地点、新闻条和底部商圈卡，避免页游/山寨感。
+  // V18首页不再使用左右两排页游式大按钮。
 }
 
 /* =========================
@@ -2046,17 +2016,17 @@ function drawMetricChip(
     x,
     y,
     w,
-    37,
+    38,
     9,
-    'rgba(246,244,238,0.95)',
-    'rgba(16,54,74,0.08)'
+    '#F7F4EE',
+    'rgba(15,53,73,0.08)'
   );
 
   drawText(
     label,
     x + 8,
     y + 10,
-    6.1,
+    5.8,
     COLORS.muted,
     '700'
   );
@@ -2064,8 +2034,8 @@ function drawMetricChip(
   drawText(
     value,
     x + 8,
-    y + 26,
-    8.2,
+    y + 27,
+    8.1,
     color,
     '800'
   );
@@ -2090,8 +2060,8 @@ function drawDistrictCard() {
     w,
     h,
     16,
-    'rgba(255,253,247,0.97)',
-    'rgba(15,52,73,0.24)',
+    'rgba(255,253,247,0.985)',
+    'rgba(17,53,72,0.25)',
     1
   );
 
@@ -2099,26 +2069,26 @@ function drawDistrictCard() {
     !selectedDistrictId
   ) {
     drawText(
-      '选择一个商圈',
+      '请选择一个商圈',
       18,
-      y + 23,
-      12.5,
+      y + 22,
+      12.3,
       COLORS.text,
       '800'
     );
 
     drawText(
-      '点击地图地点查看人口、需求、客单、竞争和租金',
+      '点击地图地点，查看经营数据与开店机会',
       18,
-      y + 44,
-      7,
+      y + 43,
+      6.8,
       COLORS.muted,
       '600'
     );
 
     drawMetricChip(
       18,
-      y + 57,
+      y + 58,
       108,
       '人口',
       '--',
@@ -2127,18 +2097,18 @@ function drawDistrictCard() {
 
     drawMetricChip(
       141,
-      y + 57,
+      y + 58,
       108,
-      '需求',
+      '日需求',
       '--',
       COLORS.danger
     );
 
     drawMetricChip(
       264,
-      y + 57,
+      y + 58,
       108,
-      '客单',
+      '客单价',
       '--',
       COLORS.green
     );
@@ -2172,74 +2142,90 @@ function drawDistrictCard() {
     drawImageFocus(
       ctx,
       thumb,
-      x + 10,
-      y + 10,
-      92,
-      h - 20,
-      1.2,
+      x + 9,
+      y + 9,
+      91,
+      h - 18,
+      1.45,
       0.5,
-      0.45
+      0.55
     );
 
     roundedRect(
-      x + 10,
-      y + 10,
-      92,
-      h - 20,
+      x + 9,
+      y + 9,
+      91,
+      h - 18,
       11,
       null,
-      'rgba(8,43,62,0.15)'
+      'rgba(9,45,63,0.16)'
     );
   }
 
   drawText(
     district.name,
-    x + 114,
-    y + 23,
-    14,
+    x + 112,
+    y + 22,
+    13.4,
     COLORS.text,
     '800'
   );
 
   drawText(
-    (
-      district.saturation >=
-      simulationConfig
-        .city
-        .competitionBands
-        .high
-        ? '竞争较强'
-        : '仍有机会'
-    ) +
-      ' · 消费力 ' +
-      (
-        district.avgSpend >= 60
-          ? '较高'
-          : district.avgSpend >= 40
-            ? '中等'
-            : '亲民'
-      ),
-    x + 114,
-    y + 43,
-    6.8,
-    COLORS.muted,
+    district.saturation >= 95
+      ? '竞争激烈 · 仍需谨慎选址'
+      : '客群活跃 · 仍有经营机会',
+    x + 112,
+    y + 42,
+    6.3,
+    district.saturation >= 95
+      ? COLORS.danger
+      : COLORS.blue,
     '600'
   );
 
   const metrics = [
-    ['人口', district.population.toLocaleString(), COLORS.blue],
-    ['需求', currentDemand.toLocaleString(), COLORS.danger],
-    ['客单', '¥' + district.avgSpend, COLORS.green],
-    ['餐饮店', district.restaurantCount + '家', COLORS.navy],
-    ['饱和度', district.saturation + '%', COLORS.orange],
-    ['租金', district.rentIndex.toFixed(2), COLORS.navy]
+    [
+      '人口',
+      district.population
+        .toLocaleString(),
+      COLORS.blue
+    ],
+    [
+      '需求',
+      currentDemand
+        .toLocaleString(),
+      COLORS.green
+    ],
+    [
+      '客单',
+      '¥' +
+        district.avgSpend,
+      COLORS.navy
+    ],
+    [
+      '餐饮店',
+      district.restaurantCount +
+        '家',
+      COLORS.navy
+    ],
+    [
+      '饱和度',
+      district.saturation +
+        '%',
+      district.saturation >= 95
+        ? COLORS.danger
+        : COLORS.blue
+    ],
+    [
+      '租金',
+      district.rentIndex
+        .toFixed(
+          2
+        ),
+      COLORS.navy
+    ]
   ];
-
-  const metricY =
-    y + 54;
-
-  const metricW =
-    41;
 
   for (
     let i = 0;
@@ -2247,70 +2233,52 @@ function drawDistrictCard() {
     metrics.length;
     i++
   ) {
-    const mx =
-      x + 113 +
-      i * 43;
-
-    roundedRect(
-      mx,
-      metricY,
-      metricW,
-      45,
-      8,
-      '#F6F3ED',
-      'rgba(16,54,74,0.07)'
-    );
-
-    drawText(
+    drawMetricChip(
+      x + 111 +
+        i * 43,
+      y + 53,
+      40,
       metrics[i][0],
-      mx + 5,
-      metricY + 11,
-      5.4,
-      COLORS.muted,
-      '700'
-    );
-
-    drawText(
-      fitText(
-        metrics[i][1],
-        metricW - 9,
-        7.2,
-        '800'
-      ),
-      mx + 5,
-      metricY + 29,
-      7.2,
-      metrics[i][2],
-      '800'
+      metrics[i][1],
+      metrics[i][2]
     );
   }
 
+  drawText(
+    '实时数据会随人口、城市事件、竞争和租金变化',
+    x + 112,
+    y + 107,
+    5.8,
+    COLORS.muted,
+    '600'
+  );
+
   roundedRect(
-    x + 205,
-    y + h - 38,
-    158,
+    x + 263,
+    y + h - 39,
+    101,
     31,
     15,
     COLORS.gold,
-    '#DBA324'
+    '#D99E22'
   );
 
   drawText(
     '进入商圈  ›',
-    x + 284,
-    y + h - 22.5,
-    8.4,
-    '#23343D',
+    x + 313.5,
+    y + h - 23.5,
+    8,
+    '#213541',
     '800',
     'center'
   );
 
   addButton(
     'district:details',
-    x + 196,
-    y + h - 44,
-    176,
-    43
+    x + 255,
+    y + h - 45,
+    117,
+    44
   );
 }
 
@@ -2329,12 +2297,12 @@ function drawBottomNav() {
 
   gradient.addColorStop(
     0,
-    '#0B3B57'
+    '#0A405E'
   );
 
   gradient.addColorStop(
     1,
-    '#06263A'
+    '#05263A'
   );
 
   ctx.fillStyle =
@@ -2348,7 +2316,7 @@ function drawBottomNav() {
   );
 
   ctx.fillStyle =
-    'rgba(75,190,240,0.30)';
+    'rgba(84,194,237,0.28)';
 
   ctx.fillRect(
     0,
@@ -2379,7 +2347,8 @@ function drawBottomNav() {
       cellW / 2;
 
     const active =
-      item.id === current ||
+      item.id ===
+        current ||
       (
         item.id ===
           'city' &&
@@ -2407,26 +2376,30 @@ function drawBottomNav() {
           'renovation'
       );
 
-    if (active) {
+    if (
+      active
+    ) {
       roundedRect(
-        i * cellW + 3,
-        NAV_Y + 5,
-        cellW - 6,
-        NAV_H - 10,
+        i * cellW + 4,
+        NAV_Y + 6,
+        cellW - 8,
+        NAV_H - 12,
         11,
         COLORS.gold,
-        '#FFE29A'
+        '#FFE09A'
       );
     }
 
     drawText(
       item.icon,
       cx,
-      NAV_Y + NAV_H * 0.34,
-      10.5,
+      NAV_Y +
+        NAV_H *
+        0.34,
+      10.2,
       active
         ? '#163445'
-        : '#E6F0F4',
+        : '#E7F1F4',
       '800',
       'center'
     );
@@ -2434,8 +2407,10 @@ function drawBottomNav() {
     drawText(
       item.name,
       cx,
-      NAV_Y + NAV_H * 0.72,
-      6.7,
+      NAV_Y +
+        NAV_H *
+        0.72,
+      6.4,
       active
         ? '#153342'
         : '#E0EBEF',
@@ -3105,6 +3080,48 @@ function loadResources() {
         'city_header_thumb',
         'assets/images/premium/district/header_city.jpg',
         'city'
+      ),
+
+    resourceManager
+      .loadImage(
+        'district_marker_gold',
+        'assets/images/split/ui/marker_gold.png',
+        'city'
+      ),
+
+    resourceManager
+      .loadImage(
+        'district_marker_blue',
+        'assets/images/split/ui/marker_blue.png',
+        'city'
+      ),
+
+    resourceManager
+      .loadImage(
+        'district_marker_orange',
+        'assets/images/split/ui/marker_orange.png',
+        'city'
+      ),
+
+    resourceManager
+      .loadImage(
+        'district_marker_purple',
+        'assets/images/split/ui/marker_purple.png',
+        'city'
+      ),
+
+    resourceManager
+      .loadImage(
+        'district_marker_green',
+        'assets/images/split/ui/marker_green.png',
+        'city'
+      ),
+
+    resourceManager
+      .loadImage(
+        'district_marker_red',
+        'assets/images/split/ui/marker_red.png',
+        'city'
       )
   ])
     .then(
@@ -3149,5 +3166,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V14 金蓝高保真UI实装版启动成功'
+  '城市餐饮经营小游戏 V18 核心四页全量重构版启动成功'
 );
