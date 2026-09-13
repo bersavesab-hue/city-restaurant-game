@@ -1,24 +1,43 @@
 {
-  "patch": "city-restaurant-v0.2-foundation-step1",
-  "target": "bersavesab-hue/city-restaurant-game",
-  "type": "additive-foundation-refactor",
-  "safeForExistingUI": true,
-  "runtimeIntegration": "not-yet-enabled",
-  "adds": [
-    "foundation/rng.js",
-    "foundation/packRegistry.js",
-    "foundation/compositionEngine.js",
-    "foundation/createFoundation.js",
-    "foundation/index.js",
-    "entities/entityFactory.js",
+  "patch": "property-full-pack-v1.0.0",
+  "package_version": "0.3.0",
+  "base": "city-restaurant-game >= 0.2.1",
+  "cumulative": true,
+  "safe_update_zip": true,
+  "goal": "Expand the property foundation from the small prototype into a full 6-20000 sqm property composition system while keeping current UI and legacy IDs compatible.",
+  "counts": {
+    "categories": 16,
+    "subtypes": 96,
+    "structures": 240,
+    "size_bands": 7,
+    "landlord_profiles": 24,
+    "landlord_traits": 24,
+    "contracts": 24,
+    "historical_uses": 36,
+    "vacancy_reasons": 24,
+    "advantages": 36,
+    "defects": 48,
+    "restrictions": 32,
+    "transaction_methods": 12,
+    "visual_variants": 40
+  },
+  "updated": [
+    "property/propertyPackV02.js",
+    "property/propertyRulesV02.js",
+    "property/propertyAdapterV02.js",
     "packs/base/foundationPacks.js",
-    "systems/pricingEngine.js",
-    "systems/competitionEngine.js",
-    "systems/reviewEngine.js",
-    "systems/eventEngine.js",
-    "tests/foundationV02.test.js",
-    "docs/V0.2_FOUNDATION_STEP1.md"
+    "entities/entityFactory.js",
+    "package.json"
   ],
-  "changes": ["package.json: 0.2.0 + foundation test"],
-  "next": "migrate current property market to the new property/entity composition system"
+  "added": [
+    "tests/propertyFullPackV100.test.js",
+    "docs/PROPERTY_PACK_V1_FULL.md"
+  ],
+  "carried_forward": [
+    "foundation/*",
+    "systems/*",
+    "scenes/shopScene.js",
+    "tests/foundationV02.test.js",
+    "tests/propertyPackV02.test.js"
+  ]
 }

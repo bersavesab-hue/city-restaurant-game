@@ -1,5 +1,7 @@
 'use strict';
 
+const PROPERTY_PACK = require('../property/propertyPackV02.js');
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
@@ -28,19 +30,44 @@ class EntityFactory {
     if (!district) throw new Error(`未知商圈: ${districtId}`);
 
     let tags = [...district.tags];
-    const building = options.buildingTypeId
-      ? this.registry.getItem('property_buildings', options.buildingTypeId)
-      : this.composer.pickWeighted('property_buildings', tags);
+    const categoryWeights = {
+      university: { education_commercial: 2.4, food_hall: 1.7, street_commercial: 1.4, community_commercial: 1.2, night_economy: 1.3, complex_project: 0.12 },
+      cbd: { office_commercial: 2.2, mall_commercial: 1.8, street_commercial: 1.4, large_catering: 1.1, complex_project: 0.8 },
+      hightech: { office_commercial: 2.2, industrial_commercial: 1.2, street_commercial: 1.1, institutional_catering: 1.0, complex_project: 0.18 },
+      oldtown: { street_commercial: 1.8, community_commercial: 1.4, market_commercial: 1.3, night_economy: 1.2, standalone_catering: 1.0, complex_project: 0.18 },
+      village: { street_commercial: 1.7, community_commercial: 1.8, market_commercial: 1.2, night_economy: 1.2, large_catering: 0.2, complex_project: 0.04 },
+      market: { market_commercial: 2.4, street_commercial: 1.5, food_hall: 1.3, special_opportunity: 1.0, large_catering: 0.35 },
+      industry: { industrial_commercial: 2.7, institutional_catering: 1.8, street_commercial: 1.0, large_catering: 0.3, complex_project: 0.08 }
+    };
+    const districtWeights = categoryWeights[districtId] || {};
+    const legacyBuildingAliases = {
+      street_shop: 'street_single',
+      community_shop: 'community_ground',
+      mall_stall: 'foodhall_stall',
+      upper_floor: 'street_double',
+      market_stall: 'wetmarket_front',
+      office_podium: 'office_podium',
+      station_shop: 'transport_hub_complex',
+      standalone: 'detached_street',
+      large_catering: 'large_chinese',
+      project: 'complex_floor',
+      institutional: 'enterprise_canteen',
+      generic: 'street_single'
+    };
+    const requestedBuildingId = options.buildingTypeId && (legacyBuildingAliases[options.buildingTypeId] || options.buildingTypeId);
+    const building = requestedBuildingId
+      ? this.registry.getItem('property_buildings', requestedBuildingId)
+      : this.composer.pickWeighted('property_buildings', tags, (row) => districtWeights[row.categoryId] == null ? 0.70 : districtWeights[row.categoryId]);
     if (!building) throw new Error('无法生成房屋类型');
     tags = this.composer.applyTags(tags, building);
 
     const range = building.areaRange || [20, 100];
     const area = round(options.area || this.rng.float(range[0], range[1]), 1);
-    const floor = options.floor || building.floor || 1;
+    const floorOptions = Array.isArray(building.floorOptions) && building.floorOptions.length ? building.floorOptions : [building.floor || 1];
+    const floor = options.floor || this.rng.pick(floorOptions) || 1;
     if (floor === 1) tags.push('floor_1'); else tags.push('upper_floor');
-    if (area < 35) tags.push('area_small');
-    else if (area < 80) tags.push('area_medium');
-    else tags.push('area_large');
+    const sizeBand = PROPERTY_PACK.sizeBandForArea(area);
+    tags.push(`area_${sizeBand.id}`);
 
     const facilities = {};
     for (const key of ['exhaust', 'gas', 'threePhase', 'drainage', 'greaseTrap', 'fire']) {
@@ -69,7 +96,8 @@ class EntityFactory {
       district.trafficIndex * (building.trafficFactor || 1) * (floor > 1 ? 0.58 : 1) * this.rng.float(0.88, 1.12),
       5, 100
     );
-    const baseRentPerSqm = district.rentPerSqm * (building.rentFactor || 1) * (floor > 1 ? 0.72 : 1);
+    const floorFactor = floor <= 1 ? 1 : floor === 2 ? 0.78 : floor === 3 ? 0.69 : 0.63;
+    const baseRentPerSqm = district.rentPerSqm * (building.rentFactor || 1) * floorFactor * (sizeBand.rentFactor || 1);
     const rentPerSqm = round(baseRentPerSqm * this.rng.float(0.90, 1.10), 1);
     const monthlyRent = Math.max(300, Math.round(rentPerSqm * area / 10) * 10);
     const depositMonths = lease.depositMonths;
@@ -90,6 +118,8 @@ class EntityFactory {
       id: this.id('property'),
       districtId,
       buildingTypeId: building.id,
+      propertyCategoryId: building.categoryId || null,
+      scaleBandId: sizeBand.id,
       area,
       floor,
       seats,

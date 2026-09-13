@@ -1,73 +1,51 @@
 'use strict';
 
+const PROPERTY = require('../../property/propertyPackV02.js');
+
+const districtItems = [
+  { id: 'university', name: '大学城', tags: ['district_university', 'young_consumers'], trafficIndex: 82, rentPerSqm: 78, visibilityMod: 3,
+    facilityBase: { exhaust: 0.62, gas: 0.42, threePhase: 0.80, drainage: 0.85, greaseTrap: 0.66, fire: 0.88 } },
+  { id: 'cbd', name: '商业中心', tags: ['district_cbd', 'high_rent', 'office_consumers'], trafficIndex: 91, rentPerSqm: 146, visibilityMod: 7,
+    facilityBase: { exhaust: 0.70, gas: 0.38, threePhase: 0.92, drainage: 0.92, greaseTrap: 0.78, fire: 0.96 } },
+  { id: 'oldtown', name: '老城区', tags: ['district_oldtown', 'resident_consumers'], trafficIndex: 69, rentPerSqm: 58, visibilityMod: 0,
+    facilityBase: { exhaust: 0.58, gas: 0.68, threePhase: 0.62, drainage: 0.78, greaseTrap: 0.54, fire: 0.72 } },
+  { id: 'village', name: '城中村', tags: ['district_village', 'price_sensitive'], trafficIndex: 76, rentPerSqm: 43, visibilityMod: -2,
+    facilityBase: { exhaust: 0.54, gas: 0.72, threePhase: 0.52, drainage: 0.70, greaseTrap: 0.45, fire: 0.61 } },
+  { id: 'market', name: '东门市场', tags: ['district_market', 'price_sensitive'], trafficIndex: 79, rentPerSqm: 49, visibilityMod: 2,
+    facilityBase: { exhaust: 0.60, gas: 0.65, threePhase: 0.58, drainage: 0.78, greaseTrap: 0.55, fire: 0.70 } },
+  { id: 'industry', name: '工业园', tags: ['district_industry', 'worker_consumers'], trafficIndex: 66, rentPerSqm: 46, visibilityMod: -4,
+    facilityBase: { exhaust: 0.72, gas: 0.58, threePhase: 0.86, drainage: 0.80, greaseTrap: 0.66, fire: 0.86 } },
+  { id: 'hightech', name: '高新区', tags: ['district_hightech', 'office_consumers'], trafficIndex: 73, rentPerSqm: 98, visibilityMod: 4,
+    facilityBase: { exhaust: 0.68, gas: 0.34, threePhase: 0.94, drainage: 0.90, greaseTrap: 0.74, fire: 0.95 } }
+];
+
+const propertyBuildingItems = PROPERTY.PROPERTY_SUBTYPES.map((row) => ({
+  ...row,
+  floor: row.floorOptions?.[0] || 1
+}));
+const landlordItems = Object.values(PROPERTY.LANDLORD_PROFILES).map((row) => ({ ...row, tags: [`landlord_${row.id}`] }));
+const leaseItems = Object.values(PROPERTY.CONTRACT_PROFILES).map((row) => ({
+  ...row,
+  payMonths: row.paymentMonths,
+  annualEscalation: row.annualIncrease,
+  tags: [`lease_${row.id}`]
+}));
+const defectItems = Object.values(PROPERTY.DEFECTS).map((row) => ({ ...row, tags: [`defect_${row.id}`] }));
+
 const PACKS = [
-  {
-    id: 'district_profiles',
-    mode: 'fixed',
-    items: [
-      { id: 'university', name: '大学城', tags: ['district_university', 'young_consumers'], trafficIndex: 82, rentPerSqm: 78, visibilityMod: 3,
-        facilityBase: { exhaust: 0.62, gas: 0.42, threePhase: 0.80, drainage: 0.85, greaseTrap: 0.66, fire: 0.88 } },
-      { id: 'cbd', name: '商业中心', tags: ['district_cbd', 'high_rent', 'office_consumers'], trafficIndex: 91, rentPerSqm: 146, visibilityMod: 7,
-        facilityBase: { exhaust: 0.70, gas: 0.38, threePhase: 0.92, drainage: 0.92, greaseTrap: 0.78, fire: 0.96 } },
-      { id: 'oldtown', name: '老城区', tags: ['district_oldtown', 'resident_consumers'], trafficIndex: 69, rentPerSqm: 58, visibilityMod: 0,
-        facilityBase: { exhaust: 0.58, gas: 0.68, threePhase: 0.62, drainage: 0.78, greaseTrap: 0.54, fire: 0.72 } },
-      { id: 'village', name: '城中村', tags: ['district_village', 'price_sensitive'], trafficIndex: 76, rentPerSqm: 43, visibilityMod: -2,
-        facilityBase: { exhaust: 0.54, gas: 0.72, threePhase: 0.52, drainage: 0.70, greaseTrap: 0.45, fire: 0.61 } },
-      { id: 'market', name: '东门市场', tags: ['district_market', 'price_sensitive'], trafficIndex: 79, rentPerSqm: 49, visibilityMod: 2,
-        facilityBase: { exhaust: 0.60, gas: 0.65, threePhase: 0.58, drainage: 0.78, greaseTrap: 0.55, fire: 0.70 } },
-      { id: 'industry', name: '工业园', tags: ['district_industry', 'worker_consumers'], trafficIndex: 66, rentPerSqm: 46, visibilityMod: -4,
-        facilityBase: { exhaust: 0.72, gas: 0.58, threePhase: 0.86, drainage: 0.80, greaseTrap: 0.66, fire: 0.86 } },
-      { id: 'hightech', name: '高新区', tags: ['district_hightech', 'office_consumers'], trafficIndex: 73, rentPerSqm: 98, visibilityMod: 4,
-        facilityBase: { exhaust: 0.68, gas: 0.34, threePhase: 0.94, drainage: 0.90, greaseTrap: 0.74, fire: 0.95 } }
-    ]
-  },
-  {
-    id: 'property_buildings',
-    items: [
-      { id: 'street_shop', name: '临街底商', weight: 28, tags: ['streetfront'], areaRange: [32, 120], floor: 1, baseVisibility: 78, trafficFactor: 1.02, rentFactor: 1.08, seatDensity: 0.42, transferFeeBase: 12000,
-        facilityChance: { exhaust: 0.72, gas: 0.62, threePhase: 0.78, drainage: 0.86, greaseTrap: 0.66, fire: 0.84 } },
-      { id: 'community_shop', name: '社区底商', weight: 26, tags: ['community'], areaRange: [28, 95], floor: 1, baseVisibility: 66, trafficFactor: 0.90, rentFactor: 0.88, seatDensity: 0.44, transferFeeBase: 8000,
-        facilityChance: { exhaust: 0.66, gas: 0.70, threePhase: 0.65, drainage: 0.82, greaseTrap: 0.58, fire: 0.78 } },
-      { id: 'mall_stall', name: '商场/美食城档口', weight: 20, tags: ['mall', 'no_gas_typical'], areaRange: [12, 45], floor: 3, baseVisibility: 58, trafficFactor: 0.82, rentFactor: 1.32, seatDensity: 0.10, transferFeeBase: 5000,
-        facilityChance: { exhaust: 0.50, gas: 0.06, threePhase: 0.96, drainage: 0.88, greaseTrap: 0.82, fire: 0.98 } },
-      { id: 'upper_floor', name: '二三层商铺', weight: 12, tags: ['upper_floor'], areaRange: [55, 180], floor: 2, baseVisibility: 34, trafficFactor: 0.62, rentFactor: 0.67, seatDensity: 0.50, transferFeeBase: 6000,
-        facilityChance: { exhaust: 0.48, gas: 0.42, threePhase: 0.72, drainage: 0.74, greaseTrap: 0.55, fire: 0.80 } },
-      { id: 'market_stall', name: '市场街铺', weight: 14, tags: ['market_stall'], requires: ['district_market'], areaRange: [16, 58], floor: 1, baseVisibility: 72, trafficFactor: 1.10, rentFactor: 0.76, seatDensity: 0.30, transferFeeBase: 4000,
-        facilityChance: { exhaust: 0.58, gas: 0.64, threePhase: 0.50, drainage: 0.74, greaseTrap: 0.45, fire: 0.66 } }
-    ]
-  },
-  {
-    id: 'landlord_profiles',
-    items: [
-      { id: 'stable', name: '稳定型房东', weight: 34, tags: ['landlord_stable'], negotiation: 0.45, renewalRisk: 0.18 },
-      { id: 'price_focused', name: '价格敏感型房东', weight: 27, tags: ['landlord_price'], negotiation: 0.28, renewalRisk: 0.44 },
-      { id: 'long_term', name: '偏好长期租约房东', weight: 22, tags: ['landlord_longterm'], negotiation: 0.58, renewalRisk: 0.12 },
-      { id: 'urgent', name: '急租型房东', weight: 12, tags: ['landlord_urgent'], negotiation: 0.82, renewalRisk: 0.24 },
-      { id: 'institutional', name: '商业机构业主', weight: 5, tags: ['landlord_institution'], negotiation: 0.15, renewalRisk: 0.20 }
-    ]
-  },
-  {
-    id: 'lease_profiles',
-    items: [
-      { id: 'deposit1_pay3', name: '押一付三', weight: 38, depositMonths: 1, payMonths: 3, freeRentDays: 10, annualEscalation: 0.04 },
-      { id: 'deposit2_pay3', name: '押二付三', weight: 23, depositMonths: 2, payMonths: 3, freeRentDays: 12, annualEscalation: 0.04 },
-      { id: 'deposit2_pay1', name: '押二付一', weight: 14, depositMonths: 2, payMonths: 1, freeRentDays: 7, annualEscalation: 0.05 },
-      { id: 'longterm_friendly', name: '长租友好', weight: 15, tags: ['lease_longterm'], depositMonths: 1, payMonths: 2, freeRentDays: 20, annualEscalation: 0.03 },
-      { id: 'mall_contract', name: '商业体合同', weight: 10, requires: ['mall'], depositMonths: 3, payMonths: 1, freeRentDays: 15, annualEscalation: 0.06 }
-    ]
-  },
-  {
-    id: 'property_defects',
-    items: [
-      { id: 'weak_visibility', name: '门头可见性差', weight: 22, tags: ['defect_visibility'] },
-      { id: 'poor_parking', name: '停车不便', weight: 18, tags: ['defect_parking'] },
-      { id: 'noise_neighbor', name: '邻里噪音限制', weight: 12, tags: ['defect_noise'] },
-      { id: 'old_pipeline', name: '管线老化', weight: 15, tags: ['defect_pipeline'] },
-      { id: 'delivery_access', name: '骑手取餐动线差', weight: 15, tags: ['defect_delivery'] },
-      { id: 'short_lease', name: '可签年限偏短', weight: 10, tags: ['defect_lease'] },
-      { id: 'none_material', name: '无明显硬伤', weight: 8, tags: ['defect_minor'] }
-    ]
-  },
+  { id: 'district_profiles', mode: 'fixed', items: districtItems },
+  { id: 'property_buildings', items: propertyBuildingItems },
+  { id: 'property_structures', items: PROPERTY.STRUCTURE_TEMPLATES.map((row) => ({ ...row, weight: 1 })) },
+  { id: 'landlord_profiles', items: landlordItems },
+  { id: 'landlord_traits', items: PROPERTY.LANDLORD_TRAITS },
+  { id: 'lease_profiles', items: leaseItems },
+  { id: 'property_history', items: PROPERTY.HISTORICAL_USES.map((row) => ({ ...row, weight: 1 })) },
+  { id: 'property_vacancy_reasons', items: PROPERTY.VACANCY_REASONS },
+  { id: 'property_advantages', items: Object.values(PROPERTY.ADVANTAGES).map((row) => ({ ...row, weight: 1 })) },
+  { id: 'property_defects', items: defectItems },
+  { id: 'property_restrictions', items: PROPERTY.RESTRICTIONS.map((row) => ({ ...row, weight: 1 })) },
+  { id: 'property_transactions', items: PROPERTY.TRANSACTION_METHODS },
+  { id: 'property_visuals', mode: 'free', items: PROPERTY.FREE_VISUALS },
   {
     id: 'person_names', mode: 'free', items: [
       { id: 'n1', name: '陈安' }, { id: 'n2', name: '赵建国' }, { id: 'n3', name: '周晓梅' },
