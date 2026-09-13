@@ -9834,6 +9834,159 @@ v32FormatMoney = function (value) {
 };
 
 console.log('V34_MONEY_FORMAT_FIX loaded');
+
+/* V35_TOP_HUD_POLISH */
+
+const v35PreviousLoadResources = loadResources;
+const v35PreviousDrawTopHud = drawTopHud;
+
+loadResources = function () {
+  return Promise.all([
+    resourceManager.loadImage(
+      'v35_cash_icon',
+      'assets/images/target_home/hud/icon_cash.png',
+      'v35-hud'
+    ),
+    resourceManager.loadImage(
+      'v35_plus_icon',
+      'assets/images/target_home/hud/icon_plus.png',
+      'v35-hud'
+    )
+  ]).then(function () {
+    return v35PreviousLoadResources();
+  });
+};
+
+drawCashGlyph = function (cx, cy) {
+  const image = resourceManager.getImage('v35_cash_icon');
+
+  if (image) {
+    const w = 22;
+    const h = 17;
+
+    ctx.drawImage(
+      image,
+      cx - w / 2,
+      cy - h / 2,
+      w,
+      h
+    );
+
+    return;
+  }
+
+  // Fallback only if the asset failed to load.
+  roundedRect(
+    cx - 10,
+    cy - 7,
+    20,
+    14,
+    4,
+    '#20A86B',
+    '#9CE2BA',
+    0.8
+  );
+
+  drawText(
+    '¥',
+    cx,
+    cy,
+    7.3,
+    '#FFFFFF',
+    '800',
+    'center'
+  );
+};
+
+drawTopHud = function () {
+  v35PreviousDrawTopHud();
+
+  const display = timeSystem.getDisplayState();
+
+  // Cover the old loose time text and rebuild it as a proper HUD card.
+  const timeX = 244;
+  const timeY = TOP_H - 31;
+  const timeW = VIEW_W - timeX - 8;
+  const timeH = 26;
+
+  roundedRect(
+    timeX,
+    timeY,
+    timeW,
+    timeH,
+    10,
+    'rgba(3,54,83,0.94)',
+    'rgba(82,198,240,0.58)',
+    1
+  );
+
+  const glow = ctx.createLinearGradient(
+    0,
+    timeY,
+    0,
+    timeY + timeH
+  );
+
+  glow.addColorStop(0, 'rgba(33,147,207,0.22)');
+  glow.addColorStop(1, 'rgba(33,147,207,0)');
+
+  ctx.fillStyle = glow;
+  roundedRect(
+    timeX + 1,
+    timeY + 1,
+    timeW - 2,
+    timeH - 2,
+    9,
+    glow
+  );
+
+  drawText(
+    fitText(display.date || '', timeW - 59, 5.7, '700'),
+    timeX + 9,
+    timeY + 7.7,
+    5.7,
+    '#D7EBF4',
+    '700'
+  );
+
+  drawText(
+    display.time || '--:--',
+    timeX + 9,
+    timeY + 18.6,
+    8.1,
+    '#FFFFFF',
+    '800'
+  );
+
+  const mealText =
+    MEAL_NAMES[display.mealPeriod] ||
+    '';
+
+  const mealW = 35;
+
+  roundedRect(
+    timeX + timeW - mealW - 7,
+    timeY + 6,
+    mealW,
+    14,
+    7,
+    'rgba(245,190,48,0.18)',
+    'rgba(255,223,110,0.55)',
+    0.8
+  );
+
+  drawText(
+    mealText,
+    timeX + timeW - mealW / 2 - 7,
+    timeY + 13,
+    5.8,
+    '#FFE386',
+    '800',
+    'center'
+  );
+};
+
+console.log('V35_TOP_HUD_POLISH loaded');
 /* =========================
    启动
 ========================= */
@@ -9855,5 +10008,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V34 资金显示修正版启动成功'
+  '城市餐饮经营小游戏 V35 顶部HUD精修版启动成功'
 );
