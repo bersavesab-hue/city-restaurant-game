@@ -1,43 +1,23 @@
 {
-  "patch": "property-full-pack-v1.0.0",
-  "package_version": "0.3.0",
-  "base": "city-restaurant-game >= 0.2.1",
+  "patch": "person-npc-final-v1.0.0",
+  "projectVersion": "0.4.0",
   "cumulative": true,
-  "safe_update_zip": true,
-  "goal": "Expand the property foundation from the small prototype into a full 6-20000 sqm property composition system while keeping current UI and legacy IDs compatible.",
-  "counts": {
-    "categories": 16,
-    "subtypes": 96,
-    "structures": 240,
-    "size_bands": 7,
-    "landlord_profiles": 24,
-    "landlord_traits": 24,
-    "contracts": 24,
-    "historical_uses": 36,
-    "vacancy_reasons": 24,
-    "advantages": 36,
-    "defects": 48,
-    "restrictions": 32,
-    "transaction_methods": 12,
-    "visual_variants": 40
-  },
-  "updated": [
-    "property/propertyPackV02.js",
-    "property/propertyRulesV02.js",
-    "property/propertyAdapterV02.js",
-    "packs/base/foundationPacks.js",
+  "base": "property-full-v1.0.0",
+  "adds": [
+    "person/personPackV10.js",
+    "person/personRulesV10.js",
+    "systems/personEngine.js",
+    "tests/personNpcFullPackV100.test.js",
+    "docs/PERSON_NPC_PACK_V1_FINAL.md"
+  ],
+  "updates": [
     "entities/entityFactory.js",
+    "packs/base/foundationPacks.js",
     "package.json"
   ],
-  "added": [
-    "tests/propertyFullPackV100.test.js",
-    "docs/PROPERTY_PACK_V1_FULL.md"
-  ],
-  "carried_forward": [
-    "foundation/*",
-    "systems/*",
-    "scenes/shopScene.js",
-    "tests/foundationV02.test.js",
-    "tests/propertyPackV02.test.js"
+  "notes": [
+    "保留旧人物背景ID、旧性格ID映射、旧NPC角色ID兼容",
+    "人物与角色分离",
+    "无多余顶层目录"
   ]
 }

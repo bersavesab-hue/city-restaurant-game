@@ -1,6 +1,7 @@
 'use strict';
 
 const PROPERTY_PACK = require('../property/propertyPackV02.js');
+const PERSON_RULES = require('../person/personRulesV10.js');
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -143,65 +144,15 @@ class EntityFactory {
   }
 
   createPerson(options = {}) {
-    let tags = [];
-    const age = options.age || this.rng.int(18, 62);
-    tags.push(age < 25 ? 'age_young' : age > 50 ? 'age_senior' : 'age_adult');
-
-    const background = options.backgroundId
-      ? this.registry.getItem('person_backgrounds', options.backgroundId)
-      : this.composer.pickWeighted('person_backgrounds', tags);
-    tags = this.composer.applyTags(tags, background);
-
-    const traitA = this.composer.pickWeighted('person_traits', tags);
-    tags = this.composer.applyTags(tags, traitA);
-    const traitB = this.composer.pickWeighted('person_traits', tags, null, (row) => !traitA || row.id !== traitA.id);
-
-    const names = this.registry.list('person_names');
-    const name = options.name || (this.rng.pick(names) || { name: '陈安' }).name;
-
-    const skills = {
-      cooking: clamp((background.skills?.cooking || 20) + this.rng.int(-8, 12), 0, 100),
-      service: clamp((background.skills?.service || 25) + this.rng.int(-8, 12), 0, 100),
-      management: clamp((background.skills?.management || 20) + this.rng.int(-8, 12), 0, 100),
-      sales: clamp((background.skills?.sales || 20) + this.rng.int(-8, 12), 0, 100),
-      finance: clamp((background.skills?.finance || 15) + this.rng.int(-8, 12), 0, 100)
-    };
-
+    const profile = PERSON_RULES.createPersonProfile(this.rng, options);
     return {
       id: this.id('person'),
-      name,
-      age,
-      backgroundId: background.id,
-      traits: [traitA && traitA.id, traitB && traitB.id].filter(Boolean),
-      skills,
-      wealth: Math.max(0, Math.round((background.wealthBase || 20000) * this.rng.float(0.55, 1.8))),
-      riskTolerance: clamp(50 + (traitA?.riskMod || 0) + (traitB?.riskMod || 0) + this.rng.int(-8, 8), 0, 100),
-      patience: clamp(50 + (traitA?.patienceMod || 0) + (traitB?.patienceMod || 0) + this.rng.int(-8, 8), 0, 100),
-      currentRole: null,
-      employerId: null,
-      relationshipIds: [],
-      memory: [],
-      tags: [...new Set(tags)]
+      ...profile
     };
   }
 
   assignNpcRole(person, roleId, context = {}) {
-    const role = this.registry.getItem('npc_roles', roleId);
-    if (!role) throw new Error(`未知 NPC 角色: ${roleId}`);
-    if (role.minAge && person.age < role.minAge) {
-      return { ok: false, reason: `年龄不足 ${role.minAge}` };
-    }
-    const score = Object.entries(role.skillWeights || {}).reduce(
-      (sum, [skill, weight]) => sum + (person.skills[skill] || 0) * weight,
-      0
-    );
-    const threshold = Number(role.minFit || 0);
-    if (score < threshold && !context.allowLowFit) {
-      return { ok: false, reason: `岗位适配度不足`, score: round(score, 1) };
-    }
-    person.currentRole = roleId;
-    person.employerId = context.employerId || null;
-    return { ok: true, score: round(score, 1), person };
+    return PERSON_RULES.assignRole(person, roleId, context);
   }
 
   createCompetitor(options = {}) {

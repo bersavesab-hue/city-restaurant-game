@@ -1,6 +1,7 @@
 'use strict';
 
 const PROPERTY = require('../../property/propertyPackV02.js');
+const PERSON = require('../../person/personPackV10.js');
 
 const districtItems = [
   { id: 'university', name: '大学城', tags: ['district_university', 'young_consumers'], trafficIndex: 82, rentPerSqm: 78, visibilityMod: 3,
@@ -46,48 +47,33 @@ const PACKS = [
   { id: 'property_restrictions', items: PROPERTY.RESTRICTIONS.map((row) => ({ ...row, weight: 1 })) },
   { id: 'property_transactions', items: PROPERTY.TRANSACTION_METHODS },
   { id: 'property_visuals', mode: 'free', items: PROPERTY.FREE_VISUALS },
-  {
-    id: 'person_names', mode: 'free', items: [
-      { id: 'n1', name: '陈安' }, { id: 'n2', name: '赵建国' }, { id: 'n3', name: '周晓梅' },
-      { id: 'n4', name: '李卫东' }, { id: 'n5', name: '王秀兰' }, { id: 'n6', name: '刘晨' },
-      { id: 'n7', name: '孙悦' }, { id: 'n8', name: '郭志强' }, { id: 'n9', name: '何静' }, { id: 'n10', name: '马小峰' }
-    ]
-  },
-  {
-    id: 'person_backgrounds',
-    items: [
-      { id: 'kitchen_worker', name: '餐饮后厨从业', weight: 20, tags: ['food_experience'], wealthBase: 18000, skills: { cooking: 62, service: 28, management: 26, sales: 18, finance: 12 } },
-      { id: 'service_worker', name: '服务业从业', weight: 18, tags: ['service_experience'], wealthBase: 22000, skills: { cooking: 18, service: 58, management: 28, sales: 46, finance: 18 } },
-      { id: 'small_business', name: '小生意经营者', weight: 14, tags: ['business_experience'], wealthBase: 120000, skills: { cooking: 28, service: 42, management: 60, sales: 64, finance: 48 } },
-      { id: 'office_worker', name: '普通白领', weight: 18, tags: ['office_experience'], wealthBase: 65000, skills: { cooking: 15, service: 32, management: 42, sales: 36, finance: 45 } },
-      { id: 'logistics_worker', name: '物流配送从业', weight: 12, tags: ['logistics_experience'], wealthBase: 30000, skills: { cooking: 12, service: 30, management: 34, sales: 24, finance: 20 } },
-      { id: 'property_owner', name: '本地物业持有人', weight: 8, tags: ['property_experience'], wealthBase: 800000, skills: { cooking: 8, service: 28, management: 48, sales: 54, finance: 60 } },
-      { id: 'fresh_graduate', name: '毕业生', weight: 10, tags: ['junior'], wealthBase: 9000, skills: { cooking: 12, service: 30, management: 20, sales: 28, finance: 22 } }
-    ]
-  },
-  {
-    id: 'person_traits',
-    items: [
-      { id: 'steady', name: '稳健', weight: 18, riskMod: -15, patienceMod: 16, tags: ['trait_steady'] },
-      { id: 'ambitious', name: '进取', weight: 14, riskMod: 14, patienceMod: -4, tags: ['trait_ambitious'] },
-      { id: 'careful', name: '细致', weight: 15, riskMod: -6, patienceMod: 14, tags: ['trait_careful'] },
-      { id: 'social', name: '善交际', weight: 14, riskMod: 4, patienceMod: 3, tags: ['trait_social'] },
-      { id: 'impatient', name: '急躁', weight: 9, riskMod: 12, patienceMod: -22, tags: ['trait_impatient'], forbids: ['trait_steady'] },
-      { id: 'frugal', name: '节俭', weight: 12, riskMod: -10, patienceMod: 8, tags: ['trait_frugal'] },
-      { id: 'trend_seeker', name: '追热点', weight: 10, riskMod: 18, patienceMod: -8, tags: ['trait_trend'] },
-      { id: 'quality_minded', name: '重品质', weight: 8, riskMod: -2, patienceMod: 9, tags: ['trait_quality'] }
-    ]
-  },
-  {
-    id: 'npc_roles', mode: 'fixed', items: [
-      { id: 'landlord', name: '房东', minAge: 24, minFit: 16, skillWeights: { finance: 0.18, sales: 0.12 } },
-      { id: 'agent', name: '中介', minAge: 20, minFit: 24, skillWeights: { sales: 0.42, service: 0.18 } },
-      { id: 'chef', name: '厨师', minAge: 18, minFit: 34, skillWeights: { cooking: 0.62, service: 0.04 } },
-      { id: 'manager', name: '店长', minAge: 20, minFit: 38, skillWeights: { management: 0.45, service: 0.18, finance: 0.08 } },
-      { id: 'supplier_owner', name: '供应商老板', minAge: 24, minFit: 34, skillWeights: { management: 0.25, sales: 0.30, finance: 0.15 } },
-      { id: 'competitor_owner', name: '竞对老板', minAge: 20, minFit: 36, skillWeights: { management: 0.30, sales: 0.25, finance: 0.20 } }
-    ]
-  },
+  { id: 'person_names', mode: 'free', items: [
+    { id:'legacy_n1', name:'陈安' }, { id:'legacy_n2', name:'赵建国' }, { id:'legacy_n3', name:'周晓梅' },
+    { id:'legacy_n4', name:'李卫东' }, { id:'legacy_n5', name:'王秀兰' }, { id:'legacy_n6', name:'刘晨' },
+    { id:'legacy_n7', name:'孙悦' }, { id:'legacy_n8', name:'郭志强' }, { id:'legacy_n9', name:'何静' }, { id:'legacy_n10', name:'马小峰' }
+  ] },
+  { id: 'person_surnames', mode:'free', items: PERSON.SURNAMES },
+  { id: 'person_given_names', mode:'free', items: PERSON.GIVEN_NAMES },
+  { id: 'person_genders', mode:'weighted', items: PERSON.GENDERS },
+  { id: 'person_educations', mode:'weighted', items: PERSON.EDUCATIONS },
+  { id: 'person_origins', mode:'weighted', items: PERSON.ORIGIN_TYPES },
+  { id: 'person_families', mode:'weighted', items: PERSON.FAMILY_BACKGROUNDS },
+  { id: 'person_backgrounds', mode:'weighted', items: PERSON.CAREER_BACKGROUNDS },
+  { id: 'person_traits', mode:'weighted', items: PERSON.PERSON_TRAITS },
+  { id: 'person_values', mode:'weighted', items: PERSON.VALUES },
+  { id: 'person_motivations', mode:'weighted', items: PERSON.MOTIVATIONS },
+  { id: 'person_habits', mode:'weighted', items: PERSON.HABITS },
+  { id: 'person_flaws', mode:'weighted', items: PERSON.FLAWS },
+  { id: 'person_work_styles', mode:'weighted', items: PERSON.WORK_STYLES },
+  { id: 'person_social_styles', mode:'weighted', items: PERSON.SOCIAL_STYLES },
+  { id: 'person_money_attitudes', mode:'weighted', items: PERSON.MONEY_ATTITUDES },
+  { id: 'person_negotiation_styles', mode:'weighted', items: PERSON.NEGOTIATION_STYLES },
+  { id: 'person_stress_responses', mode:'weighted', items: PERSON.STRESS_RESPONSES },
+  { id: 'person_life_goals', mode:'weighted', items: PERSON.LIFE_GOALS },
+  { id: 'person_appearance', mode:'free', items: PERSON.APPEARANCE_FEATURES },
+  { id: 'npc_roles', mode:'fixed', items: PERSON.NPC_ROLES },
+  { id: 'relationship_types', mode:'fixed', items: PERSON.RELATIONSHIP_TYPES },
+  { id: 'memory_types', mode:'fixed', items: PERSON.MEMORY_TYPES },
   {
     id: 'competitor_archetypes',
     items: [
