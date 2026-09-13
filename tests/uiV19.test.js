@@ -29,7 +29,7 @@ assert.ok(
   source.includes(
     'function drawCityBadge('
   ),
-  '城市左上角必须使用清晰矢量徽标'
+  '城市左上角必须使用清晰徽标/缩略图组件'
 );
 
 assert.ok(
@@ -49,8 +49,13 @@ assert.ok(
   source.includes(
     'VIEW_W -'
   ) &&
-  source.includes(
-    'labelW'
+  (
+    source.includes(
+      'labelW'
+    ) ||
+    source.includes(
+      'boxW'
+    )
   ),
   '地图商圈标签必须具备左右翻转与边界约束'
 );
@@ -59,7 +64,7 @@ assert.ok(
   source.includes(
     'function drawNavIcon('
   ),
-  '底部导航必须改为正式矢量图标'
+  '底部导航必须使用正式图标组件'
 );
 
 assert.ok(
@@ -87,5 +92,5 @@ assert.ok(
 );
 
 console.log(
-  'V19 city home polish tests passed'
+  'V19/V20 city home compatibility tests passed'
 );

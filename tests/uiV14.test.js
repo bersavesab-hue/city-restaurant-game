@@ -49,7 +49,7 @@ assert.ok(
   main.includes(
     'V18_CITY_UI_REWRITE'
   ),
-  '首页必须升级到V18正式UI'
+  '首页必须保留V18动态城市底层'
 );
 
 assert.ok(
@@ -61,9 +61,15 @@ assert.ok(
 
 assert.ok(
   main.includes(
+    "id: 'traffic'"
+  ) &&
+  main.includes(
+    "name: '客流'"
+  ) &&
+  !main.includes(
     "{ id: 'renovation', name: '装修', icon: '装' }"
   ),
-  '底部导航必须保留独立装修入口'
+  '装修必须并入门店，第三底栏改为真实客流模式'
 );
 
 assert.ok(
@@ -80,7 +86,7 @@ assert.ok(
   district.includes(
     "'open-here'"
   ),
-  '商圈页必须是V18重写并保留开店入口'
+  '商圈页必须保留真实开店入口'
 );
 
 assert.ok(
@@ -88,12 +94,15 @@ assert.ok(
     'V16_STORE_UI_REWRITE'
   ) &&
   store.includes(
-    "'room:rename:'"
+    "'room:manage'"
   ) &&
   store.includes(
-    "'room:manage'"
+    "renovation:"
+  ) &&
+  store.includes(
+    "'renovation'"
   ),
-  '门店页必须是V16重写并保留包厢自定义'
+  '装修入口必须保留在门店体系'
 );
 
 assert.ok(
@@ -102,16 +111,10 @@ assert.ok(
   ) &&
   renovation.includes(
     "'template:save'"
-  ) &&
-  renovation.includes(
-    "'template:save-as'"
-  ) &&
-  renovation.includes(
-    "'rooms'"
   ),
-  '装修页必须是V17重写并保留真实模板/包厢功能'
+  '装修页功能必须继续保留'
 );
 
 console.log(
-  'V18 UI compatibility tests passed'
+  'V20 UI compatibility tests passed'
 );

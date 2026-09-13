@@ -5805,6 +5805,2058 @@
     }
   });
 
+  // src/renovation/renovationConfig.js
+  var require_renovationConfig = __commonJS({
+    "src/renovation/renovationConfig.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        // Furniture footprint includes basic chair pull-out + service clearance.
+        tableFootprint: {
+          2: 4.8,
+          4: 7.6,
+          6: 10.4,
+          8: 13.2
+        },
+        aisleModes: {
+          compact: {
+            id: "compact",
+            name: "\u7D27\u51D1",
+            areaFactor: 0.9,
+            comfort: 0.84,
+            serviceEfficiency: 1.06
+          },
+          standard: {
+            id: "standard",
+            name: "\u6807\u51C6",
+            areaFactor: 1,
+            comfort: 1,
+            serviceEfficiency: 1
+          },
+          spacious: {
+            id: "spacious",
+            name: "\u5BBD\u677E",
+            areaFactor: 1.15,
+            comfort: 1.1,
+            serviceEfficiency: 0.96
+          }
+        },
+        hallStyles: [
+          { id: "simple", name: "\u7B80\u7EA6", costFactor: 0.88, appeal: 0.95, maintenance: 0.9 },
+          { id: "wood", name: "\u539F\u6728", costFactor: 1, appeal: 1.03, maintenance: 0.98 },
+          { id: "modern_cn", name: "\u73B0\u4EE3\u4E2D\u5F0F", costFactor: 1.18, appeal: 1.1, maintenance: 1.06 },
+          { id: "industrial", name: "\u5DE5\u4E1A\u98CE", costFactor: 1.06, appeal: 1.04, maintenance: 0.94 },
+          { id: "retro", name: "\u590D\u53E4\u5E02\u4E95", costFactor: 1.12, appeal: 1.08, maintenance: 1.04 },
+          { id: "premium", name: "\u54C1\u8D28\u5546\u52A1", costFactor: 1.36, appeal: 1.18, maintenance: 1.16 }
+        ],
+        privateRoomStyles: [
+          { id: "plain", name: "\u5B9E\u7528\u578B", costPerSqm: 620, appeal: 0.96 },
+          { id: "wood", name: "\u539F\u6728\u96C5\u95F4", costPerSqm: 880, appeal: 1.05 },
+          { id: "chinese", name: "\u4E2D\u5F0F\u96C5\u95F4", costPerSqm: 1180, appeal: 1.12 },
+          { id: "modern", name: "\u73B0\u4EE3\u5305\u53A2", costPerSqm: 1080, appeal: 1.1 },
+          { id: "premium", name: "\u5546\u52A1\u5305\u53A2", costPerSqm: 1580, appeal: 1.2 }
+        ],
+        materialGrades: [
+          { id: "budget", name: "\u7ECF\u6D4E", costFactor: 0.82, quality: 0.88, durability: 0.85 },
+          { id: "standard", name: "\u6807\u51C6", costFactor: 1, quality: 1, durability: 1 },
+          { id: "good", name: "\u54C1\u8D28", costFactor: 1.22, quality: 1.1, durability: 1.12 },
+          { id: "premium", name: "\u9AD8\u6863", costFactor: 1.48, quality: 1.18, durability: 1.2 }
+        ],
+        lightingLevels: [
+          { id: "basic", name: "\u57FA\u7840\u7167\u660E", costPerSqm: 55, appeal: 0.96 },
+          { id: "warm", name: "\u6696\u5149\u6C1B\u56F4", costPerSqm: 88, appeal: 1.04 },
+          { id: "layered", name: "\u5206\u5C42\u706F\u5149", costPerSqm: 125, appeal: 1.1 },
+          { id: "premium", name: "\u8BBE\u8BA1\u706F\u5149", costPerSqm: 188, appeal: 1.16 }
+        ],
+        privateRoomSeatOptions: [4, 6, 8, 10, 12],
+        zoneRules: {
+          minKitchenRatio: 0.18,
+          maxKitchenRatio: 0.42,
+          minStorageRatio: 0.04,
+          maxStorageRatio: 0.18,
+          minServiceRatio: 0.08,
+          maxServiceRatio: 0.2
+        },
+        baseConstructionCostPerSqm: 520,
+        templateRules: {
+          maxTemplates: 30,
+          defaultNamePrefix: "\u88C5\u4FEE\u6A21\u677F"
+        },
+        nameRules: {
+          shopMaxLength: 12,
+          roomMaxLength: 10,
+          templateMaxLength: 14
+        },
+        contractorNameParts: {
+          prefix: ["\u57CE\u5EFA", "\u5320\u9020", "\u79BE\u6728", "\u9F0E\u76DB", "\u9752\u79BE", "\u8FDC\u666F", "\u4E07\u5BB6", "\u7B51\u5473"],
+          suffix: ["\u88C5\u9970\u5DE5\u7A0B", "\u9910\u996E\u7A7A\u95F4", "\u5EFA\u8BBE\u8BBE\u8BA1", "\u5DE5\u7A0B\u670D\u52A1"]
+        }
+      };
+    }
+  });
+
+  // src/renovation/renovationSystem.js
+  var require_renovationSystem = __commonJS({
+    "src/renovation/renovationSystem.js"(exports, module) {
+      "use strict";
+      var gameState = require_gameState();
+      var simulationSystem = require_simulationSystem();
+      var config = require_renovationConfig();
+      function clone(value) {
+        return JSON.parse(
+          JSON.stringify(value)
+        );
+      }
+      function clamp(value, min, max) {
+        return Math.max(
+          min,
+          Math.min(max, value)
+        );
+      }
+      function hashFloat(text) {
+        let h = 2166136261;
+        const source = String(text);
+        for (let i = 0; i < source.length; i++) {
+          h ^= source.charCodeAt(i);
+          h = Math.imul(h, 16777619);
+        }
+        return (h >>> 0) % 1e5 / 1e5;
+      }
+      var RenovationSystem = class {
+        constructor() {
+          this.history = {};
+        }
+        getHistory(shopId) {
+          if (!this.history[shopId]) {
+            this.history[shopId] = {
+              undo: [],
+              redo: []
+            };
+          }
+          return this.history[shopId];
+        }
+        getShop(shopId) {
+          const business = gameState.getBusiness();
+          return business.shops.find(
+            (item) => item.id === shopId
+          ) || null;
+        }
+        getStore() {
+          return gameState.getRenovations();
+        }
+        getMaxFloors(shop) {
+          const raw = String(
+            shop.floor || ""
+          );
+          if (raw.indexOf("1-3") >= 0) {
+            return 3;
+          }
+          if (raw.indexOf("1-2") >= 0) {
+            return 2;
+          }
+          return 1;
+        }
+        createFloor(index, area) {
+          const diningArea = area * 0.56;
+          const table4 = Math.max(
+            1,
+            Math.floor(
+              diningArea / 16
+            )
+          );
+          return {
+            index,
+            name: "\u7B2C" + (index + 1) + "\u5C42",
+            area: Number(
+              area.toFixed(1)
+            ),
+            kitchenRatio: index === 0 ? 0.27 : 0.18,
+            storageRatio: 0.08,
+            serviceRatio: 0.11,
+            aisleMode: "standard",
+            tables: {
+              2: 2,
+              4: table4,
+              6: 0,
+              8: 0
+            },
+            privateRooms: []
+          };
+        }
+        ensurePlan(shopId) {
+          const shop = this.getShop(shopId);
+          if (!shop) {
+            return null;
+          }
+          const store = this.getStore();
+          if (!store[shopId]) {
+            const maxFloors = this.getMaxFloors(shop);
+            const usable = Math.max(
+              1,
+              Number(
+                shop.usableArea || shop.grossArea || 60
+              )
+            );
+            const perFloor = usable / maxFloors;
+            const floors = [];
+            for (let i = 0; i < maxFloors; i++) {
+              floors.push(
+                this.createFloor(
+                  i,
+                  perFloor
+                )
+              );
+            }
+            store[shopId] = {
+              shopId,
+              status: "draft",
+              activeFloor: 0,
+              hallStyle: "simple",
+              materialGrade: "budget",
+              lightingLevel: "basic",
+              floors,
+              selectedContractorId: null,
+              construction: null
+            };
+          }
+          return clone(
+            store[shopId]
+          );
+        }
+        mutatePlan(shopId, callback, options) {
+          this.ensurePlan(shopId);
+          const plan = this.getStore()[shopId];
+          const opts = options || {};
+          if (!opts.skipHistory && plan.status !== "constructing" && plan.status !== "completed") {
+            const history = this.getHistory(
+              shopId
+            );
+            history.undo.push(
+              clone(
+                plan
+              )
+            );
+            if (history.undo.length > 20) {
+              history.undo.shift();
+            }
+            history.redo = [];
+          }
+          callback(plan);
+          return clone(plan);
+        }
+        canUndo(shopId) {
+          return this.getHistory(
+            shopId
+          ).undo.length > 0;
+        }
+        canRedo(shopId) {
+          return this.getHistory(
+            shopId
+          ).redo.length > 0;
+        }
+        undo(shopId) {
+          const store = this.getStore();
+          const current = store[shopId];
+          if (!current || current.status === "constructing" || current.status === "completed") {
+            return null;
+          }
+          const history = this.getHistory(
+            shopId
+          );
+          const previous = history.undo.pop();
+          if (!previous) {
+            return null;
+          }
+          history.redo.push(
+            clone(
+              current
+            )
+          );
+          store[shopId] = clone(
+            previous
+          );
+          return clone(
+            store[shopId]
+          );
+        }
+        redo(shopId) {
+          const store = this.getStore();
+          const current = store[shopId];
+          if (!current || current.status === "constructing" || current.status === "completed") {
+            return null;
+          }
+          const history = this.getHistory(
+            shopId
+          );
+          const next = history.redo.pop();
+          if (!next) {
+            return null;
+          }
+          history.undo.push(
+            clone(
+              current
+            )
+          );
+          store[shopId] = clone(
+            next
+          );
+          return clone(
+            store[shopId]
+          );
+        }
+        setActiveFloor(shopId, index) {
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              plan.activeFloor = clamp(
+                Math.floor(index),
+                0,
+                plan.floors.length - 1
+              );
+            }
+          );
+        }
+        adjustZone(shopId, floorIndex, key, delta) {
+          const rules = config.zoneRules;
+          const range = {
+            kitchenRatio: [
+              rules.minKitchenRatio,
+              rules.maxKitchenRatio
+            ],
+            storageRatio: [
+              rules.minStorageRatio,
+              rules.maxStorageRatio
+            ],
+            serviceRatio: [
+              rules.minServiceRatio,
+              rules.maxServiceRatio
+            ]
+          }[key];
+          if (!range) {
+            return null;
+          }
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              const floor = plan.floors[clamp(
+                floorIndex,
+                0,
+                plan.floors.length - 1
+              )];
+              floor[key] = Number(
+                clamp(
+                  floor[key] + delta,
+                  range[0],
+                  range[1]
+                ).toFixed(2)
+              );
+            }
+          );
+        }
+        cycleAisle(shopId, floorIndex) {
+          const ids = Object.keys(
+            config.aisleModes
+          );
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              const floor = plan.floors[floorIndex];
+              const current = ids.indexOf(
+                floor.aisleMode
+              );
+              floor.aisleMode = ids[(current + 1) % ids.length];
+            }
+          );
+        }
+        adjustTable(shopId, floorIndex, seats, delta) {
+          const key = String(seats);
+          if (!config.tableFootprint[key]) {
+            return null;
+          }
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              const floor = plan.floors[floorIndex];
+              floor.tables[key] = Math.max(
+                0,
+                Math.min(
+                  40,
+                  (floor.tables[key] || 0) + delta
+                )
+              );
+            }
+          );
+        }
+        addPrivateRoom(shopId, floorIndex) {
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              const floor = plan.floors[floorIndex];
+              if (floor.privateRooms.length >= 8) {
+                return;
+              }
+              const id = "room_" + Date.now() % 1e6 + "_" + floor.privateRooms.length;
+              floor.privateRooms.push({
+                id,
+                name: "\u5305\u53A2" + (floor.privateRooms.length + 1),
+                seats: 6,
+                style: "wood"
+              });
+            }
+          );
+        }
+        removePrivateRoom(shopId, floorIndex, roomId) {
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              const floor = plan.floors[floorIndex];
+              floor.privateRooms = floor.privateRooms.filter(
+                (item) => item.id !== roomId
+              );
+            }
+          );
+        }
+        cycleRoomSeats(shopId, floorIndex, roomId) {
+          const options = config.privateRoomSeatOptions;
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              const room = plan.floors[floorIndex].privateRooms.find(
+                (item) => item.id === roomId
+              );
+              if (!room) {
+                return;
+              }
+              const current = options.indexOf(
+                room.seats
+              );
+              room.seats = options[(current + 1) % options.length];
+            }
+          );
+        }
+        cycleRoomStyle(shopId, floorIndex, roomId) {
+          const styles = config.privateRoomStyles;
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              const room = plan.floors[floorIndex].privateRooms.find(
+                (item) => item.id === roomId
+              );
+              if (!room) {
+                return;
+              }
+              const current = styles.findIndex(
+                (item) => item.id === room.style
+              );
+              room.style = styles[(current + 1) % styles.length].id;
+            }
+          );
+        }
+        cycleGlobal(shopId, key) {
+          const source = key === "hallStyle" ? config.hallStyles : key === "materialGrade" ? config.materialGrades : config.lightingLevels;
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              const current = source.findIndex(
+                (item) => item.id === plan[key]
+              );
+              plan[key] = source[(current + 1) % source.length].id;
+            }
+          );
+        }
+        getById(list, id) {
+          return list.find(
+            (item) => item.id === id
+          ) || list[0];
+        }
+        getMetrics(shopId) {
+          const shop = this.getShop(shopId);
+          const plan = this.ensurePlan(shopId);
+          if (!shop || !plan) {
+            return null;
+          }
+          const hallStyle = this.getById(
+            config.hallStyles,
+            plan.hallStyle
+          );
+          const material = this.getById(
+            config.materialGrades,
+            plan.materialGrade
+          );
+          const lighting = this.getById(
+            config.lightingLevels,
+            plan.lightingLevel
+          );
+          let totalSeats = 0;
+          let totalDiningArea = 0;
+          let totalFurnitureArea = 0;
+          let privateRoomArea = 0;
+          let privateRoomSeats = 0;
+          let roomAppeal = 0;
+          let roomCount = 0;
+          let kitchenArea = 0;
+          let storageArea = 0;
+          let serviceArea = 0;
+          let comfortScore = 0;
+          let serviceScore = 0;
+          let invalidFloorCount = 0;
+          const floorMetrics = [];
+          for (let i = 0; i < plan.floors.length; i++) {
+            const floor = plan.floors[i];
+            const aisle = config.aisleModes[floor.aisleMode];
+            const zoneRatio = floor.kitchenRatio + floor.storageRatio + floor.serviceRatio;
+            const diningArea = Math.max(
+              0,
+              floor.area * (1 - zoneRatio)
+            );
+            let tableArea = 0;
+            let tableSeats = 0;
+            Object.keys(
+              floor.tables
+            ).forEach(
+              (key) => {
+                const count = floor.tables[key];
+                tableArea += count * config.tableFootprint[key] * aisle.areaFactor;
+                tableSeats += count * Number(key);
+              }
+            );
+            let roomArea = 0;
+            let roomSeats = 0;
+            let floorRoomAppeal = 0;
+            for (let j = 0; j < floor.privateRooms.length; j++) {
+              const room = floor.privateRooms[j];
+              const style = this.getById(
+                config.privateRoomStyles,
+                room.style
+              );
+              const area = 7 + room.seats * 1.55;
+              roomArea += area;
+              roomSeats += room.seats;
+              floorRoomAppeal += style.appeal;
+            }
+            const used = tableArea + roomArea;
+            const remaining = diningArea - used;
+            const crowding = diningArea > 0 ? used / diningArea : 99;
+            const valid = remaining >= -0.01 && zoneRatio < 0.78;
+            if (!valid) {
+              invalidFloorCount += 1;
+            }
+            floorMetrics.push({
+              ...floor,
+              diningArea: Number(
+                diningArea.toFixed(1)
+              ),
+              tableArea: Number(
+                tableArea.toFixed(1)
+              ),
+              privateRoomArea: Number(
+                roomArea.toFixed(1)
+              ),
+              remainingArea: Number(
+                remaining.toFixed(1)
+              ),
+              seats: tableSeats + roomSeats,
+              crowding,
+              valid
+            });
+            totalSeats += tableSeats + roomSeats;
+            totalDiningArea += diningArea;
+            totalFurnitureArea += tableArea;
+            privateRoomArea += roomArea;
+            privateRoomSeats += roomSeats;
+            roomAppeal += floorRoomAppeal;
+            roomCount += floor.privateRooms.length;
+            kitchenArea += floor.area * floor.kitchenRatio;
+            storageArea += floor.area * floor.storageRatio;
+            serviceArea += floor.area * floor.serviceRatio;
+            comfortScore += aisle.comfort;
+            serviceScore += aisle.serviceEfficiency;
+          }
+          const totalArea = plan.floors.reduce(
+            (sum, item) => sum + item.area,
+            0
+          );
+          const furnitureCost = plan.floors.reduce(
+            (sum, floor) => {
+              return sum + Object.keys(
+                floor.tables
+              ).reduce(
+                (inner, key) => inner + floor.tables[key] * (420 + Number(key) * 165),
+                0
+              );
+            },
+            0
+          );
+          let roomCost = 0;
+          for (let i = 0; i < plan.floors.length; i++) {
+            const floor = plan.floors[i];
+            for (let j = 0; j < floor.privateRooms.length; j++) {
+              const room = floor.privateRooms[j];
+              const style = this.getById(
+                config.privateRoomStyles,
+                room.style
+              );
+              const area = 7 + room.seats * 1.55;
+              roomCost += area * style.costPerSqm;
+            }
+          }
+          const constructionBase = totalArea * config.baseConstructionCostPerSqm * hallStyle.costFactor * material.costFactor;
+          const lightingCost = totalArea * lighting.costPerSqm;
+          const kitchenComplexity = kitchenArea * (210 + totalSeats * 1.8);
+          const totalCost = Math.round(
+            constructionBase + lightingCost + furnitureCost + roomCost + kitchenComplexity
+          );
+          const averageComfort = comfortScore / Math.max(
+            1,
+            plan.floors.length
+          );
+          const averageService = serviceScore / Math.max(
+            1,
+            plan.floors.length
+          );
+          const kitchenLoad = totalSeats / Math.max(
+            1,
+            kitchenArea * 2.65
+          );
+          const comfort = clamp(
+            averageComfort * material.quality * lighting.appeal * (1 - Math.max(
+              0,
+              (totalFurnitureArea + privateRoomArea) / Math.max(
+                1,
+                totalDiningArea
+              ) - 0.78
+            ) * 0.8),
+            0.35,
+            1.35
+          );
+          const appeal = clamp(
+            hallStyle.appeal * lighting.appeal * material.quality * (roomCount ? roomAppeal / roomCount : 1),
+            0.55,
+            1.55
+          );
+          const operationalEfficiency = clamp(
+            averageService * (1 - Math.max(
+              0,
+              kitchenLoad - 1
+            ) * 0.32) * (1 + storageArea / Math.max(
+              1,
+              totalArea
+            ) * 0.22),
+            0.45,
+            1.35
+          );
+          const buildDays = Math.max(
+            5,
+            Math.round(
+              Math.sqrt(
+                totalArea
+              ) * 1.4 * hallStyle.costFactor + roomCount * 1.8 + plan.floors.length * 2
+            )
+          );
+          return {
+            shopId,
+            plan,
+            floors: floorMetrics,
+            totalArea: Number(
+              totalArea.toFixed(1)
+            ),
+            totalSeats,
+            privateRoomSeats,
+            roomCount,
+            kitchenArea: Number(
+              kitchenArea.toFixed(1)
+            ),
+            storageArea: Number(
+              storageArea.toFixed(1)
+            ),
+            serviceArea: Number(
+              serviceArea.toFixed(1)
+            ),
+            totalDiningArea: Number(
+              totalDiningArea.toFixed(1)
+            ),
+            invalidFloorCount,
+            valid: invalidFloorCount === 0 && kitchenLoad <= 1.28,
+            kitchenLoad,
+            comfort,
+            appeal,
+            operationalEfficiency,
+            totalCost,
+            buildDays
+          };
+        }
+        getContractorQuotes(shopId) {
+          const metrics = this.getMetrics(
+            shopId
+          );
+          if (!metrics) {
+            return [];
+          }
+          const seed = gameState.getSimulation().seed || 1;
+          const quotes = [];
+          for (let i = 0; i < 3; i++) {
+            const r1 = hashFloat(
+              shopId + ":contractor:" + seed + ":" + i
+            );
+            const r2 = hashFloat(
+              shopId + ":contractor2:" + seed + ":" + i
+            );
+            const prefix = config.contractorNameParts.prefix[Math.floor(
+              r1 * config.contractorNameParts.prefix.length
+            ) % config.contractorNameParts.prefix.length];
+            const suffix = config.contractorNameParts.suffix[Math.floor(
+              r2 * config.contractorNameParts.suffix.length
+            ) % config.contractorNameParts.suffix.length];
+            const priceFactor = 0.88 + r1 * 0.3;
+            const speedFactor = 0.84 + r2 * 0.3;
+            const reliability = Math.round(
+              68 + (r1 * 0.45 + r2 * 0.55) * 29
+            );
+            quotes.push({
+              id: "contractor_" + i,
+              name: prefix + suffix,
+              price: Math.round(
+                metrics.totalCost * priceFactor
+              ),
+              days: Math.max(
+                4,
+                Math.round(
+                  metrics.buildDays * speedFactor
+                )
+              ),
+              reliability,
+              quality: Math.round(
+                65 + r2 * 32
+              )
+            });
+          }
+          return quotes.sort(
+            (a, b) => a.price - b.price
+          );
+        }
+        selectContractor(shopId, contractorId) {
+          const quotes = this.getContractorQuotes(
+            shopId
+          );
+          const found = quotes.find(
+            (item) => item.id === contractorId
+          );
+          if (!found) {
+            return null;
+          }
+          return this.mutatePlan(
+            shopId,
+            (plan) => {
+              plan.selectedContractorId = contractorId;
+            }
+          );
+        }
+        startConstruction(shopId) {
+          const shop = this.getShop(
+            shopId
+          );
+          const metrics = this.getMetrics(
+            shopId
+          );
+          if (!shop || !metrics) {
+            return {
+              ok: false,
+              message: "\u95E8\u5E97\u4E0D\u5B58\u5728"
+            };
+          }
+          if (!metrics.valid) {
+            return {
+              ok: false,
+              message: "\u5F53\u524D\u5E03\u5C40\u5B58\u5728\u9762\u79EF\u6216\u540E\u53A8\u627F\u8F7D\u95EE\u9898"
+            };
+          }
+          const plan = this.getStore()[shopId];
+          const quotes = this.getContractorQuotes(
+            shopId
+          );
+          const quote = quotes.find(
+            (item) => item.id === plan.selectedContractorId
+          ) || quotes[0];
+          if (gameState.getPlayer().cash < quote.price) {
+            return {
+              ok: false,
+              message: "\u88C5\u4FEE\u8D44\u91D1\u4E0D\u8DB3\uFF0C\u8FD8\u5DEE\xA5" + (quote.price - gameState.getPlayer().cash).toLocaleString()
+            };
+          }
+          gameState.spendCash(
+            quote.price
+          );
+          const currentDay = simulationSystem.getDayOrdinal(
+            gameState.getTime()
+          );
+          plan.status = "constructing";
+          plan.construction = {
+            contractor: clone(quote),
+            startDay: currentDay,
+            finishDay: currentDay + quote.days,
+            paid: quote.price,
+            snapshot: clone(metrics)
+          };
+          shop.status = "renovating";
+          shop.renovationCost = quote.price;
+          shop.renovationFinishDay = plan.construction.finishDay;
+          return {
+            ok: true,
+            quote: clone(quote),
+            finishDay: plan.construction.finishDay
+          };
+        }
+        updateShop(shopId) {
+          const shop = this.getShop(
+            shopId
+          );
+          const plan = this.ensurePlan(
+            shopId
+          );
+          if (!shop || !plan || plan.status !== "constructing" || !plan.construction) {
+            return false;
+          }
+          const currentDay = simulationSystem.getDayOrdinal(
+            gameState.getTime()
+          );
+          if (currentDay < plan.construction.finishDay) {
+            return false;
+          }
+          const stored = this.getStore()[shopId];
+          stored.status = "completed";
+          shop.status = "renovated_pending_license";
+          shop.layoutMetrics = clone(
+            stored.construction.snapshot
+          );
+          return true;
+        }
+      };
+      module.exports = new RenovationSystem();
+    }
+  });
+
+  // src/opening/openingConfig.js
+  var require_openingConfig = __commonJS({
+    "src/opening/openingConfig.js"(exports, module) {
+      "use strict";
+      module.exports = {
+        equipment: [
+          {
+            id: "cooking",
+            name: "\u70F9\u996A\u8BBE\u5907",
+            iconKey: "visual_stove",
+            basePrice: 13800,
+            capacityPerUnit: 34,
+            powerKw: 8,
+            gasPreferred: true,
+            installDays: 2
+          },
+          {
+            id: "cold",
+            name: "\u51B7\u85CF\u8BBE\u5907",
+            iconKey: "visual_fridge",
+            basePrice: 9800,
+            capacityPerUnit: 52,
+            powerKw: 2.6,
+            gasPreferred: false,
+            installDays: 1
+          },
+          {
+            id: "prep",
+            name: "\u5907\u9910\u64CD\u4F5C\u53F0",
+            iconKey: "visual_register",
+            basePrice: 4200,
+            capacityPerUnit: 42,
+            powerKw: 0.3,
+            gasPreferred: false,
+            installDays: 1
+          },
+          {
+            id: "dishwash",
+            name: "\u6D17\u6D88\u8BBE\u5907",
+            iconKey: "visual_fridge",
+            basePrice: 7600,
+            capacityPerUnit: 46,
+            powerKw: 5.5,
+            gasPreferred: false,
+            installDays: 2
+          },
+          {
+            id: "pos",
+            name: "\u6536\u94F6\u8BBE\u5907",
+            iconKey: "visual_register",
+            basePrice: 3200,
+            capacityPerUnit: 85,
+            powerKw: 0.5,
+            gasPreferred: false,
+            installDays: 1
+          }
+        ],
+        qualityGrades: [
+          {
+            id: "budget",
+            name: "\u7ECF\u6D4E",
+            priceFactor: 0.82,
+            reliability: 0.86,
+            efficiency: 0.92
+          },
+          {
+            id: "standard",
+            name: "\u6807\u51C6",
+            priceFactor: 1,
+            reliability: 1,
+            efficiency: 1
+          },
+          {
+            id: "premium",
+            name: "\u9AD8\u914D",
+            priceFactor: 1.28,
+            reliability: 1.12,
+            efficiency: 1.09
+          }
+        ],
+        permits: [
+          {
+            id: "business",
+            name: "\u4E3B\u4F53\u767B\u8BB0",
+            baseFee: 380,
+            baseDays: 2
+          },
+          {
+            id: "food",
+            name: "\u98DF\u54C1\u7ECF\u8425\u8BB8\u53EF",
+            baseFee: 680,
+            baseDays: 5
+          },
+          {
+            id: "fire",
+            name: "\u6D88\u9632\u68C0\u67E5/\u5907\u6848",
+            baseFee: 460,
+            baseDays: 4
+          },
+          {
+            id: "sign",
+            name: "\u95E8\u5934\u62DB\u724C\u5907\u6848",
+            baseFee: 160,
+            baseDays: 2
+          }
+        ],
+        roles: [
+          {
+            id: "manager",
+            name: "\u5E97\u957F",
+            baseWage: 7200,
+            seatsPerWorker: 999
+          },
+          {
+            id: "chef",
+            name: "\u53A8\u5E08",
+            baseWage: 6800,
+            seatsPerWorker: 38
+          },
+          {
+            id: "server",
+            name: "\u670D\u52A1\u5458",
+            baseWage: 4200,
+            seatsPerWorker: 22
+          },
+          {
+            id: "cashier",
+            name: "\u6536\u94F6/\u524D\u53F0",
+            baseWage: 4300,
+            seatsPerWorker: 70
+          }
+        ],
+        surnames: [
+          "\u9648",
+          "\u738B",
+          "\u674E",
+          "\u5F20",
+          "\u5218",
+          "\u5468",
+          "\u8D75",
+          "\u5B59",
+          "\u9A6C",
+          "\u6731",
+          "\u80E1",
+          "\u90ED",
+          "\u4F55",
+          "\u9AD8",
+          "\u6797",
+          "\u90D1",
+          "\u6881",
+          "\u8BB8",
+          "\u5B8B",
+          "\u8C22"
+        ],
+        givenNames: [
+          "\u542F\u660E",
+          "\u5A49\u5B81",
+          "\u5FD7\u5F3A",
+          "\u8FDC\u822A",
+          "\u96C5\u7434",
+          "\u56FD\u6881",
+          "\u6668\u66E6",
+          "\u96E8\u6850",
+          "\u5609\u5B81",
+          "\u535A\u6587",
+          "\u6D69\u7136",
+          "\u601D\u8FDC",
+          "\u5B50\u6DB5",
+          "\u660E\u8F69",
+          "\u82E5\u6EAA",
+          "\u4FCA\u6770",
+          "\u96EA\u6674",
+          "\u4F73\u6021",
+          "\u6587\u6D9B",
+          "\u6653\u5CF0"
+        ]
+      };
+    }
+  });
+
+  // src/opening/openingPrepSystem.js
+  var require_openingPrepSystem = __commonJS({
+    "src/opening/openingPrepSystem.js"(exports, module) {
+      "use strict";
+      var gameState = require_gameState();
+      var simulationSystem = require_simulationSystem();
+      var renovationSystem = require_renovationSystem();
+      var config = require_openingConfig();
+      function clone(value) {
+        return JSON.parse(
+          JSON.stringify(value)
+        );
+      }
+      function clamp(value, min, max) {
+        return Math.max(
+          min,
+          Math.min(
+            max,
+            value
+          )
+        );
+      }
+      function hashFloat(text) {
+        let h = 2166136261;
+        const source = String(text);
+        for (let i = 0; i < source.length; i++) {
+          h ^= source.charCodeAt(
+            i
+          );
+          h = Math.imul(
+            h,
+            16777619
+          );
+        }
+        return (h >>> 0) % 1e5 / 1e5;
+      }
+      function featureOkay(value) {
+        if (value === void 0 || value === null) {
+          return true;
+        }
+        if (typeof value === "boolean") {
+          return value;
+        }
+        const text = String(value);
+        return !(text.indexOf(
+          "\u65E0"
+        ) >= 0 || text.indexOf(
+          "\u4E0D"
+        ) >= 0 || text.indexOf(
+          "\u5426"
+        ) >= 0 || text.indexOf(
+          "\u4E0D\u8DB3"
+        ) >= 0);
+      }
+      var OpeningPrepSystem = class {
+        getShop(shopId) {
+          return gameState.getBusiness().shops.find(
+            (item) => item.id === shopId
+          ) || null;
+        }
+        getStore() {
+          return gameState.getOpeningPrep();
+        }
+        getCurrentDay() {
+          return simulationSystem.getDayOrdinal(
+            gameState.getTime()
+          );
+        }
+        getSeats(shopId) {
+          const shop = this.getShop(
+            shopId
+          );
+          if (!shop) {
+            return 0;
+          }
+          const metrics = renovationSystem.getMetrics(
+            shopId
+          );
+          if (metrics && Number.isFinite(
+            Number(
+              metrics.totalSeats
+            )
+          )) {
+            return Math.max(
+              1,
+              Number(
+                metrics.totalSeats
+              )
+            );
+          }
+          return Math.max(
+            1,
+            Number(
+              shop.seatEstimate
+            ) || 30
+          );
+        }
+        ensureEquipment(shopId) {
+          const prep = this.getStore();
+          if (!prep.equipment[shopId]) {
+            const seats = this.getSeats(
+              shopId
+            );
+            const items = {};
+            for (const item of config.equipment) {
+              items[item.id] = {
+                id: item.id,
+                quantity: Math.max(
+                  1,
+                  Math.ceil(
+                    seats / item.capacityPerUnit
+                  )
+                ),
+                grade: "standard"
+              };
+            }
+            prep.equipment[shopId] = {
+              status: "planning",
+              items,
+              orderDay: null,
+              deliveryDay: null,
+              paid: 0
+            };
+          }
+          return prep.equipment[shopId];
+        }
+        getEquipmentState(shopId) {
+          return clone(
+            this.ensureEquipment(
+              shopId
+            )
+          );
+        }
+        getEquipmentQuote(shopId) {
+          const shop = this.getShop(
+            shopId
+          );
+          if (!shop) {
+            return null;
+          }
+          const state = this.ensureEquipment(
+            shopId
+          );
+          const day = this.getCurrentDay();
+          const marketFactor = 0.94 + hashFloat(
+            shopId + ":equipment-market:" + day
+          ) * 0.14;
+          const lines = [];
+          let total = 0;
+          let totalPower = 0;
+          let cookingCapacity = 0;
+          let serviceCapacity = Infinity;
+          let maxInstallDays = 1;
+          for (const item of config.equipment) {
+            const plan = state.items[item.id];
+            const grade = config.qualityGrades.find(
+              (entry) => entry.id === plan.grade
+            ) || config.qualityGrades[1];
+            const price = Math.round(
+              item.basePrice * plan.quantity * grade.priceFactor * marketFactor
+            );
+            const capacity2 = item.capacityPerUnit * plan.quantity * grade.efficiency;
+            const power = item.powerKw * plan.quantity;
+            total += price;
+            totalPower += power;
+            maxInstallDays = Math.max(
+              maxInstallDays,
+              item.installDays
+            );
+            if (item.id === "cooking") {
+              cookingCapacity = capacity2;
+            } else {
+              serviceCapacity = Math.min(
+                serviceCapacity,
+                capacity2
+              );
+            }
+            lines.push({
+              ...item,
+              quantity: plan.quantity,
+              grade: grade.id,
+              gradeName: grade.name,
+              price,
+              capacity: Math.round(
+                capacity2
+              ),
+              powerKw: Number(
+                power.toFixed(
+                  1
+                )
+              ),
+              reliability: grade.reliability
+            });
+          }
+          if (serviceCapacity === Infinity) {
+            serviceCapacity = 0;
+          }
+          const seats = this.getSeats(
+            shopId
+          );
+          const capacity = Math.min(
+            cookingCapacity,
+            serviceCapacity
+          );
+          const capacityRatio = capacity / Math.max(
+            1,
+            seats
+          );
+          const electricLimit = Number(
+            shop.electricCapacityKw
+          );
+          const issues = [];
+          let infrastructureUpgradeCost = 0;
+          if (Number.isFinite(
+            electricLimit
+          ) && electricLimit > 0 && totalPower > electricLimit) {
+            infrastructureUpgradeCost = Math.round(
+              (totalPower - electricLimit) * 850
+            );
+          }
+          const shortage = Math.max(
+            0,
+            1 - capacityRatio
+          );
+          const marketDelay = Math.floor(
+            hashFloat(
+              shopId + ":equipment-delay:" + day
+            ) * 3
+          );
+          return {
+            shopId,
+            lines,
+            total: total + infrastructureUpgradeCost,
+            equipmentCost: total,
+            infrastructureUpgradeCost,
+            totalPowerKw: Number(
+              totalPower.toFixed(
+                1
+              )
+            ),
+            seats,
+            capacity: Math.round(
+              capacity
+            ),
+            capacityRatio,
+            shortage,
+            issues,
+            valid: capacityRatio >= 0.9,
+            installDays: maxInstallDays + marketDelay,
+            marketFactor
+          };
+        }
+        adjustEquipment(shopId, itemId, delta) {
+          const state = this.ensureEquipment(
+            shopId
+          );
+          if (state.status !== "planning") {
+            return false;
+          }
+          const item = state.items[itemId];
+          if (!item) {
+            return false;
+          }
+          item.quantity = clamp(
+            item.quantity + delta,
+            0,
+            20
+          );
+          return true;
+        }
+        cycleEquipmentGrade(shopId, itemId) {
+          const state = this.ensureEquipment(
+            shopId
+          );
+          if (state.status !== "planning") {
+            return false;
+          }
+          const item = state.items[itemId];
+          if (!item) {
+            return false;
+          }
+          const ids = config.qualityGrades.map(
+            (entry) => entry.id
+          );
+          const current = ids.indexOf(
+            item.grade
+          );
+          item.grade = ids[(current + 1) % ids.length];
+          return true;
+        }
+        orderEquipment(shopId) {
+          const state = this.ensureEquipment(
+            shopId
+          );
+          if (state.status !== "planning") {
+            return {
+              ok: false,
+              message: "\u8BBE\u5907\u8BA2\u5355\u5DF2\u7ECF\u63D0\u4EA4"
+            };
+          }
+          const quote = this.getEquipmentQuote(
+            shopId
+          );
+          if (!quote) {
+            return {
+              ok: false,
+              message: "\u95E8\u5E97\u4E0D\u5B58\u5728"
+            };
+          }
+          if (!quote.valid) {
+            return {
+              ok: false,
+              message: quote.issues[0] || "\u5F53\u524D\u8BBE\u5907\u914D\u7F6E\u65E0\u6CD5\u6EE1\u8DB3\u8425\u4E1A\u9700\u6C42"
+            };
+          }
+          if (!gameState.spendCash(
+            quote.total
+          )) {
+            return {
+              ok: false,
+              message: "\u8BBE\u5907\u91C7\u8D2D\u8D44\u91D1\u4E0D\u8DB3"
+            };
+          }
+          const day = this.getCurrentDay();
+          state.status = "ordered";
+          state.orderDay = day;
+          state.deliveryDay = day + quote.installDays;
+          state.paid = quote.total;
+          state.quote = clone(
+            quote
+          );
+          return {
+            ok: true,
+            deliveryDay: state.deliveryDay,
+            total: quote.total
+          };
+        }
+        updateEquipment(shopId) {
+          const state = this.ensureEquipment(
+            shopId
+          );
+          if (state.status !== "ordered") {
+            return false;
+          }
+          if (this.getCurrentDay() < state.deliveryDay) {
+            return false;
+          }
+          state.status = "installed";
+          return true;
+        }
+        getPermitState(shopId) {
+          const prep = this.getStore();
+          if (!prep.permits[shopId]) {
+            const items = {};
+            for (const permit of config.permits) {
+              items[permit.id] = {
+                id: permit.id,
+                status: "not_applied",
+                appliedDay: null,
+                finishDay: null,
+                paid: 0,
+                issue: null
+              };
+            }
+            prep.permits[shopId] = {
+              items,
+              remediated: {}
+            };
+          }
+          return prep.permits[shopId];
+        }
+        getPermitRequirements(shopId, permitId) {
+          const shop = this.getShop(
+            shopId
+          );
+          const equipment = this.ensureEquipment(
+            shopId
+          );
+          const permitState = this.getPermitState(
+            shopId
+          );
+          const renovation = renovationSystem.ensurePlan(
+            shopId
+          );
+          const reasons = [];
+          if (permitId === "food") {
+            if (!renovation || renovation.status !== "completed") {
+              reasons.push(
+                "\u88C5\u4FEE\u5C1A\u672A\u5B8C\u6210"
+              );
+            }
+            if (equipment.status !== "installed") {
+              reasons.push(
+                "\u4E3B\u8981\u8BBE\u5907\u5C1A\u672A\u5B89\u88C5"
+              );
+            }
+            if (shop && !featureOkay(
+              shop.greaseTrap
+            ) && !permitState.remediated.food) {
+              reasons.push(
+                "\u9694\u6CB9\u8BBE\u65BD\u9700\u6574\u6539"
+              );
+            }
+          }
+          if (permitId === "fire") {
+            if (!renovation || renovation.status !== "completed") {
+              reasons.push(
+                "\u88C5\u4FEE\u5C1A\u672A\u5B8C\u6210"
+              );
+            }
+            if (shop && !featureOkay(
+              shop.fireSprinkler
+            ) && !permitState.remediated.fire) {
+              reasons.push(
+                "\u6D88\u9632\u55B7\u6DCB\u9700\u6574\u6539"
+              );
+            }
+          }
+          return {
+            ready: reasons.length === 0,
+            reasons
+          };
+        }
+        getPermitOverview(shopId) {
+          const shop = this.getShop(
+            shopId
+          );
+          if (!shop) {
+            return null;
+          }
+          const state = this.getPermitState(
+            shopId
+          );
+          const day = this.getCurrentDay();
+          const rows = [];
+          for (const permit of config.permits) {
+            const item = state.items[permit.id];
+            const req = this.getPermitRequirements(
+              shopId,
+              permit.id
+            );
+            const volatility = 0.92 + hashFloat(
+              shopId + ":permit:" + permit.id + ":" + day
+            ) * 0.22;
+            const fee = Math.round(
+              permit.baseFee * volatility
+            );
+            const days = Math.max(
+              1,
+              Math.round(
+                permit.baseDays * (0.85 + volatility * 0.18)
+              )
+            );
+            const remediableReason = req.reasons.find(
+              (reason) => reason.indexOf(
+                "\u6574\u6539"
+              ) >= 0
+            ) || null;
+            const remediationCost = Math.round(
+              (permit.id === "fire" ? 6800 : permit.id === "food" ? 4200 : 1800) * (0.88 + hashFloat(
+                shopId + ":remediation:" + permit.id + ":" + day
+              ) * 0.28)
+            );
+            rows.push({
+              ...permit,
+              fee,
+              days,
+              ready: req.ready,
+              reasons: req.reasons,
+              status: item.status,
+              finishDay: item.finishDay,
+              issue: item.issue,
+              remediable: !!remediableReason || item.status === "needs_fix",
+              remediationCost
+            });
+          }
+          return {
+            shopId,
+            rows,
+            approved: rows.filter(
+              (item) => item.status === "approved"
+            ).length,
+            total: rows.length
+          };
+        }
+        applyPermit(shopId, permitId) {
+          const state = this.getPermitState(
+            shopId
+          );
+          const item = state.items[permitId];
+          if (!item) {
+            return {
+              ok: false,
+              message: "\u8BC1\u7167\u9879\u76EE\u4E0D\u5B58\u5728"
+            };
+          }
+          if (item.status === "applying" || item.status === "approved") {
+            return {
+              ok: false,
+              message: "\u8BE5\u9879\u76EE\u5DF2\u63D0\u4EA4"
+            };
+          }
+          const overview = this.getPermitOverview(
+            shopId
+          );
+          const row = overview.rows.find(
+            (permit) => permit.id === permitId
+          );
+          if (!row.ready) {
+            return {
+              ok: false,
+              message: row.reasons[0] || "\u5F53\u524D\u6761\u4EF6\u4E0D\u6EE1\u8DB3"
+            };
+          }
+          if (!gameState.spendCash(
+            row.fee
+          )) {
+            return {
+              ok: false,
+              message: "\u529E\u7406\u8D39\u7528\u4E0D\u8DB3"
+            };
+          }
+          const day = this.getCurrentDay();
+          item.status = "applying";
+          item.appliedDay = day;
+          item.finishDay = day + row.days;
+          item.paid += row.fee;
+          item.issue = null;
+          return {
+            ok: true,
+            finishDay: item.finishDay,
+            fee: row.fee
+          };
+        }
+        remediatePermit(shopId, permitId) {
+          const state = this.getPermitState(
+            shopId
+          );
+          const item = state.items[permitId];
+          if (!item) {
+            return {
+              ok: false,
+              message: "\u8BC1\u7167\u9879\u76EE\u4E0D\u5B58\u5728"
+            };
+          }
+          const overview = this.getPermitOverview(
+            shopId
+          );
+          const row = overview.rows.find(
+            (entry) => entry.id === permitId
+          );
+          if (!row || !row.remediable) {
+            return {
+              ok: false,
+              message: "\u5F53\u524D\u6CA1\u6709\u53EF\u6267\u884C\u7684\u6574\u6539\u9879\u76EE"
+            };
+          }
+          if (!gameState.spendCash(
+            row.remediationCost
+          )) {
+            return {
+              ok: false,
+              message: "\u6574\u6539\u8D44\u91D1\u4E0D\u8DB3"
+            };
+          }
+          state.remediated[permitId] = true;
+          item.status = "not_applied";
+          item.issue = null;
+          item.finishDay = null;
+          return {
+            ok: true,
+            cost: row.remediationCost
+          };
+        }
+        updatePermits(shopId) {
+          const shop = this.getShop(
+            shopId
+          );
+          if (!shop) {
+            return false;
+          }
+          const state = this.getPermitState(
+            shopId
+          );
+          const day = this.getCurrentDay();
+          let changed = false;
+          for (const permit of config.permits) {
+            const item = state.items[permit.id];
+            if (item.status !== "applying" || day < item.finishDay) {
+              continue;
+            }
+            const req = this.getPermitRequirements(
+              shopId,
+              permit.id
+            );
+            if (!req.ready) {
+              item.status = "needs_fix";
+              item.issue = req.reasons[0];
+              changed = true;
+              continue;
+            }
+            const inspection = hashFloat(
+              shopId + ":inspection:" + permit.id + ":" + item.appliedDay
+            );
+            const failRisk = permit.id === "food" ? 0.1 : permit.id === "fire" ? 0.08 : 0.035;
+            if (inspection < failRisk) {
+              item.status = "needs_fix";
+              item.issue = permit.id === "food" ? "\u73B0\u573A\u536B\u751F\u7EC6\u8282\u9700\u8865\u5145\u6574\u6539" : permit.id === "fire" ? "\u6D88\u9632\u6807\u8BC6\u4E0E\u901A\u9053\u7EC6\u8282\u9700\u8865\u5145" : "\u8D44\u6599\u5B58\u5728\u7F3A\u9879";
+            } else {
+              item.status = "approved";
+              item.issue = null;
+            }
+            changed = true;
+          }
+          return changed;
+        }
+        getStaffState(shopId) {
+          const prep = this.getStore();
+          if (!prep.staffing[shopId]) {
+            prep.staffing[shopId] = {
+              hired: [],
+              candidateDay: null,
+              candidates: []
+            };
+          }
+          return prep.staffing[shopId];
+        }
+        getRequiredStaff(shopId) {
+          const seats = this.getSeats(
+            shopId
+          );
+          const result = {};
+          for (const role of config.roles) {
+            result[role.id] = role.id === "manager" ? 1 : Math.max(
+              1,
+              Math.ceil(
+                seats / role.seatsPerWorker
+              )
+            );
+          }
+          return result;
+        }
+        generateCandidate(shopId, role, index, day) {
+          const seed = gameState.getSimulation().seed || 1;
+          const base = shopId + ":" + role.id + ":" + day + ":" + index + ":" + seed;
+          const r1 = hashFloat(
+            base + ":a"
+          );
+          const r2 = hashFloat(
+            base + ":b"
+          );
+          const r3 = hashFloat(
+            base + ":c"
+          );
+          const surname = config.surnames[Math.floor(
+            r1 * config.surnames.length
+          ) % config.surnames.length];
+          const given = config.givenNames[Math.floor(
+            r2 * config.givenNames.length
+          ) % config.givenNames.length];
+          const skill = Math.round(
+            48 + r1 * 48
+          );
+          const stability = Math.round(
+            45 + r2 * 52
+          );
+          const experience = Math.round(
+            r3 * 10
+          );
+          const wage = Math.round(
+            role.baseWage * (0.84 + skill / 250 + experience / 100) / 100
+          ) * 100;
+          return {
+            id: "candidate_" + role.id + "_" + day + "_" + index,
+            roleId: role.id,
+            roleName: role.name,
+            name: surname + given,
+            age: 20 + Math.floor(
+              r3 * 25
+            ),
+            skill,
+            stability,
+            experience,
+            wage,
+            score: Math.round(
+              skill * 0.55 + stability * 0.3 + Math.min(
+                100,
+                experience * 10
+              ) * 0.15
+            )
+          };
+        }
+        refreshCandidates(shopId) {
+          const state = this.getStaffState(
+            shopId
+          );
+          const day = this.getCurrentDay();
+          if (state.candidateDay === day && state.candidates.length) {
+            return;
+          }
+          const candidates = [];
+          for (const role of config.roles) {
+            for (let i = 0; i < 3; i++) {
+              candidates.push(
+                this.generateCandidate(
+                  shopId,
+                  role,
+                  i,
+                  day
+                )
+              );
+            }
+          }
+          state.candidateDay = day;
+          state.candidates = candidates;
+        }
+        getStaffOverview(shopId) {
+          this.refreshCandidates(
+            shopId
+          );
+          const state = this.getStaffState(
+            shopId
+          );
+          const required = this.getRequiredStaff(
+            shopId
+          );
+          const current = {};
+          for (const role of config.roles) {
+            current[role.id] = state.hired.filter(
+              (staff) => staff.roleId === role.id
+            ).length;
+          }
+          let requiredTotal = 0;
+          let currentTotal = 0;
+          for (const role of config.roles) {
+            requiredTotal += required[role.id];
+            currentTotal += Math.min(
+              required[role.id],
+              current[role.id]
+            );
+          }
+          const payroll = state.hired.reduce(
+            (total, staff) => total + staff.wage,
+            0
+          );
+          return {
+            required,
+            current,
+            hired: clone(
+              state.hired
+            ),
+            candidates: clone(
+              state.candidates
+            ),
+            payroll,
+            coverage: currentTotal / Math.max(
+              1,
+              requiredTotal
+            )
+          };
+        }
+        hireCandidate(shopId, candidateId) {
+          this.refreshCandidates(
+            shopId
+          );
+          const state = this.getStaffState(
+            shopId
+          );
+          const candidate = state.candidates.find(
+            (item) => item.id === candidateId
+          );
+          if (!candidate) {
+            return {
+              ok: false,
+              message: "\u5019\u9009\u4EBA\u5DF2\u5931\u6548"
+            };
+          }
+          const signOnCost = Math.round(
+            candidate.wage * 0.18
+          );
+          if (!gameState.spendCash(
+            signOnCost
+          )) {
+            return {
+              ok: false,
+              message: "\u62DB\u8058\u5165\u804C\u6210\u672C\u4E0D\u8DB3"
+            };
+          }
+          state.hired.push({
+            id: "staff_" + candidate.id,
+            ...clone(
+              candidate
+            ),
+            hiredDay: this.getCurrentDay(),
+            signOnCost
+          });
+          state.candidates = state.candidates.filter(
+            (item) => item.id !== candidateId
+          );
+          return {
+            ok: true,
+            staff: clone(
+              state.hired[state.hired.length - 1]
+            ),
+            signOnCost
+          };
+        }
+        dismissStaff(shopId, staffId) {
+          const state = this.getStaffState(
+            shopId
+          );
+          const index = state.hired.findIndex(
+            (item) => item.id === staffId
+          );
+          if (index < 0) {
+            return false;
+          }
+          state.hired.splice(
+            index,
+            1
+          );
+          return true;
+        }
+        getReadiness(shopId) {
+          this.updateEquipment(
+            shopId
+          );
+          this.updatePermits(
+            shopId
+          );
+          const renovation = renovationSystem.ensurePlan(
+            shopId
+          );
+          const equipment = this.ensureEquipment(
+            shopId
+          );
+          const permits = this.getPermitOverview(
+            shopId
+          );
+          const staffing = this.getStaffOverview(
+            shopId
+          );
+          const renovationReady = !!renovation && renovation.status === "completed";
+          const equipmentReady = equipment.status === "installed";
+          const permitsReady = permits.approved === permits.total;
+          const staffingReady = staffing.coverage >= 0.9;
+          const score = (renovationReady ? 25 : 0) + (equipmentReady ? 25 : 0) + (permitsReady ? 25 : 0) + Math.round(
+            clamp(
+              staffing.coverage,
+              0,
+              1
+            ) * 25
+          );
+          const ready = renovationReady && equipmentReady && permitsReady && staffingReady;
+          const shop = this.getShop(
+            shopId
+          );
+          if (shop && ready && shop.status !== "open") {
+            shop.status = "ready_for_trial";
+          }
+          return {
+            renovationReady,
+            equipmentReady,
+            permitsReady,
+            staffingReady,
+            score,
+            ready,
+            equipment,
+            permits,
+            staffing
+          };
+        }
+        startTrialOpening(shopId) {
+          const shop = this.getShop(
+            shopId
+          );
+          if (!shop) {
+            return {
+              ok: false,
+              message: "\u95E8\u5E97\u4E0D\u5B58\u5728"
+            };
+          }
+          const readiness = this.getReadiness(
+            shopId
+          );
+          if (!readiness.ready) {
+            return {
+              ok: false,
+              message: "\u88C5\u4FEE\u3001\u8BBE\u5907\u3001\u8BC1\u7167\u548C\u57FA\u7840\u73ED\u7EC4\u5C1A\u672A\u5168\u90E8\u5B8C\u6210"
+            };
+          }
+          shop.status = "open";
+          shop.trialOpenedDay = this.getCurrentDay();
+          return {
+            ok: true,
+            day: shop.trialOpenedDay
+          };
+        }
+        updateShop(shopId) {
+          this.updateEquipment(
+            shopId
+          );
+          this.updatePermits(
+            shopId
+          );
+          return this.getReadiness(
+            shopId
+          );
+        }
+      };
+      module.exports = new OpeningPrepSystem();
+    }
+  });
+
+  // src/ui/textInput.js
+  var require_textInput = __commonJS({
+    "src/ui/textInput.js"(exports, module) {
+      "use strict";
+      var runtime = globalThis.GameRuntime || {};
+      var api = runtime.api || {};
+      function requestRender() {
+        if (runtime && typeof runtime.requestRender === "function") {
+          runtime.requestRender();
+        }
+      }
+      function normalize(value, maxLength) {
+        return String(
+          value == null ? "" : value
+        ).replace(
+          /\s+/g,
+          " "
+        ).trim().slice(
+          0,
+          Math.max(
+            1,
+            Number(
+              maxLength
+            ) || 12
+          )
+        );
+      }
+      function promptFallback(options, done) {
+        if (typeof globalThis.prompt === "function") {
+          const result = globalThis.prompt(
+            options.title || "\u8BF7\u8F93\u5165\u540D\u79F0",
+            options.value || ""
+          );
+          done(
+            result == null ? null : normalize(
+              result,
+              options.maxLength
+            )
+          );
+          requestRender();
+          return;
+        }
+        if (api && typeof api.showToast === "function") {
+          api.showToast({
+            title: "\u5F53\u524D\u73AF\u5883\u6682\u4E0D\u652F\u6301\u6587\u5B57\u8F93\u5165",
+            icon: "none"
+          });
+        }
+        done(
+          null
+        );
+      }
+      function requestText(options) {
+        const opts = options || {};
+        return new Promise(
+          (resolve) => {
+            let settled = false;
+            const finish = (value) => {
+              if (settled) {
+                return;
+              }
+              settled = true;
+              resolve(
+                value
+              );
+              requestRender();
+            };
+            if (api && typeof api.showModal === "function") {
+              try {
+                api.showModal({
+                  title: opts.title || "\u7F16\u8F91\u540D\u79F0",
+                  content: opts.value || "",
+                  editable: true,
+                  placeholderText: opts.placeholder || "\u8BF7\u8F93\u5165\u540D\u79F0",
+                  confirmText: "\u4FDD\u5B58",
+                  cancelText: "\u53D6\u6D88",
+                  success: (result) => {
+                    if (!result || !result.confirm) {
+                      finish(
+                        null
+                      );
+                      return;
+                    }
+                    const raw = result.content != null ? result.content : result.inputValue != null ? result.inputValue : result.value != null ? result.value : "";
+                    const text = normalize(
+                      raw,
+                      opts.maxLength
+                    );
+                    if (text) {
+                      finish(
+                        text
+                      );
+                    } else {
+                      promptFallback(
+                        opts,
+                        finish
+                      );
+                    }
+                  },
+                  fail: () => {
+                    promptFallback(
+                      opts,
+                      finish
+                    );
+                  }
+                });
+                return;
+              } catch (error) {
+                promptFallback(
+                  opts,
+                  finish
+                );
+                return;
+              }
+            }
+            promptFallback(
+              opts,
+              finish
+            );
+          }
+        );
+      }
+      module.exports = {
+        requestText,
+        requestRender
+      };
+    }
+  });
+
   // src/property/propertyIconAtlas.js
   var require_propertyIconAtlas = __commonJS({
     "src/property/propertyIconAtlas.js"(exports, module) {
@@ -11057,1929 +13109,6 @@
     }
   });
 
-  // src/renovation/renovationConfig.js
-  var require_renovationConfig = __commonJS({
-    "src/renovation/renovationConfig.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        // Furniture footprint includes basic chair pull-out + service clearance.
-        tableFootprint: {
-          2: 4.8,
-          4: 7.6,
-          6: 10.4,
-          8: 13.2
-        },
-        aisleModes: {
-          compact: {
-            id: "compact",
-            name: "\u7D27\u51D1",
-            areaFactor: 0.9,
-            comfort: 0.84,
-            serviceEfficiency: 1.06
-          },
-          standard: {
-            id: "standard",
-            name: "\u6807\u51C6",
-            areaFactor: 1,
-            comfort: 1,
-            serviceEfficiency: 1
-          },
-          spacious: {
-            id: "spacious",
-            name: "\u5BBD\u677E",
-            areaFactor: 1.15,
-            comfort: 1.1,
-            serviceEfficiency: 0.96
-          }
-        },
-        hallStyles: [
-          { id: "simple", name: "\u7B80\u7EA6", costFactor: 0.88, appeal: 0.95, maintenance: 0.9 },
-          { id: "wood", name: "\u539F\u6728", costFactor: 1, appeal: 1.03, maintenance: 0.98 },
-          { id: "modern_cn", name: "\u73B0\u4EE3\u4E2D\u5F0F", costFactor: 1.18, appeal: 1.1, maintenance: 1.06 },
-          { id: "industrial", name: "\u5DE5\u4E1A\u98CE", costFactor: 1.06, appeal: 1.04, maintenance: 0.94 },
-          { id: "retro", name: "\u590D\u53E4\u5E02\u4E95", costFactor: 1.12, appeal: 1.08, maintenance: 1.04 },
-          { id: "premium", name: "\u54C1\u8D28\u5546\u52A1", costFactor: 1.36, appeal: 1.18, maintenance: 1.16 }
-        ],
-        privateRoomStyles: [
-          { id: "plain", name: "\u5B9E\u7528\u578B", costPerSqm: 620, appeal: 0.96 },
-          { id: "wood", name: "\u539F\u6728\u96C5\u95F4", costPerSqm: 880, appeal: 1.05 },
-          { id: "chinese", name: "\u4E2D\u5F0F\u96C5\u95F4", costPerSqm: 1180, appeal: 1.12 },
-          { id: "modern", name: "\u73B0\u4EE3\u5305\u53A2", costPerSqm: 1080, appeal: 1.1 },
-          { id: "premium", name: "\u5546\u52A1\u5305\u53A2", costPerSqm: 1580, appeal: 1.2 }
-        ],
-        materialGrades: [
-          { id: "budget", name: "\u7ECF\u6D4E", costFactor: 0.82, quality: 0.88, durability: 0.85 },
-          { id: "standard", name: "\u6807\u51C6", costFactor: 1, quality: 1, durability: 1 },
-          { id: "good", name: "\u54C1\u8D28", costFactor: 1.22, quality: 1.1, durability: 1.12 },
-          { id: "premium", name: "\u9AD8\u6863", costFactor: 1.48, quality: 1.18, durability: 1.2 }
-        ],
-        lightingLevels: [
-          { id: "basic", name: "\u57FA\u7840\u7167\u660E", costPerSqm: 55, appeal: 0.96 },
-          { id: "warm", name: "\u6696\u5149\u6C1B\u56F4", costPerSqm: 88, appeal: 1.04 },
-          { id: "layered", name: "\u5206\u5C42\u706F\u5149", costPerSqm: 125, appeal: 1.1 },
-          { id: "premium", name: "\u8BBE\u8BA1\u706F\u5149", costPerSqm: 188, appeal: 1.16 }
-        ],
-        privateRoomSeatOptions: [4, 6, 8, 10, 12],
-        zoneRules: {
-          minKitchenRatio: 0.18,
-          maxKitchenRatio: 0.42,
-          minStorageRatio: 0.04,
-          maxStorageRatio: 0.18,
-          minServiceRatio: 0.08,
-          maxServiceRatio: 0.2
-        },
-        baseConstructionCostPerSqm: 520,
-        templateRules: {
-          maxTemplates: 30,
-          defaultNamePrefix: "\u88C5\u4FEE\u6A21\u677F"
-        },
-        nameRules: {
-          shopMaxLength: 12,
-          roomMaxLength: 10,
-          templateMaxLength: 14
-        },
-        contractorNameParts: {
-          prefix: ["\u57CE\u5EFA", "\u5320\u9020", "\u79BE\u6728", "\u9F0E\u76DB", "\u9752\u79BE", "\u8FDC\u666F", "\u4E07\u5BB6", "\u7B51\u5473"],
-          suffix: ["\u88C5\u9970\u5DE5\u7A0B", "\u9910\u996E\u7A7A\u95F4", "\u5EFA\u8BBE\u8BBE\u8BA1", "\u5DE5\u7A0B\u670D\u52A1"]
-        }
-      };
-    }
-  });
-
-  // src/renovation/renovationSystem.js
-  var require_renovationSystem = __commonJS({
-    "src/renovation/renovationSystem.js"(exports, module) {
-      "use strict";
-      var gameState = require_gameState();
-      var simulationSystem = require_simulationSystem();
-      var config = require_renovationConfig();
-      function clone(value) {
-        return JSON.parse(
-          JSON.stringify(value)
-        );
-      }
-      function clamp(value, min, max) {
-        return Math.max(
-          min,
-          Math.min(max, value)
-        );
-      }
-      function hashFloat(text) {
-        let h = 2166136261;
-        const source = String(text);
-        for (let i = 0; i < source.length; i++) {
-          h ^= source.charCodeAt(i);
-          h = Math.imul(h, 16777619);
-        }
-        return (h >>> 0) % 1e5 / 1e5;
-      }
-      var RenovationSystem = class {
-        constructor() {
-          this.history = {};
-        }
-        getHistory(shopId) {
-          if (!this.history[shopId]) {
-            this.history[shopId] = {
-              undo: [],
-              redo: []
-            };
-          }
-          return this.history[shopId];
-        }
-        getShop(shopId) {
-          const business = gameState.getBusiness();
-          return business.shops.find(
-            (item) => item.id === shopId
-          ) || null;
-        }
-        getStore() {
-          return gameState.getRenovations();
-        }
-        getMaxFloors(shop) {
-          const raw = String(
-            shop.floor || ""
-          );
-          if (raw.indexOf("1-3") >= 0) {
-            return 3;
-          }
-          if (raw.indexOf("1-2") >= 0) {
-            return 2;
-          }
-          return 1;
-        }
-        createFloor(index, area) {
-          const diningArea = area * 0.56;
-          const table4 = Math.max(
-            1,
-            Math.floor(
-              diningArea / 16
-            )
-          );
-          return {
-            index,
-            name: "\u7B2C" + (index + 1) + "\u5C42",
-            area: Number(
-              area.toFixed(1)
-            ),
-            kitchenRatio: index === 0 ? 0.27 : 0.18,
-            storageRatio: 0.08,
-            serviceRatio: 0.11,
-            aisleMode: "standard",
-            tables: {
-              2: 2,
-              4: table4,
-              6: 0,
-              8: 0
-            },
-            privateRooms: []
-          };
-        }
-        ensurePlan(shopId) {
-          const shop = this.getShop(shopId);
-          if (!shop) {
-            return null;
-          }
-          const store = this.getStore();
-          if (!store[shopId]) {
-            const maxFloors = this.getMaxFloors(shop);
-            const usable = Math.max(
-              1,
-              Number(
-                shop.usableArea || shop.grossArea || 60
-              )
-            );
-            const perFloor = usable / maxFloors;
-            const floors = [];
-            for (let i = 0; i < maxFloors; i++) {
-              floors.push(
-                this.createFloor(
-                  i,
-                  perFloor
-                )
-              );
-            }
-            store[shopId] = {
-              shopId,
-              status: "draft",
-              activeFloor: 0,
-              hallStyle: "simple",
-              materialGrade: "budget",
-              lightingLevel: "basic",
-              floors,
-              selectedContractorId: null,
-              construction: null
-            };
-          }
-          return clone(
-            store[shopId]
-          );
-        }
-        mutatePlan(shopId, callback, options) {
-          this.ensurePlan(shopId);
-          const plan = this.getStore()[shopId];
-          const opts = options || {};
-          if (!opts.skipHistory && plan.status !== "constructing" && plan.status !== "completed") {
-            const history = this.getHistory(
-              shopId
-            );
-            history.undo.push(
-              clone(
-                plan
-              )
-            );
-            if (history.undo.length > 20) {
-              history.undo.shift();
-            }
-            history.redo = [];
-          }
-          callback(plan);
-          return clone(plan);
-        }
-        canUndo(shopId) {
-          return this.getHistory(
-            shopId
-          ).undo.length > 0;
-        }
-        canRedo(shopId) {
-          return this.getHistory(
-            shopId
-          ).redo.length > 0;
-        }
-        undo(shopId) {
-          const store = this.getStore();
-          const current = store[shopId];
-          if (!current || current.status === "constructing" || current.status === "completed") {
-            return null;
-          }
-          const history = this.getHistory(
-            shopId
-          );
-          const previous = history.undo.pop();
-          if (!previous) {
-            return null;
-          }
-          history.redo.push(
-            clone(
-              current
-            )
-          );
-          store[shopId] = clone(
-            previous
-          );
-          return clone(
-            store[shopId]
-          );
-        }
-        redo(shopId) {
-          const store = this.getStore();
-          const current = store[shopId];
-          if (!current || current.status === "constructing" || current.status === "completed") {
-            return null;
-          }
-          const history = this.getHistory(
-            shopId
-          );
-          const next = history.redo.pop();
-          if (!next) {
-            return null;
-          }
-          history.undo.push(
-            clone(
-              current
-            )
-          );
-          store[shopId] = clone(
-            next
-          );
-          return clone(
-            store[shopId]
-          );
-        }
-        setActiveFloor(shopId, index) {
-          return this.mutatePlan(
-            shopId,
-            (plan) => {
-              plan.activeFloor = clamp(
-                Math.floor(index),
-                0,
-                plan.floors.length - 1
-              );
-            }
-          );
-        }
-        adjustZone(shopId, floorIndex, key, delta) {
-          const rules = config.zoneRules;
-          const range = {
-            kitchenRatio: [
-              rules.minKitchenRatio,
-              rules.maxKitchenRatio
-            ],
-            storageRatio: [
-              rules.minStorageRatio,
-              rules.maxStorageRatio
-            ],
-            serviceRatio: [
-              rules.minServiceRatio,
-              rules.maxServiceRatio
-            ]
-          }[key];
-          if (!range) {
-            return null;
-          }
-          return this.mutatePlan(
-            shopId,
-            (plan) => {
-              const floor = plan.floors[clamp(
-                floorIndex,
-                0,
-                plan.floors.length - 1
-              )];
-              floor[key] = Number(
-                clamp(
-                  floor[key] + delta,
-                  range[0],
-                  range[1]
-                ).toFixed(2)
-              );
-            }
-          );
-        }
-        cycleAisle(shopId, floorIndex) {
-          const ids = Object.keys(
-            config.aisleModes
-          );
-          return this.mutatePlan(
-            shopId,
-            (plan) => {
-              const floor = plan.floors[floorIndex];
-              const current = ids.indexOf(
-                floor.aisleMode
-              );
-              floor.aisleMode = ids[(current + 1) % ids.length];
-            }
-          );
-        }
-        adjustTable(shopId, floorIndex, seats, delta) {
-          const key = String(seats);
-          if (!config.tableFootprint[key]) {
-            return null;
-          }
-          return this.mutatePlan(
-            shopId,
-            (plan) => {
-              const floor = plan.floors[floorIndex];
-              floor.tables[key] = Math.max(
-                0,
-                Math.min(
-                  40,
-                  (floor.tables[key] || 0) + delta
-                )
-              );
-            }
-          );
-        }
-        addPrivateRoom(shopId, floorIndex) {
-          return this.mutatePlan(
-            shopId,
-            (plan) => {
-              const floor = plan.floors[floorIndex];
-              if (floor.privateRooms.length >= 8) {
-                return;
-              }
-              const id = "room_" + Date.now() % 1e6 + "_" + floor.privateRooms.length;
-              floor.privateRooms.push({
-                id,
-                name: "\u5305\u53A2" + (floor.privateRooms.length + 1),
-                seats: 6,
-                style: "wood"
-              });
-            }
-          );
-        }
-        removePrivateRoom(shopId, floorIndex, roomId) {
-          return this.mutatePlan(
-            shopId,
-            (plan) => {
-              const floor = plan.floors[floorIndex];
-              floor.privateRooms = floor.privateRooms.filter(
-                (item) => item.id !== roomId
-              );
-            }
-          );
-        }
-        cycleRoomSeats(shopId, floorIndex, roomId) {
-          const options = config.privateRoomSeatOptions;
-          return this.mutatePlan(
-            shopId,
-            (plan) => {
-              const room = plan.floors[floorIndex].privateRooms.find(
-                (item) => item.id === roomId
-              );
-              if (!room) {
-                return;
-              }
-              const current = options.indexOf(
-                room.seats
-              );
-              room.seats = options[(current + 1) % options.length];
-            }
-          );
-        }
-        cycleRoomStyle(shopId, floorIndex, roomId) {
-          const styles = config.privateRoomStyles;
-          return this.mutatePlan(
-            shopId,
-            (plan) => {
-              const room = plan.floors[floorIndex].privateRooms.find(
-                (item) => item.id === roomId
-              );
-              if (!room) {
-                return;
-              }
-              const current = styles.findIndex(
-                (item) => item.id === room.style
-              );
-              room.style = styles[(current + 1) % styles.length].id;
-            }
-          );
-        }
-        cycleGlobal(shopId, key) {
-          const source = key === "hallStyle" ? config.hallStyles : key === "materialGrade" ? config.materialGrades : config.lightingLevels;
-          return this.mutatePlan(
-            shopId,
-            (plan) => {
-              const current = source.findIndex(
-                (item) => item.id === plan[key]
-              );
-              plan[key] = source[(current + 1) % source.length].id;
-            }
-          );
-        }
-        getById(list, id) {
-          return list.find(
-            (item) => item.id === id
-          ) || list[0];
-        }
-        getMetrics(shopId) {
-          const shop = this.getShop(shopId);
-          const plan = this.ensurePlan(shopId);
-          if (!shop || !plan) {
-            return null;
-          }
-          const hallStyle = this.getById(
-            config.hallStyles,
-            plan.hallStyle
-          );
-          const material = this.getById(
-            config.materialGrades,
-            plan.materialGrade
-          );
-          const lighting = this.getById(
-            config.lightingLevels,
-            plan.lightingLevel
-          );
-          let totalSeats = 0;
-          let totalDiningArea = 0;
-          let totalFurnitureArea = 0;
-          let privateRoomArea = 0;
-          let privateRoomSeats = 0;
-          let roomAppeal = 0;
-          let roomCount = 0;
-          let kitchenArea = 0;
-          let storageArea = 0;
-          let serviceArea = 0;
-          let comfortScore = 0;
-          let serviceScore = 0;
-          let invalidFloorCount = 0;
-          const floorMetrics = [];
-          for (let i = 0; i < plan.floors.length; i++) {
-            const floor = plan.floors[i];
-            const aisle = config.aisleModes[floor.aisleMode];
-            const zoneRatio = floor.kitchenRatio + floor.storageRatio + floor.serviceRatio;
-            const diningArea = Math.max(
-              0,
-              floor.area * (1 - zoneRatio)
-            );
-            let tableArea = 0;
-            let tableSeats = 0;
-            Object.keys(
-              floor.tables
-            ).forEach(
-              (key) => {
-                const count = floor.tables[key];
-                tableArea += count * config.tableFootprint[key] * aisle.areaFactor;
-                tableSeats += count * Number(key);
-              }
-            );
-            let roomArea = 0;
-            let roomSeats = 0;
-            let floorRoomAppeal = 0;
-            for (let j = 0; j < floor.privateRooms.length; j++) {
-              const room = floor.privateRooms[j];
-              const style = this.getById(
-                config.privateRoomStyles,
-                room.style
-              );
-              const area = 7 + room.seats * 1.55;
-              roomArea += area;
-              roomSeats += room.seats;
-              floorRoomAppeal += style.appeal;
-            }
-            const used = tableArea + roomArea;
-            const remaining = diningArea - used;
-            const crowding = diningArea > 0 ? used / diningArea : 99;
-            const valid = remaining >= -0.01 && zoneRatio < 0.78;
-            if (!valid) {
-              invalidFloorCount += 1;
-            }
-            floorMetrics.push({
-              ...floor,
-              diningArea: Number(
-                diningArea.toFixed(1)
-              ),
-              tableArea: Number(
-                tableArea.toFixed(1)
-              ),
-              privateRoomArea: Number(
-                roomArea.toFixed(1)
-              ),
-              remainingArea: Number(
-                remaining.toFixed(1)
-              ),
-              seats: tableSeats + roomSeats,
-              crowding,
-              valid
-            });
-            totalSeats += tableSeats + roomSeats;
-            totalDiningArea += diningArea;
-            totalFurnitureArea += tableArea;
-            privateRoomArea += roomArea;
-            privateRoomSeats += roomSeats;
-            roomAppeal += floorRoomAppeal;
-            roomCount += floor.privateRooms.length;
-            kitchenArea += floor.area * floor.kitchenRatio;
-            storageArea += floor.area * floor.storageRatio;
-            serviceArea += floor.area * floor.serviceRatio;
-            comfortScore += aisle.comfort;
-            serviceScore += aisle.serviceEfficiency;
-          }
-          const totalArea = plan.floors.reduce(
-            (sum, item) => sum + item.area,
-            0
-          );
-          const furnitureCost = plan.floors.reduce(
-            (sum, floor) => {
-              return sum + Object.keys(
-                floor.tables
-              ).reduce(
-                (inner, key) => inner + floor.tables[key] * (420 + Number(key) * 165),
-                0
-              );
-            },
-            0
-          );
-          let roomCost = 0;
-          for (let i = 0; i < plan.floors.length; i++) {
-            const floor = plan.floors[i];
-            for (let j = 0; j < floor.privateRooms.length; j++) {
-              const room = floor.privateRooms[j];
-              const style = this.getById(
-                config.privateRoomStyles,
-                room.style
-              );
-              const area = 7 + room.seats * 1.55;
-              roomCost += area * style.costPerSqm;
-            }
-          }
-          const constructionBase = totalArea * config.baseConstructionCostPerSqm * hallStyle.costFactor * material.costFactor;
-          const lightingCost = totalArea * lighting.costPerSqm;
-          const kitchenComplexity = kitchenArea * (210 + totalSeats * 1.8);
-          const totalCost = Math.round(
-            constructionBase + lightingCost + furnitureCost + roomCost + kitchenComplexity
-          );
-          const averageComfort = comfortScore / Math.max(
-            1,
-            plan.floors.length
-          );
-          const averageService = serviceScore / Math.max(
-            1,
-            plan.floors.length
-          );
-          const kitchenLoad = totalSeats / Math.max(
-            1,
-            kitchenArea * 2.65
-          );
-          const comfort = clamp(
-            averageComfort * material.quality * lighting.appeal * (1 - Math.max(
-              0,
-              (totalFurnitureArea + privateRoomArea) / Math.max(
-                1,
-                totalDiningArea
-              ) - 0.78
-            ) * 0.8),
-            0.35,
-            1.35
-          );
-          const appeal = clamp(
-            hallStyle.appeal * lighting.appeal * material.quality * (roomCount ? roomAppeal / roomCount : 1),
-            0.55,
-            1.55
-          );
-          const operationalEfficiency = clamp(
-            averageService * (1 - Math.max(
-              0,
-              kitchenLoad - 1
-            ) * 0.32) * (1 + storageArea / Math.max(
-              1,
-              totalArea
-            ) * 0.22),
-            0.45,
-            1.35
-          );
-          const buildDays = Math.max(
-            5,
-            Math.round(
-              Math.sqrt(
-                totalArea
-              ) * 1.4 * hallStyle.costFactor + roomCount * 1.8 + plan.floors.length * 2
-            )
-          );
-          return {
-            shopId,
-            plan,
-            floors: floorMetrics,
-            totalArea: Number(
-              totalArea.toFixed(1)
-            ),
-            totalSeats,
-            privateRoomSeats,
-            roomCount,
-            kitchenArea: Number(
-              kitchenArea.toFixed(1)
-            ),
-            storageArea: Number(
-              storageArea.toFixed(1)
-            ),
-            serviceArea: Number(
-              serviceArea.toFixed(1)
-            ),
-            totalDiningArea: Number(
-              totalDiningArea.toFixed(1)
-            ),
-            invalidFloorCount,
-            valid: invalidFloorCount === 0 && kitchenLoad <= 1.28,
-            kitchenLoad,
-            comfort,
-            appeal,
-            operationalEfficiency,
-            totalCost,
-            buildDays
-          };
-        }
-        getContractorQuotes(shopId) {
-          const metrics = this.getMetrics(
-            shopId
-          );
-          if (!metrics) {
-            return [];
-          }
-          const seed = gameState.getSimulation().seed || 1;
-          const quotes = [];
-          for (let i = 0; i < 3; i++) {
-            const r1 = hashFloat(
-              shopId + ":contractor:" + seed + ":" + i
-            );
-            const r2 = hashFloat(
-              shopId + ":contractor2:" + seed + ":" + i
-            );
-            const prefix = config.contractorNameParts.prefix[Math.floor(
-              r1 * config.contractorNameParts.prefix.length
-            ) % config.contractorNameParts.prefix.length];
-            const suffix = config.contractorNameParts.suffix[Math.floor(
-              r2 * config.contractorNameParts.suffix.length
-            ) % config.contractorNameParts.suffix.length];
-            const priceFactor = 0.88 + r1 * 0.3;
-            const speedFactor = 0.84 + r2 * 0.3;
-            const reliability = Math.round(
-              68 + (r1 * 0.45 + r2 * 0.55) * 29
-            );
-            quotes.push({
-              id: "contractor_" + i,
-              name: prefix + suffix,
-              price: Math.round(
-                metrics.totalCost * priceFactor
-              ),
-              days: Math.max(
-                4,
-                Math.round(
-                  metrics.buildDays * speedFactor
-                )
-              ),
-              reliability,
-              quality: Math.round(
-                65 + r2 * 32
-              )
-            });
-          }
-          return quotes.sort(
-            (a, b) => a.price - b.price
-          );
-        }
-        selectContractor(shopId, contractorId) {
-          const quotes = this.getContractorQuotes(
-            shopId
-          );
-          const found = quotes.find(
-            (item) => item.id === contractorId
-          );
-          if (!found) {
-            return null;
-          }
-          return this.mutatePlan(
-            shopId,
-            (plan) => {
-              plan.selectedContractorId = contractorId;
-            }
-          );
-        }
-        startConstruction(shopId) {
-          const shop = this.getShop(
-            shopId
-          );
-          const metrics = this.getMetrics(
-            shopId
-          );
-          if (!shop || !metrics) {
-            return {
-              ok: false,
-              message: "\u95E8\u5E97\u4E0D\u5B58\u5728"
-            };
-          }
-          if (!metrics.valid) {
-            return {
-              ok: false,
-              message: "\u5F53\u524D\u5E03\u5C40\u5B58\u5728\u9762\u79EF\u6216\u540E\u53A8\u627F\u8F7D\u95EE\u9898"
-            };
-          }
-          const plan = this.getStore()[shopId];
-          const quotes = this.getContractorQuotes(
-            shopId
-          );
-          const quote = quotes.find(
-            (item) => item.id === plan.selectedContractorId
-          ) || quotes[0];
-          if (gameState.getPlayer().cash < quote.price) {
-            return {
-              ok: false,
-              message: "\u88C5\u4FEE\u8D44\u91D1\u4E0D\u8DB3\uFF0C\u8FD8\u5DEE\xA5" + (quote.price - gameState.getPlayer().cash).toLocaleString()
-            };
-          }
-          gameState.spendCash(
-            quote.price
-          );
-          const currentDay = simulationSystem.getDayOrdinal(
-            gameState.getTime()
-          );
-          plan.status = "constructing";
-          plan.construction = {
-            contractor: clone(quote),
-            startDay: currentDay,
-            finishDay: currentDay + quote.days,
-            paid: quote.price,
-            snapshot: clone(metrics)
-          };
-          shop.status = "renovating";
-          shop.renovationCost = quote.price;
-          shop.renovationFinishDay = plan.construction.finishDay;
-          return {
-            ok: true,
-            quote: clone(quote),
-            finishDay: plan.construction.finishDay
-          };
-        }
-        updateShop(shopId) {
-          const shop = this.getShop(
-            shopId
-          );
-          const plan = this.ensurePlan(
-            shopId
-          );
-          if (!shop || !plan || plan.status !== "constructing" || !plan.construction) {
-            return false;
-          }
-          const currentDay = simulationSystem.getDayOrdinal(
-            gameState.getTime()
-          );
-          if (currentDay < plan.construction.finishDay) {
-            return false;
-          }
-          const stored = this.getStore()[shopId];
-          stored.status = "completed";
-          shop.status = "renovated_pending_license";
-          shop.layoutMetrics = clone(
-            stored.construction.snapshot
-          );
-          return true;
-        }
-      };
-      module.exports = new RenovationSystem();
-    }
-  });
-
-  // src/opening/openingConfig.js
-  var require_openingConfig = __commonJS({
-    "src/opening/openingConfig.js"(exports, module) {
-      "use strict";
-      module.exports = {
-        equipment: [
-          {
-            id: "cooking",
-            name: "\u70F9\u996A\u8BBE\u5907",
-            iconKey: "visual_stove",
-            basePrice: 13800,
-            capacityPerUnit: 34,
-            powerKw: 8,
-            gasPreferred: true,
-            installDays: 2
-          },
-          {
-            id: "cold",
-            name: "\u51B7\u85CF\u8BBE\u5907",
-            iconKey: "visual_fridge",
-            basePrice: 9800,
-            capacityPerUnit: 52,
-            powerKw: 2.6,
-            gasPreferred: false,
-            installDays: 1
-          },
-          {
-            id: "prep",
-            name: "\u5907\u9910\u64CD\u4F5C\u53F0",
-            iconKey: "visual_register",
-            basePrice: 4200,
-            capacityPerUnit: 42,
-            powerKw: 0.3,
-            gasPreferred: false,
-            installDays: 1
-          },
-          {
-            id: "dishwash",
-            name: "\u6D17\u6D88\u8BBE\u5907",
-            iconKey: "visual_fridge",
-            basePrice: 7600,
-            capacityPerUnit: 46,
-            powerKw: 5.5,
-            gasPreferred: false,
-            installDays: 2
-          },
-          {
-            id: "pos",
-            name: "\u6536\u94F6\u8BBE\u5907",
-            iconKey: "visual_register",
-            basePrice: 3200,
-            capacityPerUnit: 85,
-            powerKw: 0.5,
-            gasPreferred: false,
-            installDays: 1
-          }
-        ],
-        qualityGrades: [
-          {
-            id: "budget",
-            name: "\u7ECF\u6D4E",
-            priceFactor: 0.82,
-            reliability: 0.86,
-            efficiency: 0.92
-          },
-          {
-            id: "standard",
-            name: "\u6807\u51C6",
-            priceFactor: 1,
-            reliability: 1,
-            efficiency: 1
-          },
-          {
-            id: "premium",
-            name: "\u9AD8\u914D",
-            priceFactor: 1.28,
-            reliability: 1.12,
-            efficiency: 1.09
-          }
-        ],
-        permits: [
-          {
-            id: "business",
-            name: "\u4E3B\u4F53\u767B\u8BB0",
-            baseFee: 380,
-            baseDays: 2
-          },
-          {
-            id: "food",
-            name: "\u98DF\u54C1\u7ECF\u8425\u8BB8\u53EF",
-            baseFee: 680,
-            baseDays: 5
-          },
-          {
-            id: "fire",
-            name: "\u6D88\u9632\u68C0\u67E5/\u5907\u6848",
-            baseFee: 460,
-            baseDays: 4
-          },
-          {
-            id: "sign",
-            name: "\u95E8\u5934\u62DB\u724C\u5907\u6848",
-            baseFee: 160,
-            baseDays: 2
-          }
-        ],
-        roles: [
-          {
-            id: "manager",
-            name: "\u5E97\u957F",
-            baseWage: 7200,
-            seatsPerWorker: 999
-          },
-          {
-            id: "chef",
-            name: "\u53A8\u5E08",
-            baseWage: 6800,
-            seatsPerWorker: 38
-          },
-          {
-            id: "server",
-            name: "\u670D\u52A1\u5458",
-            baseWage: 4200,
-            seatsPerWorker: 22
-          },
-          {
-            id: "cashier",
-            name: "\u6536\u94F6/\u524D\u53F0",
-            baseWage: 4300,
-            seatsPerWorker: 70
-          }
-        ],
-        surnames: [
-          "\u9648",
-          "\u738B",
-          "\u674E",
-          "\u5F20",
-          "\u5218",
-          "\u5468",
-          "\u8D75",
-          "\u5B59",
-          "\u9A6C",
-          "\u6731",
-          "\u80E1",
-          "\u90ED",
-          "\u4F55",
-          "\u9AD8",
-          "\u6797",
-          "\u90D1",
-          "\u6881",
-          "\u8BB8",
-          "\u5B8B",
-          "\u8C22"
-        ],
-        givenNames: [
-          "\u542F\u660E",
-          "\u5A49\u5B81",
-          "\u5FD7\u5F3A",
-          "\u8FDC\u822A",
-          "\u96C5\u7434",
-          "\u56FD\u6881",
-          "\u6668\u66E6",
-          "\u96E8\u6850",
-          "\u5609\u5B81",
-          "\u535A\u6587",
-          "\u6D69\u7136",
-          "\u601D\u8FDC",
-          "\u5B50\u6DB5",
-          "\u660E\u8F69",
-          "\u82E5\u6EAA",
-          "\u4FCA\u6770",
-          "\u96EA\u6674",
-          "\u4F73\u6021",
-          "\u6587\u6D9B",
-          "\u6653\u5CF0"
-        ]
-      };
-    }
-  });
-
-  // src/opening/openingPrepSystem.js
-  var require_openingPrepSystem = __commonJS({
-    "src/opening/openingPrepSystem.js"(exports, module) {
-      "use strict";
-      var gameState = require_gameState();
-      var simulationSystem = require_simulationSystem();
-      var renovationSystem = require_renovationSystem();
-      var config = require_openingConfig();
-      function clone(value) {
-        return JSON.parse(
-          JSON.stringify(value)
-        );
-      }
-      function clamp(value, min, max) {
-        return Math.max(
-          min,
-          Math.min(
-            max,
-            value
-          )
-        );
-      }
-      function hashFloat(text) {
-        let h = 2166136261;
-        const source = String(text);
-        for (let i = 0; i < source.length; i++) {
-          h ^= source.charCodeAt(
-            i
-          );
-          h = Math.imul(
-            h,
-            16777619
-          );
-        }
-        return (h >>> 0) % 1e5 / 1e5;
-      }
-      function featureOkay(value) {
-        if (value === void 0 || value === null) {
-          return true;
-        }
-        if (typeof value === "boolean") {
-          return value;
-        }
-        const text = String(value);
-        return !(text.indexOf(
-          "\u65E0"
-        ) >= 0 || text.indexOf(
-          "\u4E0D"
-        ) >= 0 || text.indexOf(
-          "\u5426"
-        ) >= 0 || text.indexOf(
-          "\u4E0D\u8DB3"
-        ) >= 0);
-      }
-      var OpeningPrepSystem = class {
-        getShop(shopId) {
-          return gameState.getBusiness().shops.find(
-            (item) => item.id === shopId
-          ) || null;
-        }
-        getStore() {
-          return gameState.getOpeningPrep();
-        }
-        getCurrentDay() {
-          return simulationSystem.getDayOrdinal(
-            gameState.getTime()
-          );
-        }
-        getSeats(shopId) {
-          const shop = this.getShop(
-            shopId
-          );
-          if (!shop) {
-            return 0;
-          }
-          const metrics = renovationSystem.getMetrics(
-            shopId
-          );
-          if (metrics && Number.isFinite(
-            Number(
-              metrics.totalSeats
-            )
-          )) {
-            return Math.max(
-              1,
-              Number(
-                metrics.totalSeats
-              )
-            );
-          }
-          return Math.max(
-            1,
-            Number(
-              shop.seatEstimate
-            ) || 30
-          );
-        }
-        ensureEquipment(shopId) {
-          const prep = this.getStore();
-          if (!prep.equipment[shopId]) {
-            const seats = this.getSeats(
-              shopId
-            );
-            const items = {};
-            for (const item of config.equipment) {
-              items[item.id] = {
-                id: item.id,
-                quantity: Math.max(
-                  1,
-                  Math.ceil(
-                    seats / item.capacityPerUnit
-                  )
-                ),
-                grade: "standard"
-              };
-            }
-            prep.equipment[shopId] = {
-              status: "planning",
-              items,
-              orderDay: null,
-              deliveryDay: null,
-              paid: 0
-            };
-          }
-          return prep.equipment[shopId];
-        }
-        getEquipmentState(shopId) {
-          return clone(
-            this.ensureEquipment(
-              shopId
-            )
-          );
-        }
-        getEquipmentQuote(shopId) {
-          const shop = this.getShop(
-            shopId
-          );
-          if (!shop) {
-            return null;
-          }
-          const state = this.ensureEquipment(
-            shopId
-          );
-          const day = this.getCurrentDay();
-          const marketFactor = 0.94 + hashFloat(
-            shopId + ":equipment-market:" + day
-          ) * 0.14;
-          const lines = [];
-          let total = 0;
-          let totalPower = 0;
-          let cookingCapacity = 0;
-          let serviceCapacity = Infinity;
-          let maxInstallDays = 1;
-          for (const item of config.equipment) {
-            const plan = state.items[item.id];
-            const grade = config.qualityGrades.find(
-              (entry) => entry.id === plan.grade
-            ) || config.qualityGrades[1];
-            const price = Math.round(
-              item.basePrice * plan.quantity * grade.priceFactor * marketFactor
-            );
-            const capacity2 = item.capacityPerUnit * plan.quantity * grade.efficiency;
-            const power = item.powerKw * plan.quantity;
-            total += price;
-            totalPower += power;
-            maxInstallDays = Math.max(
-              maxInstallDays,
-              item.installDays
-            );
-            if (item.id === "cooking") {
-              cookingCapacity = capacity2;
-            } else {
-              serviceCapacity = Math.min(
-                serviceCapacity,
-                capacity2
-              );
-            }
-            lines.push({
-              ...item,
-              quantity: plan.quantity,
-              grade: grade.id,
-              gradeName: grade.name,
-              price,
-              capacity: Math.round(
-                capacity2
-              ),
-              powerKw: Number(
-                power.toFixed(
-                  1
-                )
-              ),
-              reliability: grade.reliability
-            });
-          }
-          if (serviceCapacity === Infinity) {
-            serviceCapacity = 0;
-          }
-          const seats = this.getSeats(
-            shopId
-          );
-          const capacity = Math.min(
-            cookingCapacity,
-            serviceCapacity
-          );
-          const capacityRatio = capacity / Math.max(
-            1,
-            seats
-          );
-          const electricLimit = Number(
-            shop.electricCapacityKw
-          );
-          const issues = [];
-          let infrastructureUpgradeCost = 0;
-          if (Number.isFinite(
-            electricLimit
-          ) && electricLimit > 0 && totalPower > electricLimit) {
-            infrastructureUpgradeCost = Math.round(
-              (totalPower - electricLimit) * 850
-            );
-          }
-          const shortage = Math.max(
-            0,
-            1 - capacityRatio
-          );
-          const marketDelay = Math.floor(
-            hashFloat(
-              shopId + ":equipment-delay:" + day
-            ) * 3
-          );
-          return {
-            shopId,
-            lines,
-            total: total + infrastructureUpgradeCost,
-            equipmentCost: total,
-            infrastructureUpgradeCost,
-            totalPowerKw: Number(
-              totalPower.toFixed(
-                1
-              )
-            ),
-            seats,
-            capacity: Math.round(
-              capacity
-            ),
-            capacityRatio,
-            shortage,
-            issues,
-            valid: capacityRatio >= 0.9,
-            installDays: maxInstallDays + marketDelay,
-            marketFactor
-          };
-        }
-        adjustEquipment(shopId, itemId, delta) {
-          const state = this.ensureEquipment(
-            shopId
-          );
-          if (state.status !== "planning") {
-            return false;
-          }
-          const item = state.items[itemId];
-          if (!item) {
-            return false;
-          }
-          item.quantity = clamp(
-            item.quantity + delta,
-            0,
-            20
-          );
-          return true;
-        }
-        cycleEquipmentGrade(shopId, itemId) {
-          const state = this.ensureEquipment(
-            shopId
-          );
-          if (state.status !== "planning") {
-            return false;
-          }
-          const item = state.items[itemId];
-          if (!item) {
-            return false;
-          }
-          const ids = config.qualityGrades.map(
-            (entry) => entry.id
-          );
-          const current = ids.indexOf(
-            item.grade
-          );
-          item.grade = ids[(current + 1) % ids.length];
-          return true;
-        }
-        orderEquipment(shopId) {
-          const state = this.ensureEquipment(
-            shopId
-          );
-          if (state.status !== "planning") {
-            return {
-              ok: false,
-              message: "\u8BBE\u5907\u8BA2\u5355\u5DF2\u7ECF\u63D0\u4EA4"
-            };
-          }
-          const quote = this.getEquipmentQuote(
-            shopId
-          );
-          if (!quote) {
-            return {
-              ok: false,
-              message: "\u95E8\u5E97\u4E0D\u5B58\u5728"
-            };
-          }
-          if (!quote.valid) {
-            return {
-              ok: false,
-              message: quote.issues[0] || "\u5F53\u524D\u8BBE\u5907\u914D\u7F6E\u65E0\u6CD5\u6EE1\u8DB3\u8425\u4E1A\u9700\u6C42"
-            };
-          }
-          if (!gameState.spendCash(
-            quote.total
-          )) {
-            return {
-              ok: false,
-              message: "\u8BBE\u5907\u91C7\u8D2D\u8D44\u91D1\u4E0D\u8DB3"
-            };
-          }
-          const day = this.getCurrentDay();
-          state.status = "ordered";
-          state.orderDay = day;
-          state.deliveryDay = day + quote.installDays;
-          state.paid = quote.total;
-          state.quote = clone(
-            quote
-          );
-          return {
-            ok: true,
-            deliveryDay: state.deliveryDay,
-            total: quote.total
-          };
-        }
-        updateEquipment(shopId) {
-          const state = this.ensureEquipment(
-            shopId
-          );
-          if (state.status !== "ordered") {
-            return false;
-          }
-          if (this.getCurrentDay() < state.deliveryDay) {
-            return false;
-          }
-          state.status = "installed";
-          return true;
-        }
-        getPermitState(shopId) {
-          const prep = this.getStore();
-          if (!prep.permits[shopId]) {
-            const items = {};
-            for (const permit of config.permits) {
-              items[permit.id] = {
-                id: permit.id,
-                status: "not_applied",
-                appliedDay: null,
-                finishDay: null,
-                paid: 0,
-                issue: null
-              };
-            }
-            prep.permits[shopId] = {
-              items,
-              remediated: {}
-            };
-          }
-          return prep.permits[shopId];
-        }
-        getPermitRequirements(shopId, permitId) {
-          const shop = this.getShop(
-            shopId
-          );
-          const equipment = this.ensureEquipment(
-            shopId
-          );
-          const permitState = this.getPermitState(
-            shopId
-          );
-          const renovation = renovationSystem.ensurePlan(
-            shopId
-          );
-          const reasons = [];
-          if (permitId === "food") {
-            if (!renovation || renovation.status !== "completed") {
-              reasons.push(
-                "\u88C5\u4FEE\u5C1A\u672A\u5B8C\u6210"
-              );
-            }
-            if (equipment.status !== "installed") {
-              reasons.push(
-                "\u4E3B\u8981\u8BBE\u5907\u5C1A\u672A\u5B89\u88C5"
-              );
-            }
-            if (shop && !featureOkay(
-              shop.greaseTrap
-            ) && !permitState.remediated.food) {
-              reasons.push(
-                "\u9694\u6CB9\u8BBE\u65BD\u9700\u6574\u6539"
-              );
-            }
-          }
-          if (permitId === "fire") {
-            if (!renovation || renovation.status !== "completed") {
-              reasons.push(
-                "\u88C5\u4FEE\u5C1A\u672A\u5B8C\u6210"
-              );
-            }
-            if (shop && !featureOkay(
-              shop.fireSprinkler
-            ) && !permitState.remediated.fire) {
-              reasons.push(
-                "\u6D88\u9632\u55B7\u6DCB\u9700\u6574\u6539"
-              );
-            }
-          }
-          return {
-            ready: reasons.length === 0,
-            reasons
-          };
-        }
-        getPermitOverview(shopId) {
-          const shop = this.getShop(
-            shopId
-          );
-          if (!shop) {
-            return null;
-          }
-          const state = this.getPermitState(
-            shopId
-          );
-          const day = this.getCurrentDay();
-          const rows = [];
-          for (const permit of config.permits) {
-            const item = state.items[permit.id];
-            const req = this.getPermitRequirements(
-              shopId,
-              permit.id
-            );
-            const volatility = 0.92 + hashFloat(
-              shopId + ":permit:" + permit.id + ":" + day
-            ) * 0.22;
-            const fee = Math.round(
-              permit.baseFee * volatility
-            );
-            const days = Math.max(
-              1,
-              Math.round(
-                permit.baseDays * (0.85 + volatility * 0.18)
-              )
-            );
-            const remediableReason = req.reasons.find(
-              (reason) => reason.indexOf(
-                "\u6574\u6539"
-              ) >= 0
-            ) || null;
-            const remediationCost = Math.round(
-              (permit.id === "fire" ? 6800 : permit.id === "food" ? 4200 : 1800) * (0.88 + hashFloat(
-                shopId + ":remediation:" + permit.id + ":" + day
-              ) * 0.28)
-            );
-            rows.push({
-              ...permit,
-              fee,
-              days,
-              ready: req.ready,
-              reasons: req.reasons,
-              status: item.status,
-              finishDay: item.finishDay,
-              issue: item.issue,
-              remediable: !!remediableReason || item.status === "needs_fix",
-              remediationCost
-            });
-          }
-          return {
-            shopId,
-            rows,
-            approved: rows.filter(
-              (item) => item.status === "approved"
-            ).length,
-            total: rows.length
-          };
-        }
-        applyPermit(shopId, permitId) {
-          const state = this.getPermitState(
-            shopId
-          );
-          const item = state.items[permitId];
-          if (!item) {
-            return {
-              ok: false,
-              message: "\u8BC1\u7167\u9879\u76EE\u4E0D\u5B58\u5728"
-            };
-          }
-          if (item.status === "applying" || item.status === "approved") {
-            return {
-              ok: false,
-              message: "\u8BE5\u9879\u76EE\u5DF2\u63D0\u4EA4"
-            };
-          }
-          const overview = this.getPermitOverview(
-            shopId
-          );
-          const row = overview.rows.find(
-            (permit) => permit.id === permitId
-          );
-          if (!row.ready) {
-            return {
-              ok: false,
-              message: row.reasons[0] || "\u5F53\u524D\u6761\u4EF6\u4E0D\u6EE1\u8DB3"
-            };
-          }
-          if (!gameState.spendCash(
-            row.fee
-          )) {
-            return {
-              ok: false,
-              message: "\u529E\u7406\u8D39\u7528\u4E0D\u8DB3"
-            };
-          }
-          const day = this.getCurrentDay();
-          item.status = "applying";
-          item.appliedDay = day;
-          item.finishDay = day + row.days;
-          item.paid += row.fee;
-          item.issue = null;
-          return {
-            ok: true,
-            finishDay: item.finishDay,
-            fee: row.fee
-          };
-        }
-        remediatePermit(shopId, permitId) {
-          const state = this.getPermitState(
-            shopId
-          );
-          const item = state.items[permitId];
-          if (!item) {
-            return {
-              ok: false,
-              message: "\u8BC1\u7167\u9879\u76EE\u4E0D\u5B58\u5728"
-            };
-          }
-          const overview = this.getPermitOverview(
-            shopId
-          );
-          const row = overview.rows.find(
-            (entry) => entry.id === permitId
-          );
-          if (!row || !row.remediable) {
-            return {
-              ok: false,
-              message: "\u5F53\u524D\u6CA1\u6709\u53EF\u6267\u884C\u7684\u6574\u6539\u9879\u76EE"
-            };
-          }
-          if (!gameState.spendCash(
-            row.remediationCost
-          )) {
-            return {
-              ok: false,
-              message: "\u6574\u6539\u8D44\u91D1\u4E0D\u8DB3"
-            };
-          }
-          state.remediated[permitId] = true;
-          item.status = "not_applied";
-          item.issue = null;
-          item.finishDay = null;
-          return {
-            ok: true,
-            cost: row.remediationCost
-          };
-        }
-        updatePermits(shopId) {
-          const shop = this.getShop(
-            shopId
-          );
-          if (!shop) {
-            return false;
-          }
-          const state = this.getPermitState(
-            shopId
-          );
-          const day = this.getCurrentDay();
-          let changed = false;
-          for (const permit of config.permits) {
-            const item = state.items[permit.id];
-            if (item.status !== "applying" || day < item.finishDay) {
-              continue;
-            }
-            const req = this.getPermitRequirements(
-              shopId,
-              permit.id
-            );
-            if (!req.ready) {
-              item.status = "needs_fix";
-              item.issue = req.reasons[0];
-              changed = true;
-              continue;
-            }
-            const inspection = hashFloat(
-              shopId + ":inspection:" + permit.id + ":" + item.appliedDay
-            );
-            const failRisk = permit.id === "food" ? 0.1 : permit.id === "fire" ? 0.08 : 0.035;
-            if (inspection < failRisk) {
-              item.status = "needs_fix";
-              item.issue = permit.id === "food" ? "\u73B0\u573A\u536B\u751F\u7EC6\u8282\u9700\u8865\u5145\u6574\u6539" : permit.id === "fire" ? "\u6D88\u9632\u6807\u8BC6\u4E0E\u901A\u9053\u7EC6\u8282\u9700\u8865\u5145" : "\u8D44\u6599\u5B58\u5728\u7F3A\u9879";
-            } else {
-              item.status = "approved";
-              item.issue = null;
-            }
-            changed = true;
-          }
-          return changed;
-        }
-        getStaffState(shopId) {
-          const prep = this.getStore();
-          if (!prep.staffing[shopId]) {
-            prep.staffing[shopId] = {
-              hired: [],
-              candidateDay: null,
-              candidates: []
-            };
-          }
-          return prep.staffing[shopId];
-        }
-        getRequiredStaff(shopId) {
-          const seats = this.getSeats(
-            shopId
-          );
-          const result = {};
-          for (const role of config.roles) {
-            result[role.id] = role.id === "manager" ? 1 : Math.max(
-              1,
-              Math.ceil(
-                seats / role.seatsPerWorker
-              )
-            );
-          }
-          return result;
-        }
-        generateCandidate(shopId, role, index, day) {
-          const seed = gameState.getSimulation().seed || 1;
-          const base = shopId + ":" + role.id + ":" + day + ":" + index + ":" + seed;
-          const r1 = hashFloat(
-            base + ":a"
-          );
-          const r2 = hashFloat(
-            base + ":b"
-          );
-          const r3 = hashFloat(
-            base + ":c"
-          );
-          const surname = config.surnames[Math.floor(
-            r1 * config.surnames.length
-          ) % config.surnames.length];
-          const given = config.givenNames[Math.floor(
-            r2 * config.givenNames.length
-          ) % config.givenNames.length];
-          const skill = Math.round(
-            48 + r1 * 48
-          );
-          const stability = Math.round(
-            45 + r2 * 52
-          );
-          const experience = Math.round(
-            r3 * 10
-          );
-          const wage = Math.round(
-            role.baseWage * (0.84 + skill / 250 + experience / 100) / 100
-          ) * 100;
-          return {
-            id: "candidate_" + role.id + "_" + day + "_" + index,
-            roleId: role.id,
-            roleName: role.name,
-            name: surname + given,
-            age: 20 + Math.floor(
-              r3 * 25
-            ),
-            skill,
-            stability,
-            experience,
-            wage,
-            score: Math.round(
-              skill * 0.55 + stability * 0.3 + Math.min(
-                100,
-                experience * 10
-              ) * 0.15
-            )
-          };
-        }
-        refreshCandidates(shopId) {
-          const state = this.getStaffState(
-            shopId
-          );
-          const day = this.getCurrentDay();
-          if (state.candidateDay === day && state.candidates.length) {
-            return;
-          }
-          const candidates = [];
-          for (const role of config.roles) {
-            for (let i = 0; i < 3; i++) {
-              candidates.push(
-                this.generateCandidate(
-                  shopId,
-                  role,
-                  i,
-                  day
-                )
-              );
-            }
-          }
-          state.candidateDay = day;
-          state.candidates = candidates;
-        }
-        getStaffOverview(shopId) {
-          this.refreshCandidates(
-            shopId
-          );
-          const state = this.getStaffState(
-            shopId
-          );
-          const required = this.getRequiredStaff(
-            shopId
-          );
-          const current = {};
-          for (const role of config.roles) {
-            current[role.id] = state.hired.filter(
-              (staff) => staff.roleId === role.id
-            ).length;
-          }
-          let requiredTotal = 0;
-          let currentTotal = 0;
-          for (const role of config.roles) {
-            requiredTotal += required[role.id];
-            currentTotal += Math.min(
-              required[role.id],
-              current[role.id]
-            );
-          }
-          const payroll = state.hired.reduce(
-            (total, staff) => total + staff.wage,
-            0
-          );
-          return {
-            required,
-            current,
-            hired: clone(
-              state.hired
-            ),
-            candidates: clone(
-              state.candidates
-            ),
-            payroll,
-            coverage: currentTotal / Math.max(
-              1,
-              requiredTotal
-            )
-          };
-        }
-        hireCandidate(shopId, candidateId) {
-          this.refreshCandidates(
-            shopId
-          );
-          const state = this.getStaffState(
-            shopId
-          );
-          const candidate = state.candidates.find(
-            (item) => item.id === candidateId
-          );
-          if (!candidate) {
-            return {
-              ok: false,
-              message: "\u5019\u9009\u4EBA\u5DF2\u5931\u6548"
-            };
-          }
-          const signOnCost = Math.round(
-            candidate.wage * 0.18
-          );
-          if (!gameState.spendCash(
-            signOnCost
-          )) {
-            return {
-              ok: false,
-              message: "\u62DB\u8058\u5165\u804C\u6210\u672C\u4E0D\u8DB3"
-            };
-          }
-          state.hired.push({
-            id: "staff_" + candidate.id,
-            ...clone(
-              candidate
-            ),
-            hiredDay: this.getCurrentDay(),
-            signOnCost
-          });
-          state.candidates = state.candidates.filter(
-            (item) => item.id !== candidateId
-          );
-          return {
-            ok: true,
-            staff: clone(
-              state.hired[state.hired.length - 1]
-            ),
-            signOnCost
-          };
-        }
-        dismissStaff(shopId, staffId) {
-          const state = this.getStaffState(
-            shopId
-          );
-          const index = state.hired.findIndex(
-            (item) => item.id === staffId
-          );
-          if (index < 0) {
-            return false;
-          }
-          state.hired.splice(
-            index,
-            1
-          );
-          return true;
-        }
-        getReadiness(shopId) {
-          this.updateEquipment(
-            shopId
-          );
-          this.updatePermits(
-            shopId
-          );
-          const renovation = renovationSystem.ensurePlan(
-            shopId
-          );
-          const equipment = this.ensureEquipment(
-            shopId
-          );
-          const permits = this.getPermitOverview(
-            shopId
-          );
-          const staffing = this.getStaffOverview(
-            shopId
-          );
-          const renovationReady = !!renovation && renovation.status === "completed";
-          const equipmentReady = equipment.status === "installed";
-          const permitsReady = permits.approved === permits.total;
-          const staffingReady = staffing.coverage >= 0.9;
-          const score = (renovationReady ? 25 : 0) + (equipmentReady ? 25 : 0) + (permitsReady ? 25 : 0) + Math.round(
-            clamp(
-              staffing.coverage,
-              0,
-              1
-            ) * 25
-          );
-          const ready = renovationReady && equipmentReady && permitsReady && staffingReady;
-          const shop = this.getShop(
-            shopId
-          );
-          if (shop && ready && shop.status !== "open") {
-            shop.status = "ready_for_trial";
-          }
-          return {
-            renovationReady,
-            equipmentReady,
-            permitsReady,
-            staffingReady,
-            score,
-            ready,
-            equipment,
-            permits,
-            staffing
-          };
-        }
-        startTrialOpening(shopId) {
-          const shop = this.getShop(
-            shopId
-          );
-          if (!shop) {
-            return {
-              ok: false,
-              message: "\u95E8\u5E97\u4E0D\u5B58\u5728"
-            };
-          }
-          const readiness = this.getReadiness(
-            shopId
-          );
-          if (!readiness.ready) {
-            return {
-              ok: false,
-              message: "\u88C5\u4FEE\u3001\u8BBE\u5907\u3001\u8BC1\u7167\u548C\u57FA\u7840\u73ED\u7EC4\u5C1A\u672A\u5168\u90E8\u5B8C\u6210"
-            };
-          }
-          shop.status = "open";
-          shop.trialOpenedDay = this.getCurrentDay();
-          return {
-            ok: true,
-            day: shop.trialOpenedDay
-          };
-        }
-        updateShop(shopId) {
-          this.updateEquipment(
-            shopId
-          );
-          this.updatePermits(
-            shopId
-          );
-          return this.getReadiness(
-            shopId
-          );
-        }
-      };
-      module.exports = new OpeningPrepSystem();
-    }
-  });
-
   // src/finance/openingFinanceSystem.js
   var require_openingFinanceSystem = __commonJS({
     "src/finance/openingFinanceSystem.js"(exports, module) {
@@ -13570,135 +13699,6 @@
         }
       };
       module.exports = new CustomizationSystem();
-    }
-  });
-
-  // src/ui/textInput.js
-  var require_textInput = __commonJS({
-    "src/ui/textInput.js"(exports, module) {
-      "use strict";
-      var runtime = globalThis.GameRuntime || {};
-      var api = runtime.api || {};
-      function requestRender() {
-        if (runtime && typeof runtime.requestRender === "function") {
-          runtime.requestRender();
-        }
-      }
-      function normalize(value, maxLength) {
-        return String(
-          value == null ? "" : value
-        ).replace(
-          /\s+/g,
-          " "
-        ).trim().slice(
-          0,
-          Math.max(
-            1,
-            Number(
-              maxLength
-            ) || 12
-          )
-        );
-      }
-      function promptFallback(options, done) {
-        if (typeof globalThis.prompt === "function") {
-          const result = globalThis.prompt(
-            options.title || "\u8BF7\u8F93\u5165\u540D\u79F0",
-            options.value || ""
-          );
-          done(
-            result == null ? null : normalize(
-              result,
-              options.maxLength
-            )
-          );
-          requestRender();
-          return;
-        }
-        if (api && typeof api.showToast === "function") {
-          api.showToast({
-            title: "\u5F53\u524D\u73AF\u5883\u6682\u4E0D\u652F\u6301\u6587\u5B57\u8F93\u5165",
-            icon: "none"
-          });
-        }
-        done(
-          null
-        );
-      }
-      function requestText(options) {
-        const opts = options || {};
-        return new Promise(
-          (resolve) => {
-            let settled = false;
-            const finish = (value) => {
-              if (settled) {
-                return;
-              }
-              settled = true;
-              resolve(
-                value
-              );
-              requestRender();
-            };
-            if (api && typeof api.showModal === "function") {
-              try {
-                api.showModal({
-                  title: opts.title || "\u7F16\u8F91\u540D\u79F0",
-                  content: opts.value || "",
-                  editable: true,
-                  placeholderText: opts.placeholder || "\u8BF7\u8F93\u5165\u540D\u79F0",
-                  confirmText: "\u4FDD\u5B58",
-                  cancelText: "\u53D6\u6D88",
-                  success: (result) => {
-                    if (!result || !result.confirm) {
-                      finish(
-                        null
-                      );
-                      return;
-                    }
-                    const raw = result.content != null ? result.content : result.inputValue != null ? result.inputValue : result.value != null ? result.value : "";
-                    const text = normalize(
-                      raw,
-                      opts.maxLength
-                    );
-                    if (text) {
-                      finish(
-                        text
-                      );
-                    } else {
-                      promptFallback(
-                        opts,
-                        finish
-                      );
-                    }
-                  },
-                  fail: () => {
-                    promptFallback(
-                      opts,
-                      finish
-                    );
-                  }
-                });
-                return;
-              } catch (error) {
-                promptFallback(
-                  opts,
-                  finish
-                );
-                return;
-              }
-            }
-            promptFallback(
-              opts,
-              finish
-            );
-          }
-        );
-      }
-      module.exports = {
-        requestText,
-        requestRender
-      };
     }
   });
 
@@ -20604,6 +20604,8 @@
       var demandSystem = require_demandSystem();
       var simulationSystem = require_simulationSystem();
       var simulationConfig = require_simulationConfig();
+      var openingPrepSystem = require_openingPrepSystem();
+      var textInput = require_textInput();
       var propertyMarketScene = require_shopScene();
       var storeScene = require_storeScene();
       var districtScene = require_districtScene();
@@ -20698,15 +20700,44 @@
         }
       };
       var NAV_ITEMS = [
-        { id: "city", name: "\u57CE\u5E02", icon: "\u57CE" },
-        { id: "shop", name: "\u95E8\u5E97", icon: "\u5E97" },
-        { id: "renovation", name: "\u88C5\u4FEE", icon: "\u88C5" },
-        { id: "research", name: "\u83DC\u5355", icon: "\u83DC" },
-        { id: "supply", name: "\u4F9B\u5E94\u94FE", icon: "\u4F9B" },
-        { id: "business", name: "\u6570\u636E", icon: "\u6570" },
-        { id: "system", name: "\u7CFB\u7EDF", icon: "\u8BBE" }
+        {
+          id: "city",
+          name: "\u57CE\u5E02",
+          icon: "city"
+        },
+        {
+          id: "shop",
+          name: "\u95E8\u5E97",
+          icon: "shop"
+        },
+        {
+          id: "traffic",
+          name: "\u5BA2\u6D41",
+          icon: "traffic"
+        },
+        {
+          id: "research",
+          name: "\u83DC\u5355",
+          icon: "research"
+        },
+        {
+          id: "supply",
+          name: "\u4F9B\u5E94\u94FE",
+          icon: "supply"
+        },
+        {
+          id: "business",
+          name: "\u6570\u636E",
+          icon: "business"
+        },
+        {
+          id: "system",
+          name: "\u7CFB\u7EDF",
+          icon: "system"
+        }
       ];
       var selectedDistrictId = null;
+      var trafficMode = false;
       var districtFx = {
         id: null,
         scale: 1,
@@ -20969,49 +21000,915 @@
         };
       }
       function drawCityBadge(cityName, x, y, size) {
-        const first = String(
-          cityName || "\u57CE"
-        ).charAt(
-          0
-        ) || "\u57CE";
+        const image = resourceManager.getImage(
+          "city_base_01"
+        );
         roundedRect(
           x,
           y,
           size,
           size,
           10,
-          "rgba(6,49,72,0.96)",
+          "#FFFFFF",
           "#F6C64E",
           1.2
         );
+        if (image) {
+          ctx2.save();
+          roundedPath(
+            ctx2,
+            x + 3,
+            y + 3,
+            size - 6,
+            size - 6,
+            8
+          );
+          ctx2.clip();
+          drawImageFocus(
+            ctx2,
+            image,
+            x + 3,
+            y + 3,
+            size - 6,
+            size - 6,
+            2.1,
+            0.52,
+            0.28
+          );
+          ctx2.restore();
+        } else {
+          drawText(
+            String(
+              cityName || "\u57CE"
+            ).charAt(
+              0
+            ),
+            x + size / 2,
+            y + size / 2,
+            15,
+            "#0A3A57",
+            "800",
+            "center"
+          );
+        }
+      }
+      function drawWeatherGlyph(weather, x, y) {
+        ctx2.save();
+        const isRain = weather === "rain" || weather === "heavyRain";
+        const isCloud = weather === "cloudy" || isRain;
+        ctx2.fillStyle = "#FFD34D";
+        ctx2.beginPath();
+        ctx2.arc(
+          x - 4,
+          y - 3,
+          5,
+          0,
+          Math.PI * 2
+        );
+        ctx2.fill();
+        for (let i = 0; i < 8; i++) {
+          const a = i * Math.PI / 4;
+          ctx2.strokeStyle = "#FFD34D";
+          ctx2.lineWidth = 1.4;
+          ctx2.beginPath();
+          ctx2.moveTo(
+            x - 4 + Math.cos(
+              a
+            ) * 8,
+            y - 3 + Math.sin(
+              a
+            ) * 8
+          );
+          ctx2.lineTo(
+            x - 4 + Math.cos(
+              a
+            ) * 11,
+            y - 3 + Math.sin(
+              a
+            ) * 11
+          );
+          ctx2.stroke();
+        }
+        if (isCloud) {
+          ctx2.fillStyle = "#EAF4F8";
+          ctx2.beginPath();
+          ctx2.arc(
+            x + 2,
+            y + 1,
+            6,
+            Math.PI,
+            0
+          );
+          ctx2.arc(
+            x + 9,
+            y,
+            5,
+            Math.PI,
+            0
+          );
+          ctx2.arc(
+            x + 6,
+            y + 3,
+            6,
+            0,
+            Math.PI
+          );
+          ctx2.closePath();
+          ctx2.fill();
+        }
+        if (isRain) {
+          ctx2.strokeStyle = "#7ED8FF";
+          ctx2.lineWidth = 1.5;
+          for (let i = 0; i < 3; i++) {
+            ctx2.beginPath();
+            ctx2.moveTo(
+              x + i * 5,
+              y + 8
+            );
+            ctx2.lineTo(
+              x - 2 + i * 5,
+              y + 12
+            );
+            ctx2.stroke();
+          }
+        }
+        ctx2.restore();
+      }
+      function drawCashGlyph(x, y) {
+        ctx2.save();
         roundedRect(
-          x + 4,
-          y + 4,
-          size - 8,
-          size - 8,
-          8,
-          "rgba(255,255,255,0.08)",
-          "rgba(255,255,255,0.28)",
-          0.8
+          x - 11,
+          y - 6,
+          22,
+          12,
+          2,
+          "#58B766",
+          "#DDF6B2",
+          1
+        );
+        roundedRect(
+          x - 8,
+          y - 9,
+          22,
+          12,
+          2,
+          "#78C96C",
+          "#E8F7B8",
+          1
         );
         drawText(
-          first,
-          x + size / 2,
-          y + size * 0.47,
-          17,
-          "#FFE49A",
+          "\xA5",
+          x + 3,
+          y - 3,
+          7.4,
+          "#F7FFCE",
+          "800",
+          "center"
+        );
+        ctx2.restore();
+      }
+      function drawCrownGlyph(x, y) {
+        ctx2.save();
+        ctx2.fillStyle = "#FFD557";
+        ctx2.strokeStyle = "#FFF0A8";
+        ctx2.lineWidth = 1;
+        ctx2.beginPath();
+        ctx2.moveTo(
+          x - 12,
+          y + 6
+        );
+        ctx2.lineTo(
+          x - 9,
+          y - 7
+        );
+        ctx2.lineTo(
+          x - 2,
+          y
+        );
+        ctx2.lineTo(
+          x + 3,
+          y - 10
+        );
+        ctx2.lineTo(
+          x + 9,
+          y
+        );
+        ctx2.lineTo(
+          x + 13,
+          y - 7
+        );
+        ctx2.lineTo(
+          x + 11,
+          y + 6
+        );
+        ctx2.closePath();
+        ctx2.fill();
+        ctx2.stroke();
+        ctx2.restore();
+      }
+      function getShopForDistrict(districtId) {
+        const business = gameState.getBusiness();
+        if (!business || !Array.isArray(
+          business.shops
+        )) {
+          return [];
+        }
+        return business.shops.filter(
+          (shop) => shop.districtId === districtId
+        );
+      }
+      function getDistrictVisualMeta(district) {
+        const descriptions = {
+          university: "\u5B66\u751F\u7F8E\u98DF\u5929\u5802",
+          hightech: "\u767D\u9886\u805A\u9910\u9996\u9009",
+          cbd: "\u9AD8\u7AEF\u9910\u996E\u805A\u96C6\u5730",
+          oldtown: "\u4F20\u7EDF\u7F8E\u98DF\u8857",
+          village: "\u70DF\u706B\u6C14\u5341\u8DB3",
+          market: "\u4F20\u7EDF\u5E02\u573A\u7115\u53D1\u65B0\u6D3B\u529B",
+          industry: "\u5DE5\u4F5C\u9910\u9700\u6C42\u5927"
+        };
+        const shops = getShopForDistrict(
+          district.id
+        );
+        const demandDelta = Number(
+          district.demandDeltaRatio
+        ) || 0;
+        let badge = "";
+        let badgeColor = "#D93E36";
+        if (district.saturation >= 92) {
+          badge = "\u7ADE\u4E89\u6FC0\u70C8";
+        } else if (demandDelta >= 0.035) {
+          badge = "\u9700\u6C42\u2191";
+        } else if (district.rentIndex <= 0.52) {
+          badge = "\u79DF\u91D1\u4F4E";
+        } else if (Number(
+          district.populationDelta
+        ) > 20) {
+          badge = "\u4EBA\u6C14\u9AD8";
+        } else if (demandDelta <= -0.035) {
+          badge = "\u9700\u6C42\u2193";
+          badgeColor = "#447FAD";
+        }
+        return {
+          subtitle: descriptions[district.id] || "\u9910\u996E\u6D88\u8D39\u6D3B\u8DC3",
+          badge,
+          badgeColor,
+          myShopCount: shops.length
+        };
+      }
+      function drawDistrictPictogram(districtId, x, y) {
+        ctx2.save();
+        ctx2.strokeStyle = "#FFFFFF";
+        ctx2.fillStyle = "#FFFFFF";
+        ctx2.lineWidth = 1.5;
+        ctx2.lineCap = "round";
+        ctx2.lineJoin = "round";
+        if (districtId === "university") {
+          ctx2.beginPath();
+          ctx2.moveTo(
+            x - 5,
+            y - 6
+          );
+          ctx2.lineTo(
+            x - 5,
+            y + 6
+          );
+          ctx2.moveTo(
+            x - 8,
+            y - 6
+          );
+          ctx2.lineTo(
+            x - 8,
+            y - 1
+          );
+          ctx2.moveTo(
+            x - 2,
+            y - 6
+          );
+          ctx2.lineTo(
+            x - 2,
+            y - 1
+          );
+          ctx2.moveTo(
+            x + 5,
+            y - 6
+          );
+          ctx2.lineTo(
+            x + 5,
+            y + 6
+          );
+          ctx2.stroke();
+        } else if (districtId === "hightech") {
+          ctx2.strokeRect(
+            x - 7,
+            y - 6,
+            14,
+            10
+          );
+          ctx2.beginPath();
+          ctx2.moveTo(
+            x,
+            y + 4
+          );
+          ctx2.lineTo(
+            x,
+            y + 8
+          );
+          ctx2.moveTo(
+            x - 4,
+            y + 8
+          );
+          ctx2.lineTo(
+            x + 4,
+            y + 8
+          );
+          ctx2.stroke();
+        } else if (districtId === "cbd") {
+          roundedRect(
+            x - 5,
+            y - 4,
+            10,
+            10,
+            2,
+            null,
+            "#FFFFFF",
+            1.5
+          );
+          ctx2.beginPath();
+          ctx2.arc(
+            x,
+            y - 4,
+            4,
+            Math.PI,
+            0
+          );
+          ctx2.stroke();
+        } else if (districtId === "oldtown") {
+          ctx2.beginPath();
+          ctx2.moveTo(
+            x - 7,
+            y - 3
+          );
+          ctx2.lineTo(
+            x,
+            y - 8
+          );
+          ctx2.lineTo(
+            x + 7,
+            y - 3
+          );
+          ctx2.stroke();
+          ctx2.strokeRect(
+            x - 5,
+            y - 3,
+            10,
+            10
+          );
+        } else if (districtId === "village") {
+          ctx2.beginPath();
+          ctx2.moveTo(
+            x - 7,
+            y
+          );
+          ctx2.lineTo(
+            x,
+            y - 7
+          );
+          ctx2.lineTo(
+            x + 7,
+            y
+          );
+          ctx2.stroke();
+          ctx2.strokeRect(
+            x - 5,
+            y,
+            10,
+            7
+          );
+        } else if (districtId === "market") {
+          ctx2.strokeRect(
+            x - 7,
+            y - 1,
+            14,
+            8
+          );
+          ctx2.beginPath();
+          ctx2.moveTo(
+            x - 8,
+            y - 1
+          );
+          ctx2.lineTo(
+            x - 5,
+            y - 7
+          );
+          ctx2.lineTo(
+            x + 5,
+            y - 7
+          );
+          ctx2.lineTo(
+            x + 8,
+            y - 1
+          );
+          ctx2.stroke();
+        } else {
+          ctx2.strokeRect(
+            x - 7,
+            y - 1,
+            14,
+            8
+          );
+          ctx2.beginPath();
+          ctx2.moveTo(
+            x - 5,
+            y - 1
+          );
+          ctx2.lineTo(
+            x - 5,
+            y - 7
+          );
+          ctx2.moveTo(
+            x + 1,
+            y - 1
+          );
+          ctx2.lineTo(
+            x + 1,
+            y - 9
+          );
+          ctx2.moveTo(
+            x + 5,
+            y - 1
+          );
+          ctx2.lineTo(
+            x + 5,
+            y - 5
+          );
+          ctx2.stroke();
+        }
+        ctx2.restore();
+      }
+      function getHomeGoalState() {
+        const business = gameState.getBusiness();
+        if (!business.hasShop || !Array.isArray(
+          business.shops
+        ) || business.shops.length === 0) {
+          const process = business.propertyProcess || {
+            visits: {},
+            negotiations: {},
+            leases: {}
+          };
+          const visitCount = Object.keys(
+            process.visits || {}
+          ).length;
+          const negotiationCount = Object.keys(
+            process.negotiations || {}
+          ).length;
+          let current2 = selectedDistrictId ? 1 : 0;
+          if (visitCount > 0) {
+            current2 = Math.max(
+              current2,
+              2
+            );
+          }
+          if (negotiationCount > 0) {
+            current2 = Math.max(
+              current2,
+              3
+            );
+          }
+          return {
+            title: "\u5F00\u8BBE\u9996\u5E97",
+            steps: [
+              "\u9009\u5740",
+              "\u770B\u94FA",
+              "\u8C08\u5224",
+              "\u7B7E\u7EA6",
+              "\u88C5\u4FEE"
+            ],
+            current: current2,
+            completed: false
+          };
+        }
+        const shop = business.shops.find(
+          (item) => item.id === business.currentShopId
+        ) || business.shops[0];
+        const readiness = openingPrepSystem.getReadiness(
+          shop.id
+        );
+        let current = 1;
+        if (readiness.renovationReady) {
+          current = 2;
+        }
+        if (readiness.permitsReady) {
+          current = 3;
+        }
+        if (readiness.staffingReady) {
+          current = 4;
+        }
+        if (readiness.ready || shop.status === "open") {
+          current = 5;
+        }
+        return {
+          title: shop.status === "open" ? "\u7A33\u5B9A\u7ECF\u8425" : "\u7B79\u5907\u9996\u5E97",
+          steps: [
+            "\u7B7E\u7EA6",
+            "\u88C5\u4FEE",
+            "\u8BC1\u7167",
+            "\u62DB\u8058",
+            "\u8425\u4E1A"
+          ],
+          current,
+          completed: shop.status === "open"
+        };
+      }
+      function drawGoalBar() {
+        const goal = getHomeGoalState();
+        const x = 8;
+        const y = MAP_Y + 43;
+        const w = VIEW_W - 16;
+        const h = 30;
+        roundedRect(
+          x,
+          y,
+          w,
+          h,
+          15,
+          "rgba(3,40,62,0.94)",
+          "rgba(73,192,239,0.48)"
+        );
+        drawText(
+          "\u25CE",
+          x + 15,
+          y + 15,
+          13,
+          "#FFD85C",
           "800",
           "center"
         );
         drawText(
-          "\u57CE",
-          x + size / 2,
-          y + size * 0.76,
-          6.2,
-          "#E4F0F4",
+          "\u5F53\u524D\u76EE\u6807\uFF1A",
+          x + 29,
+          y + 15,
+          6.8,
+          "#FFD85C",
+          "800"
+        );
+        drawText(
+          goal.title,
+          x + 76,
+          y + 15,
+          7.1,
+          "#FFFFFF",
+          "800"
+        );
+        const startX = x + 150;
+        const available = w - 185;
+        const gap = available / Math.max(
+          1,
+          goal.steps.length - 1
+        );
+        for (let i = 0; i < goal.steps.length; i++) {
+          const cx = startX + i * gap;
+          const done = i < goal.current;
+          const active = i === goal.current && !goal.completed;
+          ctx2.beginPath();
+          ctx2.arc(
+            cx,
+            y + 11,
+            5.5,
+            0,
+            Math.PI * 2
+          );
+          ctx2.fillStyle = done ? "#F2C744" : active ? "#FFF8CF" : "rgba(225,239,244,0.18)";
+          ctx2.fill();
+          ctx2.strokeStyle = done || active ? "#FFE58B" : "#9DB8C5";
+          ctx2.lineWidth = 1;
+          ctx2.stroke();
+          if (i < goal.steps.length - 1) {
+            ctx2.strokeStyle = i < goal.current ? "#F2C744" : "rgba(178,205,218,0.48)";
+            ctx2.lineWidth = 1.2;
+            ctx2.beginPath();
+            ctx2.moveTo(
+              cx + 7,
+              y + 11
+            );
+            ctx2.lineTo(
+              cx + gap - 7,
+              y + 11
+            );
+            ctx2.stroke();
+          }
+          drawText(
+            goal.steps[i],
+            cx,
+            y + 24,
+            5.2,
+            done || active ? "#FFE595" : "#D7E6EC",
+            done || active ? "800" : "600",
+            "center"
+          );
+        }
+        drawText(
+          "\u{1F381}",
+          x + w - 15,
+          y + 15,
+          10,
+          "#FFE280",
           "700",
           "center"
         );
+        addButton(
+          "goal:current",
+          x,
+          y,
+          w,
+          h
+        );
+      }
+      function selectBusiestDistrict() {
+        const districts = getDistricts();
+        let best = null;
+        let bestDemand = -1;
+        for (let i = 0; i < districts.length; i++) {
+          const demand = demandSystem.getTotalDemand(
+            districts[i].id
+          );
+          if (demand > bestDemand) {
+            bestDemand = demand;
+            best = districts[i];
+          }
+        }
+        if (best) {
+          selectedDistrictId = best.id;
+          citySystem.setCurrentDistrict(
+            best.id
+          );
+          startDistrictFx(
+            best.id
+          );
+        }
+        return best;
+      }
+      function drawTrafficOverlay() {
+        if (!trafficMode) {
+          return;
+        }
+        const districts = getDistricts();
+        const demands = districts.map(
+          (item) => demandSystem.getTotalDemand(
+            item.id
+          )
+        );
+        const maxDemand = Math.max(
+          1,
+          ...demands
+        );
+        for (let i = 0; i < districts.length; i++) {
+          const district = districts[i];
+          const point = getDistrictPoint(
+            district.id
+          );
+          if (!point) {
+            continue;
+          }
+          const ratio = demands[i] / maxDemand;
+          const radius = 17 + ratio * 18;
+          const glow = ctx2.createRadialGradient(
+            point.x,
+            point.y,
+            2,
+            point.x,
+            point.y,
+            radius
+          );
+          glow.addColorStop(
+            0,
+            ratio > 0.72 ? "rgba(255,167,47,0.42)" : "rgba(65,191,235,0.34)"
+          );
+          glow.addColorStop(
+            1,
+            "rgba(55,168,218,0)"
+          );
+          ctx2.fillStyle = glow;
+          ctx2.beginPath();
+          ctx2.arc(
+            point.x,
+            point.y,
+            radius,
+            0,
+            Math.PI * 2
+          );
+          ctx2.fill();
+          roundedRect(
+            point.x - 22,
+            point.y + 24,
+            44,
+            16,
+            8,
+            "rgba(5,50,72,0.88)",
+            "rgba(255,224,122,0.45)"
+          );
+          drawText(
+            String(
+              demands[i]
+            ),
+            point.x,
+            point.y + 32,
+            5.8,
+            "#FFF5C2",
+            "800",
+            "center"
+          );
+        }
+        roundedRect(
+          13,
+          MAP_Y + 79,
+          92,
+          22,
+          11,
+          "rgba(4,45,67,0.90)",
+          "rgba(255,218,96,0.56)"
+        );
+        drawText(
+          "\u5BA2\u6D41\u70ED\u529B\u6A21\u5F0F",
+          59,
+          MAP_Y + 90,
+          6.4,
+          "#FFE084",
+          "800",
+          "center"
+        );
+      }
+      function drawMetricSymbol(ctxLabel, x, y, color) {
+        ctx2.save();
+        ctx2.strokeStyle = color;
+        ctx2.fillStyle = color;
+        ctx2.lineWidth = 1.4;
+        if (ctxLabel === "\u4EBA\u53E3") {
+          ctx2.beginPath();
+          ctx2.arc(
+            x - 4,
+            y - 3,
+            3,
+            0,
+            Math.PI * 2
+          );
+          ctx2.arc(
+            x + 4,
+            y - 3,
+            3,
+            0,
+            Math.PI * 2
+          );
+          ctx2.fill();
+          ctx2.beginPath();
+          ctx2.arc(
+            x - 4,
+            y + 5,
+            5,
+            Math.PI,
+            0
+          );
+          ctx2.arc(
+            x + 4,
+            y + 5,
+            5,
+            Math.PI,
+            0
+          );
+          ctx2.fill();
+        } else if (ctxLabel === "\u9700\u6C42") {
+          ctx2.fillRect(
+            x - 7,
+            y + 1,
+            3,
+            7
+          );
+          ctx2.fillRect(
+            x - 1,
+            y - 3,
+            3,
+            11
+          );
+          ctx2.fillRect(
+            x + 5,
+            y - 8,
+            3,
+            16
+          );
+        } else if (ctxLabel === "\u5BA2\u5355") {
+          ctx2.beginPath();
+          ctx2.ellipse(
+            x,
+            y - 5,
+            7,
+            3,
+            0,
+            0,
+            Math.PI * 2
+          );
+          ctx2.stroke();
+          ctx2.beginPath();
+          ctx2.moveTo(
+            x - 7,
+            y - 5
+          );
+          ctx2.lineTo(
+            x - 7,
+            y + 6
+          );
+          ctx2.moveTo(
+            x + 7,
+            y - 5
+          );
+          ctx2.lineTo(
+            x + 7,
+            y + 6
+          );
+          ctx2.stroke();
+          ctx2.beginPath();
+          ctx2.ellipse(
+            x,
+            y + 6,
+            7,
+            3,
+            0,
+            0,
+            Math.PI
+          );
+          ctx2.stroke();
+        } else if (ctxLabel === "\u9910\u996E\u5E97") {
+          ctx2.strokeRect(
+            x - 7,
+            y - 1,
+            14,
+            9
+          );
+          ctx2.beginPath();
+          ctx2.moveTo(
+            x - 8,
+            y - 1
+          );
+          ctx2.lineTo(
+            x - 5,
+            y - 7
+          );
+          ctx2.lineTo(
+            x + 5,
+            y - 7
+          );
+          ctx2.lineTo(
+            x + 8,
+            y - 1
+          );
+          ctx2.stroke();
+        } else if (ctxLabel === "\u9971\u548C\u5EA6") {
+          ctx2.beginPath();
+          ctx2.arc(
+            x,
+            y,
+            7,
+            0,
+            Math.PI * 2
+          );
+          ctx2.stroke();
+          ctx2.beginPath();
+          ctx2.moveTo(
+            x,
+            y
+          );
+          ctx2.lineTo(
+            x,
+            y - 7
+          );
+          ctx2.lineTo(
+            x + 6,
+            y + 3
+          );
+          ctx2.closePath();
+          ctx2.fill();
+        } else {
+          ctx2.beginPath();
+          ctx2.moveTo(
+            x - 7,
+            y
+          );
+          ctx2.lineTo(
+            x,
+            y - 7
+          );
+          ctx2.lineTo(
+            x + 7,
+            y
+          );
+          ctx2.stroke();
+          ctx2.strokeRect(
+            x - 5,
+            y,
+            10,
+            7
+          );
+        }
+        ctx2.restore();
       }
       function drawDistrictThumb(districtId, x, y, w, h) {
         const image = resourceManager.getImage(
@@ -21179,39 +22076,47 @@
             6,
             7
           );
-        } else if (id === "renovation") {
+        } else if (id === "traffic") {
+          ctx2.beginPath();
+          ctx2.arc(
+            cx - 6,
+            cy - 4,
+            3,
+            0,
+            Math.PI * 2
+          );
+          ctx2.arc(
+            cx + 5,
+            cy - 3,
+            3,
+            0,
+            Math.PI * 2
+          );
+          ctx2.fill();
+          ctx2.beginPath();
+          ctx2.arc(
+            cx - 6,
+            cy + 5,
+            5,
+            Math.PI,
+            0
+          );
+          ctx2.arc(
+            cx + 5,
+            cy + 6,
+            5,
+            Math.PI,
+            0
+          );
+          ctx2.fill();
           ctx2.beginPath();
           ctx2.moveTo(
-            cx - 8,
-            cy + 8
+            cx - 12,
+            cy + 11
           );
           ctx2.lineTo(
-            cx + 4,
-            cy - 4
-          );
-          ctx2.stroke();
-          ctx2.beginPath();
-          ctx2.moveTo(
-            cx,
-            cy - 8
-          );
-          ctx2.lineTo(
-            cx + 8,
-            cy
-          );
-          ctx2.lineTo(
-            cx + 4,
-            cy + 4
-          );
-          ctx2.stroke();
-          ctx2.beginPath();
-          ctx2.moveTo(
-            cx - 10,
-            cy + 5
-          );
-          ctx2.lineTo(
-            cx - 5,
-            cy + 10
+            cx + 12,
+            cy + 11
           );
           ctx2.stroke();
         } else if (id === "research") {
@@ -21565,11 +22470,11 @@
             0,
             VIEW_W,
             TOP_H,
-            1.65,
-            0.53,
-            0.16
+            1.48,
+            0.52,
+            0.17
           );
-          ctx2.fillStyle = "rgba(4,35,58,0.67)";
+          ctx2.fillStyle = "rgba(4,35,58,0.61)";
           ctx2.fillRect(
             0,
             0,
@@ -21594,30 +22499,60 @@
         drawText(
           fitText(
             cityName,
-            102,
+            87,
             15.5,
             "800"
           ),
-          66,
+          65,
           20 + SAFE_TOP,
           15.5,
           COLORS.white,
           "800"
         );
+        roundedRect(
+          145,
+          12 + SAFE_TOP,
+          18,
+          18,
+          5,
+          "rgba(4,49,72,0.74)",
+          "rgba(255,255,255,0.24)"
+        );
+        drawText(
+          "\u270E",
+          154,
+          21 + SAFE_TOP,
+          7.4,
+          "#FFE08B",
+          "800",
+          "center"
+        );
+        addButton(
+          "city:rename",
+          140,
+          7 + SAFE_TOP,
+          28,
+          28
+        );
         drawText(
           "\u6253\u9020\u5C5E\u4E8E\u4F60\u7684\u7F8E\u98DF\u5E1D\u56FD",
-          66,
+          65,
           42 + SAFE_TOP,
-          7.2,
-          "#DFEEF4",
+          7.1,
+          "#E1EEF3",
           "600"
+        );
+        drawWeatherGlyph(
+          world.weather,
+          190,
+          24 + SAFE_TOP
         );
         drawText(
           WEATHER_NAMES[world.weather] || "\u6674",
-          181,
-          21 + SAFE_TOP,
-          7.7,
-          "#FFF1B2",
+          211,
+          20 + SAFE_TOP,
+          6.9,
+          "#FFFFFF",
           "700",
           "center"
         );
@@ -21627,84 +22562,131 @@
               world.temperature
             )
           ) ? world.temperature + "\u2103" : "--\u2103",
-          181,
-          42 + SAFE_TOP,
-          6.8,
-          "#D7E8EE",
+          211,
+          40 + SAFE_TOP,
+          6.6,
+          "#DDECF1",
           "600",
           "center"
         );
         roundedRect(
-          211,
-          9 + SAFE_TOP,
-          105,
-          45,
+          231,
+          8 + SAFE_TOP,
+          94,
+          47,
           12,
-          "rgba(5,39,60,0.88)",
-          "rgba(255,255,255,0.30)"
+          "rgba(5,43,65,0.90)",
+          "rgba(114,208,244,0.44)"
+        );
+        drawCashGlyph(
+          247,
+          25 + SAFE_TOP
         );
         drawText(
           fitText(
             "\xA5" + player.cash.toLocaleString(),
-            91,
-            11,
+            61,
+            10.8,
             "800"
           ),
-          263.5,
-          24 + SAFE_TOP,
-          11,
-          "#FFF0A8",
+          278,
+          22 + SAFE_TOP,
+          10.8,
+          "#FFF1A7",
           "800",
           "center"
         );
         drawText(
           "\u53EF\u7528\u8D44\u91D1",
-          263.5,
+          278,
           42 + SAFE_TOP,
-          6.3,
-          "#D6E7ED",
+          6.2,
+          "#D9E9EF",
           "600",
+          "center"
+        );
+        roundedRect(
+          309,
+          16 + SAFE_TOP,
+          11,
+          11,
+          4,
+          "#F5B62D",
+          "#FFE598"
+        );
+        drawText(
+          "+",
+          314.5,
+          21.5 + SAFE_TOP,
+          8,
+          "#FFFFFF",
+          "800",
           "center"
         );
         const brand = getBrandState(
           player
         );
         roundedRect(
-          323,
-          9 + SAFE_TOP,
-          58,
-          45,
+          330,
+          8 + SAFE_TOP,
+          51,
+          47,
           12,
-          "rgba(5,39,60,0.88)",
-          "rgba(255,255,255,0.30)"
+          "rgba(5,43,65,0.90)",
+          "rgba(114,208,244,0.44)"
+        );
+        drawCrownGlyph(
+          343,
+          24 + SAFE_TOP
         );
         drawText(
-          "\u265B Lv." + brand.level,
-          352,
-          23 + SAFE_TOP,
+          "Lv." + brand.level,
+          361,
+          21 + SAFE_TOP,
           7.8,
-          "#FFE081",
+          "#FFE27D",
           "800",
           "center"
         );
         roundedRect(
-          333,
-          42 + SAFE_TOP,
-          38,
+          339,
+          41 + SAFE_TOP,
+          34,
           3,
           1.5,
-          "rgba(255,255,255,0.24)"
+          "rgba(255,255,255,0.22)"
         );
         roundedRect(
-          333,
-          42 + SAFE_TOP,
+          339,
+          41 + SAFE_TOP,
           Math.max(
             3,
-            38 * brand.progress
+            34 * brand.progress
           ),
           3,
           1.5,
           COLORS.gold
+        );
+        drawText(
+          brand.reputation + "/" + Math.max(
+            100,
+            Math.ceil(
+              (brand.reputation + 1) / 100
+            ) * 100
+          ),
+          356,
+          50 + SAFE_TOP,
+          4.9,
+          "#E7F2F6",
+          "600",
+          "center"
+        );
+        addButton(
+          "brand:status",
+          327,
+          5 + SAFE_TOP,
+          57,
+          53
         );
         const speedItems = [
           [
@@ -21728,7 +22710,7 @@
             "10\xD7"
           ]
         ];
-        const y = TOP_H - 27;
+        const y = TOP_H - 28;
         for (let i = 0; i < speedItems.length; i++) {
           const id = speedItems[i][0];
           const speed = timeSystem.getSpeed();
@@ -21770,10 +22752,10 @@
             6.5,
             "600"
           ),
-          376,
+          377,
           y + 10.5,
           6.5,
-          "#DCEBF0",
+          "#E5F0F4",
           "600",
           "right"
         );
@@ -21849,6 +22831,9 @@
         const x = point.x;
         const y = point.y;
         const selected = selectedDistrictId === district.id;
+        const meta = getDistrictVisualMeta(
+          district
+        );
         const animated = districtFx.id === district.id;
         const markerScale = animated ? districtFx.scale : 1;
         const markerKeys = {
@@ -21868,11 +22853,11 @@
           ctx2.arc(
             x,
             y,
-            21 + districtFx.flash * 5,
+            23 + districtFx.flash * 5,
             0,
             Math.PI * 2
           );
-          ctx2.fillStyle = "rgba(255,191,45,0.24)";
+          ctx2.fillStyle = "rgba(255,195,54,0.24)";
           ctx2.fill();
         }
         ctx2.save();
@@ -21887,89 +22872,185 @@
         if (image) {
           ctx2.drawImage(
             image,
-            -16,
-            -23,
-            32,
-            44
+            -18,
+            -27,
+            36,
+            50
           );
         } else {
           ctx2.beginPath();
           ctx2.arc(
             0,
             0,
-            8,
+            10,
             0,
             Math.PI * 2
           );
           ctx2.fillStyle = COLORS.gold;
           ctx2.fill();
         }
+        drawDistrictPictogram(
+          district.id,
+          0,
+          -8
+        );
         ctx2.restore();
-        const labelW = Math.max(
-          63,
+        const boxW = Math.max(
+          81,
           Math.min(
-            94,
-            31 + district.name.length * 10
+            102,
+            43 + district.name.length * 11
           )
         );
-        const preferLeft = x > VIEW_W * 0.64;
-        let labelX = preferLeft ? x - labelW - 10 : x + 10;
-        labelX = Math.max(
-          6,
+        const preferLeft = x > VIEW_W * 0.62;
+        let boxX = preferLeft ? x - boxW - 11 : x + 11;
+        boxX = Math.max(
+          5,
           Math.min(
-            VIEW_W - labelW - 6,
-            labelX
+            VIEW_W - boxW - 5,
+            boxX
           )
         );
-        const labelY = Math.max(
-          MAP_Y + 43,
+        let boxY = y - 15;
+        boxY = Math.max(
+          MAP_Y + 82,
           Math.min(
-            CARD_Y - 31,
-            y - 11
+            CARD_Y - 54,
+            boxY
           )
         );
         roundedRect(
-          labelX,
-          labelY,
-          labelW,
-          23,
+          boxX,
+          boxY,
+          boxW,
+          27,
           11,
-          selected ? "#0A4969" : "#063C5B",
-          selected ? "#FFD25A" : "#F0BA37",
+          "#073E5D",
+          selected ? "#FFE06C" : "#F1C34A",
           selected ? 1.4 : 1
         );
         drawText(
-          district.name + "  \u203A",
-          labelX + labelW / 2,
-          labelY + 11.5,
-          7.6,
-          "#F8FBFC",
+          district.name,
+          boxX + 11,
+          boxY + 13.5,
+          8.7,
+          "#FFFFFF",
+          "800"
+        );
+        drawText(
+          "\u203A",
+          boxX + boxW - 10,
+          boxY + 13.5,
+          11,
+          "#FFE49C",
           "800",
           "center"
         );
+        roundedRect(
+          boxX + 6,
+          boxY + 27,
+          boxW - 12,
+          18,
+          7,
+          "rgba(255,253,247,0.96)",
+          "rgba(11,55,76,0.13)"
+        );
+        drawText(
+          fitText(
+            meta.subtitle,
+            boxW - 20,
+            5.5,
+            "700"
+          ),
+          boxX + boxW / 2,
+          boxY + 36,
+          5.5,
+          "#23455B",
+          "700",
+          "center"
+        );
+        if (meta.badge) {
+          const badgeW = Math.max(
+            35,
+            17 + meta.badge.length * 6
+          );
+          const badgeX = Math.max(
+            5,
+            Math.min(
+              VIEW_W - badgeW - 5,
+              boxX + boxW - badgeW + 5
+            )
+          );
+          roundedRect(
+            badgeX,
+            boxY - 7,
+            badgeW,
+            17,
+            8,
+            meta.badgeColor,
+            "#FFF2C8"
+          );
+          drawText(
+            meta.badge,
+            badgeX + badgeW / 2,
+            boxY + 1.5,
+            5.4,
+            "#FFFFFF",
+            "800",
+            "center"
+          );
+        }
+        if (meta.myShopCount > 0) {
+          const textValue = meta.myShopCount > 1 ? "\u2713 \u6211\u7684\u5E97\xD7" + meta.myShopCount : "\u2713 \u6211\u7684\u5E97";
+          const shopW = meta.myShopCount > 1 ? 54 : 43;
+          const sx = Math.max(
+            5,
+            Math.min(
+              VIEW_W - shopW - 5,
+              boxX + boxW - shopW + 8
+            )
+          );
+          roundedRect(
+            sx,
+            boxY - 27,
+            shopW,
+            17,
+            8,
+            "#1E9A5E",
+            "#B9F0C8"
+          );
+          drawText(
+            textValue,
+            sx + shopW / 2,
+            boxY - 18.5,
+            5.2,
+            "#FFFFFF",
+            "800",
+            "center"
+          );
+        }
         const hitLeft = Math.min(
           x - 20,
-          labelX - 3
+          boxX - 3
         );
         const hitRight = Math.max(
           x + 20,
-          labelX + labelW + 3
+          boxX + boxW + 3
+        );
+        const hitTop = Math.min(
+          y - 31,
+          boxY - 29
+        );
+        const hitBottom = Math.max(
+          y + 25,
+          boxY + 49
         );
         addButton(
           "district:" + district.id,
           hitLeft,
-          Math.min(
-            y - 28,
-            labelY - 6
-          ),
+          hitTop,
           hitRight - hitLeft,
-          Math.max(
-            56,
-            labelY + 29 - Math.min(
-              y - 28,
-              labelY - 6
-            )
-          )
+          hitBottom - hitTop
         );
       }
       function startDistrictFx(districtId) {
@@ -22007,6 +23088,7 @@
         });
       }
       function drawNewsTicker() {
+        const feed = simulationSystem.getNewsFeed();
         const bulletin = simulationSystem.getBulletin();
         const x = 8;
         const y = MAP_Y + 7;
@@ -22018,33 +23100,65 @@
           w,
           h,
           15,
-          "rgba(3,40,62,0.92)",
-          "rgba(73,192,239,0.52)"
+          "rgba(3,40,62,0.94)",
+          "rgba(73,192,239,0.56)"
         );
         drawText(
-          "\u{1F4E3} \u57CE\u5E02\u901A\u62A5",
-          x + 13,
+          "\u{1F4E3}",
+          x + 16,
+          y + 15.5,
+          10,
+          "#FFD65A",
+          "800",
+          "center"
+        );
+        drawText(
+          "\u57CE\u5E02\u901A\u62A5",
+          x + 31,
           y + 15.5,
           7,
-          "#FFD66B",
+          "#FFD65A",
           "800"
         );
-        drawText(
-          fitText(
-            bulletin.title + "  \xB7  " + bulletin.detail,
-            w - 116,
-            6.5,
-            "600"
-          ),
-          x + 87,
-          y + 15.5,
-          6.5,
-          "#F3FAFC",
-          "600"
+        const items = (feed && feed.length ? feed : [
+          bulletin
+        ]).slice(
+          0,
+          3
         );
+        const startX = x + 85;
+        const sectionW = (w - 112) / Math.max(
+          1,
+          items.length
+        );
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (i > 0) {
+            ctx2.fillStyle = "rgba(230,242,247,0.34)";
+            ctx2.fillRect(
+              startX + i * sectionW - 5,
+              y + 8,
+              1,
+              15
+            );
+          }
+          drawText(
+            fitText(
+              item && item.title ? item.title : "\u57CE\u5E02\u8FD0\u884C\u5E73\u7A33",
+              sectionW - 10,
+              6,
+              "600"
+            ),
+            startX + i * sectionW,
+            y + 15.5,
+            6,
+            "#F3FAFC",
+            "600"
+          );
+        }
         drawText(
           "\u203A",
-          x + w - 14,
+          x + w - 13,
           y + 15.5,
           14,
           "#FFE49C",
@@ -22100,12 +23214,12 @@
           h,
           16,
           "rgba(255,253,247,0.988)",
-          "rgba(17,53,72,0.25)",
+          "rgba(17,53,72,0.22)",
           1
         );
         if (!selectedDistrictId) {
           drawText(
-            "\u8BF7\u9009\u62E9\u4E00\u4E2A\u5546\u5708",
+            trafficMode ? "\u8BF7\u9009\u62E9\u4E00\u4E2A\u5BA2\u6D41\u70ED\u70B9" : "\u8BF7\u9009\u62E9\u4E00\u4E2A\u5546\u5708",
             18,
             y + 22,
             12.3,
@@ -22113,7 +23227,7 @@
             "800"
           );
           drawText(
-            "\u70B9\u51FB\u5730\u56FE\u5730\u70B9\uFF0C\u67E5\u770B\u7ECF\u8425\u6570\u636E\u4E0E\u5F00\u5E97\u673A\u4F1A",
+            trafficMode ? "\u5730\u56FE\u70ED\u529B\u663E\u793A\u5B9E\u65F6\u9910\u996E\u9700\u6C42\uFF0C\u70B9\u51FB\u70ED\u70B9\u67E5\u770B\u8BE6\u7EC6\u6570\u636E" : "\u70B9\u51FB\u5730\u56FE\u5730\u70B9\uFF0C\u67E5\u770B\u7ECF\u8425\u6570\u636E\u4E0E\u5F00\u5E97\u673A\u4F1A",
             18,
             y + 43,
             6.8,
@@ -22132,17 +23246,17 @@
             141,
             y + 58,
             108,
-            "\u65E5\u9700\u6C42",
+            "\u9700\u6C42",
             "--",
-            COLORS.danger
+            COLORS.green
           );
           drawMetricChip(
             264,
             y + 58,
             108,
-            "\u5BA2\u5355\u4EF7",
+            "\u5BA2\u5355",
             "--",
-            COLORS.green
+            COLORS.navy
           );
           return;
         }
@@ -22157,140 +23271,160 @@
         );
         drawDistrictThumb(
           district.id,
-          x + 9,
-          y + 9,
-          93,
-          h - 18
+          x + 8,
+          y + 8,
+          95,
+          h - 16
+        );
+        const meta = getDistrictVisualMeta(
+          district
         );
         roundedRect(
-          x + 17,
-          y + h - 34,
-          77,
-          19,
-          9,
-          "rgba(5,42,61,0.86)",
-          "rgba(255,220,122,0.55)"
+          x + 113,
+          y + 11,
+          22,
+          22,
+          11,
+          "#F2A51F",
+          "#FFD964"
         );
-        drawText(
-          district.name,
-          x + 55.5,
-          y + h - 24.5,
-          6.7,
-          "#FFF7D4",
-          "800",
-          "center"
+        drawDistrictPictogram(
+          district.id,
+          x + 124,
+          y + 22
         );
         drawText(
           fitText(
             district.name,
-            118,
+            126,
             13.4,
             "800"
           ),
-          x + 113,
+          x + 142,
           y + 22,
           13.4,
-          COLORS.text,
+          "#0D3760",
           "800"
         );
-        const demandDelta = Number(
-          district.demandDeltaRatio
-        ) || 0;
-        let statusText = "\u5BA2\u7FA4\u6D3B\u8DC3 \xB7 \u4ECD\u6709\u7ECF\u8425\u673A\u4F1A";
-        let statusColor = COLORS.blue;
-        if (district.saturation >= 95) {
-          statusText = "\u7ADE\u4E89\u6FC0\u70C8 \xB7 \u5EFA\u8BAE\u8C28\u614E\u9009\u5740";
-          statusColor = COLORS.danger;
-        } else if (demandDelta >= 0.04) {
-          statusText = "\u9700\u6C42\u5347\u6E29 \xB7 \u5F53\u524D\u673A\u4F1A\u8F83\u597D";
-          statusColor = COLORS.green;
-        } else if (demandDelta <= -0.04) {
-          statusText = "\u9700\u6C42\u56DE\u843D \xB7 \u6CE8\u610F\u7ECF\u8425\u98CE\u9669";
-          statusColor = COLORS.orange;
-        }
         drawText(
-          statusText,
-          x + 113,
+          fitText(
+            meta.subtitle + " \xB7 " + (district.saturation >= 90 ? "\u7ADE\u4E89\u8F83\u9AD8" : "\u4ECD\u6709\u7ECF\u8425\u673A\u4F1A"),
+            190,
+            6.1,
+            "600"
+          ),
+          x + 142,
           y + 42,
-          6.3,
-          statusColor,
+          6.1,
+          "#4776A0",
           "600"
         );
         const metrics = [
           [
             "\u4EBA\u53E3",
             district.population.toLocaleString(),
-            COLORS.blue
+            "#1769AE"
           ],
           [
             "\u9700\u6C42",
             currentDemand.toLocaleString(),
-            COLORS.green
+            "#15924C"
           ],
           [
             "\u5BA2\u5355",
             "\xA5" + district.avgSpend,
-            COLORS.navy
+            "#164A86"
           ],
           [
             "\u9910\u996E\u5E97",
             district.restaurantCount + "\u5BB6",
-            COLORS.navy
+            "#164A86"
           ],
           [
             "\u9971\u548C\u5EA6",
             district.saturation + "%",
-            district.saturation >= 95 ? COLORS.danger : COLORS.blue
+            "#1E76C5"
           ],
           [
             "\u79DF\u91D1",
             district.rentIndex.toFixed(
               2
             ),
-            COLORS.navy
+            "#164A86"
           ]
         ];
+        const metricX = x + 111;
+        const metricY = y + 54;
+        const metricGap = 3;
+        const metricW = (w - 121 - metricGap * 5) / 6;
         for (let i = 0; i < metrics.length; i++) {
-          drawMetricChip(
-            x + 112 + i * 42,
-            y + 53,
-            39,
+          const mx = metricX + i * (metricW + metricGap);
+          roundedRect(
+            mx,
+            metricY,
+            metricW,
+            48,
+            9,
+            "#F8F5EF",
+            "rgba(17,62,92,0.10)"
+          );
+          drawMetricSymbol(
             metrics[i][0],
-            metrics[i][1],
+            mx + metricW / 2,
+            metricY + 11,
             metrics[i][2]
+          );
+          drawText(
+            metrics[i][0],
+            mx + metricW / 2,
+            metricY + 27,
+            5.5,
+            "#245276",
+            "700",
+            "center"
+          );
+          drawText(
+            metrics[i][1],
+            mx + metricW / 2,
+            metricY + 41,
+            6.9,
+            metrics[i][2],
+            "800",
+            "center"
           );
         }
         drawText(
-          "\u5B9E\u65F6\u6570\u636E\u968F\u4EBA\u53E3\u3001\u4E8B\u4EF6\u3001\u7ADE\u4E89\u4E0E\u79DF\u91D1\u53D8\u5316",
-          x + 113,
-          y + 107,
-          5.8,
-          COLORS.muted,
+          trafficMode ? "\u5BA2\u6D41\u70ED\u529B\u4F1A\u968F\u65F6\u95F4\u3001\u5929\u6C14\u3001\u4E8B\u4EF6\u4E0E\u6D88\u8D39\u65F6\u6BB5\u5B9E\u65F6\u53D8\u5316" : "\u5B9E\u65F6\u6570\u636E\u4F1A\u968F\u4EBA\u53E3\u3001\u57CE\u5E02\u4E8B\u4EF6\u3001\u7ADE\u4E89\u548C\u79DF\u91D1\u53D8\u5316",
+          x + 112,
+          y + h - 18,
+          5.7,
+          "#50718A",
           "600"
         );
         roundedRect(
-          x + 258,
-          y + h - 39,
-          106,
-          31,
-          15,
-          COLORS.gold,
-          "#D99E22"
+          x + w - 115,
+          y + h - 43,
+          104,
+          34,
+          17,
+          "#FFC22D",
+          "#DFA01B",
+          1.2
         );
         drawText(
           "\u8FDB\u5165\u5546\u5708  \u203A",
-          x + 311,
-          y + h - 23.5,
-          8,
-          "#213541",
+          x + w - 63,
+          y + h - 26,
+          8.2,
+          "#123A53",
           "800",
           "center"
         );
         addButton(
           "district:details",
-          x + 250,
-          y + h - 45,
-          122,
+          x + w - 121,
+          y + h - 48,
+          116,
           44
         );
       }
@@ -22303,11 +23437,11 @@
         );
         gradient.addColorStop(
           0,
-          "#0A405E"
+          "#0B4A70"
         );
         gradient.addColorStop(
           1,
-          "#05263A"
+          "#052A42"
         );
         ctx2.fillStyle = gradient;
         ctx2.fillRect(
@@ -22316,7 +23450,7 @@
           VIEW_W,
           NAV_H
         );
-        ctx2.fillStyle = "rgba(84,194,237,0.28)";
+        ctx2.fillStyle = "rgba(75,191,239,0.36)";
         ctx2.fillRect(
           0,
           NAV_Y,
@@ -22328,16 +23462,31 @@
         for (let i = 0; i < NAV_ITEMS.length; i++) {
           const item = NAV_ITEMS[i];
           const cx = i * cellW + cellW / 2;
-          const active = item.id === current || item.id === "city" && current === "district" || item.id === "shop" && (current === "propertyMarket" || current === "equipment" || current === "license" || current === "staff") || item.id === "renovation" && current === "renovation";
+          const active = item.id === "city" && current === "city" && !trafficMode || item.id === "traffic" && current === "city" && trafficMode || item.id === "shop" && (current === "shop" || current === "propertyMarket" || current === "equipment" || current === "license" || current === "staff" || current === "renovation") || item.id === current;
           if (active) {
+            const fill = ctx2.createLinearGradient(
+              0,
+              NAV_Y + 6,
+              0,
+              VIEW_H - 6
+            );
+            fill.addColorStop(
+              0,
+              "#FFE066"
+            );
+            fill.addColorStop(
+              1,
+              "#F2B22A"
+            );
             roundedRect(
               i * cellW + 4,
               NAV_Y + 6,
               cellW - 8,
               NAV_H - 12,
               11,
-              COLORS.gold,
-              "#FFE09A"
+              fill,
+              "#FFE79B",
+              1.2
             );
           }
           drawNavIcon(
@@ -22350,8 +23499,8 @@
             item.name,
             cx,
             NAV_Y + NAV_H * 0.73,
-            6.4,
-            active ? "#153342" : "#E0EBEF",
+            6.5,
+            active ? "#173545" : "#EEF7FA",
             active ? "800" : "600",
             "center"
           );
@@ -22385,13 +23534,15 @@
           );
           drawTopHud();
           drawMapBase();
+          drawNewsTicker();
+          drawGoalBar();
+          drawTrafficOverlay();
           const districts = getDistricts();
           for (let i = 0; i < districts.length; i++) {
             drawDistrictMarker(
               districts[i]
             );
           }
-          drawNewsTicker();
           drawSideTools();
           drawDistrictCard();
         },
@@ -22409,6 +23560,55 @@
             );
             startDistrictFx(
               districtId
+            );
+            return true;
+          }
+          if (target.id === "city:rename") {
+            textInput.requestText({
+              title: "\u4FEE\u6539\u57CE\u5E02\u540D\u79F0",
+              value: gameState.getCityName(),
+              placeholder: "\u8BF7\u8F93\u5165\u57CE\u5E02\u540D\u79F0",
+              maxLength: 8
+            }).then(
+              (value) => {
+                if (!value) {
+                  return;
+                }
+                if (gameState.setCityName(
+                  value
+                )) {
+                  textInput.requestRender();
+                }
+              }
+            );
+            return true;
+          }
+          if (target.id === "brand:status") {
+            const brand = getBrandState(
+              gameState.getPlayer()
+            );
+            showToast(
+              "\u54C1\u724C\u7B49\u7EA7 Lv." + brand.level + " \xB7 \u58F0\u671B " + brand.reputation
+            );
+            return true;
+          }
+          if (target.id === "goal:current") {
+            const business = gameState.getBusiness();
+            if (business.hasShop && business.shops.length) {
+              sceneManager.switchTo(
+                "shop"
+              );
+              return true;
+            }
+            if (!selectedDistrictId) {
+              selectBusiestDistrict();
+              return true;
+            }
+            sceneManager.switchTo(
+              "district",
+              {
+                districtId: selectedDistrictId
+              }
             );
             return true;
           }
@@ -22597,12 +23797,40 @@
           "nav:"
         ) === 0) {
           const sceneId = target.id.split(":")[1];
+          if (sceneId === "traffic") {
+            trafficMode = true;
+            if (sceneManager.getCurrentId() !== "city") {
+              sceneManager.switchTo(
+                "city"
+              );
+            }
+            if (!selectedDistrictId) {
+              selectBusiestDistrict();
+            }
+            render();
+            return;
+          }
+          if (sceneId === "city") {
+            trafficMode = false;
+            selectedDistrictId = null;
+            animationManager.cancelGroup(
+              "districtTap"
+            );
+            if (sceneManager.getCurrentId() !== "city") {
+              sceneManager.switchTo(
+                "city"
+              );
+            }
+            render();
+            return;
+          }
           if (sceneId === "system") {
             showToast(
               "\u7CFB\u7EDF\u8BBE\u7F6E\u5C06\u5728\u4E0B\u4E00\u9636\u6BB5\u63A5\u5165"
             );
             return;
           }
+          trafficMode = false;
           selectedDistrictId = null;
           animationManager.cancelGroup(
             "districtTap"
@@ -22761,7 +23989,7 @@
         gameLoop
       );
       console.log(
-        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V19 \u57CE\u5E02\u9996\u9875\u7CBE\u4FEE\u7248\u542F\u52A8\u6210\u529F"
+        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V20 \u4E3B\u9875\u76EE\u6807\u56FE\u4E00\u6BD4\u4E00\u7248\u542F\u52A8\u6210\u529F"
       );
     }
   });
