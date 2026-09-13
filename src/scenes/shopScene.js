@@ -1,6 +1,7 @@
 'use strict';
 
 // V43_PROPERTY_IMAGE_REBUILD
+// V44_PROPERTY_VISUAL_REPAIR
 
 const runtime =
   globalThis.GameRuntime;
@@ -59,21 +60,21 @@ const DESIGN_W =
 
 // V43_1_PROPERTY_CONSTANTS_HOTFIX
 const V43_PROPERTY_ICONS = {
-  area: 'restaurant',
-  frontage: 'view',
-  exhaust: 'renovation',
-  gas: 'warning',
-  power: 'upgrade',
-  competitor: 'people',
-  event: 'bulletin',
-  filter: 'search',
-  sort: 'route',
-  lease: 'location',
-  floor: 'shop',
-  layout: 'restaurant',
+  area: 'area',
+  frontage: 'frontage',
+  exhaust: 'exhaust',
+  gas: 'gas',
+  power: 'power',
+  competitor: 'competitor',
+  event: 'event',
+  filter: 'filter',
+  sort: 'sort',
+  lease: 'lease',
+  floor: 'floor',
+  layout: 'layout',
   warning: 'warning',
-  broker: 'people',
-  landlord: 'people'
+  broker: 'broker',
+  landlord: 'landlord'
 };
 
 const V43_STOREFRONTS = [
@@ -478,21 +479,46 @@ function money(
   value
 ) {
   const n =
-    Math.max(
-      0,
-      Math.round(
-        Number(
-          value
-        ) ||
-        0
-      )
-    );
+    Number(value) || 0;
 
-  return (
-    '¥' +
-    n
-      .toLocaleString()
-  );
+  const sign =
+    n < 0
+      ? '-'
+      : '';
+
+  const abs =
+    Math.abs(n);
+
+  function trim(v, decimals) {
+    return Number(v)
+      .toFixed(decimals)
+      .replace(/\.0+$/, '')
+      .replace(/(\.\d*?[1-9])0+$/, '$1');
+  }
+
+  if (abs >= 1000000000000) {
+    const v = abs / 1000000000000;
+    return sign + '¥' +
+      trim(v, v >= 100 ? 0 : v >= 10 ? 1 : 2) +
+      '万亿';
+  }
+
+  if (abs >= 100000000) {
+    const v = abs / 100000000;
+    return sign + '¥' +
+      trim(v, v >= 100 ? 0 : v >= 10 ? 1 : 2) +
+      '亿';
+  }
+
+  if (abs >= 10000) {
+    const v = abs / 10000;
+    return sign + '¥' +
+      trim(v, v >= 100 ? 0 : v >= 10 ? 1 : 2) +
+      '万';
+  }
+
+  return sign + '¥' +
+    Math.round(abs).toLocaleString();
 }
 
 function percent(
@@ -865,6 +891,17 @@ class ShopScene {
   enter(
     payload
   ) {
+    ['money', 'target', 'bulletin', 'star', 'gift']
+      .forEach(name => {
+        resourceManager
+          .loadImage(
+            'v44_glossy_' + name,
+            'assets/images/v44_glossy/' + name + '.png',
+            'v44-glossy'
+          )
+          .catch(() => {});
+      });
+
     Object.values(V43_PROPERTY_ICONS)
       .filter((value, index, list) => list.indexOf(value) === index)
       .forEach(name => {
@@ -890,7 +927,7 @@ class ShopScene {
     resourceManager
       .loadImage(
         'v43_property_header',
-        'assets/images/premium/store/explore_banner.jpg',
+        'assets/images/v32_home/home_background.jpg',
         'v43-property-storefronts'
       )
       .catch(() => {});
@@ -1628,20 +1665,56 @@ class ShopScene {
     align
   ) {
     ctx.save();
-    ctx.fillStyle = color || COLORS.text;
+
+    ctx.fillStyle =
+      color ||
+      COLORS.text;
+
     const readableSize =
       Math.max(
         4.8,
         Number(size) || 5.5
       );
+
+    const rawWeight =
+      String(
+        weight || '500'
+      );
+
+    const finalWeight =
+      rawWeight === '800'
+        ? '900'
+        : rawWeight === '700'
+          ? '800'
+          : rawWeight;
+
     ctx.font =
-      (weight || '500') +
+      finalWeight +
       ' ' +
       readableSize +
       'px "Noto Sans SC","Microsoft YaHei",sans-serif';
-    ctx.textAlign = align || 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(String(text), x, y);
+
+    ctx.textAlign =
+      align || 'left';
+
+    ctx.textBaseline =
+      'middle';
+
+    if (
+      readableSize >= 10 &&
+      finalWeight === '900'
+    ) {
+      ctx.shadowColor =
+        'rgba(0,0,0,0.12)';
+      ctx.shadowBlur = 0.8;
+    }
+
+    ctx.fillText(
+      String(text),
+      x,
+      y
+    );
+
     ctx.restore();
   }
 
@@ -1653,19 +1726,26 @@ class ShopScene {
     size,
     fallback
   ) {
-    const mapped =
-      V43_PROPERTY_ICONS[name];
+    const glossyMap = {
+      rent: 'money',
+      hot: 'target',
+      event: 'bulletin'
+    };
 
-    const libImage =
-      mapped
+    const glossyName =
+      glossyMap[name];
+
+    const glossyImage =
+      glossyName
         ? resourceManager.getImage(
-            'v43_icon_' + mapped
+            'v44_glossy_' +
+            glossyName
           )
         : null;
 
-    if (libImage) {
+    if (glossyImage) {
       ctx.drawImage(
-        libImage,
+        glossyImage,
         x,
         y,
         size,
@@ -1674,14 +1754,46 @@ class ShopScene {
       return;
     }
 
+    const aliases = {
+      area: 'area',
+      frontage: 'frontage',
+      exhaust: 'exhaust',
+      gas: 'gas',
+      power: 'power',
+      competitor: 'competitor',
+      filter: 'filter',
+      sort: 'sort',
+      lease: 'lease',
+      floor: 'floor',
+      layout: 'layout',
+      warning: 'warning',
+      broker: 'broker',
+      landlord: 'landlord',
+      drainage: 'drainage',
+      grease: 'grease',
+      fire: 'fire',
+      depth: 'depth',
+      new: 'new'
+    };
+
+    const key =
+      aliases[name] ||
+      name;
+
     const image =
       resourceManager.getImage(
         'property_icons_01'
       );
-    const region =
-      propertyIconAtlas.icons[name];
 
-    if (image && region) {
+    const region =
+      propertyIconAtlas.icons[
+        key
+      ];
+
+    if (
+      image &&
+      region
+    ) {
       ctx.drawImage(
         image,
         region.x,
@@ -1702,15 +1814,22 @@ class ShopScene {
       y,
       size,
       size,
-      Math.max(4, size * 0.23),
-      '#EEE2D3'
+      Math.max(
+        4,
+        size * 0.23
+      ),
+      '#EEF3F5'
     );
+
     this.text(
       ctx,
       fallback || '·',
       x + size / 2,
       y + size / 2,
-      Math.max(5, size * 0.32),
+      Math.max(
+        5,
+        size * 0.32
+      ),
       COLORS.navy,
       '700',
       'center'
@@ -1724,6 +1843,7 @@ class ShopScene {
     backId
   ) {
     const h = 66;
+
     const headerImage =
       resourceManager.getImage(
         'v43_property_header'
@@ -1738,19 +1858,62 @@ class ShopScene {
         DESIGN_W,
         h
       );
+
+      const overlay =
+        ctx.createLinearGradient(
+          0,
+          0,
+          DESIGN_W,
+          0
+        );
+
+      overlay.addColorStop(
+        0,
+        'rgba(2,38,59,0.82)'
+      );
+
+      overlay.addColorStop(
+        0.60,
+        'rgba(2,46,69,0.62)'
+      );
+
+      overlay.addColorStop(
+        1,
+        'rgba(2,38,59,0.78)'
+      );
+
       ctx.fillStyle =
-        'rgba(2,42,64,0.64)';
+        overlay;
+
       ctx.fillRect(
         0,
         0,
         DESIGN_W,
         h
       );
+
       ctx.restore();
     } else {
-      ctx.fillStyle = COLORS.navy2;
-      ctx.fillRect(0, 0, DESIGN_W, h);
+      ctx.fillStyle =
+        COLORS.navy2;
+
+      ctx.fillRect(
+        0,
+        0,
+        DESIGN_W,
+        h
+      );
     }
+
+    ctx.fillStyle =
+      '#E6B94B';
+
+    ctx.fillRect(
+      0,
+      h - 1,
+      DESIGN_W,
+      1
+    );
 
     if (backId) {
       this.roundedRect(
@@ -1761,8 +1924,9 @@ class ShopScene {
         34,
         10,
         'rgba(3,55,80,0.88)',
-        'rgba(255,255,255,0.25)'
+        'rgba(255,255,255,0.30)'
       );
+
       this.text(
         ctx,
         '‹',
@@ -1773,6 +1937,7 @@ class ShopScene {
         '800',
         'center'
       );
+
       this.addButton(
         backId,
         6,
@@ -1782,32 +1947,55 @@ class ShopScene {
       );
     }
 
-    const textX = backId ? 69 : 15;
+    const textX =
+      backId
+        ? 69
+        : 15;
+
     this.text(
       ctx,
       title,
       textX,
-      21,
-      15,
+      20,
+      14.2,
       COLORS.white,
       '800'
     );
+
     this.text(
       ctx,
       subtitle || '',
       textX,
-      44,
-      5.6,
-      'rgba(255,255,255,0.82)',
+      43,
+      5.3,
+      '#EAF3F6',
       '600'
     );
+
+    const moneyIcon =
+      resourceManager.getImage(
+        'v44_glossy_money'
+      );
+
+    if (moneyIcon) {
+      ctx.drawImage(
+        moneyIcon,
+        292,
+        9,
+        24,
+        24
+      );
+    }
+
     this.text(
       ctx,
       money(
-        gameState.getPlayer().cash
+        gameState
+          .getPlayer()
+          .cash
       ),
       377,
-      20,
+      19,
       10,
       '#FFE37A',
       '800',
@@ -1816,6 +2004,7 @@ class ShopScene {
 
     const time =
       gameState.getTime();
+
     this.text(
       ctx,
       '第' +
@@ -1827,7 +2016,7 @@ class ShopScene {
         '日',
       377,
       43,
-      5.4,
+      5.1,
       '#E1ECF0',
       '600',
       'right'
@@ -2069,8 +2258,7 @@ class ShopScene {
     y
   ) {
     const summary =
-      this
-        .cachedDistrictSummary;
+      this.cachedDistrictSummary;
 
     if (!summary) {
       return;
@@ -2089,37 +2277,32 @@ class ShopScene {
 
     const metrics = [
       [
+        'new',
         '挂牌',
-        summary
-          .activeListingCount +
+        summary.activeListingCount +
           '套',
         COLORS.navy
       ],
-
       [
+        'rent',
         '均租',
         money(
-          summary
-            .averageAskingRent
+          summary.averageAskingRent
         ),
         COLORS.red
       ],
-
       [
+        'event',
         '均挂',
-        summary
-          .averageDaysOnMarket +
+        summary.averageDaysOnMarket +
           '天',
         COLORS.blue
       ],
-
       [
+        'hot',
         '最热',
-        summary
-          .hottestStreet
-          ? summary
-              .hottestStreet
-              .name
+        summary.hottestStreet
+          ? summary.hottestStreet.name
           : '--',
         COLORS.orange
       ]
@@ -2127,35 +2310,52 @@ class ShopScene {
 
     for (
       let i = 0;
-      i <
-      metrics.length;
+      i < metrics.length;
       i++
     ) {
       const x =
-        18 +
-        i *
-          92;
+        16 +
+        i * 92;
 
-      this.text(
+      if (i > 0) {
+        ctx.fillStyle =
+          '#E6DDD2';
+
+        ctx.fillRect(
+          x - 5,
+          y + 12,
+          1,
+          37
+        );
+      }
+
+      this.drawIcon(
         ctx,
         metrics[i][0],
         x,
-        y +
-          17,
-        7,
-        COLORS.muted,
-        '600'
+        y + 14,
+        19,
+        ''
       );
 
       this.text(
         ctx,
         metrics[i][1],
-        x,
-        y +
-          39,
-        10,
-        metrics[i][2],
+        x + 25,
+        y + 18,
+        4.9,
+        COLORS.muted,
         '700'
+      );
+
+      this.text(
+        ctx,
+        metrics[i][2],
+        x + 25,
+        y + 39,
+        8.2,
+        metrics[i][3],
+        '800'
       );
     }
   }
@@ -2550,75 +2750,85 @@ class ShopScene {
     const hardware = [
       [
         'exhaust',
-        item.exhaust,
-        '烟'
+        '排烟',
+        item.exhaust
       ],
-
       [
         'gas',
-        item.gas,
-        '气'
+        '燃气',
+        item.gas
       ],
-
       [
         'power',
-        item.threePhase,
-        '电'
+        '三相',
+        item.threePhase
       ]
     ];
 
     for (
       let i = 0;
-      i <
-      hardware.length;
+      i < hardware.length;
       i++
     ) {
+      const cellX =
+        x +
+        i * 45;
+
+      const ok =
+        Boolean(
+          hardware[i][2]
+        );
+
+      this.roundedRect(
+        ctx,
+        cellX,
+        y,
+        41,
+        19,
+        8,
+        ok
+          ? '#EAF7F1'
+          : '#FFF0ED',
+        ok
+          ? '#B8DFCD'
+          : '#E9C2BC'
+      );
+
       this.drawIcon(
         ctx,
         hardware[i][0],
-        x +
-          i *
-          27,
-        y,
-        20,
-        hardware[i][2]
+        cellX + 4,
+        y + 4,
+        11,
+        ''
       );
 
-      if (
-        !hardware[i][1]
-      ) {
-        ctx.save();
+      this.text(
+        ctx,
+        hardware[i][1],
+        cellX + 18,
+        y + 9.5,
+        4.2,
+        ok
+          ? COLORS.green
+          : COLORS.red,
+        '800'
+      );
 
-        ctx.strokeStyle =
-          COLORS.red;
-
-        ctx.lineWidth =
-          2;
-
-        ctx.beginPath();
-
-        ctx.moveTo(
-          x +
-            i *
-            27 +
-            3,
-          y +
-            3
-        );
-
-        ctx.lineTo(
-          x +
-            i *
-            27 +
-            17,
-          y +
-            17
-        );
-
-        ctx.stroke();
-
-        ctx.restore();
-      }
+      this.text(
+        ctx,
+        ok
+          ? '✓'
+          : '×',
+        cellX + 36,
+        y + 9.5,
+        4.8,
+        ok
+          ? COLORS.green
+          : COLORS.red,
+        '800',
+        'center'
+      );
     }
   }
 

@@ -8,6 +8,7 @@
 // V39_LIBRARY_ASSET_INTEGRATION
 // V42_STORE_MASTER_REFERENCE_REBUILD
 // V43_REFERENCE_IMAGE_UI
+// V44_STORE_VISUAL_REPAIR
 // 用户定稿门店模式：无门店 / 单店营业 / 多门店总览 / 筹备中。
 
 const runtime = globalThis.GameRuntime;
@@ -106,6 +107,25 @@ const V43_REFERENCE_ICONS = {
   warning: 'warning',
   lease: 'location',
   contract: 'complete'
+};
+
+const V44_GLOSSY_ICONS = {
+  rent: 'money',
+  hot: 'target',
+  event: 'bulletin'
+};
+
+const V44_PROPERTY_ALIASES = {
+  visibility: 'visibility',
+  layout: 'layout',
+  broker: 'broker',
+  new: 'new',
+  rider: 'rider',
+  route: 'sort',
+  store: 'new',
+  warning: 'warning',
+  lease: 'lease',
+  contract: 'lease'
 };
 
 const COLORS = {
@@ -219,25 +239,45 @@ function storeText(
     color ||
     '#123A55';
 
-  ctx.font =
-    (
-      weight ||
-      '500'
-    ) +
-    ' ' +
+  const rawWeight =
+    String(
+      weight || '500'
+    );
+
+  const finalWeight =
+    rawWeight === '800'
+      ? '900'
+      : rawWeight === '700'
+        ? '800'
+        : rawWeight;
+
+  const finalSize =
     Math.max(
       4.6,
-      Number(size) ||
-      5.6
-    ) +
+      Number(size) || 5.6
+    );
+
+  ctx.font =
+    finalWeight +
+    ' ' +
+    finalSize +
     'px "Noto Sans SC","Microsoft YaHei",sans-serif';
 
   ctx.textAlign =
-    align ||
-    'left';
+    align || 'left';
 
   ctx.textBaseline =
     'middle';
+
+  if (
+    finalSize >= 10 &&
+    finalWeight === '900'
+  ) {
+    ctx.shadowColor =
+      'rgba(0,0,0,0.14)';
+    ctx.shadowBlur =
+      0.8;
+  }
 
   ctx.fillText(
     String(
@@ -334,6 +374,25 @@ class StoreScene {
   }
 
   enter(params) {
+    ['money', 'target', 'bulletin', 'star', 'gift']
+      .forEach(name => {
+        resourceManager
+          .loadImage(
+            'v44_glossy_' + name,
+            'assets/images/v44_glossy/' + name + '.png',
+            'v44-glossy'
+          )
+          .catch(() => {});
+      });
+
+    resourceManager
+      .loadImage(
+        'v44_store_header',
+        'assets/images/v32_home/home_background.jpg',
+        'v44-store-header'
+      )
+      .catch(() => {});
+
     Object.values(V43_REFERENCE_ICONS)
       .filter((value, index, list) => list.indexOf(value) === index)
       .forEach(name => {
@@ -526,19 +585,22 @@ class StoreScene {
     fallback,
     tint
   ) {
-    const mapped =
-      V43_REFERENCE_ICONS[name];
+    const glossyName =
+      V44_GLOSSY_ICONS[
+        name
+      ];
 
-    const libImage =
-      mapped
+    const glossyImage =
+      glossyName
         ? resourceManager.getImage(
-            'v43_icon_' + mapped
+            'v44_glossy_' +
+            glossyName
           )
         : null;
 
-    if (libImage) {
+    if (glossyImage) {
       ctx.drawImage(
-        libImage,
+        glossyImage,
         x,
         y,
         size,
@@ -547,15 +609,26 @@ class StoreScene {
       return;
     }
 
+    const alias =
+      V44_PROPERTY_ALIASES[
+        name
+      ] ||
+      name;
+
     const image =
       resourceManager.getImage(
         'property_icons_01'
       );
 
     const region =
-      propertyIconAtlas.icons[name];
+      propertyIconAtlas.icons[
+        alias
+      ];
 
-    if (image && region) {
+    if (
+      image &&
+      region
+    ) {
       ctx.drawImage(
         image,
         region.x,
@@ -571,6 +644,7 @@ class StoreScene {
     }
 
     ctx.beginPath();
+
     ctx.arc(
       x + size / 2,
       y + size / 2,
@@ -578,7 +652,11 @@ class StoreScene {
       0,
       Math.PI * 2
     );
-    ctx.fillStyle = tint || '#E8F4F9';
+
+    ctx.fillStyle =
+      tint ||
+      '#E8F4F9';
+
     ctx.fill();
 
     storeText(
@@ -586,7 +664,10 @@ class StoreScene {
       fallback || '·',
       x + size / 2,
       y + size / 2,
-      Math.max(5, size * 0.32),
+      Math.max(
+        5,
+        size * 0.32
+      ),
       COLORS.navy,
       '800',
       'center'
@@ -670,7 +751,16 @@ class StoreScene {
   ) {
     const rounded =
       Math.round(
-        clamp(score, 0, 5)
+        clamp(
+          score,
+          0,
+          5
+        )
+      );
+
+    const star =
+      resourceManager.getImage(
+        'v44_glossy_star'
       );
 
     for (
@@ -678,17 +768,36 @@ class StoreScene {
       i < 5;
       i++
     ) {
-      ui.text(
-        ctx,
-        '★',
-        x + i * 10,
-        y,
-        7,
-        i < rounded
-          ? '#F7B916'
-          : '#D7D9D9',
-        '800'
-      );
+      if (star) {
+        ctx.save();
+
+        ctx.globalAlpha =
+          i < rounded
+            ? 1
+            : 0.18;
+
+        ctx.drawImage(
+          star,
+          x + i * 9,
+          y - 5,
+          8,
+          8
+        );
+
+        ctx.restore();
+      } else {
+        storeText(
+          ctx,
+          '★',
+          x + i * 9,
+          y,
+          5.4,
+          i < rounded
+            ? '#F7B916'
+            : '#D7D9D9',
+          '800'
+        );
+      }
     }
   }
 
@@ -1495,21 +1604,62 @@ class StoreScene {
     const opts =
       options || {};
 
-    ui.coverImage(
-      ctx,
-      visualAssetSystem.get(
-        'premium_explore_banner'
-      ),
+    const headerImage =
+      resourceManager.getImage(
+        'v44_store_header'
+      );
+
+    if (headerImage) {
+      ui.coverImage(
+        ctx,
+        headerImage,
+        0,
+        0,
+        DESIGN_W,
+        86,
+        0,
+        null
+      );
+    } else {
+      ui.coverImage(
+        ctx,
+        visualAssetSystem.get(
+          'premium_explore_banner'
+        ),
+        0,
+        0,
+        DESIGN_W,
+        86,
+        0,
+        null
+      );
+    }
+
+    const overlay =
+      ctx.createLinearGradient(
+        0,
+        0,
+        DESIGN_W,
+        0
+      );
+
+    overlay.addColorStop(
       0,
-      0,
-      DESIGN_W,
-      86,
-      0,
-      'rgba(1,31,48,0.47)'
+      'rgba(2,37,59,0.84)'
+    );
+
+    overlay.addColorStop(
+      0.62,
+      'rgba(2,47,72,0.56)'
+    );
+
+    overlay.addColorStop(
+      1,
+      'rgba(2,37,59,0.80)'
     );
 
     ctx.fillStyle =
-      'rgba(2,43,67,0.40)';
+      overlay;
 
     ctx.fillRect(
       0,
@@ -1529,7 +1679,7 @@ class StoreScene {
         fill:
           'rgba(3,52,80,0.91)',
         stroke:
-          'rgba(255,255,255,0.27)',
+          'rgba(255,255,255,0.30)',
         shadow: false
       }
     );
@@ -1554,10 +1704,7 @@ class StoreScene {
     );
 
     const cityName =
-      gameState.getCityName() ===
-        '未命名城市'
-        ? '未命名城市'
-        : gameState.getCityName();
+      gameState.getCityName();
 
     storeText(
       ctx,
@@ -1575,7 +1722,7 @@ class StoreScene {
         '打造属于你的美食帝国',
       58,
       39,
-      6.0,
+      5.8,
       '#ECF5F8',
       '600'
     );
@@ -1603,14 +1750,29 @@ class StoreScene {
       }
     );
 
+    const moneyIcon =
+      resourceManager.getImage(
+        'v44_glossy_money'
+      );
+
+    if (moneyIcon) {
+      ctx.drawImage(
+        moneyIcon,
+        289,
+        16,
+        23,
+        23
+      );
+    }
+
     storeText(
       ctx,
       cash,
-      328,
-      24,
+      336,
+      23,
       cash.length > 8
-        ? 8.6
-        : 10.2,
+        ? 8.4
+        : 9.8,
       '#FFE57A',
       '800',
       'center'
@@ -1619,9 +1781,9 @@ class StoreScene {
     storeText(
       ctx,
       '可用资金',
-      328,
+      333,
       42,
-      5.3,
+      5.0,
       '#DCECF2',
       '600',
       'center'
@@ -1647,12 +1809,27 @@ class StoreScene {
       }
     );
 
+    const speaker =
+      resourceManager.getImage(
+        'v44_glossy_bulletin'
+      );
+
+    if (speaker) {
+      ctx.drawImage(
+        speaker,
+        15,
+        62,
+        17,
+        17
+      );
+    }
+
     storeText(
       ctx,
       '城市动态',
-      19,
+      38,
       70.5,
-      5.8,
+      5.6,
       '#FFD35E',
       '800'
     );
@@ -1669,11 +1846,11 @@ class StoreScene {
           bulletin.detail ||
           ''
         ),
-        50
+        47
       ),
-      72,
+      87,
       70.5,
-      5.3,
+      5.0,
       COLORS.white,
       '600'
     );
@@ -1905,7 +2082,7 @@ class StoreScene {
                 budget.total
               )
             : '--',
-        icon: 'visibility'
+        icon: 'hot'
       },
       {
         title: '推荐商圈',
@@ -1913,7 +2090,7 @@ class StoreScene {
           rec
             ? rec.district.name
             : '--',
-        icon: 'hot'
+        icon: 'lease'
       }
     ];
 
@@ -2004,10 +2181,20 @@ class StoreScene {
       }
     );
 
+    this.drawPropertyIcon(
+      ctx,
+      'new',
+      20,
+      287,
+      18,
+      '',
+      '#EEF4F6'
+    );
+
     storeText(
       ctx,
       '开店流程',
-      22,
+      44,
       296,
       7.5,
       COLORS.text,
@@ -2084,10 +2271,20 @@ class StoreScene {
       }
     );
 
+    this.drawPropertyIcon(
+      ctx,
+      'hot',
+      20,
+      356,
+      18,
+      '',
+      '#FFF3D8'
+    );
+
     storeText(
       ctx,
       '推荐房源',
-      22,
+      44,
       365,
       8.6,
       COLORS.text,
@@ -2248,24 +2445,12 @@ class StoreScene {
           listing
         );
 
-      for (
-        let s = 0;
-        s < 5;
-        s++
-      ) {
-        storeText(
-          ctx,
-          '★',
-          x + 7 + s * 9,
-          481,
-          5.6,
-          s <
-          Math.round(score)
-            ? '#F7B916'
-            : '#D8D9D9',
-          '800'
-        );
-      }
+      this.drawScoreStars(
+        ctx,
+        score,
+        x + 7,
+        481
+      );
 
       const tags = [
         listing.exhaust
@@ -2380,10 +2565,20 @@ class StoreScene {
       }
     );
 
+    this.drawPropertyIcon(
+      ctx,
+      'event',
+      20,
+      bottomY + 9,
+      18,
+      '',
+      '#FFF0E0'
+    );
+
     storeText(
       ctx,
       '今日机会',
-      22,
+      44,
       bottomY + 18,
       7.5,
       COLORS.text,
@@ -2487,10 +2682,20 @@ class StoreScene {
       }
     );
 
+    this.drawPropertyIcon(
+      ctx,
+      'rent',
+      207,
+      bottomY + 9,
+      18,
+      '',
+      '#EFF7F0'
+    );
+
     storeText(
       ctx,
       '市场动态',
-      211,
+      231,
       bottomY + 18,
       7.5,
       COLORS.text,

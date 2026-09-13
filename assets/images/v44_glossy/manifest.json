@@ -1,0 +1,92 @@
+{
+  "version": "V44_VISUAL_REPAIR",
+  "generated": false,
+  "source": "餐饮城市经营游戏图标资源包_2.png",
+  "policy": "standalone_subject_only_no_label_no_adjacent_asset",
+  "canvas": [
+    96,
+    96
+  ],
+  "icons": {
+    "money": {
+      "path": "assets/images/v44_glossy/money.png",
+      "source_box": [
+        268,
+        106,
+        368,
+        202
+      ],
+      "subject_bbox_on_canvas": [
+        11,
+        18,
+        85,
+        78
+      ],
+      "fully_inside_canvas": true
+    },
+    "target": {
+      "path": "assets/images/v44_glossy/target.png",
+      "source_box": [
+        1278,
+        104,
+        1382,
+        202
+      ],
+      "subject_bbox_on_canvas": [
+        13,
+        12,
+        83,
+        84
+      ],
+      "fully_inside_canvas": true
+    },
+    "bulletin": {
+      "path": "assets/images/v44_glossy/bulletin.png",
+      "source_box": [
+        1152,
+        103,
+        1255,
+        203
+      ],
+      "subject_bbox_on_canvas": [
+        11,
+        11,
+        85,
+        85
+      ],
+      "fully_inside_canvas": true
+    },
+    "gift": {
+      "path": "assets/images/v44_glossy/gift.png",
+      "source_box": [
+        1401,
+        104,
+        1515,
+        203
+      ],
+      "subject_bbox_on_canvas": [
+        11,
+        11,
+        85,
+        85
+      ],
+      "fully_inside_canvas": true
+    },
+    "star": {
+      "path": "assets/images/v44_glossy/star.png",
+      "source_box": [
+        795,
+        804,
+        866,
+        873
+      ],
+      "subject_bbox_on_canvas": [
+        13,
+        15,
+        83,
+        81
+      ],
+      "fully_inside_canvas": true
+    }
+  }
+}

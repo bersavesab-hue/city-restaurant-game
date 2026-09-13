@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "private": true,
   "scripts": {
-    "test": "node tests/core.test.js && node tests/propertyFoundation.test.js && node tests/propertyMarket.test.js && node tests/foundationV02.test.js && node tests/v43ReferenceImageUi.test.js && node tests/v43_1ScriptErrorHotfix.test.js",
+    "test": "node tests/core.test.js && node tests/propertyFoundation.test.js && node tests/propertyMarket.test.js && node tests/foundationV02.test.js && node tests/v43ReferenceImageUi.test.js && node tests/v43_1ScriptErrorHotfix.test.js && node tests/v44VisualRepair.test.js",
     "build:android-js": "esbuild android/entry.js --bundle --platform=browser --format=iife --target=chrome100 --outfile=android/app/src/main/assets/game.bundle.js",
     "test:foundation": "node tests/foundationV02.test.js"
   },
