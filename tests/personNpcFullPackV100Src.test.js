@@ -1,9 +1,9 @@
 'use strict';
 const assert=require('assert');
-const createFoundation=require('../foundation/createFoundation.js');
-const P=require('../person/personPackV10.js');
-const rules=require('../person/personRulesV10.js');
-const engine=require('../systems/personEngine.js');
+const createFoundation=require('../src/foundation/createFoundation.js');
+const P=require('../src/person/personPackV10.js');
+const rules=require('../src/person/personRulesV10.js');
+const engine=require('../src/systems/personEngine.js');
 
 (function counts(){
   const s=P.stats();
@@ -53,4 +53,4 @@ const engine=require('../systems/personEngine.js');
   const f=createFoundation('neg'); const p=f.entities.createPerson({backgroundId:'real_estate_agent'});
   const n=engine.negotiationProfile(p,{leverage:70}); assert.ok(n.firmness>=0&&n.firmness<=100&&n.compromise>=0&&n.compromise<=100);
 })();
-console.log('personNpcFullPackV100.test.js PASS');
+console.log('personNpcFullPackV100Src.test.js PASS');

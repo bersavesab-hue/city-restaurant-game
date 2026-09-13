@@ -1,10 +1,10 @@
 'use strict';
 
 const assert = require('assert');
-const PACK = require('../property/propertyPackV02.js');
-const adapter = require('../property/propertyAdapterV02.js');
-const rules = require('../property/propertyRulesV02.js');
-const createFoundation = require('../foundation/createFoundation.js');
+const PACK = require('../src/property/propertyPackV02.js');
+const adapter = require('../src/property/propertyAdapterV02.js');
+const rules = require('../src/property/propertyRulesV02.js');
+const createFoundation = require('../src/foundation/createFoundation.js');
 
 (function exactPackCounts() {
   const stats = adapter.getPackStats();
@@ -79,4 +79,4 @@ const createFoundation = require('../foundation/createFoundation.js');
   assert.ok(p.v02Tags.includes('集团级项目'), '项目级房源需要清晰标签');
 })();
 
-console.log('propertyFullPackV100.test.js PASS');
+console.log('propertyFullPackV100Src.test.js PASS');

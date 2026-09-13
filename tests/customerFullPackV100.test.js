@@ -1,0 +1,23 @@
+'use strict';
+const assert=require('assert');
+const C=require('../src/customer');
+class Rng{constructor(seed=123456789){this.s=seed>>>0;}next(){this.s=(Math.imul(this.s,1664525)+1013904223)>>>0;return this.s/4294967296;}int(a,b){return Math.floor(this.next()*(b-a+1))+a;}weighted(list,fn=x=>x.weight??1){let t=0;const ws=list.map(x=>Math.max(0,fn(x)));ws.forEach(w=>t+=w);let r=this.next()*t;for(let i=0;i<list.length;i++){r-=ws[i];if(r<=0)return list[i];}return list[list.length-1];}}
+const rng=new Rng(20260914);
+assert.equal(C.pack.SEGMENTS.length,64);
+assert.equal(C.pack.INCOME_BANDS.length,8);
+assert.equal(C.pack.HOUSEHOLD_TYPES.length,12);
+assert.equal(C.pack.DINING_MOTIVES.length,24);
+assert.equal(C.pack.TASTE_PROFILES.length,24);
+assert.equal(C.pack.CHANNEL_HABITS.length,18);
+assert.equal(C.pack.COMPLAINT_TRIGGERS.length,32);
+assert.equal(C.pack.DELIGHT_TRIGGERS.length,32);
+const p=C.engine.createSegmentProfile(rng,{districtId:'university'});assert(p.segmentId&&p.incomeBandId&&p.traits);
+const v=C.engine.generateVisit(p,rng,{hour:12});assert(v.budget>0&&v.partySize>=1);
+const stores=[{id:'a',expectedSpend:18,qualityScore:70,rating:4.3,serviceScore:65,hygieneScore:70,environmentScore:60,distanceMinutes:4,waitMinutes:7,availabilityScore:100},{id:'b',expectedSpend:35,qualityScore:92,rating:4.8,serviceScore:84,hygieneScore:90,environmentScore:88,distanceMinutes:12,waitMinutes:15,availabilityScore:100}];
+const choice=C.engine.chooseStore(p,v,stores,rng,{marketPrice:23});assert(choice.chosen&&choice.scored.length===2);
+const q=C.engine.queueDecision(p,v,choice.chosen);assert(q.stayProbability>=0&&q.stayProbability<=1);
+const ex=C.engine.evaluateExperience(p,v,{paidPerPerson:22,marketPrice:23,taste:82,portion:76,speed:68,service:74,hygiene:84,environment:70,stability:78});assert(ex.overall>=0&&ex.overall<=100);
+const post=C.engine.postVisit(p,v,choice.chosen,{paidPerPerson:22,marketPrice:23,taste:82,portion:76,speed:68,service:74,hygiene:84,environment:70,stability:78},rng);assert(post.repeatProbability>=0&&post.repeatProbability<=1);
+const pop=C.engine.buildDistrictPopulation(rng,{districtId:'cbd',count:500});assert.equal(pop.count,500);const d=C.engine.aggregateDemand(pop,{period:'lunch'});assert(d.totalPotentialVisits>0&&d.avgBudget>0);
+const cheap={...C.pack.SEGMENTS.find(x=>x.id==='student_budget')};assert(C.rules.budgetFit(40,20,cheap.priceSensitivity)<C.rules.budgetFit(18,20,cheap.priceSensitivity));
+console.log('customerFullPackV100.test.js PASS');

@@ -1,11 +1,11 @@
 'use strict';
 
 const assert = require('assert');
-const createFoundation = require('../foundation/createFoundation.js');
-const pricing = require('../systems/pricingEngine.js');
-const competition = require('../systems/competitionEngine.js');
-const reviews = require('../systems/reviewEngine.js');
-const events = require('../systems/eventEngine.js');
+const createFoundation = require('../src/foundation/createFoundation.js');
+const pricing = require('../src/systems/pricingEngine.js');
+const competition = require('../src/systems/competitionEngine.js');
+const reviews = require('../src/systems/reviewEngine.js');
+const events = require('../src/systems/eventEngine.js');
 
 (function deterministicGeneration() {
   const a = createFoundation('same-seed');
@@ -96,4 +96,4 @@ const events = require('../systems/eventEngine.js');
   assert.ok(reviews.reviewSignals({ taste: 90, speed: 30 }).some((x) => x.dimension === 'speed' && x.sentiment === 'negative'));
 })();
 
-console.log('foundationV02.test.js: PASS');
+console.log('foundationSrcV050.test.js: PASS');

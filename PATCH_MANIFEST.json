@@ -1,16 +1,27 @@
 {
-  "patch": "competitor-pack-expanded-final-v1.1.0",
-  "type": "additive-foundation-pack",
+  "patch": "底层结构总修复 V0.5.0",
+  "version": "0.5.0",
+  "purpose": "把早期错误写到项目根目录的房源、人物、foundation、systems、彩蛋模块迁移到真实 src 运行目录，并重新统一测试链。",
   "safe": true,
-  "overwrites_existing_runtime_files": false,
-  "replaces_only_competitor_foundation": true,
-  "files": [
-    "src/competitor/competitorPackV10.js",
-    "src/competitor/competitorRulesV10.js",
-    "src/competitor/competitorEngineV10.js",
-    "src/competitor/index.js",
-    "tests/competitorFullPackV110.test.js",
-    "docs/COMPETITOR_PACK_V1_1_FINAL.md"
+  "touchesExistingUI": false,
+  "doesNotOverwrite": [
+    "src/scenes/shopScene.js",
+    "src/main.js",
+    "android/entry.js",
+    "src/property/propertyMarketSystem.js",
+    "src/property/propertyData.js",
+    "src/property/propertySystem.js"
   ],
-  "notes": "不修改房源页、人物包、main、Android入口与package.json。只升级竞对底座，保持V1.0 API兼容。"
+  "restores": [
+    "src/foundation",
+    "src/entities",
+    "src/systems",
+    "src/property V1 data extensions",
+    "src/person",
+    "src/easteregg"
+  ],
+  "reincludes": [
+    "src/competitor V1.1",
+    "src/customer V1.0"
+  ]
 }
