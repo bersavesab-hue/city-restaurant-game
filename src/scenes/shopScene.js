@@ -57,6 +57,34 @@ const propertyNegotiationSystem =
 const DESIGN_W =
   390;
 
+// V43_1_PROPERTY_CONSTANTS_HOTFIX
+const V43_PROPERTY_ICONS = {
+  area: 'restaurant',
+  frontage: 'view',
+  exhaust: 'renovation',
+  gas: 'warning',
+  power: 'upgrade',
+  competitor: 'people',
+  event: 'bulletin',
+  filter: 'search',
+  sort: 'route',
+  lease: 'location',
+  floor: 'shop',
+  layout: 'restaurant',
+  warning: 'warning',
+  broker: 'people',
+  landlord: 'people'
+};
+
+const V43_STOREFRONTS = [
+  'assets/images/library_store/listings/storefront_1.png',
+  'assets/images/library_store/listings/storefront_2.png',
+  'assets/images/library_store/listings/storefront_3.png',
+  'assets/images/library_store/listings/storefront_4.png',
+  'assets/images/library_store/listings/storefront_5.png'
+];
+
+
 const COLORS = {
   navy:
     '#12384D',
