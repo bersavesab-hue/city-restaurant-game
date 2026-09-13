@@ -13722,21 +13722,21 @@
           }
         ],
         renovation: [
-          { key: "visual_table_2", path: "assets/images/runtime/renovation/table_2.webp" },
-          { key: "visual_table_4", path: "assets/images/runtime/renovation/table_4.webp" },
-          { key: "visual_table_6", path: "assets/images/runtime/renovation/table_6.webp" },
-          { key: "visual_table_8", path: "assets/images/runtime/renovation/table_8.webp" },
-          { key: "visual_register", path: "assets/images/runtime/renovation/register.webp" },
-          { key: "visual_stove", path: "assets/images/runtime/renovation/stove.webp" },
-          { key: "visual_fridge", path: "assets/images/runtime/renovation/fridge.webp" },
-          { key: "visual_plant", path: "assets/images/runtime/renovation/plant.webp" },
-          { key: "visual_light", path: "assets/images/runtime/renovation/light.webp" },
-          { key: "visual_divider", path: "assets/images/runtime/renovation/divider.webp" },
-          { key: "visual_style_wood", path: "assets/images/runtime/renovation/style_wood.webp" },
-          { key: "visual_style_chinese", path: "assets/images/runtime/renovation/style_chinese.webp" },
-          { key: "visual_style_modern", path: "assets/images/runtime/renovation/style_modern.webp" },
-          { key: "visual_style_night", path: "assets/images/runtime/renovation/style_night.webp" },
-          { key: "visual_style_business", path: "assets/images/runtime/renovation/style_business.webp" }
+          { key: "visual_table_2", path: "assets/images/split/renovation/table_2.png" },
+          { key: "visual_table_4", path: "assets/images/split/renovation/table_4.png" },
+          { key: "visual_table_6", path: "assets/images/split/renovation/table_6.png" },
+          { key: "visual_table_8", path: "assets/images/split/renovation/table_8.png" },
+          { key: "visual_register", path: "assets/images/split/renovation/cashier_counter.png" },
+          { key: "visual_stove", path: "assets/images/split/renovation/stove.png" },
+          { key: "visual_fridge", path: "assets/images/split/renovation/fridge.png" },
+          { key: "visual_plant", path: "assets/images/split/renovation/plant_1.png" },
+          { key: "visual_light", path: "assets/images/split/renovation/light_1.png" },
+          { key: "visual_divider", path: "assets/images/split/renovation/screen_door.png" },
+          { key: "visual_style_wood", path: "assets/images/split/renovation/style_wood.png" },
+          { key: "visual_style_chinese", path: "assets/images/split/renovation/style_chinese.png" },
+          { key: "visual_style_modern", path: "assets/images/split/renovation/style_modern.png" },
+          { key: "visual_style_night", path: "assets/images/split/renovation/style_night.png" },
+          { key: "visual_style_business", path: "assets/images/split/renovation/style_business.png" }
         ],
         premiumStore: [
           { key: "premium_store_hero", path: "assets/images/premium/store/store_hero.jpg" },
@@ -22187,6 +22187,154 @@
   var ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("\u65E0\u6CD5\u521B\u5EFA Canvas 2D \u73AF\u5883");
   var lastTouchAt = 0;
+  var activeModal = null;
+  function removeActiveModal() {
+    if (activeModal && activeModal.parentNode) {
+      activeModal.parentNode.removeChild(activeModal);
+    }
+    activeModal = null;
+  }
+  function createModal(options) {
+    const opts = options || {};
+    removeActiveModal();
+    const overlay = document.createElement("div");
+    activeModal = overlay;
+    overlay.style.position = "fixed";
+    overlay.style.left = "0";
+    overlay.style.top = "0";
+    overlay.style.right = "0";
+    overlay.style.bottom = "0";
+    overlay.style.zIndex = "10000";
+    overlay.style.display = "flex";
+    overlay.style.alignItems = "center";
+    overlay.style.justifyContent = "center";
+    overlay.style.padding = "18px";
+    overlay.style.background = "rgba(4, 24, 36, 0.55)";
+    overlay.style.backdropFilter = "blur(2px)";
+    const panel = document.createElement("div");
+    panel.style.width = "min(92vw, 420px)";
+    panel.style.borderRadius = "18px";
+    panel.style.padding = "18px";
+    panel.style.background = "#FFFDF8";
+    panel.style.boxShadow = "0 14px 45px rgba(0,0,0,0.30)";
+    panel.style.border = "1px solid rgba(14,52,72,0.16)";
+    panel.style.fontFamily = "sans-serif";
+    panel.style.color = "#16364B";
+    const title = document.createElement("div");
+    title.textContent = opts.title || "\u63D0\u793A";
+    title.style.fontSize = "18px";
+    title.style.fontWeight = "800";
+    title.style.marginBottom = "10px";
+    panel.appendChild(title);
+    if (opts.content && !opts.editable) {
+      const content = document.createElement("div");
+      content.textContent = String(opts.content);
+      content.style.fontSize = "14px";
+      content.style.lineHeight = "1.55";
+      content.style.color = "#61747D";
+      content.style.whiteSpace = "pre-wrap";
+      content.style.marginBottom = "16px";
+      panel.appendChild(content);
+    }
+    let input = null;
+    if (opts.editable) {
+      input = document.createElement("input");
+      input.type = "text";
+      input.value = opts.content || opts.value || "";
+      input.placeholder = opts.placeholderText || "\u8BF7\u8F93\u5165\u5185\u5BB9";
+      input.maxLength = Number(opts.maxLength) || 24;
+      input.autocomplete = "off";
+      input.style.display = "block";
+      input.style.width = "100%";
+      input.style.height = "46px";
+      input.style.padding = "0 12px";
+      input.style.borderRadius = "12px";
+      input.style.border = "1px solid #CFC5B7";
+      input.style.background = "#FFF9EF";
+      input.style.color = "#17374C";
+      input.style.fontSize = "16px";
+      input.style.outline = "none";
+      input.style.boxSizing = "border-box";
+      input.style.marginBottom = "16px";
+      panel.appendChild(input);
+    }
+    const buttons = document.createElement("div");
+    buttons.style.display = "flex";
+    buttons.style.gap = "10px";
+    buttons.style.justifyContent = "flex-end";
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.textContent = opts.cancelText || "\u53D6\u6D88";
+    cancel.style.flex = "1";
+    cancel.style.height = "42px";
+    cancel.style.border = "1px solid #D3C9BB";
+    cancel.style.borderRadius = "12px";
+    cancel.style.background = "#F3EEE5";
+    cancel.style.color = "#3B5361";
+    cancel.style.fontSize = "15px";
+    cancel.style.fontWeight = "700";
+    const confirm = document.createElement("button");
+    confirm.type = "button";
+    confirm.textContent = opts.confirmText || "\u786E\u5B9A";
+    confirm.style.flex = "1";
+    confirm.style.height = "42px";
+    confirm.style.border = "1px solid #D9A12C";
+    confirm.style.borderRadius = "12px";
+    confirm.style.background = "#F5B72F";
+    confirm.style.color = "#1C3442";
+    confirm.style.fontSize = "15px";
+    confirm.style.fontWeight = "800";
+    function finish(result) {
+      removeActiveModal();
+      if (typeof opts.success === "function") {
+        opts.success(result);
+      }
+    }
+    cancel.addEventListener("click", function() {
+      finish({
+        confirm: false,
+        cancel: true
+      });
+    });
+    confirm.addEventListener("click", function() {
+      const value = input ? input.value : "";
+      finish({
+        confirm: true,
+        cancel: false,
+        content: value,
+        inputValue: value,
+        value
+      });
+    });
+    buttons.appendChild(cancel);
+    buttons.appendChild(confirm);
+    panel.appendChild(buttons);
+    overlay.appendChild(panel);
+    overlay.addEventListener("click", function(event) {
+      if (event.target === overlay) {
+        finish({
+          confirm: false,
+          cancel: true
+        });
+      }
+    });
+    document.body.appendChild(overlay);
+    if (input) {
+      window.setTimeout(function() {
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+      }, 60);
+      input.addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          confirm.click();
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          cancel.click();
+        }
+      });
+    }
+  }
   var androidApi = {
     createCanvas() {
       return canvas;
@@ -22237,6 +22385,15 @@
     showToast(options) {
       const title = options && options.title ? options.title : "";
       showAndroidToast(title);
+    },
+    showModal(options) {
+      try {
+        createModal(options || {});
+      } catch (error) {
+        if (options && typeof options.fail === "function") {
+          options.fail(error);
+        }
+      }
     },
     setStorageSync(key, value) {
       localStorage.setItem(key, JSON.stringify(value));
