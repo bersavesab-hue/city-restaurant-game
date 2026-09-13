@@ -23979,6 +23979,328 @@
           }
         );
       }
+      var V21_DISTRICT_ICON_KEYS = {
+        university: "v21_district_university",
+        hightech: "v21_district_hightech",
+        cbd: "v21_district_cbd",
+        oldtown: "v21_district_oldtown",
+        village: "v21_district_village",
+        market: "v21_district_market",
+        industry: "v21_district_industry"
+      };
+      var V21_NAV_ICON_KEYS = {
+        city: "v21_nav_city",
+        shop: "v21_nav_store",
+        traffic: "v21_nav_traffic",
+        research: "v21_nav_menu",
+        supply: "v21_nav_supply",
+        business: "v21_nav_data",
+        system: "v21_nav_system"
+      };
+      var V21_METRIC_ICON_KEYS = {
+        "\u4EBA\u53E3": "v21_metric_population",
+        "\u9700\u6C42": "v21_metric_demand",
+        "\u5BA2\u5355": "v21_metric_spend",
+        "\u9910\u996E\u5E97": "v21_metric_restaurants",
+        "\u9971\u548C\u5EA6": "v21_metric_saturation",
+        "\u79DF\u91D1": "v21_metric_rent"
+      };
+      function v21DrawImage(key, cx, cy, w, h, alpha) {
+        const image = resourceManager.getImage(key);
+        if (!image) return false;
+        ctx2.save();
+        ctx2.globalAlpha = alpha == null ? 1 : alpha;
+        ctx2.drawImage(
+          image,
+          cx - w / 2,
+          cy - h / 2,
+          w,
+          h
+        );
+        ctx2.restore();
+        return true;
+      }
+      var v21OriginalDrawWeatherGlyph = drawWeatherGlyph;
+      var v21OriginalDrawCashGlyph = drawCashGlyph;
+      var v21OriginalDrawCrownGlyph = drawCrownGlyph;
+      var v21OriginalDrawMetricSymbol = drawMetricSymbol;
+      var v21OriginalDrawNavIcon = drawNavIcon;
+      updateLayout = function() {
+        TOP_H = (VIEW_H < 740 ? 92 : 96) + SAFE_TOP;
+        NAV_H = (VIEW_H < 740 ? 56 : 60) + SAFE_BOTTOM;
+        MAP_X = 0;
+        MAP_Y = TOP_H;
+        MAP_W = VIEW_W;
+        NAV_Y = VIEW_H - NAV_H;
+        MAP_H = NAV_Y - MAP_Y;
+        CARD_H = VIEW_H < 740 ? 124 : 136;
+        CARD_X = 7;
+        CARD_W = VIEW_W - 14;
+        CARD_Y = NAV_Y - CARD_H - 6;
+      };
+      drawWeatherGlyph = function(weather, x, y) {
+        if (v21DrawImage("v21_hud_weather", x, y, 28, 28)) return;
+        return v21OriginalDrawWeatherGlyph(weather, x, y);
+      };
+      drawCashGlyph = function(x, y) {
+        if (v21DrawImage("v21_hud_money", x, y, 27, 27)) return;
+        return v21OriginalDrawCashGlyph(x, y);
+      };
+      drawCrownGlyph = function(x, y) {
+        if (v21DrawImage("v21_hud_crown", x, y, 24, 24)) return;
+        return v21OriginalDrawCrownGlyph(x, y);
+      };
+      drawMetricSymbol = function(label, x, y, color) {
+        const key = V21_METRIC_ICON_KEYS[label];
+        if (key && v21DrawImage(key, x, y, 17, 17)) return;
+        return v21OriginalDrawMetricSymbol(
+          label,
+          x,
+          y,
+          color
+        );
+      };
+      drawNavIcon = function(id, cx, cy, active) {
+        const key = V21_NAV_ICON_KEYS[id];
+        if (key && v21DrawImage(
+          key,
+          cx,
+          cy,
+          active ? 25 : 23,
+          active ? 25 : 23,
+          active ? 1 : 0.9
+        )) {
+          return;
+        }
+        return v21OriginalDrawNavIcon(
+          id,
+          cx,
+          cy,
+          active
+        );
+      };
+      drawDistrictMarker = function(district) {
+        const point = getDistrictPoint(district.id);
+        if (!point) return;
+        const x = point.x;
+        const y = point.y;
+        const selected = selectedDistrictId === district.id;
+        const meta = getDistrictVisualMeta(district);
+        const animated = districtFx.id === district.id;
+        const markerScale = animated ? districtFx.scale : 1;
+        if (selected) {
+          ctx2.beginPath();
+          ctx2.arc(
+            x,
+            y,
+            19 + districtFx.flash * 4,
+            0,
+            Math.PI * 2
+          );
+          ctx2.fillStyle = "rgba(255,195,54,0.20)";
+          ctx2.fill();
+        }
+        ctx2.save();
+        ctx2.translate(x, y);
+        ctx2.scale(markerScale, markerScale);
+        const key = V21_DISTRICT_ICON_KEYS[district.id];
+        if (!key || !v21DrawImage(key, 0, -4, 31, 40)) {
+          drawDistrictPictogram(district.id, 0, -5);
+        }
+        ctx2.restore();
+        const boxW = Math.max(
+          70,
+          Math.min(
+            91,
+            38 + district.name.length * 9
+          )
+        );
+        const preferLeft = x > VIEW_W * 0.64;
+        let boxX = preferLeft ? x - boxW - 9 : x + 9;
+        boxX = Math.max(
+          5,
+          Math.min(
+            VIEW_W - boxW - 5,
+            boxX
+          )
+        );
+        let boxY = y - 13;
+        boxY = Math.max(
+          MAP_Y + 73,
+          Math.min(
+            CARD_Y - 44,
+            boxY
+          )
+        );
+        roundedRect(
+          boxX,
+          boxY,
+          boxW,
+          23,
+          9,
+          "rgba(5,53,79,0.96)",
+          selected ? "#FFE06C" : "rgba(255,218,93,0.78)",
+          selected ? 1.3 : 0.9
+        );
+        drawText(
+          district.name,
+          boxX + 9,
+          boxY + 11.5,
+          7.7,
+          "#FFFFFF",
+          "800"
+        );
+        drawText(
+          "\u203A",
+          boxX + boxW - 8,
+          boxY + 11.5,
+          9.5,
+          "#FFE49C",
+          "800",
+          "center"
+        );
+        roundedRect(
+          boxX + 5,
+          boxY + 23,
+          boxW - 10,
+          15,
+          6,
+          "rgba(255,253,247,0.96)",
+          "rgba(11,55,76,0.11)"
+        );
+        drawText(
+          fitText(
+            meta.subtitle,
+            boxW - 16,
+            4.9,
+            "700"
+          ),
+          boxX + boxW / 2,
+          boxY + 30.5,
+          4.9,
+          "#23455B",
+          "700",
+          "center"
+        );
+        if (meta.badge) {
+          const badgeW = Math.max(
+            31,
+            14 + meta.badge.length * 5.2
+          );
+          const badgeX = Math.max(
+            5,
+            Math.min(
+              VIEW_W - badgeW - 5,
+              boxX + boxW - badgeW + 3
+            )
+          );
+          roundedRect(
+            badgeX,
+            boxY - 6,
+            badgeW,
+            14,
+            7,
+            meta.badgeColor,
+            "rgba(255,245,218,0.96)"
+          );
+          drawText(
+            meta.badge,
+            badgeX + badgeW / 2,
+            boxY + 1,
+            4.8,
+            "#FFFFFF",
+            "800",
+            "center"
+          );
+        }
+        if (meta.myShopCount > 0) {
+          const textValue = meta.myShopCount > 1 ? "\u2713 \u6211\u7684\u5E97\xD7" + meta.myShopCount : "\u2713 \u6211\u7684\u5E97";
+          const shopW = meta.myShopCount > 1 ? 49 : 39;
+          const sx = Math.max(
+            5,
+            Math.min(
+              VIEW_W - shopW - 5,
+              boxX + boxW - shopW + 6
+            )
+          );
+          roundedRect(
+            sx,
+            boxY - 22,
+            shopW,
+            14,
+            7,
+            "#1E9A5E",
+            "#B9F0C8"
+          );
+          drawText(
+            textValue,
+            sx + shopW / 2,
+            boxY - 15,
+            4.6,
+            "#FFFFFF",
+            "800",
+            "center"
+          );
+        }
+        const hitLeft = Math.min(x - 18, boxX - 3);
+        const hitRight = Math.max(x + 18, boxX + boxW + 3);
+        const hitTop = Math.min(y - 25, boxY - 24);
+        const hitBottom = Math.max(y + 20, boxY + 41);
+        addButton(
+          "district:" + district.id,
+          hitLeft,
+          hitTop,
+          hitRight - hitLeft,
+          hitBottom - hitTop
+        );
+      };
+      var v21OriginalLoadResources = loadResources;
+      loadResources = function() {
+        const assets = [
+          ["v21_hud_city", "hud_city.png"],
+          ["v21_hud_weather", "hud_weather.png"],
+          ["v21_hud_money", "hud_money.png"],
+          ["v21_hud_plus", "hud_plus.png"],
+          ["v21_hud_crown", "hud_crown.png"],
+          ["v21_hud_bulletin", "hud_bulletin.png"],
+          ["v21_hud_goal", "hud_goal.png"],
+          ["v21_hud_reward", "hud_reward.png"],
+          ["v21_district_university", "district_university.png"],
+          ["v21_district_hightech", "district_hightech.png"],
+          ["v21_district_cbd", "district_cbd.png"],
+          ["v21_district_oldtown", "district_oldtown.png"],
+          ["v21_district_village", "district_village.png"],
+          ["v21_district_market", "district_market.png"],
+          ["v21_district_industry", "district_industry.png"],
+          ["v21_metric_population", "metric_population.png"],
+          ["v21_metric_demand", "metric_demand.png"],
+          ["v21_metric_spend", "metric_spend.png"],
+          ["v21_metric_restaurants", "metric_restaurants.png"],
+          ["v21_metric_saturation", "metric_saturation.png"],
+          ["v21_metric_rent", "metric_rent.png"],
+          ["v21_nav_city", "nav_city.png"],
+          ["v21_nav_store", "nav_store.png"],
+          ["v21_nav_traffic", "nav_traffic.png"],
+          ["v21_nav_menu", "nav_menu.png"],
+          ["v21_nav_supply", "nav_supply.png"],
+          ["v21_nav_data", "nav_data.png"],
+          ["v21_nav_system", "nav_system.png"]
+        ];
+        const tasks = [];
+        for (let i = 0; i < assets.length; i++) {
+          tasks.push(
+            resourceManager.loadImage(
+              assets[i][0],
+              "assets/images/v21/" + assets[i][1],
+              "v21-ui"
+            )
+          );
+        }
+        return Promise.all(tasks).then(function() {
+          return v21OriginalLoadResources();
+        });
+      };
+      console.log("V21_HOME_ICON_POLISH loaded");
       simulationSystem.initialize();
       sceneManager.switchTo(
         "city"
@@ -23989,7 +24311,7 @@
         gameLoop
       );
       console.log(
-        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V20 \u4E3B\u9875\u76EE\u6807\u56FE\u4E00\u6BD4\u4E00\u7248\u542F\u52A8\u6210\u529F"
+        "\u57CE\u5E02\u9910\u996E\u7ECF\u8425\u5C0F\u6E38\u620F V21 \u4E3B\u9875\u56FE\u6807\u91CD\u6784\u7248\u542F\u52A8\u6210\u529F"
       );
     }
   });
