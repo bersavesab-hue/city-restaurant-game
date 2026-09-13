@@ -17,10 +17,47 @@ const esbuild = path.join(
     : 'esbuild'
 );
 
+const entry = path.join(
+  root,
+  'android/entry.js'
+);
+
 const outfile = path.join(
   os.tmpdir(),
   'city-restaurant-v21-test-bundle.js'
 );
+
+// 轻量测试工作流没有执行 npm install。
+// 此时不把 ENOENT 误判成游戏构建失败，而是至少做入口语法检查。
+// 正式 Apply Update ZIP 工作流会 npm install，并在后续再次实际执行 esbuild + Gradle。
+if (!fs.existsSync(esbuild)) {
+  const syntax = childProcess.spawnSync(
+    process.execPath,
+    ['--check', entry],
+    {
+      cwd: root,
+      encoding: 'utf8',
+      timeout: 15000
+    }
+  );
+
+  assert.strictEqual(
+    syntax.status,
+    0,
+    'Android入口JS语法检查必须成功:\n' +
+      (
+        syntax.stderr ||
+        syntax.stdout ||
+        ''
+      )
+  );
+
+  console.log(
+    'V21 Android lightweight syntax regression test passed (esbuild not installed in this workflow)'
+  );
+
+  process.exit(0);
+}
 
 function runBundle() {
   try {
@@ -33,7 +70,7 @@ function runBundle() {
   return childProcess.spawnSync(
     esbuild,
     [
-      path.join(root, 'android/entry.js'),
+      entry,
       '--bundle',
       '--platform=browser',
       '--format=iife',
@@ -51,10 +88,13 @@ function runBundle() {
 
 let result = null;
 
-for (let attempt = 1; attempt <= 3; attempt++) {
+for (
+  let attempt = 1;
+  attempt <= 3;
+  attempt++
+) {
   result = runBundle();
 
-  // 真实的非零退出码立即视为构建失败，不重试掩盖问题。
   if (
     result &&
     typeof result.status === 'number'
@@ -64,7 +104,7 @@ for (let attempt = 1; attempt <= 3; attempt++) {
 
   if (attempt < 3) {
     console.warn(
-      'V21 Android bundle test spawn status=null，重试 ' +
+      'V21 Android bundle spawn status=null，重试 ' +
       (attempt + 1) +
       '/3'
     );
@@ -83,7 +123,8 @@ const detail =
       ) ||
       (
         result.signal
-          ? 'signal=' + result.signal
+          ? 'signal=' +
+            result.signal
           : ''
       )
     )
