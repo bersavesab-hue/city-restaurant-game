@@ -1,5 +1,8 @@
 'use strict';
 
+const gameState =
+  require('../core/gameState.js');
+
 function roundedPath(
   ctx,
   x,
@@ -128,6 +131,28 @@ function text(
     color ||
     '#153044';
 
+  const progress =
+    gameState
+      .getData()
+      .progress ||
+    {};
+
+  const settings =
+    progress.settings ||
+    {};
+
+  const fontScale =
+    Math.max(
+      1,
+      Math.min(
+        1.15,
+        Number(
+          settings.fontScale
+        ) ||
+        1
+      )
+    );
+
   const readableSize =
     Math.max(
       7.3,
@@ -135,7 +160,8 @@ function text(
         size
       ) ||
       7.3
-    );
+    ) *
+    fontScale;
 
   ctx.font =
     (

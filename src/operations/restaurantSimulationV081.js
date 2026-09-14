@@ -433,6 +433,12 @@ function expectedArrivalsPerMinute(
       1.08
     );
 
+  const trialFactor =
+    shop.status ===
+      'trial_opening'
+      ? 0.78
+      : 1;
+
   return Math.max(
     0,
     averageRestaurantDemand /
@@ -448,7 +454,8 @@ function expectedArrivalsPerMinute(
       ) *
       dynamicDemandFactor *
       competitionFactor *
-      nightFactor
+      nightFactor *
+      trialFactor
   );
 }
 
@@ -1390,7 +1397,9 @@ function update(
   ) {
     if (
       shop.status !==
-      'open'
+        'open' &&
+      shop.status !==
+        'trial_opening'
     ) {
       continue;
     }

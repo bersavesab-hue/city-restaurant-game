@@ -2031,7 +2031,11 @@ class OpeningPrepSystem {
       shop &&
       ready &&
       shop.status !==
-        'open'
+        'open' &&
+      shop.status !==
+        'trial_opening' &&
+      shop.status !==
+        'trial_complete'
     ) {
       shop.status =
         'ready_for_trial';
@@ -2082,16 +2086,28 @@ class OpeningPrepSystem {
     }
 
     shop.status =
-      'open';
+      'trial_opening';
 
     shop.trialOpenedDay =
       this.getCurrentDay();
+
+    shop.trialEndDay =
+      shop.trialOpenedDay +
+      3;
+
+    shop.trialCompletedDay =
+      null;
+
+    shop.trialReport =
+      null;
 
     return {
       ok:
         true,
       day:
-        shop.trialOpenedDay
+        shop.trialOpenedDay,
+      endDay:
+        shop.trialEndDay
     };
   }
 

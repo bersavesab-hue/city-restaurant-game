@@ -139,6 +139,7 @@ for (
     'tests/dynamicWorldUiV0816.test.js',
     'tests/liveRestaurantV082.test.js',
     'tests/timeScheduleV0821.test.js',
+    'tests/businessLifecycleV086.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

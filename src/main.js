@@ -63,6 +63,9 @@ const openingPrepSystem =
 const globalTimeline =
   require('./core/globalTimelineV0821.js');
 
+const businessLifecycle =
+  require('./core/businessLifecycleV086.js');
+
 const textInput =
   require('./ui/textInput.js');
 
@@ -102,6 +105,9 @@ const businessScene =
 
 const dynamicWorldScene =
   require('./scenes/dynamicWorldScene.js');
+
+const systemScene =
+  require('./scenes/systemSceneV086.js');
 
 const dynamicWorldSystem =
   require('./world/dynamicWorldSystemV0815.js');
@@ -5306,6 +5312,11 @@ sceneManager.register(
   dynamicWorldScene
 );
 
+sceneManager.register(
+  'system',
+  systemScene
+);
+
 /* =========================
    总渲染
 ========================= */
@@ -5652,9 +5663,18 @@ function handleTap(
       sceneId ===
       'system'
     ) {
-      showToast(
-        '系统设置将在下一阶段接入'
-      );
+      trafficMode =
+        false;
+
+      selectedDistrictId =
+        null;
+
+      sceneManager
+        .switchTo(
+          'system'
+        );
+
+      render();
 
       return;
     }
@@ -5804,6 +5824,9 @@ function gameLoop(
   let restaurantChanged =
     false;
 
+  let lifecycleChanged =
+    false;
+
   const advancedMinutes =
     timeSystem
       .update(
@@ -5840,13 +5863,22 @@ function gameLoop(
             restaurantChanged =
               true;
           }
+
+          if (
+            businessLifecycle
+              .update()
+          ) {
+            lifecycleChanged =
+              true;
+          }
         }
       );
 
   if (
     simulationChanged ||
     timelineChanged ||
-    restaurantChanged
+    restaurantChanged ||
+    lifecycleChanged
   ) {
     saveSystem
       .autoSave();
@@ -5858,6 +5890,7 @@ function gameLoop(
     simulationChanged ||
     timelineChanged ||
     restaurantChanged ||
+    lifecycleChanged ||
     animationChanged ||
     needsResize
   ) {

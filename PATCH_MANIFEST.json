@@ -1,20 +1,17 @@
 {
-  "version": "0.8.5",
-  "name": "Business Management Center",
-  "baseVersion": "0.8.4",
-  "files": [
-    "src/world/managementWorldSystemV085.js",
-    "src/scenes/businessScene.js",
-    "tests/managementCenterV085.test.js",
-    "docs/MANAGEMENT_CENTER_V085.md",
-    "PATCH_MANIFEST.json",
-    "package.json"
+  "id": "V086_BUSINESS_LIFECYCLE",
+  "base": "0.8.5",
+  "target": "0.8.6",
+  "preserves": [
+    "V0.8.5 management center",
+    "V0.8.4 live world",
+    "V0.8.21 time/schedule"
   ],
   "features": [
-    "tabbed business management center",
-    "real staff management actions",
-    "competitor center",
-    "dynamic district ranking",
-    "competition event feedback"
+    "real 3-day trial opening",
+    "loan repayment lifecycle",
+    "lease lifecycle",
+    "system page",
+    "opening flow correction"
   ]
 }

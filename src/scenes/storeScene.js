@@ -49,6 +49,9 @@ const openingPrepSystem =
 const openingFinanceSystem =
   require('../finance/openingFinanceSystem.js');
 
+const businessLifecycle =
+  require('../core/businessLifecycleV086.js');
+
 const operationsStore =
   require('../operations/operationsStoreV080.js');
 
@@ -879,7 +882,12 @@ class StoreScene {
 
     if (
       shop &&
-      shop.status === 'open'
+      (
+        shop.status ===
+          'open' ||
+        shop.status ===
+          'trial_opening'
+      )
     ) {
       return 'operating';
     }
@@ -1270,51 +1278,62 @@ class StoreScene {
     };
 
     if (
+      shop.status ===
+        'trial_complete'
+    ) {
+      recommendation = {
+        id:'formal-open',
+        title:'试营业复盘完成',
+        detail:
+          '查看3天结果后确认正式营业',
+        action:'正式开业'
+      };
+    } else if (
       readiness
         .renovationReady
     ) {
       if (
         !readiness
+          .equipmentReady
+      ) {
+        recommendation = {
+          id:'equipment',
+          title:'安装设备',
+          detail:
+            '装修后先完成后厨与前厅设备',
+          action:'配置设备'
+        };
+      } else if (
+        !readiness
           .permitsReady
       ) {
         recommendation = {
-          id: 'license',
-          title: '办理证照',
+          id:'license',
+          title:'办理证照',
           detail:
-            '完成营业、食品及消防手续',
-          action: '办理证照'
+            '设备完成后办理营业、食品及消防手续',
+          action:'办理证照'
         };
       } else if (
         !readiness
           .staffingReady
       ) {
         recommendation = {
-          id: 'staff',
-          title: '补齐员工',
+          id:'staff',
+          title:'补齐员工',
           detail:
-            '基础班组仍未达到开业要求',
-          action: '去招聘'
-        };
-      } else if (
-        !readiness
-          .equipmentReady
-      ) {
-        recommendation = {
-          id: 'equipment',
-          title: '安装设备',
-          detail:
-            '完成后厨与前厅设备采购安装',
-          action: '配置设备'
+            '证照齐备后组建基础班组',
+          action:'去招聘'
         };
       } else if (
         readiness.ready
       ) {
         recommendation = {
-          id: 'trial',
-          title: '开始试营业',
+          id:'trial',
+          title:'开始3天试营业',
           detail:
-            '基础筹备完成，可以验证真实经营',
-          action: '试营业'
+            '用真实客流验证出餐、服务、库存与盈利',
+          action:'试营业'
         };
       }
     }
@@ -5116,22 +5135,94 @@ class StoreScene {
     }
 
     if (
-      moduleId === 'trial'
+      moduleId ===
+        'trial'
     ) {
       const result =
-        openingPrepSystem
+        businessLifecycle
           .startTrialOpening(
             shop.id
           );
 
       this.showToast(
         result.ok
-          ? '试营业开始！'
+          ? '3天试营业开始'
           : result.message
       );
 
       textInput
         .requestRender();
+
+      return true;
+    }
+
+    if (
+      moduleId ===
+        'formal-open'
+    ) {
+      const report =
+        businessLifecycle
+          .getTrialReport(
+            shop.id
+          );
+
+      const open =
+        () => {
+          const result =
+            businessLifecycle
+              .formalOpen(
+                shop.id
+              );
+
+          this.showToast(
+            result.ok
+              ? '正式营业开始！'
+              : result.message
+          );
+
+          textInput
+            .requestRender();
+        };
+
+      if (
+        api &&
+        typeof api.showModal ===
+          'function'
+      ) {
+        api.showModal({
+          title:'试营业复盘',
+          content:
+            report
+              ? (
+                  '营业额 ' +
+                  compactMoney(
+                    report.revenue
+                  ) +
+                  '，利润 ' +
+                  compactMoney(
+                    report.profit
+                  ) +
+                  '，订单 ' +
+                  report.orders +
+                  '，评分 ' +
+                  report.rating +
+                  '。是否正式开业？'
+                )
+              : '试营业已完成，是否正式开业？',
+          confirmText:'正式开业',
+          cancelText:'继续复盘',
+          success:result => {
+            if (
+              result &&
+              result.confirm
+            ) {
+              open();
+            }
+          }
+        });
+      } else {
+        open();
+      }
 
       return true;
     }
