@@ -30,6 +30,9 @@ const timeSystem =
 const saveSystem =
   require('./core/saveSystem.js');
 
+const restaurantSimulation =
+  require('./operations/restaurantSimulationV081.js');
+
 const sceneManager =
   require('./core/sceneManager.js');
 
@@ -5814,8 +5817,18 @@ function gameLoop(
           )
       : false;
 
+  const restaurantChanged =
+    advancedMinutes >
+      0
+      ? restaurantSimulation
+          .update(
+            advancedMinutes
+          )
+      : false;
+
   if (
-    simulationChanged
+    simulationChanged ||
+    restaurantChanged
   ) {
     saveSystem
       .autoSave();
@@ -5825,6 +5838,7 @@ function gameLoop(
     advancedMinutes >
       0 ||
     simulationChanged ||
+    restaurantChanged ||
     animationChanged ||
     needsResize
   ) {
@@ -7438,5 +7452,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V0.8.0 经营接线第一阶段启动成功'
+  '城市餐饮经营小游戏 V0.8.1 真实营业循环启动成功'
 );

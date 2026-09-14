@@ -134,6 +134,7 @@ for (
 
     'tests/operationCoreV070.test.js',
     'tests/wiringStageV080.test.js',
+    'tests/realOperationLoopV081.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

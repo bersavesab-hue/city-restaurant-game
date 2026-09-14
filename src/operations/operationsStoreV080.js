@@ -3,6 +3,9 @@
 const gameState =
   require('../core/gameState.js');
 
+const simulationSystem =
+  require('../core/simulationSystem.js');
+
 const runtimeEngine =
   require('./restaurantRuntimeV10.js');
 
@@ -37,22 +40,120 @@ function clone(value) {
 }
 
 function currentDay() {
-  const time =
-    gameState.getTime();
-
-  return (
-    (
-      Number(time.year) || 1
-    ) * 372 +
-    (
-      Number(time.month) || 1
-    ) * 31 +
-    (
-      Number(time.day) || 1
-    )
-  );
+  return simulationSystem
+    .getDayOrdinal(
+      gameState.getTime()
+    );
 }
 
+function normalizeLegacyCalendar(
+  runtime
+) {
+  const expected =
+    currentDay();
+
+  const oldDay =
+    Number(
+      runtime.day
+    ) ||
+    expected;
+
+  if (
+    Math.abs(
+      oldDay -
+      expected
+    ) <=
+    90
+  ) {
+    return;
+  }
+
+  const delta =
+    expected -
+    oldDay;
+
+  runtime.day =
+    expected;
+
+  if (
+    runtime.inventory
+  ) {
+    runtime
+      .inventory
+      .day =
+      (
+        Number(
+          runtime
+            .inventory
+            .day
+        ) ||
+        oldDay
+      ) +
+      delta;
+
+    for (
+      const lot
+      of runtime
+          .inventory
+          .lots ||
+        []
+    ) {
+      lot.receivedDay =
+        (
+          Number(
+            lot.receivedDay
+          ) ||
+          oldDay
+        ) +
+        delta;
+
+      lot.expiryDay =
+        (
+          Number(
+            lot.expiryDay
+          ) ||
+          oldDay
+        ) +
+        delta;
+    }
+  }
+
+  if (
+    runtime.procurement &&
+    Array.isArray(
+      runtime
+        .procurement
+        .purchaseOrders
+    )
+  ) {
+    for (
+      const po
+      of runtime
+          .procurement
+          .purchaseOrders
+    ) {
+      for (
+        const key
+        of [
+          'orderedDay',
+          'expectedDay',
+          'receivedDay'
+        ]
+      ) {
+        if (
+          po[key] !=
+          null
+        ) {
+          po[key] =
+            Number(
+              po[key]
+            ) +
+            delta;
+        }
+      }
+    }
+  }
+}
 function getRoot() {
   const business =
     gameState.getBusiness();
@@ -63,7 +164,7 @@ function getRoot() {
       'object'
   ) {
     business.restaurantOperations = {
-      version: '0.8.0',
+      version: '0.8.1',
       sharedSupplierNetwork: null,
       shops: {}
     };
@@ -89,7 +190,7 @@ function getRoot() {
   }
 
   root.version =
-    '0.8.0';
+    '0.8.1';
 
   return root;
 }
@@ -222,6 +323,24 @@ function snapshotRuntime(runtime) {
     history:
       clone(
         runtime.history
+      ),
+
+    simulation:
+      clone(
+        runtime.simulation ||
+        {
+          arrivalCarry: 0,
+          lastRestockMinute: null,
+          unpaidOperatingPayables: 0,
+          todayOrders: 0,
+          todayCustomers: 0
+        }
+      ),
+
+    dailySnapshots:
+      clone(
+        runtime.dailySnapshots ||
+        []
       )
   };
 }
@@ -290,7 +409,9 @@ function buildRuntime(
         'brand',
         'campaigns',
         'customers',
-        'history'
+        'history',
+        'simulation',
+        'dailySnapshots'
       ]
     ) {
       if (
@@ -326,6 +447,30 @@ function buildRuntime(
 
     runtime.rng =
       rng;
+  }
+
+  normalizeLegacyCalendar(
+    runtime
+  );
+
+  if (
+    !runtime.simulation
+  ) {
+    runtime.simulation = {
+      arrivalCarry: 0,
+      lastRestockMinute: null,
+      unpaidOperatingPayables: 0,
+      todayOrders: 0,
+      todayCustomers: 0
+    };
+  }
+
+  if (
+    !Array.isArray(
+      runtime.dailySnapshots
+    )
+  ) {
+    runtime.dailySnapshots = [];
   }
 
   runtime.shop.id =
@@ -1237,7 +1382,23 @@ function dashboard(
         []
       ).slice(
         -8
-      )
+      ),
+
+    simulation:
+      clone(
+        runtime.simulation ||
+        {}
+      ),
+
+    lastDailySnapshot:
+      runtime.dailySnapshots &&
+      runtime.dailySnapshots.length
+        ? clone(
+            runtime.dailySnapshots[
+              runtime.dailySnapshots.length - 1
+            ]
+          )
+        : null
   };
 }
 

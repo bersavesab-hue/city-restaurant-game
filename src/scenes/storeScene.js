@@ -49,6 +49,9 @@ const openingPrepSystem =
 const openingFinanceSystem =
   require('../finance/openingFinanceSystem.js');
 
+const operationsStore =
+  require('../operations/operationsStoreV080.js');
+
 const customizationSystem =
   require('../ui/customizationSystem.js');
 
@@ -1381,31 +1384,62 @@ class StoreScene {
         6,
         Number(
           state.metrics
-            ? state.metrics
-                .totalSeats
+            ? state.metrics.totalSeats
             : shop.seatEstimate
         ) || 30
       );
 
-    const avgSpend =
-      Math.max(
-        10,
-        Number(
-          district
-            ? district.avgSpend
-            : 38
-        ) || 38
-      );
+    const dashboard =
+      operationsStore
+        .dashboard(
+          shop.id
+        );
 
-    const saturation =
+    const finance =
+      dashboard &&
+      dashboard.finance
+        ? dashboard.finance
+        : {
+            revenue: 0,
+            profit: 0,
+            orders: 0,
+            customers: 0,
+            avgTicket: 0
+          };
+
+    const customers =
+      Number(
+        finance.customers
+      ) ||
+      0;
+
+    const revenue =
+      Number(
+        finance.revenue
+      ) ||
+      0;
+
+    const profit =
+      Number(
+        finance.profit
+      ) ||
+      0;
+
+    const rating =
       clamp(
         Number(
-          district
-            ? district.saturation
-            : 60
-        ) / 100,
-        0.2,
-        1.5
+          dashboard &&
+          dashboard.shopRating
+        ) || 4,
+        1,
+        5
+      );
+
+    const turnover =
+      customers /
+      Math.max(
+        1,
+        seats
       );
 
     const staffCoverage =
@@ -1413,128 +1447,24 @@ class StoreScene {
       state.readiness.staffing
         ? clamp(
             Number(
-              state.readiness
-                .staffing
-                .coverage
+              state.readiness.staffing.coverage
             ) || 0,
             0,
             1.15
           )
         : 0.8;
 
-    const comfort =
-      state.metrics
-        ? clamp(
-            Number(
-              state.metrics
-                .comfort
-            ) / 100,
-            0.5,
-            1.25
-          )
-        : 0.75;
-
-    const t =
-      gameState.getTime();
-
-    const hours =
-      clamp(
-        (
-          Number(t.hour) +
-          Number(t.minute) / 60 -
-          8
-        ) / 14,
-        0.08,
-        1
-      );
-
-    const baseTurn =
-      1.25 +
+    const avgSpend =
+      Number(
+        finance.avgTicket
+      ) ||
       (
-        1.15 -
-        saturation * 0.45
+        customers >
+          0
+          ? revenue /
+            customers
+          : 0
       );
-
-    const customers =
-      Math.max(
-        1,
-        Math.round(
-          seats *
-          baseTurn *
-          hours *
-          (
-            0.72 +
-            staffCoverage * 0.28
-          ) *
-          (
-            0.78 +
-            comfort * 0.22
-          )
-        )
-      );
-
-    const revenue =
-      Math.round(
-        customers *
-        avgSpend *
-        (
-          0.92 +
-          comfort * 0.08
-        )
-      );
-
-    const rentDaily =
-      Math.round(
-        (
-          Number(
-            shop.monthlyRent
-          ) || 0
-        ) / 30
-      );
-
-    const laborDaily =
-      Math.round(
-        (
-          state.readiness &&
-          state.readiness.staffing
-            ? Number(
-                state.readiness
-                  .staffing
-                  .payroll
-              ) || 0
-            : 0
-        ) / 30
-      );
-
-    const foodCost =
-      Math.round(
-        revenue * 0.36
-      );
-
-    const utility =
-      Math.round(
-        revenue * 0.055
-      );
-
-    const profit =
-      revenue -
-      foodCost -
-      rentDaily -
-      laborDaily -
-      utility;
-
-    const rating =
-      clamp(
-        3.2 +
-        comfort * 0.85 +
-        staffCoverage * 0.55,
-        3.0,
-        5.0
-      );
-
-    const turnover =
-      customers /
-      Math.max(1, seats);
 
     const openDay =
       Math.max(
@@ -1560,7 +1490,21 @@ class StoreScene {
       turnover,
       openDay,
       staffCoverage,
-      avgSpend
+      avgSpend,
+      orders:
+        Number(
+          finance.orders
+        ) || 0,
+      foodCostRate:
+        Number(
+          finance.foodCostRate
+        ) || 0,
+      profitRate:
+        Number(
+          finance.profitRate
+        ) || 0,
+      realOperation:
+        true
     };
   }
 
