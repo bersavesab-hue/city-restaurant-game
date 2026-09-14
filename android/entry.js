@@ -203,6 +203,31 @@ const androidApi = {
     };
   },
 
+  onHide(callback) {
+    if (
+      typeof callback !==
+      'function'
+    ) {
+      return;
+    }
+
+    window.addEventListener(
+      'pagehide',
+      callback
+    );
+
+    document.addEventListener(
+      'visibilitychange',
+      function () {
+        if (
+          document.hidden
+        ) {
+          callback();
+        }
+      }
+    );
+  },
+
   onTouchEnd(callback) {
     canvas.addEventListener(
       'touchend',

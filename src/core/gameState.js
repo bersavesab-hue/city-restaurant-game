@@ -75,6 +75,12 @@ const INITIAL_STATE = {
 
     finance: {
       openingLoans: {}
+    },
+
+    restaurantOperations: {
+      version: '0.8.0',
+      sharedSupplierNetwork: null,
+      shops: {}
     }
   },
 
@@ -268,6 +274,23 @@ class GameState {
     }
 
     return business.finance;
+  }
+
+  getRestaurantOperations() {
+    const business =
+      this.data.business;
+
+    if (
+      !business.restaurantOperations
+    ) {
+      business.restaurantOperations = {
+        version: '0.8.0',
+        sharedSupplierNetwork: null,
+        shops: {}
+      };
+    }
+
+    return business.restaurantOperations;
   }
 
   getSimulation() {

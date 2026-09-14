@@ -27,6 +27,9 @@ const gameState =
 const timeSystem =
   require('./core/timeSystem.js');
 
+const saveSystem =
+  require('./core/saveSystem.js');
+
 const sceneManager =
   require('./core/sceneManager.js');
 
@@ -5812,6 +5815,13 @@ function gameLoop(
       : false;
 
   if (
+    simulationChanged
+  ) {
+    saveSystem
+      .autoSave();
+  }
+
+  if (
     advancedMinutes >
       0 ||
     simulationChanged ||
@@ -7390,8 +7400,29 @@ console.log('V35_TOP_HUD_POLISH loaded');
    启动
 ========================= */
 
+const restoredFromSave =
+  saveSystem.load();
+
 simulationSystem
   .initialize();
+
+if (
+  !restoredFromSave
+) {
+  saveSystem.save();
+}
+
+if (
+  api &&
+  typeof api.onHide ===
+    'function'
+) {
+  api.onHide(
+    function () {
+      saveSystem.save();
+    }
+  );
+}
 
 sceneManager
   .switchTo(
@@ -7407,5 +7438,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V35 顶部HUD精修版启动成功'
+  '城市餐饮经营小游戏 V0.8.0 经营接线第一阶段启动成功'
 );

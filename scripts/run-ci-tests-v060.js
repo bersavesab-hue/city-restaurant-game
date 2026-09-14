@@ -133,6 +133,7 @@ for (
     'tests/easterEggPackV100Src.test.js',
 
     'tests/operationCoreV070.test.js',
+    'tests/wiringStageV080.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {
