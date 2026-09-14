@@ -39,17 +39,50 @@ jobs:
             exit 1
           fi
 
+          if unzip -Z1 update.zip | grep -Eq '^\.github/workflows/'; then
+            echo "ERROR: update.zip 不允许修改 GitHub workflow"
+            exit 1
+          fi
+
+          if unzip -Z1 update.zip | grep -Eq '^package\.json$'; then
+            echo "ERROR: update.zip 不允许直接覆盖 package.json"
+            echo "版本修改必须通过 scripts/apply-update-patch.js 增量完成"
+            exit 1
+          fi
+
       - name: Apply update to workspace
         shell: bash
         run: |
           set -euo pipefail
 
-          unzip -o update.zip -x '.git/*' '.github/workflows/apply-update.yml'
+          unzip -o update.zip \
+            -x '.git/*' \
+            '.github/workflows/*' \
+            'package.json'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      - name: Apply incremental patch
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -f scripts/apply-update-patch.js ]; then
+            node scripts/apply-update-patch.js
+            rm -f scripts/apply-update-patch.js
+          else
+            echo "No incremental patch script."
+          fi
+
+      - name: Protect workflow files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git restore .github/workflows 2>/dev/null || true
 
       - name: Install JavaScript dependencies
         run: npm install
@@ -85,6 +118,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
           sdkmanager "platforms;android-34"
           sdkmanager "build-tools;34.0.0"
 
@@ -100,7 +134,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
           rm -f update.zip
+
+      - name: Final workflow protection
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git restore .github/workflows 2>/dev/null || true
 
       - name: Commit validated update
         shell: bash
@@ -111,6 +153,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add -A
+
+          git reset .github/workflows 2>/dev/null || true
 
           if git diff --cached --quiet; then
             echo "No file changes to commit."
