@@ -6513,9 +6513,14 @@ drawGoalBar = function () {
 
   drawText('◎', x + 15, y + 13.5, 12, '#FFD85C', '800', 'center');
   drawText('当前目标：', x + 28, y + 13.5, 7.1, '#FFD85C', '800');
-  drawText('开设餐厅', x + 83, y + 13.5, 7.2, '#FFFFFF', '800');
+  drawText(goal.title || '开设首店', x + 83, y + 13.5, 7.2, '#FFFFFF', '800');
 
-  const labels = ['选址', '装修', '试营业', '经营', '签约'];
+  // V083_DYNAMIC_GOAL_STEPS
+  const labels =
+    Array.isArray(goal.steps) &&
+    goal.steps.length === 5
+      ? goal.steps
+      : ['选址', '看铺', '谈判', '签约', '装修'];
   const currentIndex = Math.max(0, Math.min(labels.length - 1, Number(goal.current) || 0));
   const startX = x + 168;
   const usable = w - 198;
@@ -7482,5 +7487,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V0.8.1 真实营业循环启动成功'
+  '城市餐饮经营小游戏 V0.8.3 基础修复版启动成功'
 );

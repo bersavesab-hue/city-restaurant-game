@@ -167,7 +167,7 @@ function getRoot() {
       'object'
   ) {
     business.restaurantOperations = {
-      version: '0.8.1',
+      version: '0.8.3',
       sharedSupplierNetwork: null,
       shops: {}
     };
@@ -193,7 +193,7 @@ function getRoot() {
   }
 
   root.version =
-    '0.8.1';
+    '0.8.3';
 
   return root;
 }
@@ -255,7 +255,7 @@ function defaultRecipeIds() {
 
 function snapshotRuntime(runtime) {
   return {
-    version: '0.8.0',
+    version: '0.8.3',
     day:
       Number(
         runtime.day
@@ -473,6 +473,32 @@ function buildRuntime(
       todayOrders: 0,
       todayCustomers: 0
     };
+  }
+
+  runtime.simulation.unpaidOperatingPayables =
+    Math.max(
+      0,
+      Number(
+        runtime.simulation.unpaidOperatingPayables
+      ) || 0
+    );
+
+  runtime.simulation.operatingPayablesByType =
+    runtime.simulation.operatingPayablesByType &&
+    typeof runtime.simulation.operatingPayablesByType === 'object'
+      ? runtime.simulation.operatingPayablesByType
+      : {};
+
+  if (runtime.simulation.oldestPayableDay === undefined) {
+    runtime.simulation.oldestPayableDay = null;
+  }
+
+  if (runtime.simulation.payableAgeDays === undefined) {
+    runtime.simulation.payableAgeDays = 0;
+  }
+
+  if (runtime.simulation.lastPayableServiceMinute === undefined) {
+    runtime.simulation.lastPayableServiceMinute = null;
   }
 
   if (

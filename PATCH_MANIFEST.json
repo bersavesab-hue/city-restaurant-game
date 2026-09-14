@@ -1,27 +1,28 @@
 {
-  "version": "0.6.2",
-  "name": "CITY_RESTAURANT_DEVKIT_1_0",
-  "package": "CITY_RESTAURANT_DEVKIT_1_0",
-  "base_expected": "0.6.1",
-  "purpose": "统一开发体检、依赖分析、资源生命周期、发布预检和构建校验",
+  "version": "0.8.3",
+  "name": "FOUNDATION_FIXES_V083",
+  "package": "FOUNDATION_FIXES_V083",
+  "base_expected": "0.8.2",
+  "purpose": "修复存档频率、欠款闭环、统一客流、动态世界真实接线、营业时段、首页流程和版本卫生",
   "contains": [
-    "DevKit统一审计入口",
-    "更新包ZIP预检器",
-    "代码卫生与补丁堆叠检测",
-    "依赖与缺失资源检查",
-    "数据JSON完整性检查",
-    "测试发现器",
-    "资源体积报告",
-    "影响范围分析器",
-    "仓库快照器",
-    "Android JS构建一致性校验",
-    "资源生命周期与安全垃圾回收",
-    "动态备用资源池索引"
+    "20秒自动存档节流",
+    "经营应付账款分类与自动偿还",
+    "欠款逾期经营产能惩罚",
+    "商圈与门店统一需求口径",
+    "平台成本真实接线",
+    "合规成本真实接线",
+    "外卖需求真实接线",
+    "营销效率真实接线",
+    "口碑影响真实接线",
+    "检查风险真实接线",
+    "默认营业时间与跨午夜支持",
+    "首页动态目标流程",
+    "运行时版本统一到0.8.3",
+    "清理根目录错误工作流副本"
   ],
   "notes": [
-    "does not modify .github/workflows",
-    "unreferenced reserve assets are protected",
-    "unmanaged assets are protected by default",
-    "automatic GC only removes explicitly retired and fully safe assets"
+    "不覆盖 .github/workflows/apply-update.yml",
+    "补丁脚本幂等，可重复运行",
+    "NPC与竞品大型接线留到下一阶段"
   ]
 }

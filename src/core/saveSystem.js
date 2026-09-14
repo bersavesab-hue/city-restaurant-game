@@ -9,6 +9,11 @@ class SaveSystem {
     this.api =
       globalThis.GameRuntime &&
       globalThis.GameRuntime.api;
+
+    // V083_SAVE_THROTTLE
+    this.lastAutoSaveAt = 0;
+    this.autoSaveIntervalMs = 20000;
+    this.dirty = false;
   }
 
   /**
@@ -40,6 +45,9 @@ class SaveSystem {
           SAVE_KEY,
           saveData
         );
+
+        this.lastAutoSaveAt = Date.now();
+        this.dirty = false;
 
         console.log(
           '游戏保存成功'
@@ -188,9 +196,32 @@ class SaveSystem {
   }
 
   /**
-   * 自动保存
+   * 自动保存。高频模拟只标记脏状态，默认每20秒最多同步写一次。
+   * 切后台、重大交易仍可直接调用 save() 强制落盘。
    */
-  autoSave() {
+  autoSave(force) {
+    // V083_SAVE_THROTTLE_AUTO
+    this.dirty = true;
+
+    const now = Date.now();
+    const elapsed = now - Number(this.lastAutoSaveAt || 0);
+
+    if (
+      force !== true &&
+      this.lastAutoSaveAt > 0 &&
+      elapsed < this.autoSaveIntervalMs
+    ) {
+      return true;
+    }
+
+    return this.save();
+  }
+
+  flush() {
+    if (!this.dirty) {
+      return true;
+    }
+
     return this.save();
   }
 }

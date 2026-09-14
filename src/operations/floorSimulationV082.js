@@ -702,6 +702,49 @@ function enqueueArrival(
         }
       );
 
+  // V083_DYNAMIC_MODIFIERS
+  const deliveryDemandMultiplier =
+    clamp(
+      Number(
+        ctx.deliveryDemandMultiplier
+      ) || 1,
+      0.5,
+      1.8
+    );
+
+  if (
+    visit.channel === 'dine_in' &&
+    deliveryDemandMultiplier > 1 &&
+    runtime.rng.next() <
+      Math.min(
+        0.35,
+        (
+          deliveryDemandMultiplier -
+          1
+        ) *
+        0.45
+      )
+  ) {
+    visit.channel = 'delivery';
+  } else if (
+    visit.channel === 'delivery' &&
+    deliveryDemandMultiplier < 1 &&
+    runtime.rng.next() <
+      Math.min(
+        0.75,
+        (
+          1 -
+          deliveryDemandMultiplier
+        ) *
+        0.9
+      )
+  ) {
+    visit.channel =
+      runtime.rng.next() < 0.35
+        ? 'pickup'
+        : 'dine_in';
+  }
+
   floor.metrics
     .arrivedToday +=
     Math.max(
@@ -1779,7 +1822,7 @@ function settleEntry(
       'paid'
     );
 
-  const platformRate =
+  const basePlatformRate =
     order.channel ===
       'delivery'
       ? Number(
@@ -1789,6 +1832,16 @@ function settleEntry(
           0.18
         )
       : 0;
+
+  const platformRate =
+    basePlatformRate *
+    clamp(
+      Number(
+        ctx.platformCostMultiplier
+      ) || 1,
+      0.45,
+      1.8
+    );
 
   const settled =
     settlementEngine
@@ -1925,6 +1978,44 @@ function settleEntry(
           },
           runtime.rng
         );
+
+    const reputationMultiplier =
+      clamp(
+        Number(
+          ctx.reputationMultiplier
+        ) || 1,
+        0.5,
+        1.6
+      );
+
+    if (
+      retention.reviewStars !=
+      null
+    ) {
+      retention.reviewStars =
+        clamp(
+          3 +
+          (
+            Number(
+              retention.reviewStars
+            ) -
+            3
+          ) *
+          reputationMultiplier,
+          1,
+          5
+        );
+    }
+
+    retention.wordOfMouth =
+      clamp(
+        Number(
+          retention.wordOfMouth
+        ) *
+        reputationMultiplier,
+        -1,
+        1
+      );
 
     retentionEngine
       .updateShopReputation(

@@ -1518,6 +1518,20 @@ class StoreScene {
         live.stockoutsToday,
       mistakesToday:
         live.mistakesToday,
+      unpaidOperatingPayables:
+        runtime &&
+        runtime.simulation
+          ? Number(
+              runtime.simulation.unpaidOperatingPayables
+            ) || 0
+          : 0,
+      payableAgeDays:
+        runtime &&
+        runtime.simulation
+          ? Number(
+              runtime.simulation.payableAgeDays
+            ) || 0
+          : 0,
       realOperation:
         true
     };
@@ -3989,7 +4003,17 @@ class StoreScene {
     }
 
     const warning =
-      snap.walkawaysToday > 0
+      snap.unpaidOperatingPayables > 0
+        ? '待付经营款 ' +
+          compactMoney(
+            snap.unpaidOperatingPayables
+          ) +
+          (
+            snap.payableAgeDays > 0
+              ? ' · 已逾期' + snap.payableAgeDays + '天'
+              : ''
+          )
+        : snap.walkawaysToday > 0
         ? '已有' +
           snap.walkawaysToday +
           '桌顾客等位离开'

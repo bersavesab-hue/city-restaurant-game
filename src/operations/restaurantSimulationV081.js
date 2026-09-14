@@ -9,6 +9,9 @@ const simulationSystem =
 const citySystem =
   require('../city/citySystem.js');
 
+const demandSystem =
+  require('../city/demandSystem.js');
+
 const openingPrepSystem =
   require('../opening/openingPrepSystem.js');
 
@@ -181,6 +184,53 @@ function dailyPayroll(
     : 0;
 }
 
+function businessHours(shop) {
+  // V083_UNIFIED_DEMAND
+  const raw =
+    shop &&
+    shop.businessHours &&
+    typeof shop.businessHours === 'object'
+      ? shop.businessHours
+      : {};
+
+  const openHour =
+    Number.isFinite(Number(raw.openHour))
+      ? Number(raw.openHour)
+      : Number.isFinite(Number(shop && shop.openHour))
+        ? Number(shop.openHour)
+        : 6;
+
+  const closeHour =
+    Number.isFinite(Number(raw.closeHour))
+      ? Number(raw.closeHour)
+      : Number.isFinite(Number(shop && shop.closeHour))
+        ? Number(shop.closeHour)
+        : 23;
+
+  return {
+    openHour: clamp(openHour, 0, 24),
+    closeHour: clamp(closeHour, 0, 24)
+  };
+}
+
+function isWithinBusinessHours(shop, time) {
+  const hours = businessHours(shop);
+  const t = time || gameState.getTime();
+  const value =
+    Number(t.hour || 0) +
+    Number(t.minute || 0) / 60;
+
+  if (hours.openHour === hours.closeHour) {
+    return true;
+  }
+
+  if (hours.closeHour > hours.openHour) {
+    return value >= hours.openHour && value < hours.closeHour;
+  }
+
+  return value >= hours.openHour || value < hours.closeHour;
+}
+
 function expectedArrivalsPerMinute(
   shop,
   runtime
@@ -198,6 +248,10 @@ function expectedArrivalsPerMinute(
   const time =
     gameState.getTime();
 
+  if (!isWithinBusinessHours(shop, time)) {
+    return 0;
+  }
+
   const period =
     mealPeriod(
       Number(
@@ -206,11 +260,18 @@ function expectedArrivalsPerMinute(
       0
     );
 
-  const dailyDemand =
+  const demandBreakdown =
+    demandSystem
+      .getDemandBreakdown(
+        shop.districtId
+      );
+
+  const periodDemand =
     Math.max(
       0,
       Number(
-        district.baseDemand
+        demandBreakdown &&
+        demandBreakdown.total
       ) ||
       0
     );
@@ -224,20 +285,6 @@ function expectedArrivalsPerMinute(
       1
     );
 
-  const periodShare =
-    district.mealDemand &&
-    Number(
-      district.mealDemand[
-        period
-      ]
-    ) ||
-    (
-      period ===
-      'night'
-        ? 0.08
-        : 0.2
-    );
-
   const periodMinutes =
     PERIOD_MINUTES[
       period
@@ -245,7 +292,7 @@ function expectedArrivalsPerMinute(
     240;
 
   const averageRestaurantDemand =
-    dailyDemand /
+    periodDemand /
     restaurants;
 
   const rating =
@@ -277,35 +324,6 @@ function expectedArrivalsPerMinute(
     awareness /
       500;
 
-  const marketingFactor =
-    marketingEngine
-      .demandMultiplier(
-        runtime.campaigns ||
-        []
-      );
-
-  const coverage =
-    staffCoverage(
-      shop
-    );
-
-  const weather =
-    gameState
-      .getWorld()
-      .weather;
-
-  const weatherFactor =
-    weather ===
-      'rain'
-      ? 0.94
-      : weather ===
-          'storm'
-        ? 0.78
-        : weather ===
-            'hot'
-          ? 0.96
-          : 1;
-
   const worldModifiers =
     dynamicWorldSystem
       .getModifiers(
@@ -316,6 +334,36 @@ function expectedArrivalsPerMinute(
             shop.id
         }
       );
+
+  const rawMarketingFactor =
+    marketingEngine
+      .demandMultiplier(
+        runtime.campaigns ||
+        []
+      );
+
+  const marketingEfficiency =
+    clamp(
+      Number(
+        worldModifiers
+          .marketingEfficiencyMultiplier
+      ) || 1,
+      0.45,
+      1.75
+    );
+
+  const marketingFactor =
+    1 +
+    (
+      rawMarketingFactor -
+      1
+    ) *
+    marketingEfficiency;
+
+  const coverage =
+    staffCoverage(
+      shop
+    );
 
   const dynamicDemandFactor =
     Number(
@@ -348,8 +396,7 @@ function expectedArrivalsPerMinute(
 
   return Math.max(
     0,
-    averageRestaurantDemand *
-      periodShare /
+    averageRestaurantDemand /
       periodMinutes *
       ratingFactor *
       brandFactor *
@@ -360,7 +407,6 @@ function expectedArrivalsPerMinute(
         coverage *
           0.3
       ) *
-      weatherFactor *
       dynamicDemandFactor *
       nightFactor
   );
@@ -418,9 +464,33 @@ function chooseCustomer(
   return profile;
 }
 
+function ensurePayableState(runtime) {
+  // V083_PAYABLES
+  runtime.simulation =
+    runtime.simulation ||
+    {};
+
+  runtime.simulation.unpaidOperatingPayables =
+    Math.max(
+      0,
+      Number(
+        runtime.simulation.unpaidOperatingPayables
+      ) || 0
+    );
+
+  runtime.simulation.operatingPayablesByType =
+    runtime.simulation.operatingPayablesByType &&
+    typeof runtime.simulation.operatingPayablesByType === 'object'
+      ? runtime.simulation.operatingPayablesByType
+      : {};
+
+  return runtime.simulation;
+}
+
 function spendOperatingCash(
   amount,
-  runtime
+  runtime,
+  category='other'
 ) {
   const value =
     Math.max(
@@ -440,6 +510,11 @@ function spendOperatingCash(
       unpaid: 0
     };
   }
+
+  const sim =
+    ensurePayableState(
+      runtime
+    );
 
   const player =
     gameState
@@ -475,23 +550,256 @@ function spendOperatingCash(
     unpaid >
     0
   ) {
-    runtime.simulation
-      .unpaidOperatingPayables =
+    sim.unpaidOperatingPayables +=
+      unpaid;
+
+    sim.operatingPayablesByType[category] =
       (
         Number(
-          runtime
-            .simulation
-            .unpaidOperatingPayables
-        ) ||
-        0
+          sim.operatingPayablesByType[category]
+        ) || 0
       ) +
       unpaid;
+
+    if (
+      sim.oldestPayableDay ==
+      null
+    ) {
+      sim.oldestPayableDay =
+        simulationSystem
+          .getDayOrdinal(
+            gameState.getTime()
+          );
+    }
   }
 
   return {
     paid,
     unpaid
   };
+}
+
+function serviceOperatingPayables(
+  runtime
+) {
+  const sim =
+    ensurePayableState(
+      runtime
+    );
+
+  const debt =
+    Math.max(
+      0,
+      Number(
+        sim.unpaidOperatingPayables
+      ) || 0
+    );
+
+  const day =
+    simulationSystem
+      .getDayOrdinal(
+        gameState.getTime()
+      );
+
+  if (
+    debt <=
+    0.01
+  ) {
+    sim.unpaidOperatingPayables = 0;
+    sim.operatingPayablesByType = {};
+    sim.oldestPayableDay = null;
+    sim.payableAgeDays = 0;
+    return { paid:0, remaining:0, ageDays:0 };
+  }
+
+  if (
+    sim.oldestPayableDay ==
+    null
+  ) {
+    sim.oldestPayableDay =
+      day;
+  }
+
+  sim.payableAgeDays =
+    Math.max(
+      0,
+      day -
+      Number(
+        sim.oldestPayableDay
+      )
+    );
+
+  const now =
+    absoluteMinute();
+
+  if (
+    Number.isFinite(
+      Number(
+        sim.lastPayableServiceMinute
+      )
+    ) &&
+    now -
+      Number(
+        sim.lastPayableServiceMinute
+      ) <
+      60
+  ) {
+    return {
+      paid:0,
+      remaining:debt,
+      ageDays:sim.payableAgeDays
+    };
+  }
+
+  sim.lastPayableServiceMinute =
+    now;
+
+  const cash =
+    Number(
+      gameState
+        .getPlayer()
+        .cash
+    ) || 0;
+
+  const reserve = 1000;
+  const available =
+    Math.max(
+      0,
+      cash -
+      reserve
+    );
+
+  const payment =
+    Math.min(
+      debt,
+      available *
+      0.6
+    );
+
+  if (
+    payment <=
+    0
+  ) {
+    return {
+      paid:0,
+      remaining:debt,
+      ageDays:sim.payableAgeDays
+    };
+  }
+
+  gameState
+    .spendCash(
+      payment
+    );
+
+  let remainingPayment =
+    payment;
+
+  const priority = [
+    'labor',
+    'utilities',
+    'rent',
+    'compliance',
+    'marketing',
+    'other'
+  ];
+
+  for (
+    const key
+    of priority
+  ) {
+    const amount =
+      Math.max(
+        0,
+        Number(
+          sim.operatingPayablesByType[key]
+        ) || 0
+      );
+
+    if (
+      amount <=
+        0 ||
+      remainingPayment <=
+        0
+    ) {
+      continue;
+    }
+
+    const used =
+      Math.min(
+        amount,
+        remainingPayment
+      );
+
+    sim.operatingPayablesByType[key] =
+      Math.max(
+        0,
+        amount -
+        used
+      );
+
+    remainingPayment -=
+      used;
+  }
+
+  sim.unpaidOperatingPayables =
+    Math.max(
+      0,
+      debt -
+      payment
+    );
+
+  if (
+    sim.unpaidOperatingPayables <=
+    0.01
+  ) {
+    sim.unpaidOperatingPayables = 0;
+    sim.operatingPayablesByType = {};
+    sim.oldestPayableDay = null;
+    sim.payableAgeDays = 0;
+  }
+
+  return {
+    paid:payment,
+    remaining:
+      sim.unpaidOperatingPayables,
+    ageDays:
+      sim.payableAgeDays
+  };
+}
+
+function operatingRestriction(
+  runtime
+) {
+  const sim =
+    ensurePayableState(
+      runtime
+    );
+
+  const debt =
+    Number(
+      sim.unpaidOperatingPayables
+    ) || 0;
+
+  if (
+    debt <=
+    0
+  ) {
+    return 1;
+  }
+
+  const age =
+    Math.max(
+      0,
+      Number(
+        sim.payableAgeDays
+      ) || 0
+    );
+
+  if (age >= 7) return 0.55;
+  if (age >= 3) return 0.72;
+  if (age >= 1) return 0.88;
+  return 0.96;
 }
 
 function accrueFixedCosts(
@@ -517,7 +825,8 @@ function accrueFixedCosts(
       rent: 0,
       labor: 0,
       utilities: 0,
-      marketing: 0
+      marketing: 0,
+      compliance: 0
     };
   }
 
@@ -617,6 +926,20 @@ function accrueFixedCosts(
         0
       );
 
+  const compliance =
+    (
+      10 +
+      area *
+        0.08
+    ) *
+    ratio *
+    (
+      Number(
+        worldModifiers
+          .complianceCostMultiplier
+      ) || 1
+    );
+
   settlementEngine
     .addFixedCosts(
       runtime.ledger,
@@ -624,23 +947,47 @@ function accrueFixedCosts(
         rent,
         labor,
         utilities,
-        marketing
+        marketing,
+        compliance
       }
     );
 
   spendOperatingCash(
-    rent +
-      labor +
-      utilities +
-      marketing,
-    runtime
+    rent,
+    runtime,
+    'rent'
+  );
+
+  spendOperatingCash(
+    labor,
+    runtime,
+    'labor'
+  );
+
+  spendOperatingCash(
+    utilities,
+    runtime,
+    'utilities'
+  );
+
+  spendOperatingCash(
+    marketing,
+    runtime,
+    'marketing'
+  );
+
+  spendOperatingCash(
+    compliance,
+    runtime,
+    'compliance'
   );
 
   return {
     rent,
     labor,
     utilities,
-    marketing
+    marketing,
+    compliance
   };
 }
 
@@ -802,6 +1149,10 @@ function simulateShop(
       currentDay
     );
 
+  serviceOperatingPayables(
+    runtime
+  );
+
   accrueFixedCosts(
     shop,
     runtime,
@@ -899,9 +1250,41 @@ function simulateShop(
               .getWorld()
               .weather,
           capacityMultiplier:
+            (
+              Number(
+                worldModifiers
+                  .capacityMultiplier
+              ) || 1
+            ) *
+            operatingRestriction(
+              runtime
+            ) *
+            clamp(
+              1 -
+              (
+                Number(
+                  worldModifiers
+                    .inspectionRisk
+                ) || 0
+              ) *
+              0.22,
+              0.72,
+              1
+            ),
+          deliveryDemandMultiplier:
             Number(
               worldModifiers
-                .capacityMultiplier
+                .deliveryDemandMultiplier
+            ) || 1,
+          platformCostMultiplier:
+            Number(
+              worldModifiers
+                .platformCostMultiplier
+            ) || 1,
+          reputationMultiplier:
+            Number(
+              worldModifiers
+                .reputationMultiplier
             ) || 1,
           seats:
             Number(
@@ -993,9 +1376,13 @@ module.exports = {
   PERIOD_MINUTES,
   mealPeriod,
   absoluteMinute,
+  businessHours,
+  isWithinBusinessHours,
   staffCoverage,
   expectedArrivalsPerMinute,
   accrueFixedCosts,
+  serviceOperatingPayables,
+  operatingRestriction,
   maybeRestock,
   simulateShop,
   update

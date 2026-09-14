@@ -96,7 +96,7 @@ const INITIAL_STATE = {
     },
 
     restaurantOperations: {
-      version: '0.8.0',
+      version: '0.8.3',
       sharedSupplierNetwork: null,
       shops: {}
     }
@@ -302,7 +302,7 @@ class GameState {
       !business.restaurantOperations
     ) {
       business.restaurantOperations = {
-        version: '0.8.0',
+        version: '0.8.3',
         sharedSupplierNetwork: null,
         shops: {}
       };
