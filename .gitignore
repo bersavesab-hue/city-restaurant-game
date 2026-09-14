@@ -6,6 +6,8 @@ npm-debug.log*
 player-lab-output/
 reports/player-lab/latest/
 reports/project-health/
+reports/resource-lifecycle/
+reports/devkit/
 
 # Android / Gradle generated files
 android/.gradle/

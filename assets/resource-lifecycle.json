@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "defaultStatus": "protected",
+  "description": "未登记资源默认保护；无静态引用不等于可删除。",
+  "policies": [
+    {
+      "prefix": "assets/images/runtime/",
+      "status": "active",
+      "reason": "当前运行时资源"
+    },
+    {
+      "prefix": "assets/images/map/",
+      "status": "active",
+      "reason": "当前地图资源"
+    },
+    {
+      "prefix": "assets/images/target_home/",
+      "status": "active",
+      "reason": "当前主页资源"
+    },
+    {
+      "prefix": "assets/images/v29/",
+      "status": "active",
+      "reason": "当前导航/指标图标"
+    },
+    {
+      "prefix": "assets/images/v32_home/",
+      "status": "active",
+      "reason": "当前主页视觉资源"
+    },
+    {
+      "prefix": "assets/images/v33_nav/",
+      "status": "active",
+      "reason": "当前全局导航资源"
+    },
+    {
+      "prefix": "assets/images/v43_reference_icons/",
+      "status": "active",
+      "reason": "当前房源页视觉资源"
+    },
+    {
+      "prefix": "assets/images/v44_glossy/",
+      "status": "active",
+      "reason": "当前高光图标资源"
+    },
+    {
+      "prefix": "assets/images/library_store/",
+      "status": "reserve",
+      "reason": "门店/装修备用与动态素材库"
+    },
+    {
+      "prefix": "assets/images/split/",
+      "status": "reserve",
+      "reason": "已拆分备用素材池"
+    },
+    {
+      "prefix": "assets/images/ui/",
+      "status": "shared",
+      "reason": "跨模块共享UI资源"
+    },
+    {
+      "prefix": "assets/images/premium/",
+      "status": "shared",
+      "reason": "跨页面共享视觉资源"
+    },
+    {
+      "prefix": "assets/images/generated/",
+      "status": "archive",
+      "reason": "设计/生成归档，默认保留"
+    }
+  ],
+  "dynamicPools": [
+    {
+      "id": "store_library",
+      "label": "门店动态素材池",
+      "prefixes": [
+        "assets/images/library_store/listings/",
+        "assets/images/library_store/store/"
+      ]
+    },
+    {
+      "id": "renovation_library",
+      "label": "装修动态素材池",
+      "prefixes": [
+        "assets/images/library_store/renovation/",
+        "assets/images/split/renovation/"
+      ]
+    },
+    {
+      "id": "ui_library",
+      "label": "通用UI备用素材池",
+      "prefixes": [
+        "assets/images/library_store/ui/",
+        "assets/images/split/ui/"
+      ]
+    },
+    {
+      "id": "status_library",
+      "label": "状态标识备用素材池",
+      "prefixes": [
+        "assets/images/library_store/status/"
+      ]
+    }
+  ],
+  "retired": [],
+  "rules": {
+    "unmanagedDefaultProtected": true,
+    "requireReplacementBeforeDelete": true,
+    "requireSaveSafeBeforeDelete": true,
+    "dynamicPoolRequiresExplicitRetire": true,
+    "deleteOnlyAfterReferenceScan": true
+  }
+}

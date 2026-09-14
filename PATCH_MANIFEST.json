@@ -1,24 +1,27 @@
 {
-  "version": "0.6.1",
-  "name": "CLEAN_BASE_V061",
-  "package": "CLEAN_BASE_V061",
-  "base_expected": "V48.4",
-  "purpose": "remove obsolete patch layers and recovery-era build behavior",
+  "version": "0.6.2",
+  "name": "CITY_RESTAURANT_DEVKIT_1_0",
+  "package": "CITY_RESTAURANT_DEVKIT_1_0",
+  "base_expected": "0.6.1",
+  "purpose": "统一开发体检、依赖分析、资源生命周期、发布预检和构建校验",
   "contains": [
-    "renovation floorGeometry runtime fix",
-    "V21-V28 homepage overlay chain removal",
-    "legacy apply-script removal",
-    "recovery-v052 retirement",
-    "hard-fail Android JS bundler",
-    "current functional CI runner",
-    "stale update .zip removal",
-    "obsolete V21/V24 asset removal",
-    "legacy shops without frontage default to standard geometry"
+    "DevKit统一审计入口",
+    "更新包ZIP预检器",
+    "代码卫生与补丁堆叠检测",
+    "依赖与缺失资源检查",
+    "数据JSON完整性检查",
+    "测试发现器",
+    "资源体积报告",
+    "影响范围分析器",
+    "仓库快照器",
+    "Android JS构建一致性校验",
+    "资源生命周期与安全垃圾回收",
+    "动态备用资源池索引"
   ],
   "notes": [
     "does not modify .github/workflows",
-    "keeps V29/V32/V33/V34/V35 current homepage layers",
-    "keeps V43/V44/library_store assets that are still referenced",
-    "git history remains the archive for removed patch notes and scripts"
+    "unreferenced reserve assets are protected",
+    "unmanaged assets are protected by default",
+    "automatic GC only removes explicitly retired and fully safe assets"
   ]
 }

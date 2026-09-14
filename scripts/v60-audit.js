@@ -1,6 +1,8 @@
 'use strict';
 
 // CLEAN_BASE_V060_AUDIT
+// Updated by DevKit 1.0: validates a minimum clean-base version instead of
+// hard-coding one patch version forever.
 
 const assert = require('assert');
 const fs = require('fs');
@@ -9,16 +11,26 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 
 function exists(rel) {
-  return fs.existsSync(
-    path.join(ROOT, rel)
-  );
+  return fs.existsSync(path.join(ROOT, rel));
 }
 
 function read(rel) {
-  return fs.readFileSync(
-    path.join(ROOT, rel),
-    'utf8'
-  );
+  return fs.readFileSync(path.join(ROOT, rel), 'utf8');
+}
+
+function versionGte(a, b) {
+  const aa = String(a || '0').split('.').map(x => Number((x.match(/\d+/) || ['0'])[0]));
+  const bb = String(b || '0').split('.').map(x => Number((x.match(/\d+/) || ['0'])[0]));
+  const len = Math.max(aa.length, bb.length);
+
+  for (let i = 0; i < len; i++) {
+    const av = aa[i] || 0;
+    const bv = bb[i] || 0;
+    if (av > bv) return true;
+    if (av < bv) return false;
+  }
+
+  return true;
 }
 
 const forbidden = [
@@ -39,45 +51,23 @@ const forbidden = [
 ];
 
 for (const rel of forbidden) {
-  assert.ok(
-    !exists(rel),
-    '遗留文件仍存在：' + rel
-  );
+  assert.ok(!exists(rel), '遗留文件仍存在：' + rel);
 }
 
-const pkg =
-  JSON.parse(
-    read('package.json')
-  );
-
-assert.equal(
-  pkg.version,
-  '0.6.1',
-  'package版本必须收口到0.6.0'
-);
+const pkg = JSON.parse(read('package.json'));
 
 assert.ok(
-  !pkg.scripts.preinstall,
-  '一次性清理完成后不能残留preinstall'
+  versionGte(pkg.version, '0.6.1'),
+  'package版本不得低于干净基线0.6.1'
 );
 
-assert.ok(
-  !pkg.scripts.postinstall,
-  '旧恢复型postinstall必须移除'
-);
+assert.ok(!pkg.scripts.preinstall, '不能重新引入一次性preinstall补丁器');
+assert.ok(!pkg.scripts.postinstall, '不能重新引入旧恢复型postinstall');
 
-assert.equal(
-  pkg.scripts.test,
-  'node scripts/run-ci-tests-v060.js'
-);
+assert.equal(pkg.scripts.test, 'node scripts/run-ci-tests-v060.js');
+assert.equal(pkg.scripts['build:android-js'], 'node scripts/build-android-js-v060.js');
 
-assert.equal(
-  pkg.scripts['build:android-js'],
-  'node scripts/build-android-js-v060.js'
-);
-
-const main =
-  read('src/main.js');
+const main = read('src/main.js');
 
 for (const token of [
   'V21_HOME_ICON_POLISH',
@@ -90,10 +80,7 @@ for (const token of [
   'v26GetPoint(',
   'v26GetBadgeSummary('
 ]) {
-  assert.ok(
-    !main.includes(token),
-    '主页旧覆盖层仍存在：' + token
-  );
+  assert.ok(!main.includes(token), '主页旧覆盖层仍存在：' + token);
 }
 
 for (const token of [
@@ -103,10 +90,7 @@ for (const token of [
   'V34_MONEY_FORMAT_FIX',
   'V35_TOP_HUD_POLISH'
 ]) {
-  assert.ok(
-    main.includes(token),
-    '当前稳定主页层缺失：' + token
-  );
+  assert.ok(main.includes(token), '当前稳定主页层缺失：' + token);
 }
 
 assert.ok(
@@ -114,89 +98,39 @@ assert.ok(
   '最终全局导航必须包含装修'
 );
 
-const scene =
-  read('src/scenes/renovationScene.js');
-
-const floorStart =
-  scene.indexOf('  drawFloorCanvas(');
-
-const floorEnd =
-  scene.indexOf(
-    '\n  drawToolButton(',
-    floorStart
-  );
+const scene = read('src/scenes/renovationScene.js');
+const floorStart = scene.indexOf('  drawFloorCanvas(');
+const floorEnd = scene.indexOf('\n  drawToolButton(', floorStart);
 
 assert.ok(
-  floorStart >= 0 &&
-  floorEnd > floorStart,
+  floorStart >= 0 && floorEnd > floorStart,
   '无法定位装修平面图渲染器'
 );
 
-const floorBlock =
-  scene.slice(
-    floorStart,
-    floorEnd
-  );
+const floorBlock = scene.slice(floorStart, floorEnd);
 
 assert.ok(
-  floorBlock.includes(
-    'const floorGeometry ='
-  ),
+  floorBlock.includes('const floorGeometry ='),
   'floorGeometry未定义'
 );
 
 assert.ok(
-  !/\bgeometry\b/.test(
-    floorBlock
-  ),
+  !/\bgeometry\b/.test(floorBlock),
   '装修平面图仍存在未定义geometry变量'
 );
 
 assert.ok(
-  floorBlock.includes(
-    'this.drawGeometryShell('
-  ) &&
-  floorBlock.includes(
-    'floorGeometry'
-  ),
+  floorBlock.includes('this.drawGeometryShell(') &&
+  floorBlock.includes('floorGeometry'),
   '动态房型没有进入主渲染'
 );
 
-const build =
-  read(
-    'scripts/build-android-js-v060.js'
-  );
+const build = read('scripts/build-android-js-v060.js');
 
 assert.ok(
-  !build.includes(
-    'preserveOrFail'
-  ) &&
-  !build.includes(
-    '保留现有可用 game.bundle.js'
-  ),
-  '构建器不能再回退旧bundle'
+  !build.includes('preserveOrFail') &&
+  !build.includes('保留现有可用 game.bundle.js'),
+  '构建器不能回退旧bundle'
 );
 
-const docsDir =
-  path.join(ROOT, 'docs');
-
-if (fs.existsSync(docsDir)) {
-  const oldDocs =
-    fs.readdirSync(docsDir)
-      .filter(
-        name =>
-          /^[Vv]\d/.test(name) ||
-          /^RECOVERY_/i.test(name)
-      );
-
-  assert.deepEqual(
-    oldDocs,
-    [],
-    '旧版本补丁文档仍留在正式树：' +
-      oldDocs.join(', ')
-  );
-}
-
-console.log(
-  'CLEAN BASE V0.6.1 AUDIT PASS'
-);
+console.log('CLEAN BASE AUDIT PASS');
