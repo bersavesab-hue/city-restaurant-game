@@ -12,6 +12,17 @@ const renovationSystem =
 const config =
   require('./openingConfig.js');
 
+const personRules =
+  require('../person/personRulesV10.js');
+
+const personPack =
+  require('../person/personPackV10.js');
+
+const { SeededRng } =
+  require('../foundation/rng.js');
+// V084_PERSON_CANDIDATES
+
+
 function clone(value) {
   return JSON.parse(
     JSON.stringify(value)
@@ -1322,88 +1333,193 @@ class OpeningPrepSystem {
     index,
     day
   ) {
+    // V084_PERSON_CANDIDATE_GENERATOR
     const seed =
       gameState
         .getSimulation()
         .seed ||
       1;
 
-    const base =
-      shopId +
-      ':' +
+    const rng =
+      new SeededRng(
+        'candidate:' +
+        seed +
+        ':' +
+        shopId +
+        ':' +
+        role.id +
+        ':' +
+        day +
+        ':' +
+        index
+      );
+
+    const profile =
+      personRules
+        .createPersonProfile(
+          rng,
+          {
+            age:
+              rng.int(
+                20,
+                49
+              )
+          }
+        );
+
+    profile.id =
+      'person_candidate_' +
       role.id +
-      ':' +
+      '_' +
       day +
-      ':' +
-      index +
-      ':' +
-      seed;
+      '_' +
+      index;
 
-    const r1 =
-      hashFloat(
-        base +
-        ':a'
+    const roleMap = {
+      manager:'manager',
+      chef:'chef',
+      server:'waiter',
+      cashier:'cashier'
+    };
+
+    const npcRoleId =
+      roleMap[
+        role.id
+      ] ||
+      'waiter';
+
+    personRules
+      .assignRole(
+        profile,
+        npcRoleId,
+        {
+          allowLowFit:true,
+          employerId:null
+        }
       );
 
-    const r2 =
-      hashFloat(
-        base +
-        ':b'
-      );
+    const roleDef =
+      personPack
+        .NPC_ROLES
+        .find(
+          item =>
+            item.id ===
+            npcRoleId
+        );
 
-    const r3 =
-      hashFloat(
-        base +
-        ':c'
-      );
+    const fit =
+      personRules
+        .roleFit(
+          profile,
+          roleDef
+        );
 
-    const surname =
-      config.surnames[
-        Math.floor(
-          r1 *
-          config.surnames.length
-        ) %
-        config.surnames.length
-      ];
+    const skillKeys = {
+      manager:[
+        'management',
+        'operations',
+        'leadership'
+      ],
+      chef:[
+        'cooking',
+        'prep',
+        'foodSafety'
+      ],
+      server:[
+        'service',
+        'sales'
+      ],
+      cashier:[
+        'cashier',
+        'service',
+        'digital'
+      ]
+    };
 
-    const given =
-      config.givenNames[
-        Math.floor(
-          r2 *
-          config.givenNames.length
-        ) %
-        config.givenNames.length
+    const keys =
+      skillKeys[
+        role.id
+      ] ||
+      [
+        'operations'
       ];
 
     const skill =
       Math.round(
-        48 +
-        r1 *
-        48
+        keys.reduce(
+          (
+            sum,
+            key
+          ) =>
+            sum +
+            (
+              Number(
+                profile.skills[
+                  key
+                ]
+              ) ||
+              0
+            ),
+          0
+        ) /
+        keys.length
       );
 
     const stability =
       Math.round(
-        45 +
-        r2 *
-        52
+        (
+          Number(
+            profile
+              .personality
+              .stability
+          ) ||
+          50
+        ) *
+          0.62 +
+        (
+          Number(
+            profile
+              .personality
+              .conscientiousness
+          ) ||
+          50
+        ) *
+          0.38
       );
 
     const experience =
-      Math.round(
-        r3 *
-        10
+      Math.max(
+        0,
+        Math.min(
+          16,
+          Math.round(
+            (
+              profile.age -
+              18
+            ) *
+            (
+              0.18 +
+              rng.next() *
+              0.34
+            )
+          )
+        )
       );
 
     const wage =
       Math.round(
         role.baseWage *
         (
-          0.84 +
+          0.82 +
           skill /
-          250 +
+            260 +
           experience /
-          100
+            120 +
+          (
+            fit.score ||
+            50
+          ) /
+            500
         ) /
         100
       ) *
@@ -1417,42 +1533,47 @@ class OpeningPrepSystem {
         day +
         '_' +
         index,
-
       roleId:
         role.id,
-
       roleName:
         role.name,
-
       name:
-        surname +
-        given,
-
+        profile.name,
       age:
-        20 +
-        Math.floor(
-          r3 *
-          25
-        ),
-
+        profile.age,
       skill,
       stability,
       experience,
       wage,
-
       score:
         Math.round(
+          (
+            fit.score ||
+            skill
+          ) *
+            0.45 +
           skill *
-          0.55 +
+            0.30 +
           stability *
-          0.30 +
+            0.15 +
           Math.min(
             100,
             experience *
-            10
+              8
           ) *
-          0.15
-        )
+            0.10
+        ),
+      personalityLabels:
+        (
+          profile
+            .personalityLabels ||
+          []
+        ).slice(
+          0,
+          3
+        ),
+      personProfile:
+        profile
     };
   }
 
@@ -1573,6 +1694,93 @@ class OpeningPrepSystem {
         0
       );
 
+    // V084_STAFF_OVERVIEW
+    const people =
+      state.hired.map(
+        staff =>
+          staff.live ||
+          staff.personProfile &&
+          staff.personProfile.state ||
+          {}
+      );
+
+    const peopleSummary =
+      people.length
+        ? {
+            count:
+              people.length,
+            avgMood:
+              Math.round(
+                people.reduce(
+                  (
+                    sum,
+                    row
+                  ) =>
+                    sum +
+                    (
+                      Number(
+                        row.mood
+                      ) ||
+                      65
+                    ),
+                  0
+                ) /
+                people.length
+              ),
+            avgStress:
+              Math.round(
+                people.reduce(
+                  (
+                    sum,
+                    row
+                  ) =>
+                    sum +
+                    (
+                      Number(
+                        row.stress
+                      ) ||
+                      25
+                    ),
+                  0
+                ) /
+                people.length
+              ),
+            avgLoyalty:
+              Math.round(
+                people.reduce(
+                  (
+                    sum,
+                    row
+                  ) =>
+                    sum +
+                    (
+                      Number(
+                        row.loyalty
+                      ) ||
+                      55
+                    ),
+                  0
+                ) /
+                people.length
+              ),
+            highTurnoverRisk:
+              people.filter(
+                row =>
+                  Number(
+                    row.turnoverRisk
+                  ) >=
+                  68
+              ).length
+          }
+        : {
+            count:0,
+            avgMood:0,
+            avgStress:0,
+            avgLoyalty:0,
+            highTurnoverRisk:0
+          };
+
+
     return {
       required,
       current,
@@ -1585,6 +1793,7 @@ class OpeningPrepSystem {
           state.candidates
         ),
       payroll,
+      peopleSummary,
       coverage:
         currentTotal /
         Math.max(
@@ -1643,16 +1852,42 @@ class OpeningPrepSystem {
       };
     }
 
+    // V084_HIRE_PERSON_ID
     state.hired.push({
-      id:
-        'staff_' +
-        candidate.id,
       ...clone(
         candidate
       ),
+      id:
+        'staff_' +
+        candidate.id,
+      personId:
+        candidate
+          .personProfile &&
+        candidate
+          .personProfile
+          .id ||
+        candidate.id,
       hiredDay:
         this.getCurrentDay(),
-      signOnCost
+      signOnCost,
+      live:
+        candidate
+          .personProfile &&
+        candidate
+          .personProfile
+          .state
+          ? {
+              ...clone(
+                candidate
+                  .personProfile
+                  .state
+              ),
+              turnoverRisk:0,
+              entrepreneurship:0,
+              lastUpdatedDay:
+                this.getCurrentDay()
+            }
+          : null
     });
 
     state.candidates =

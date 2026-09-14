@@ -33,6 +33,11 @@ const marketingEngine =
 const dynamicWorldSystem =
   require('../world/dynamicWorldSystemV0815.js');
 
+const liveWorldSystem =
+  require('../world/liveWorldSystemV084.js');
+// V084_RESTAURANT_LIVE_WORLD
+
+
 const floorSimulation =
   require('./floorSimulationV082.js');
 
@@ -115,6 +120,7 @@ function absoluteMinute() {
 function staffCoverage(
   shop
 ) {
+  // V084_STAFF_CAPACITY
   try {
     const readiness =
       openingPrepSystem
@@ -122,14 +128,34 @@ function staffCoverage(
           shop.id
         );
 
+    const base =
+      clamp(
+        readiness &&
+        readiness.staffing
+          ? readiness
+              .staffing
+              .coverage
+          : 0.85,
+        0.3,
+        1.2
+      );
+
+    const people =
+      liveWorldSystem
+        .getStaffModifier(
+          shop.id
+        );
+
     return clamp(
-      readiness &&
-      readiness.staffing
-        ? readiness
-            .staffing
-            .coverage
-        : 0.85,
-      0.3,
+      base *
+      (
+        Number(
+          people
+            .capacityMultiplier
+        ) ||
+        1
+      ),
+      0.25,
       1.2
     );
   } catch (error) {
@@ -371,6 +397,19 @@ function expectedArrivalsPerMinute(
         .demandMultiplier
     ) || 1;
 
+  // V084_COMPETITION_DEMAND
+  const competitiveMarket =
+    liveWorldSystem
+      .getDistrictDashboard(
+        shop.districtId
+      );
+
+  const competitionFactor =
+    Number(
+      competitiveMarket
+        .playerDemandMultiplier
+    ) || 1;
+
   const nightFactor =
     period ===
       'night'
@@ -408,6 +447,7 @@ function expectedArrivalsPerMinute(
           0.3
       ) *
       dynamicDemandFactor *
+      competitionFactor *
       nightFactor
   );
 }

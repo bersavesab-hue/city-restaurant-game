@@ -67,6 +67,29 @@ const INITIAL_STATE = {
         dialoguesGenerated: 0,
         barragesGenerated: 0
       }
+    },
+
+    // V084_LIVE_WORLD_STATE
+    liveWorld: {
+      version:'0.8.4',
+      initialized:false,
+      lastProcessedDay:null,
+      competitors:[],
+      competitorCounts:{
+        core:0,
+        local:0,
+        background:0
+      },
+      districtPressure:{},
+      staffHistory:[],
+      marketHistory:[],
+      metrics:{
+        competitorActions:0,
+        openings:0,
+        closures:0,
+        staffDepartures:0,
+        staffEntrepreneurs:0
+      }
     }
   },
 
@@ -309,6 +332,42 @@ class GameState {
     }
 
     return business.restaurantOperations;
+  }
+
+  // V084_GET_LIVE_WORLD
+  getLiveWorld() {
+    const world =
+      this.data.world;
+
+    if (
+      !world.liveWorld ||
+      typeof world.liveWorld !==
+        'object'
+    ) {
+      world.liveWorld = {
+        version:'0.8.4',
+        initialized:false,
+        lastProcessedDay:null,
+        competitors:[],
+        competitorCounts:{
+          core:0,
+          local:0,
+          background:0
+        },
+        districtPressure:{},
+        staffHistory:[],
+        marketHistory:[],
+        metrics:{
+          competitorActions:0,
+          openings:0,
+          closures:0,
+          staffDepartures:0,
+          staffEntrepreneurs:0
+        }
+      };
+    }
+
+    return world.liveWorld;
   }
 
   getDynamicWorld() {

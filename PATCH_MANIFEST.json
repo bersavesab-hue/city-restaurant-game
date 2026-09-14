@@ -1,28 +1,23 @@
 {
-  "version": "0.8.3",
-  "name": "FOUNDATION_FIXES_V083",
-  "package": "FOUNDATION_FIXES_V083",
-  "base_expected": "0.8.2",
-  "purpose": "修复存档频率、欠款闭环、统一客流、动态世界真实接线、营业时段、首页流程和版本卫生",
-  "contains": [
-    "20秒自动存档节流",
-    "经营应付账款分类与自动偿还",
-    "欠款逾期经营产能惩罚",
-    "商圈与门店统一需求口径",
-    "平台成本真实接线",
-    "合规成本真实接线",
-    "外卖需求真实接线",
-    "营销效率真实接线",
-    "口碑影响真实接线",
-    "检查风险真实接线",
-    "默认营业时间与跨午夜支持",
-    "首页动态目标流程",
-    "运行时版本统一到0.8.3",
-    "清理根目录错误工作流副本"
+  "version": "0.8.4",
+  "name": "Live People & Competitor World",
+  "baseVersion": "0.8.3",
+  "files": [
+    "src/world/liveWorldSystemV084.js",
+    "scripts/install-live-world-v084.js",
+    "tests/liveWorldV084.test.js",
+    "docs/LIVE_WORLD_V084.md",
+    "PATCH_MANIFEST.json",
+    "package.json"
   ],
-  "notes": [
-    "不覆盖 .github/workflows/apply-update.yml",
-    "补丁脚本幂等，可重复运行",
-    "NPC与竞品大型接线留到下一阶段"
+  "features": [
+    "real-person recruitment",
+    "daily staff mood/stress/loyalty",
+    "turnover and entrepreneurship",
+    "300-entity tiered competitor world",
+    "competitor action and opening pipeline",
+    "real competition demand pressure",
+    "staff state capacity modifier",
+    "staff/competition UI summaries"
   ]
 }

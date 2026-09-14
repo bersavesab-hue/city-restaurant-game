@@ -3,6 +3,11 @@
 const operations =
   require('../operations/operationsStoreV080.js');
 
+const liveWorldSystem =
+  require('../world/liveWorldSystemV084.js');
+// V084_BUSINESS_WORLD
+
+
 const ui =
   require('../ui/premiumUi.js');
 
@@ -119,6 +124,19 @@ class BusinessScene {
     const data =
       operations
         .dashboard(
+          shop.id
+        );
+
+    // V084_BUSINESS_WORLD_DATA
+    const market =
+      liveWorldSystem
+        .getDistrictDashboard(
+          shop.districtId
+        );
+
+    const people =
+      liveWorldSystem
+        .getStaffSummary(
           shop.id
         );
 
@@ -283,7 +301,7 @@ class BusinessScene {
       14,
       468,
       362,
-      112,
+      174,
       {
         radius: 15,
         fill: '#FFFDF8',
@@ -367,6 +385,63 @@ class BusinessScene {
       572,
       7.8,
       '#173D54',
+      '800',
+      'right'
+    );
+
+    // V084_COMPETITION_METRICS
+    ui.text(
+      ctx,
+      '竞争压力',
+      28,
+      598,
+      7.3,
+      '#728792',
+      '600'
+    );
+
+    ui.text(
+      ctx,
+      market.intensityLabel +
+        ' · ' +
+        market.competitorCount +
+        '店',
+      352,
+      598,
+      7.8,
+      market.intensity >=
+        70
+        ? '#C85242'
+        : '#173D54',
+      '800',
+      'right'
+    );
+
+    ui.text(
+      ctx,
+      '员工状态',
+      28,
+      624,
+      7.3,
+      '#728792',
+      '600'
+    );
+
+    ui.text(
+      ctx,
+      people.count
+        ? '情绪' +
+          people.avgMood +
+          ' · 高风险' +
+          people.highTurnoverRisk
+        : '暂无员工',
+      352,
+      624,
+      7.8,
+      people.highTurnoverRisk >
+        0
+        ? '#C85242'
+        : '#173D54',
       '800',
       'right'
     );

@@ -18,6 +18,11 @@ const propertySystem =
 const dynamicWorldSystem =
   require('../world/dynamicWorldSystemV0815.js');
 
+const liveWorldSystem =
+  require('../world/liveWorldSystemV084.js');
+// V084_LIVE_WORLD_SIMULATION
+
+
 const DISTRICT_IDS = [
   'university',
   'cbd',
@@ -890,6 +895,18 @@ class SimulationSystem {
     );
 
     dynamicWorldSystem
+      .processDay(
+        dayOrdinal,
+        {
+          weather:
+            weather.weather,
+          temperature:
+            weather.temperature
+        }
+      );
+
+    // V084_WORLD_DAILY_TICK
+    liveWorldSystem
       .processDay(
         dayOrdinal,
         {

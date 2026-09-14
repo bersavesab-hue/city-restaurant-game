@@ -701,8 +701,25 @@ class StaffScene {
         ctx,
         '技能 ' +
           candidate.skill +
-          ' · 稳定 ' +
-          candidate.stability +
+          ' · ' +
+          (
+            candidate
+              .personalityLabels &&
+            candidate
+              .personalityLabels
+              .length
+              ? candidate
+                  .personalityLabels
+                  .slice(
+                    0,
+                    2
+                  )
+                  .join(
+                    '/'
+                  )
+              : '稳定 ' +
+                candidate.stability
+          ) +
           ' · 综合 ' +
           candidate.score,
         22,
@@ -768,10 +785,27 @@ class StaffScene {
 
     this.text(
       ctx,
-      overview.coverage >=
-        0.9
-        ? '基本班组已齐备'
-        : '候选人次日会自动更新',
+      overview
+        .peopleSummary &&
+      overview
+        .peopleSummary
+        .count
+        ? '团队情绪 ' +
+          overview
+            .peopleSummary
+            .avgMood +
+          ' · 压力 ' +
+          overview
+            .peopleSummary
+            .avgStress +
+          ' · 高离职风险 ' +
+          overview
+            .peopleSummary
+            .highTurnoverRisk
+        : overview.coverage >=
+            0.9
+          ? '基本班组已齐备'
+          : '候选人次日会自动更新',
       195,
       actionY + 20,
       8.5,
