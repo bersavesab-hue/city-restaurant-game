@@ -1,17 +1,16 @@
 {
-  "id": "V086_BUSINESS_LIFECYCLE",
-  "base": "0.8.5",
-  "target": "0.8.6",
-  "preserves": [
-    "V0.8.5 management center",
-    "V0.8.4 live world",
-    "V0.8.21 time/schedule"
-  ],
+  "id": "V087_OPERATIONS_SCHEDULE",
+  "base": "0.8.6",
+  "target": "0.8.7",
   "features": [
-    "real 3-day trial opening",
-    "loan repayment lifecycle",
-    "lease lifecycle",
-    "system page",
-    "opening flow correction"
+    "business hours UI",
+    "employee shift planning",
+    "weekly off day",
+    "real schedule capacity integration"
+  ],
+  "preserves": [
+    "V0.8.6 business lifecycle",
+    "V0.8.5 management center",
+    "V0.8.4 live world"
   ]
 }

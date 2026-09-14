@@ -35,6 +35,9 @@ const dynamicWorldSystem =
 
 const liveWorldSystem =
   require('../world/liveWorldSystemV084.js');
+
+const operationsSchedule =
+  require('./operationsScheduleV087.js');
 // V084_RESTAURANT_LIVE_WORLD
 
 
@@ -146,8 +149,22 @@ function staffCoverage(
           shop.id
         );
 
+    const scheduled =
+      operationsSchedule
+        .getCoverage(
+          shop.id,
+          gameState
+            .getTime()
+        );
+
     return clamp(
-      base *
+      Math.min(
+        base,
+        Number(
+          scheduled.factor
+        ) ||
+        1
+      ) *
       (
         Number(
           people
@@ -155,7 +172,7 @@ function staffCoverage(
         ) ||
         1
       ),
-      0.25,
+      0.10,
       1.2
     );
   } catch (error) {

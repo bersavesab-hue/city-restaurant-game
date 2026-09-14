@@ -94,6 +94,9 @@ const licenseScene =
 const staffScene =
   require('./scenes/staffScene.js');
 
+const scheduleScene =
+  require('./scenes/scheduleSceneV087.js');
+
 const researchScene =
   require('./scenes/researchScene.js');
 
@@ -5290,6 +5293,11 @@ sceneManager.register(
 sceneManager.register(
   'staff',
   staffScene
+);
+
+sceneManager.register(
+  'schedule',
+  scheduleScene
 );
 
 sceneManager.register(
