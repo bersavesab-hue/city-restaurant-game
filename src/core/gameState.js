@@ -399,12 +399,53 @@ class GameState {
   ========================= */
 
   getTimeSpeed() {
-    const speed =
+    const config =
+      require('./simulationConfig.js');
+
+    const allowed =
+      config.time
+        .allowedSpeeds;
+
+    const raw =
       Number(
         this.data.time.speed
-      );
+      ) ||
+      1;
 
-    return speed || 1;
+    if (
+      allowed.indexOf(
+        raw
+      ) >= 0
+    ) {
+      return raw;
+    }
+
+    let migrated =
+      allowed[0];
+
+    for (
+      const value
+      of allowed
+    ) {
+      if (
+        Math.abs(
+          value -
+          raw
+        ) <
+        Math.abs(
+          migrated -
+          raw
+        )
+      ) {
+        migrated =
+          value;
+      }
+    }
+
+    this.data.time.speed =
+      migrated;
+
+    return migrated;
   }
 
   setTimeSpeed(speed) {

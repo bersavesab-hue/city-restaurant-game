@@ -4987,6 +4987,19 @@ class RenovationScene {
     const construction =
       plan.construction;
 
+    const progressInfo =
+      renovationSystem
+        .getConstructionProgress(
+          shop.id
+        );
+
+    const progress =
+      plan.status ===
+        'completed'
+        ? 1
+        : progressInfo
+            .progress;
+
     ui.card(
       ctx,
       16,
@@ -5085,10 +5098,11 @@ class RenovationScene {
       ctx,
       41,
       273,
-      plan.status ===
-        'completed'
-        ? 308
-        : 174,
+      Math.max(
+        8,
+        308 *
+        progress
+      ),
       12,
       {
         radius: 6,
@@ -5104,7 +5118,20 @@ class RenovationScene {
       plan.status ===
         'completed'
         ? '可以返回门店继续筹备开业'
-        : '施工期间仍可查看进度，完工后自动进入下一阶段',
+        : (
+            '实际进度 ' +
+            Math.round(
+              progress *
+              100
+            ) +
+            '% · 剩余约' +
+            Math.ceil(
+              progressInfo
+                .remainingMinutes /
+              60
+            ) +
+            '小时'
+          ),
       195,
       320,
       5.8,

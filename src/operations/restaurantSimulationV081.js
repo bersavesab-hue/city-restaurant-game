@@ -840,10 +840,25 @@ function simulateShop(
         .arrivalCarry
     );
 
+  const arrivalBatchLimit =
+    Math.max(
+      18,
+      Math.min(
+        120,
+        Math.ceil(
+          Math.max(
+            1,
+            advancedMinutes
+          ) *
+          3
+        )
+      )
+    );
+
   arrivals =
     Math.min(
       arrivals,
-      18
+      arrivalBatchLimit
     );
 
   runtime

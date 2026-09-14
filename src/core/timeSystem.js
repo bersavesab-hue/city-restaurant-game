@@ -31,7 +31,10 @@ class TimeSystem {
     return gameState.getTime();
   }
 
-  update(deltaMs) {
+  update(
+    deltaMs,
+    onStep
+  ) {
     if (
       gameState.isTimePaused()
     ) {
@@ -51,7 +54,12 @@ class TimeSystem {
     delta =
       Math.min(
         delta,
-        1000
+        Number(
+          simulationConfig
+            .time
+            .maxRealDeltaMs
+        ) ||
+        250
       );
 
     const seconds =
@@ -85,9 +93,57 @@ class TimeSystem {
     this.minuteAccumulator -=
       wholeMinutes;
 
-    this.addMinutes(
-      wholeMinutes
-    );
+    const callback =
+      typeof onStep ===
+        'function'
+        ? onStep
+        : null;
+
+    if (!callback) {
+      this.addMinutes(
+        wholeMinutes
+      );
+
+      return wholeMinutes;
+    }
+
+    const maxChunk =
+      Math.max(
+        1,
+        Math.floor(
+          Number(
+            simulationConfig
+              .time
+              .maxSimulationChunkMinutes
+          ) ||
+          30
+        )
+      );
+
+    let remaining =
+      wholeMinutes;
+
+    while (
+      remaining >
+      0
+    ) {
+      const step =
+        Math.min(
+          maxChunk,
+          remaining
+        );
+
+      this.addMinutes(
+        step
+      );
+
+      callback(
+        step
+      );
+
+      remaining -=
+        step;
+    }
 
     return wholeMinutes;
   }

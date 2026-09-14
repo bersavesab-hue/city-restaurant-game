@@ -60,6 +60,9 @@ const simulationConfig =
 const openingPrepSystem =
   require('./opening/openingPrepSystem.js');
 
+const globalTimeline =
+  require('./core/globalTimelineV0821.js');
+
 const textInput =
   require('./ui/textInput.js');
 
@@ -3559,16 +3562,16 @@ function drawTopHud() {
       '1×'
     ],
     [
-      'time:speed:2',
-      '2×'
-    ],
-    [
       'time:speed:5',
       '5×'
     ],
     [
-      'time:speed:10',
-      '10×'
+      'time:speed:20',
+      '20×'
+    ],
+    [
+      'time:speed:100',
+      '100×'
     ]
   ];
 
@@ -5792,32 +5795,57 @@ function gameLoop(
         deltaMs
       );
 
+  let simulationChanged =
+    false;
+
+  let timelineChanged =
+    false;
+
+  let restaurantChanged =
+    false;
+
   const advancedMinutes =
     timeSystem
       .update(
-        deltaMs
+        deltaMs,
+        function (
+          stepMinutes
+        ) {
+          if (
+            simulationSystem
+              .update(
+                stepMinutes
+              )
+          ) {
+            simulationChanged =
+              true;
+          }
+
+          if (
+            globalTimeline
+              .update(
+                stepMinutes
+              )
+          ) {
+            timelineChanged =
+              true;
+          }
+
+          if (
+            restaurantSimulation
+              .update(
+                stepMinutes
+              )
+          ) {
+            restaurantChanged =
+              true;
+          }
+        }
       );
-
-  const simulationChanged =
-    advancedMinutes >
-      0
-      ? simulationSystem
-          .update(
-            advancedMinutes
-          )
-      : false;
-
-  const restaurantChanged =
-    advancedMinutes >
-      0
-      ? restaurantSimulation
-          .update(
-            advancedMinutes
-          )
-      : false;
 
   if (
     simulationChanged ||
+    timelineChanged ||
     restaurantChanged
   ) {
     saveSystem
@@ -5828,6 +5856,7 @@ function gameLoop(
     advancedMinutes >
       0 ||
     simulationChanged ||
+    timelineChanged ||
     restaurantChanged ||
     animationChanged ||
     needsResize
@@ -6338,9 +6367,9 @@ drawTopHud = function () {
   const speedItems = [
     ['time:pause', 'Ⅱ'],
     ['time:speed:1', '1x'],
-    ['time:speed:2', '2x'],
     ['time:speed:5', '5x'],
-    ['time:speed:10', '10x']
+    ['time:speed:20', '20x'],
+    ['time:speed:100', '100x']
   ];
 
   const y = TOP_H - 30;

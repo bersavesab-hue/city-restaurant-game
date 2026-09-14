@@ -1167,57 +1167,20 @@ class StoreScene {
   }
 
   getRenovationProgress(shopId) {
-    const plan =
+    const progress =
       renovationSystem
-        .ensurePlan(
+        .getConstructionProgress(
           shopId
         );
 
-    if (!plan) {
-      return 0;
-    }
-
-    if (
-      plan.status ===
-        'completed'
-    ) {
-      return 1;
-    }
-
-    if (
-      plan.status ===
-        'constructing' &&
-      plan.construction
-    ) {
-      const start =
-        Number(
-          plan.construction
-            .startDay
-        ) ||
-        dayOrdinal();
-
-      const finish =
-        Number(
-          plan.construction
-            .finishDay
-        ) ||
-        start + 1;
-
-      return clamp(
-        (
-          dayOrdinal() -
-          start
-        ) /
-        Math.max(
-          1,
-          finish - start
-        ),
-        0.05,
-        0.98
-      );
-    }
-
-    return 0;
+    return clamp(
+      Number(
+        progress.progress
+      ) ||
+      0,
+      0,
+      1
+    );
   }
 
   getPreparationState(shop) {

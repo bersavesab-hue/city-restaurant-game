@@ -1831,12 +1831,28 @@ class RenovationSystem {
         quote.price
       );
 
+    const currentTime =
+      gameState
+        .getTime();
+
     const currentDay =
       simulationSystem
         .getDayOrdinal(
-          gameState
-            .getTime()
+          currentTime
         );
+
+    const startMinute =
+      currentDay *
+        1440 +
+      Number(
+        currentTime.hour ||
+        0
+      ) *
+        60 +
+      Number(
+        currentTime.minute ||
+        0
+      );
 
     plan.status =
       'constructing';
@@ -1849,6 +1865,11 @@ class RenovationSystem {
       finishDay:
         currentDay +
         quote.days,
+      startMinute,
+      finishMinute:
+        startMinute +
+        quote.days *
+          1440,
       paid:
         quote.price,
       snapshot:
@@ -1871,6 +1892,158 @@ class RenovationSystem {
         true,
       quote:
         clone(quote),
+      finishDay:
+        plan
+          .construction
+          .finishDay
+    };
+  }
+
+  getConstructionProgress(
+    shopId
+  ) {
+    const plan =
+      this.ensurePlan(
+        shopId
+      );
+
+    if (
+      !plan ||
+      !plan.construction
+    ) {
+      return {
+        status:
+          plan
+            ? plan.status
+            : 'draft',
+        progress:
+          plan &&
+          plan.status ===
+            'completed'
+            ? 1
+            : 0,
+        elapsedMinutes:0,
+        totalMinutes:0,
+        remainingMinutes:0,
+        startMinute:null,
+        finishMinute:null
+      };
+    }
+
+    const time =
+      gameState
+        .getTime();
+
+    const currentMinute =
+      simulationSystem
+        .getDayOrdinal(
+          time
+        ) *
+        1440 +
+      Number(
+        time.hour ||
+        0
+      ) *
+        60 +
+      Number(
+        time.minute ||
+        0
+      );
+
+    const legacyStart =
+      Number(
+        plan
+          .construction
+          .startDay
+      ) *
+      1440;
+
+    const legacyFinish =
+      Number(
+        plan
+          .construction
+          .finishDay
+      ) *
+      1440;
+
+    const startMinute =
+      Number.isFinite(
+        Number(
+          plan
+            .construction
+            .startMinute
+        )
+      )
+        ? Number(
+            plan
+              .construction
+              .startMinute
+          )
+        : legacyStart;
+
+    const finishMinute =
+      Number.isFinite(
+        Number(
+          plan
+            .construction
+            .finishMinute
+        )
+      )
+        ? Number(
+            plan
+              .construction
+              .finishMinute
+          )
+        : legacyFinish;
+
+    const totalMinutes =
+      Math.max(
+        1,
+        finishMinute -
+        startMinute
+      );
+
+    const elapsedMinutes =
+      Math.max(
+        0,
+        Math.min(
+          totalMinutes,
+          currentMinute -
+          startMinute
+        )
+      );
+
+    const progress =
+      plan.status ===
+        'completed'
+        ? 1
+        : Math.max(
+            0,
+            Math.min(
+              1,
+              elapsedMinutes /
+              totalMinutes
+            )
+          );
+
+    return {
+      status:
+        plan.status,
+      progress,
+      elapsedMinutes,
+      totalMinutes,
+      remainingMinutes:
+        Math.max(
+          0,
+          finishMinute -
+          currentMinute
+        ),
+      startMinute,
+      finishMinute,
+      startDay:
+        plan
+          .construction
+          .startDay,
       finishDay:
         plan
           .construction
@@ -1901,18 +2074,14 @@ class RenovationSystem {
       return false;
     }
 
-    const currentDay =
-      simulationSystem
-        .getDayOrdinal(
-          gameState
-            .getTime()
-        );
+    const progress =
+      this.getConstructionProgress(
+        shopId
+      );
 
     if (
-      currentDay <
-      plan
-        .construction
-        .finishDay
+      progress.progress <
+      1
     ) {
       return false;
     }
