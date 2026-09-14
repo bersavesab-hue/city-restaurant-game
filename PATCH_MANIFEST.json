@@ -1,16 +1,21 @@
 {
-  "id": "V087_OPERATIONS_SCHEDULE",
-  "base": "0.8.6",
+  "id": "V087_FINAL_TEST_ENTRY_FIX",
+  "base": "0.8.7",
   "target": "0.8.7",
-  "features": [
-    "business hours UI",
-    "employee shift planning",
-    "weekly off day",
-    "real schedule capacity integration"
+  "purpose": "fix repeatable CI after self-cleaning installer",
+  "files": [
+    "package.json",
+    "PATCH_MANIFEST.json"
   ],
   "preserves": [
+    "V0.8.7 operations schedule",
     "V0.8.6 business lifecycle",
     "V0.8.5 management center",
     "V0.8.4 live world"
+  ],
+  "fixes": [
+    "remove deleted scripts/apply-v087-operations-schedule.js from pretest",
+    "do not execute any V0.8.6 installer",
+    "allow ordinary repository tests to run directly"
   ]
 }
