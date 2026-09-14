@@ -26,10 +26,23 @@ const pkg =
     )
   );
 
-assert.equal(
-  pkg.version,
-  '0.8.9',
-  '正式版本必须为0.8.9'
+// V0810_VERSION_GUARD
+function versionAtLeast(current, minimum) {
+  const a = String(current || '0').split('.').map(Number);
+  const b = String(minimum || '0').split('.').map(Number);
+  const n = Math.max(a.length, b.length);
+  for (let i = 0; i < n; i++) {
+    const av = a[i] || 0;
+    const bv = b[i] || 0;
+    if (av > bv) return true;
+    if (av < bv) return false;
+  }
+  return true;
+}
+
+assert.ok(
+  versionAtLeast(pkg.version, '0.8.9'),
+  '正式版本不能低于0.8.9'
 );
 
 assert.ok(

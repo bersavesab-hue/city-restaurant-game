@@ -269,6 +269,16 @@ class SystemScene {
       108
     );
 
+    this.drawButton(
+      ctx,
+      'feature:hub',
+      '功能中心',
+      28,
+      151,
+      108,
+      'gold'
+    );
+
     ui.card(
       ctx,
       14,
@@ -563,6 +573,18 @@ class SystemScene {
           ? '保存成功'
           : '保存失败'
       );
+
+      return true;
+    }
+
+    if (
+      button.id ===
+      'feature:hub'
+    ) {
+      sceneManager
+        .switchTo(
+          'featureHub'
+        );
 
       return true;
     }

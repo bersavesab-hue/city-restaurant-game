@@ -36,6 +36,9 @@ const restaurantSimulation =
 const sceneManager =
   require('./core/sceneManager.js');
 
+const entryRouter =
+  require('./core/entryRouterV0810.js');
+
 const animationManager =
   require('./core/animationManager.js');
 
@@ -117,6 +120,9 @@ const dynamicWorldScene =
 
 const systemScene =
   require('./scenes/systemSceneV086.js');
+
+const featureHubScene =
+  require('./scenes/featureHubSceneV0810.js');
 
 const dynamicWorldSystem =
   require('./world/dynamicWorldSystemV0815.js');
@@ -5335,6 +5341,14 @@ sceneManager.register(
   'system',
   systemScene
 );
+
+sceneManager.register(
+  'featureHub',
+  featureHubScene
+);
+
+// V0810_ENTRY_ROUTER_BOOT
+entryRouter.install();
 
 /* =========================
    总渲染

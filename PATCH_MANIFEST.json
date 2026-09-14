@@ -1,28 +1,22 @@
 {
-  "id": "V089_STAFF_WORKLOAD",
-  "base": "0.8.8",
-  "target": "0.8.9",
+  "id": "V0810_ENTRY_ROUTER",
+  "category": "1/26",
+  "name": "功能入口与统一路由",
+  "base": "0.8.9",
+  "target": "0.8.10",
   "features": [
-    "breakfast/lunch/dinner/night peak demand",
-    "real employee fatigue and stress",
-    "fatigue capacity penalty",
-    "8-hour overtime accounting",
-    "1.5x overtime labor cost",
-    "schedule conflict detection",
-    "leave/training/off-day shortage integration",
-    "schedule workload UI"
+    "unified route registry",
+    "legacy sceneManager switch interception",
+    "route aliases",
+    "32-step back history",
+    "route parameter memory",
+    "functional feature hub",
+    "system page feature hub entry",
+    "routing diagnostics and safe failures"
   ],
-  "preserves": [
-    "V0.8.8 staff career",
-    "V0.8.7 business hours and shifts",
-    "V0.8.6 business lifecycle",
-    "V0.8.5 management center",
-    "V0.8.4 live world"
-  ],
-  "infrastructure": [
-    "temporary installer is removed before commit",
-    "formal pretest contains no installer reference",
-    "permanent CI includes V0.8.9 regression tests",
-    "no workflow files are modified"
+  "protected": [
+    "no package.json in update.zip",
+    "no workflow file in update.zip",
+    "version/test runner changes happen only in apply-update-patch.js"
   ]
 }

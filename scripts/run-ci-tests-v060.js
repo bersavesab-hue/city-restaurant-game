@@ -143,6 +143,8 @@ for (
     'tests/updateInfrastructureV088.test.js',
     'tests/staffWorkloadV089.test.js',
     'tests/updateInfrastructureV089.test.js',
+    'tests/featureRoutingV0810.test.js',
+    'tests/updateInfrastructureV0810.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {
