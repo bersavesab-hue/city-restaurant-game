@@ -132,6 +132,7 @@ for (
     'tests/customerFullPackV100.test.js',
     'tests/easterEggPackV100Src.test.js',
 
+    'tests/operationCoreV070.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {
