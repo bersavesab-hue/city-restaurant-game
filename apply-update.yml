@@ -32,7 +32,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           test -f update.zip
 
           if unzip -Z1 update.zip | grep -Eq '(^/|(^|/)\.\.(/|$)|^\.git/)'; then
@@ -44,77 +43,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           unzip -o update.zip -x '.git/*' '.github/workflows/apply-update.yml'
-
-      - name: Repair V0.8.2 installer and V0.8.16 barrage guard
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          python3 - <<'PY'
-          import re
-          from pathlib import Path
-
-          # 1) V0.8.2 installer bug:
-          #    template strings inside replaceOnce() were evaluated by the
-          #    installer itself, so `shop` was undefined at install time.
-          installer = Path("scripts/apply-v082-live-restaurant.js")
-          if not installer.exists():
-              raise SystemExit("Missing V0.8.2 installer: " + str(installer))
-
-          source = installer.read_text(encoding="utf-8")
-          pattern = re.compile(r"(?<!\\)\$\{shop\.name \|\| '这家店'\}")
-          source, count = pattern.subn(
-              lambda _m: "\\${shop.name || '这家店'}",
-              source,
-          )
-
-          if count:
-              installer.write_text(source, encoding="utf-8")
-              print(f"[repair] Escaped {count} V0.8.2 shop template references.")
-          elif "\\${shop.name || '这家店'}" in source:
-              print("[repair] V0.8.2 shop template references already escaped.")
-          else:
-              raise SystemExit("V0.8.2 shop template repair anchor not found.")
-
-          # 2) V0.8.16 barrage bug:
-          #    generate() may receive an undefined source; source.id must not
-          #    be read until source itself has been checked.
-          barrage = Path("src/barrage/barrageEngineV0815.js")
-          if not barrage.exists():
-              raise SystemExit("Missing barrage engine: " + str(barrage))
-
-          source = barrage.read_text(encoding="utf-8")
-
-          already_guarded = re.search(
-              r"source\s*&&\s*\n\s*source\.id\s*&&",
-              source,
-          )
-
-          if already_guarded:
-              print("[repair] V0.8.16 barrage source null guard already present.")
-          else:
-              line_pattern = re.compile(r"(?m)^(\s*)source\.id\s*&&")
-              source, count = line_pattern.subn(
-                  lambda m: (
-                      m.group(1)
-                      + "source &&\n"
-                      + m.group(1)
-                      + "source.id &&"
-                  ),
-                  source,
-                  count=1,
-              )
-
-              if count != 1:
-                  raise SystemExit(
-                      "V0.8.16 barrage source.id repair anchor not found."
-                  )
-
-              barrage.write_text(source, encoding="utf-8")
-              print("[repair] Added V0.8.16 barrage source null guard.")
-          PY
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -123,6 +52,130 @@ jobs:
 
       - name: Install JavaScript dependencies
         run: npm install
+
+      - name: Install persistent V0.8.2 generated-syntax repair
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat > scripts/repair-v082-generated.js <<'JS'
+          'use strict';
+
+          const fs = require('fs');
+          const cp = require('child_process');
+
+          const target = 'src/operations/restaurantSimulationV081.js';
+
+          if (!fs.existsSync(target)) {
+            throw new Error('V0.8.2 repair target missing: ' + target);
+          }
+
+          let source = fs.readFileSync(target, 'utf8');
+
+          // V0.8.2 installer may leave a duplicated closing brace directly
+          // before function update(). Repair only that exact boundary.
+          const bad = '\n}}\n\nfunction update(';
+          const good = '\n}\n\nfunction update(';
+
+          const count = source.split(bad).length - 1;
+
+          if (count > 1) {
+            throw new Error(
+              'V0.8.2 repair refused: duplicated-brace boundary appeared '
+              + count
+              + ' times.'
+            );
+          }
+
+          if (count === 1) {
+            source = source.replace(bad, good);
+            fs.writeFileSync(target, source, 'utf8');
+            console.log(
+              '[V0.8.2 repair] Removed duplicated closing brace before update().'
+            );
+          } else {
+            console.log(
+              '[V0.8.2 repair] No duplicated closing brace found; checking syntax.'
+            );
+          }
+
+          const result = cp.spawnSync(
+            process.execPath,
+            ['--check', target],
+            {
+              encoding: 'utf8'
+            }
+          );
+
+          if (result.status !== 0) {
+            process.stderr.write(result.stdout || '');
+            process.stderr.write(result.stderr || '');
+            throw new Error(
+              'V0.8.2 generated restaurant simulation still has invalid syntax.'
+            );
+          }
+
+          console.log('[V0.8.2 repair] restaurantSimulationV081.js syntax PASS');
+          JS
+
+          node - <<'JS'
+          const fs = require('fs');
+
+          const path = 'package.json';
+          const pkg = JSON.parse(
+            fs.readFileSync(path, 'utf8')
+          );
+
+          const marker =
+            'node scripts/apply-v082-live-restaurant.js';
+
+          const repair =
+            'node scripts/repair-v082-generated.js';
+
+          if (
+            typeof pkg.scripts?.pretest !== 'string'
+          ) {
+            throw new Error(
+              'package.json scripts.pretest missing'
+            );
+          }
+
+          if (
+            !pkg.scripts.pretest.includes(repair)
+          ) {
+            if (
+              !pkg.scripts.pretest.includes(marker)
+            ) {
+              throw new Error(
+                'V0.8.2 pretest marker not found'
+              );
+            }
+
+            pkg.scripts.pretest =
+              pkg.scripts.pretest.replace(
+                marker,
+                marker + ' && ' + repair
+              );
+
+            fs.writeFileSync(
+              path,
+              JSON.stringify(
+                pkg,
+                null,
+                2
+              ) + '\n',
+              'utf8'
+            );
+
+            console.log(
+              '[V0.8.2 repair] Persistent repair inserted into pretest.'
+            );
+          } else {
+            console.log(
+              '[V0.8.2 repair] Persistent pretest repair already present.'
+            );
+          }
+          JS
 
       - name: Run all game tests
         run: npm test
