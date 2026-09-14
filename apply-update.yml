@@ -1,0 +1,198 @@
+name: Apply Update ZIP
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - update.zip
+      - .github/workflows/apply-update.yml
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: city-restaurant-one-click-update
+  cancel-in-progress: false
+
+jobs:
+  apply-test-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Verify update package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -f update.zip
+
+          if unzip -Z1 update.zip | grep -Eq '(^/|(^|/)\.\.(/|$)|^\.git/)'; then
+            echo "Unsafe path found in update.zip"
+            exit 1
+          fi
+
+      - name: Apply update to workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          unzip -o update.zip -x '.git/*' '.github/workflows/apply-update.yml'
+
+      - name: Repair V0.8.2 installer and V0.8.16 barrage guard
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          # 1) V0.8.2 installer bug:
+          #    template strings inside replaceOnce() were evaluated by the
+          #    installer itself, so `shop` was undefined at install time.
+          installer = Path("scripts/apply-v082-live-restaurant.js")
+          if not installer.exists():
+              raise SystemExit("Missing V0.8.2 installer: " + str(installer))
+
+          source = installer.read_text(encoding="utf-8")
+          pattern = re.compile(r"(?<!\\)\$\{shop\.name \|\| '这家店'\}")
+          source, count = pattern.subn(
+              lambda _m: "\\${shop.name || '这家店'}",
+              source,
+          )
+
+          if count:
+              installer.write_text(source, encoding="utf-8")
+              print(f"[repair] Escaped {count} V0.8.2 shop template references.")
+          elif "\\${shop.name || '这家店'}" in source:
+              print("[repair] V0.8.2 shop template references already escaped.")
+          else:
+              raise SystemExit("V0.8.2 shop template repair anchor not found.")
+
+          # 2) V0.8.16 barrage bug:
+          #    generate() may receive an undefined source; source.id must not
+          #    be read until source itself has been checked.
+          barrage = Path("src/barrage/barrageEngineV0815.js")
+          if not barrage.exists():
+              raise SystemExit("Missing barrage engine: " + str(barrage))
+
+          source = barrage.read_text(encoding="utf-8")
+
+          already_guarded = re.search(
+              r"source\s*&&\s*\n\s*source\.id\s*&&",
+              source,
+          )
+
+          if already_guarded:
+              print("[repair] V0.8.16 barrage source null guard already present.")
+          else:
+              line_pattern = re.compile(r"(?m)^(\s*)source\.id\s*&&")
+              source, count = line_pattern.subn(
+                  lambda m: (
+                      m.group(1)
+                      + "source &&\n"
+                      + m.group(1)
+                      + "source.id &&"
+                  ),
+                  source,
+                  count=1,
+              )
+
+              if count != 1:
+                  raise SystemExit(
+                      "V0.8.16 barrage source.id repair anchor not found."
+                  )
+
+              barrage.write_text(source, encoding="utf-8")
+              print("[repair] Added V0.8.16 barrage source null guard.")
+          PY
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install JavaScript dependencies
+        run: npm install
+
+      - name: Run all game tests
+        run: npm test
+
+      - name: Build Android game JavaScript
+        run: npm run build:android-js
+
+      - name: Copy game image assets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p android/app/src/main/assets/assets
+
+          if [ -d "assets" ]; then
+            rm -rf android/app/src/main/assets/assets/*
+            cp -R assets/. android/app/src/main/assets/assets/
+          fi
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 34
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager "platforms;android-34"
+          sdkmanager "build-tools;34.0.0"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Build debug APK
+        run: gradle -p android assembleDebug --no-daemon
+
+      - name: Remove update package before commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f update.zip
+
+      - name: Commit validated update
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "No file changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Apply validated one-click update"
+          git push origin main
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: city-restaurant-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
