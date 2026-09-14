@@ -1,38 +1,24 @@
 {
-  "id": "V088_STAFF_CAREER",
-  "base": "0.8.7",
+  "id": "V088_STABILITY_GATE_1",
+  "base": "0.8.8",
   "target": "0.8.8",
-  "features": [
-    "persistent employee career",
-    "training",
-    "salary raise",
-    "promotion",
-    "leave and sick leave",
-    "coaching",
-    "natural skill growth",
-    "team management UI"
+  "type": "stability-only",
+  "changes": [
+    "add early patch safety validation for forbidden .github/workflows paths",
+    "run 100-player lab on every npm test / update package",
+    "validate player-lab isolation and report generation",
+    "validate Android editable modal bridge",
+    "validate district insight linkage",
+    "validate core visual assets and visual fidelity"
   ],
-  "preserves": [
-    "V0.8.7 business hours and shifts",
-    "V0.8.6 business lifecycle",
-    "V0.8.5 management center",
-    "V0.8.4 live competitor/NPC world"
-  ],
-  "fix": "Fix3",
-  "infrastructure_repairs": [
-    "legacy regression verifies navigation instead of exact button copy",
-    "committed pretest never invokes apply scripts",
-    "installer retained for recovery",
-    "permanent update infrastructure regression test"
-  ],
-  "fix2": [
-    "correct infrastructure-test escaping bug",
-    "verify actual staffScene schedule navigation directly",
-    "verify legacy regression checks navigation instead of exact button copy"
-  ],
-  "fix3": [
-    "respect v60 clean-base: no apply-v scripts in committed tree",
-    "rewrite stable pretest before installer self-removal",
-    "infrastructure test verifies installer is absent after apply"
+  "root_cause_fixed": "prevent late GitHub push failure when an update.zip tries to modify workflow files without workflows permission",
+  "gameplay_changes": false,
+  "economy_changes": false,
+  "data_changes": false,
+  "safe_scope": [
+    "package.json",
+    "scripts/patch-safety-v089.js",
+    "scripts/quality-gate-v089.js",
+    "tests/qualityGateV089.test.js"
   ]
 }
