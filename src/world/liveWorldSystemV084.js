@@ -1774,19 +1774,48 @@ function processStaffDay(
           90
         );
 
+      const career =
+        staff.career ||
+        {};
+
+      const careerUnavailable =
+        (
+          career.training &&
+          Number(
+            career.training
+              .finishDay
+          ) >
+            day
+        ) ||
+        (
+          career.leave &&
+          Number(
+            career.leave
+              .untilDay
+          ) >
+            day
+        );
+
       personEngine
         .dailyTick(
           profile,
           {
-            workload,
+            workload:
+              careerUnavailable
+                ? 15
+                : workload,
             overtime:
-              workload >
-                78
-                ? 22
+              careerUnavailable
+                ? 0
                 : workload >
-                    65
-                  ? 10
-                  : 0,
+                    78
+                  ? 22
+                  : workload >
+                      65
+                    ? 10
+                    : 0,
+            dayOff:
+              careerUnavailable,
             managerQuality,
             payFairness,
             teamClimate:

@@ -774,7 +774,7 @@ class StaffScene {
       ctx,
       10,
       actionY,
-      177,
+      112,
       40,
       11,
       COLORS.navy
@@ -783,9 +783,9 @@ class StaffScene {
     this.text(
       ctx,
       '返回门店',
-      98,
+      66,
       actionY + 20,
-      8.5,
+      7.8,
       COLORS.white,
       '700',
       'center'
@@ -795,15 +795,44 @@ class StaffScene {
       'back',
       10,
       actionY,
-      177,
+      112,
       40
     );
 
     this.rounded(
       ctx,
-      193,
+      128,
       actionY,
+      118,
+      40,
+      11,
+      COLORS.gold
+    );
+
+    this.text(
+      ctx,
+      '团队管理',
       187,
+      actionY + 20,
+      7.8,
+      COLORS.text,
+      '700',
+      'center'
+    );
+
+    this.addButton(
+      'career',
+      128,
+      actionY,
+      118,
+      40
+    );
+
+    this.rounded(
+      ctx,
+      252,
+      actionY,
+      128,
       40,
       11,
       overview.coverage >=
@@ -814,10 +843,10 @@ class StaffScene {
 
     this.text(
       ctx,
-      '营业时间 / 员工排班',
-      286,
+      '营业 / 排班',
+      316,
       actionY + 20,
-      8.1,
+      7.7,
       overview.coverage >=
         0.9
         ? COLORS.white
@@ -828,9 +857,9 @@ class StaffScene {
 
     this.addButton(
       'schedule',
-      193,
+      252,
       actionY,
-      187,
+      128,
       40
     );
 
@@ -858,6 +887,22 @@ class StaffScene {
       sceneManager
         .switchTo(
           'shop'
+        );
+
+      return true;
+    }
+
+    if (
+      item.id ===
+      'career'
+    ) {
+      sceneManager
+        .switchTo(
+          'staffCareer',
+          {
+            shopId:
+              this.shopId
+          }
         );
 
       return true;

@@ -1,21 +1,38 @@
 {
-  "id": "V087_FINAL_TEST_ENTRY_FIX",
+  "id": "V088_STAFF_CAREER",
   "base": "0.8.7",
-  "target": "0.8.7",
-  "purpose": "fix repeatable CI after self-cleaning installer",
-  "files": [
-    "package.json",
-    "PATCH_MANIFEST.json"
+  "target": "0.8.8",
+  "features": [
+    "persistent employee career",
+    "training",
+    "salary raise",
+    "promotion",
+    "leave and sick leave",
+    "coaching",
+    "natural skill growth",
+    "team management UI"
   ],
   "preserves": [
-    "V0.8.7 operations schedule",
+    "V0.8.7 business hours and shifts",
     "V0.8.6 business lifecycle",
     "V0.8.5 management center",
-    "V0.8.4 live world"
+    "V0.8.4 live competitor/NPC world"
   ],
-  "fixes": [
-    "remove deleted scripts/apply-v087-operations-schedule.js from pretest",
-    "do not execute any V0.8.6 installer",
-    "allow ordinary repository tests to run directly"
+  "fix": "Fix3",
+  "infrastructure_repairs": [
+    "legacy regression verifies navigation instead of exact button copy",
+    "committed pretest never invokes apply scripts",
+    "installer retained for recovery",
+    "permanent update infrastructure regression test"
+  ],
+  "fix2": [
+    "correct infrastructure-test escaping bug",
+    "verify actual staffScene schedule navigation directly",
+    "verify legacy regression checks navigation instead of exact button copy"
+  ],
+  "fix3": [
+    "respect v60 clean-base: no apply-v scripts in committed tree",
+    "rewrite stable pretest before installer self-removal",
+    "infrastructure test verifies installer is absent after apply"
   ]
 }

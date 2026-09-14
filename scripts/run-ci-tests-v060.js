@@ -141,6 +141,8 @@ for (
     'tests/timeScheduleV0821.test.js',
     'tests/businessLifecycleV086.test.js',
     'tests/operationsScheduleV087.test.js',
+    'tests/staffCareerV088.test.js',
+    'tests/updateInfrastructureV088.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

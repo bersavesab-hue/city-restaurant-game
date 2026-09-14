@@ -66,6 +66,9 @@ const globalTimeline =
 const businessLifecycle =
   require('./core/businessLifecycleV086.js');
 
+const staffCareer =
+  require('./operations/staffCareerV088.js');
+
 const textInput =
   require('./ui/textInput.js');
 
@@ -96,6 +99,9 @@ const staffScene =
 
 const scheduleScene =
   require('./scenes/scheduleSceneV087.js');
+
+const staffCareerScene =
+  require('./scenes/staffCareerSceneV088.js');
 
 const researchScene =
   require('./scenes/researchScene.js');
@@ -5301,6 +5307,11 @@ sceneManager.register(
 );
 
 sceneManager.register(
+  'staffCareer',
+  staffCareerScene
+);
+
+sceneManager.register(
   'research',
   researchScene
 );
@@ -5835,6 +5846,9 @@ function gameLoop(
   let lifecycleChanged =
     false;
 
+  let staffCareerChanged =
+    false;
+
   const advancedMinutes =
     timeSystem
       .update(
@@ -5879,6 +5893,14 @@ function gameLoop(
             lifecycleChanged =
               true;
           }
+
+          if (
+            staffCareer
+              .update()
+          ) {
+            staffCareerChanged =
+              true;
+          }
         }
       );
 
@@ -5886,7 +5908,8 @@ function gameLoop(
     simulationChanged ||
     timelineChanged ||
     restaurantChanged ||
-    lifecycleChanged
+    lifecycleChanged ||
+    staffCareerChanged
   ) {
     saveSystem
       .autoSave();
@@ -5899,6 +5922,7 @@ function gameLoop(
     timelineChanged ||
     restaurantChanged ||
     lifecycleChanged ||
+    staffCareerChanged ||
     animationChanged ||
     needsResize
   ) {

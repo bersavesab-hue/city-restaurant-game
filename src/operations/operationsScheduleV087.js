@@ -892,6 +892,58 @@ function isWorking(
     time ||
     gameState.getTime();
 
+  const staffState =
+    openingPrepSystem
+      .getStaffState(
+        shopId
+      );
+
+  const hiredStaff =
+    (
+      staffState.hired ||
+      []
+    ).find(
+      row =>
+        String(
+          row.id
+        ) ===
+        String(
+          employee.personId
+        )
+    );
+
+  const career =
+    hiredStaff &&
+    hiredStaff.career ||
+    {};
+
+  const currentDay =
+    dayOrdinal(
+      t
+    );
+
+  if (
+    career.training &&
+    Number(
+      career.training
+        .finishDay
+    ) >
+      currentDay
+  ) {
+    return false;
+  }
+
+  if (
+    career.leave &&
+    Number(
+      career.leave
+        .untilDay
+    ) >
+      currentDay
+  ) {
+    return false;
+  }
+
   if (
     employee.offDay ===
     weekDay(

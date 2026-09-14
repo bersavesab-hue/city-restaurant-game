@@ -330,13 +330,10 @@ const staffSource =
   );
 
 assert.ok(
-  staffSource.includes(
-    '营业时间 / 员工排班'
-  ) &&
-  staffSource.includes(
-    "'schedule'"
+  /switchTo\(\s*'schedule'/.test(
+    staffSource
   ),
-  '招聘页面必须提供排班入口'
+  '招聘页面必须提供可执行的排班入口'
 );
 
 const simulationSource =
