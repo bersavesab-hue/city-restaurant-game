@@ -208,26 +208,7 @@ function inferShape(
       shop
     );
 
-  const frontage =
-    Math.max(
-      2.4,
-      Number(
-        shop &&
-        shop.frontage
-      ) || 0
-    );
-
-  const impliedDepth =
-    floorArea /
-    Math.max(
-      frontage,
-      0.1
-    );
-
-  const aspect =
-    impliedDepth /
-    frontage;
-
+  // Explicit layout metadata always wins.
   if (
     layoutId ===
       'corner_l'
@@ -271,6 +252,40 @@ function inferShape(
   ) {
     return 'stall';
   }
+
+  // Old saves and early tests may have no frontage metadata.
+  // Unknown geometry defaults to standard instead of inventing a 2.4m frontage.
+  const rawFrontage =
+    Number(
+      shop &&
+      shop.frontage
+    );
+
+  if (
+    !Number.isFinite(
+      rawFrontage
+    ) ||
+    rawFrontage <= 0
+  ) {
+    return 'standard';
+  }
+
+  const frontage =
+    Math.max(
+      2.4,
+      rawFrontage
+    );
+
+  const impliedDepth =
+    floorArea /
+    Math.max(
+      frontage,
+      0.1
+    );
+
+  const aspect =
+    impliedDepth /
+    frontage;
 
   if (
     aspect >=

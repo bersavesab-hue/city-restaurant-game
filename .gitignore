@@ -27,7 +27,3 @@ Thumbs.db
 *.log
 *.tmp
 *.temp
-
-# Historical mistyped update package.
-# IMPORTANT: do NOT ignore update.zip; it is the one-click updater trigger.
-update .zip

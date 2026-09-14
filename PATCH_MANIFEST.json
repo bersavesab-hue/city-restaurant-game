@@ -1,21 +1,24 @@
 {
-  "version": "0.5.2",
-  "name": "V47_V48_3_COMBINED",
-  "package": "V47_V48_4_COMBINED",
-  "preserve_workspace": true,
-  "base_expected": "V46",
-  "hotfix": "V48.4_ACTIVE_UPDATE_ZIP_GUARD",
+  "version": "0.6.1",
+  "name": "CLEAN_BASE_V061",
+  "package": "CLEAN_BASE_V061",
+  "base_expected": "V48.4",
+  "purpose": "remove obsolete patch layers and recovery-era build behavior",
   "contains": [
-    "V47_RENOVATION_REFERENCE_REBUILD",
-    "V48_DYNAMIC_FLOOR_GEOMETRY_UI",
-    "V48_DYNAMIC_FLOOR_GEOMETRY_SYSTEM"
+    "renovation floorGeometry runtime fix",
+    "V21-V28 homepage overlay chain removal",
+    "legacy apply-script removal",
+    "recovery-v052 retirement",
+    "hard-fail Android JS bundler",
+    "current functional CI runner",
+    "stale update .zip removal",
+    "obsolete V21/V24 asset removal",
+    "legacy shops without frontage default to standard geometry"
   ],
   "notes": [
     "does not modify .github/workflows",
-    "preserves the unpacked validated update during npm install and test",
-    "keeps V0.5.2 legacy updater reconciliation for non-direct patches",
-    "includes V47 renovation UI rebuild and V48 dynamic floor geometry",
-    "active update.zip prevents git reset during validated update",
-    "preserves V47/V48 files through npm install, test and Android build"
+    "keeps V29/V32/V33/V34/V35 current homepage layers",
+    "keeps V43/V44/library_store assets that are still referenced",
+    "git history remains the archive for removed patch notes and scripts"
   ]
 }
