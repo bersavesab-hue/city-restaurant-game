@@ -20,6 +20,10 @@ const sceneManager =
 const scheduleSystem =
   require('../operations/operationsScheduleV087.js');
 
+const staffWorkloadSystem =
+  require('../operations/staffWorkloadV089.js');
+// V089_SCHEDULE_WORKLOAD_UI
+
 const ui =
   require('../ui/premiumUi.js');
 
@@ -220,6 +224,14 @@ class ScheduleScene {
       return;
     }
 
+    const workload =
+      staffWorkloadSystem
+        .getSnapshot(
+          this.shopId,
+          gameState
+            .getTime()
+        );
+
     const h =
       opUi.viewHeight();
 
@@ -236,7 +248,7 @@ class ScheduleScene {
     opUi.header(
       ctx,
       '营业时间与排班',
-      '真实影响客流与门店承载'
+      '高峰、疲劳、加班与班次缺口实时联动'
     );
 
     this.addButton(
@@ -375,7 +387,7 @@ class ScheduleScene {
       14,
       274,
       362,
-      72,
+      88,
       {
         radius:14,
         fill:
@@ -423,6 +435,32 @@ class ScheduleScene {
         ? '#40865A'
         : '#C37A35',
       '800'
+    );
+
+    ui.text(
+      ctx,
+      workload.peak.label +
+        ' · ' +
+        workload.pressure +
+        ' · 疲劳' +
+        workload.avgFatigue +
+        ' · 冲突' +
+        workload.conflictCount +
+        ' · 加班¥' +
+        Math.round(
+          workload
+            .todayOvertimePay
+        ),
+      28,
+      347,
+      6.6,
+      workload.conflictCount >
+        0 ||
+      workload.avgFatigue >=
+        65
+        ? '#C85242'
+        : '#617A86',
+      '700'
     );
 
     ui.text(

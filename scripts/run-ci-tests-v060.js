@@ -81,7 +81,6 @@ runNode(
   'scripts/v60-audit.js'
 );
 
-// Every source and live script must at least parse.
 for (
   const dir
   of ['src', 'scripts']
@@ -110,7 +109,6 @@ for (
   }
 }
 
-// Current functional baseline.
 for (
   const rel
   of [
@@ -143,13 +141,14 @@ for (
     'tests/operationsScheduleV087.test.js',
     'tests/staffCareerV088.test.js',
     'tests/updateInfrastructureV088.test.js',
+    'tests/staffWorkloadV089.test.js',
+    'tests/updateInfrastructureV089.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {
   runNode(rel, true);
 }
 
-// Useful current feature tests: run them when present.
 for (
   const rel
   of [

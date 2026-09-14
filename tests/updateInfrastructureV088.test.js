@@ -15,6 +15,83 @@ const ROOT =
     '..'
   );
 
+function versionGte(
+  a,
+  b
+) {
+  const aa =
+    String(
+      a ||
+      '0'
+    )
+      .split('.')
+      .map(
+        x =>
+          Number(
+            (
+              x.match(
+                /\d+/
+              ) ||
+              ['0']
+            )[0]
+          )
+      );
+
+  const bb =
+    String(
+      b ||
+      '0'
+    )
+      .split('.')
+      .map(
+        x =>
+          Number(
+            (
+              x.match(
+                /\d+/
+              ) ||
+              ['0']
+            )[0]
+          )
+      );
+
+  const len =
+    Math.max(
+      aa.length,
+      bb.length
+    );
+
+  for (
+    let i = 0;
+    i < len;
+    i++
+  ) {
+    const av =
+      aa[i] ||
+      0;
+
+    const bv =
+      bb[i] ||
+      0;
+
+    if (
+      av >
+      bv
+    ) {
+      return true;
+    }
+
+    if (
+      av <
+      bv
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 const pkg =
   JSON.parse(
     fs.readFileSync(
@@ -26,10 +103,12 @@ const pkg =
     )
   );
 
-assert.equal(
-  pkg.version,
-  '0.8.8',
-  '正式版本必须为0.8.8'
+assert.ok(
+  versionGte(
+    pkg.version,
+    '0.8.8'
+  ),
+  '正式版本不能低于0.8.8'
 );
 
 assert.ok(
@@ -37,7 +116,7 @@ assert.ok(
     pkg.scripts.pretest ||
     ''
   ),
-  '正式pretest禁止再次调用一次性安装脚本'
+  '正式pretest禁止再次调用apply-v一次性安装脚本'
 );
 
 const legacy =
@@ -95,7 +174,7 @@ assert.ok(
   runner.includes(
     'tests/updateInfrastructureV088.test.js'
   ),
-  '永久CI必须包含V0.8.8员工系统和更新基础设施测试'
+  '永久CI必须继续包含V0.8.8员工系统和更新基础设施测试'
 );
 
 assert.ok(
@@ -105,7 +184,7 @@ assert.ok(
       'scripts/apply-v088-staff-career.js'
     )
   ),
-  '正式树必须删除apply-v安装脚本'
+  '正式树必须删除旧apply-v安装脚本'
 );
 
 console.log(

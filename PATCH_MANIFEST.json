@@ -1,24 +1,28 @@
 {
-  "id": "V088_STABILITY_GATE_1",
+  "id": "V089_STAFF_WORKLOAD",
   "base": "0.8.8",
-  "target": "0.8.8",
-  "type": "stability-only",
-  "changes": [
-    "add early patch safety validation for forbidden .github/workflows paths",
-    "run 100-player lab on every npm test / update package",
-    "validate player-lab isolation and report generation",
-    "validate Android editable modal bridge",
-    "validate district insight linkage",
-    "validate core visual assets and visual fidelity"
+  "target": "0.8.9",
+  "features": [
+    "breakfast/lunch/dinner/night peak demand",
+    "real employee fatigue and stress",
+    "fatigue capacity penalty",
+    "8-hour overtime accounting",
+    "1.5x overtime labor cost",
+    "schedule conflict detection",
+    "leave/training/off-day shortage integration",
+    "schedule workload UI"
   ],
-  "root_cause_fixed": "prevent late GitHub push failure when an update.zip tries to modify workflow files without workflows permission",
-  "gameplay_changes": false,
-  "economy_changes": false,
-  "data_changes": false,
-  "safe_scope": [
-    "package.json",
-    "scripts/patch-safety-v089.js",
-    "scripts/quality-gate-v089.js",
-    "tests/qualityGateV089.test.js"
+  "preserves": [
+    "V0.8.8 staff career",
+    "V0.8.7 business hours and shifts",
+    "V0.8.6 business lifecycle",
+    "V0.8.5 management center",
+    "V0.8.4 live world"
+  ],
+  "infrastructure": [
+    "temporary installer is removed before commit",
+    "formal pretest contains no installer reference",
+    "permanent CI includes V0.8.9 regression tests",
+    "no workflow files are modified"
   ]
 }

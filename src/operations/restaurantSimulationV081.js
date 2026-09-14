@@ -38,6 +38,10 @@ const liveWorldSystem =
 
 const operationsSchedule =
   require('./operationsScheduleV087.js');
+
+const staffWorkloadSystem =
+  require('./staffWorkloadV089.js');
+// V089_STAFF_WORKLOAD
 // V084_RESTAURANT_LIVE_WORLD
 
 
@@ -157,6 +161,14 @@ function staffCoverage(
             .getTime()
         );
 
+    const fatigue =
+      staffWorkloadSystem
+        .getCapacityModifier(
+          shop.id,
+          gameState
+            .getTime()
+        );
+
     return clamp(
       Math.min(
         base,
@@ -171,8 +183,9 @@ function staffCoverage(
             .capacityMultiplier
         ) ||
         1
-      ),
-      0.10,
+      ) *
+      fatigue,
+      0.08,
       1.2
     );
   } catch (error) {
@@ -456,6 +469,12 @@ function expectedArrivalsPerMinute(
       ? 0.78
       : 1;
 
+  const peakDemandFactor =
+    staffWorkloadSystem
+      .getDemandMultiplier(
+        time
+      );
+
   return Math.max(
     0,
     averageRestaurantDemand /
@@ -472,6 +491,7 @@ function expectedArrivalsPerMinute(
       dynamicDemandFactor *
       competitionFactor *
       nightFactor *
+      peakDemandFactor *
       trialFactor
   );
 }
@@ -1227,6 +1247,41 @@ function simulateShop(
     shop,
     runtime
   );
+
+  const workloadTick =
+    staffWorkloadSystem
+      .advance(
+        shop.id,
+        advancedMinutes,
+        gameState
+          .getTime()
+      );
+
+  if (
+    workloadTick &&
+    workloadTick.overtimeCost >
+      0
+  ) {
+    settlementEngine
+      .addFixedCosts(
+        runtime.ledger,
+        {
+          labor:
+            workloadTick
+              .overtimeCost
+        }
+      );
+
+    spendOperatingCash(
+      workloadTick
+        .overtimeCost,
+      runtime,
+      'labor'
+    );
+
+    changed =
+      true;
+  }
 
   const rate =
     expectedArrivalsPerMinute(
