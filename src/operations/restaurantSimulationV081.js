@@ -27,6 +27,12 @@ const staffOperations =
 const marketingEngine =
   require('./marketingEngineV10.js');
 
+const dynamicWorldSystem =
+  require('../world/dynamicWorldSystemV0815.js');
+
+const floorSimulation =
+  require('./floorSimulationV082.js');
+
 const PERIOD_MINUTES = {
   breakfast: 240,
   lunch: 240,
@@ -300,6 +306,32 @@ function expectedArrivalsPerMinute(
           ? 0.96
           : 1;
 
+  const worldModifiers =
+    dynamicWorldSystem
+      .getModifiers(
+        {
+          districtId:
+            shop.districtId,
+          shopId:
+            shop.id
+        }
+      );
+
+  const dynamicDemandFactor =
+    Number(
+      worldModifiers
+        .demandMultiplier
+    ) || 1;
+
+  const nightFactor =
+    period ===
+      'night'
+      ? Number(
+          worldModifiers
+            .nightDemandMultiplier
+        ) || 1
+      : 1;
+
   const saturationFactor =
     clamp(
       1.18 -
@@ -328,7 +360,9 @@ function expectedArrivalsPerMinute(
         coverage *
           0.3
       ) *
-      weatherFactor
+      weatherFactor *
+      dynamicDemandFactor *
+      nightFactor
   );
 }
 
@@ -487,6 +521,17 @@ function accrueFixedCosts(
     };
   }
 
+  const worldModifiers =
+    dynamicWorldSystem
+      .getModifiers(
+        {
+          districtId:
+            shop.districtId,
+          shopId:
+            shop.id
+        }
+      );
+
   const rent =
     (
       Number(
@@ -495,13 +540,25 @@ function accrueFixedCosts(
       0
     ) /
     30 *
-    ratio;
+    ratio *
+    (
+      Number(
+        worldModifiers
+          .rentCostMultiplier
+      ) || 1
+    );
 
   const labor =
     dailyPayroll(
       shop
     ) *
-    ratio;
+    ratio *
+    (
+      Number(
+        worldModifiers
+          .laborCostMultiplier
+      ) || 1
+    );
 
   const area =
     Math.max(
@@ -519,7 +576,13 @@ function accrueFixedCosts(
       area *
         0.42
     ) *
-    ratio;
+    ratio *
+    (
+      Number(
+        worldModifiers
+          .utilityCostMultiplier
+      ) || 1
+    );
 
   const marketing =
     (
@@ -656,9 +719,22 @@ function closeElapsedDays(
           runtime
         );
 
+    closed.floor =
+      floorSimulation
+        .closeDay(
+          runtime
+        );
+
     runtime
       .dailySnapshots
       .push(
+        closed
+      );
+
+    dynamicWorldSystem
+      .onShopDayClosed(
+        shop,
+        runtime,
         closed
       );
 
@@ -775,137 +851,55 @@ function simulateShop(
     .arrivalCarry -=
     arrivals;
 
-  if (
-    arrivals <=
-    0
-  ) {
-    operations
-      .persist(
-        shop.id
-      );
-
-    return {
-      changed,
-      orders: 0
-    };
-  }
-
   const coverage =
     staffCoverage(
       shop
     );
 
-  let completed =
-    0;
+  const worldModifiers =
+    dynamicWorldSystem
+      .getModifiers(
+        {
+          districtId:
+            shop.districtId,
+          shopId:
+            shop.id
+        }
+      );
 
-  for (
-    let i = 0;
-    i < arrivals;
-    i++
-  ) {
-    const profile =
-      chooseCustomer(
+  const floorResult =
+    floorSimulation
+      .advance(
         runtime,
-        shop.districtId
+        shop,
+        advancedMinutes,
+        arrivals,
+        {
+          absoluteMinute:
+            absoluteMinute(),
+          staffCoverage:
+            coverage,
+          weather:
+            gameState
+              .getWorld()
+              .weather,
+          capacityMultiplier:
+            Number(
+              worldModifiers
+                .capacityMultiplier
+            ) || 1,
+          seats:
+            Number(
+              shop.seatEstimate ||
+              shop.seats ||
+              36
+            )
+        }
       );
 
-    const time =
-      gameState.getTime();
-
-    const result =
-      runtimeEngine
-        .simulateVisit(
-          runtime,
-          profile,
-          {
-            hour:
-              Number(
-                time.hour
-              ) ||
-              12,
-
-            minute:
-              Number(
-                time.minute
-              ) ||
-              0,
-
-            staffCoverage:
-              coverage,
-
-            rain:
-              gameState
-                .getWorld()
-                .weather ===
-              'rain'
-          }
-        );
-
-    if (!result.ok) {
-      runtime.history.push({
-        day:
-          runtime.day,
-        type:
-          'lost_visit',
-        reason:
-          result.reason ||
-          'unknown'
-      });
-
-      continue;
-    }
-
-    completed +=
-      1;
-
-    runtime
-      .simulation
-      .todayOrders +=
-      1;
-
-    runtime
-      .simulation
-      .todayCustomers +=
-      Math.max(
-        1,
-        Number(
-          result
-            .order
-            .partySize
-        ) ||
-        1
-      );
-
-    const cashIn =
-      Math.max(
-        0,
-        Number(
-          result
-            .settlement
-            .revenue
-        ) -
-        Number(
-          result
-            .settlement
-            .platformFee
-        ) -
-        Number(
-          result
-            .settlement
-            .packaging
-        ) -
-        Number(
-          result
-            .settlement
-            .refund
-        )
-      );
-
-    gameState
-      .addCash(
-        cashIn
-      );
-
+  if (
+    floorResult.changed
+  ) {
     changed =
       true;
   }
@@ -918,7 +912,7 @@ function simulateShop(
   return {
     changed,
     orders:
-      completed
+      floorResult.completedOrders
   };
 }
 

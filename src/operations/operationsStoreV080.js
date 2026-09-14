@@ -27,6 +27,9 @@ const foodPack =
 const settlementEngine =
   require('./settlementEngineV10.js');
 
+const dynamicWorldSystem =
+  require('../world/dynamicWorldSystemV0815.js');
+
 const { SeededRng } =
   require('../foundation/rng.js');
 
@@ -341,6 +344,12 @@ function snapshotRuntime(runtime) {
       clone(
         runtime.dailySnapshots ||
         []
+      ),
+
+    floor:
+      clone(
+        runtime.floor ||
+        null
       )
   };
 }
@@ -411,7 +420,8 @@ function buildRuntime(
         'customers',
         'history',
         'simulation',
-        'dailySnapshots'
+        'dailySnapshots',
+        'floor'
       ]
     ) {
       if (
@@ -1109,6 +1119,11 @@ function inventoryRows(
 function autoRestock(
   shopId
 ) {
+  const operationsShop =
+    getShop(
+      shopId
+    );
+
   return mutate(
     shopId,
     runtime => {
@@ -1158,6 +1173,17 @@ function autoRestock(
               1000
           );
 
+        const worldModifiers =
+          dynamicWorldSystem
+            .getModifiers(
+              {
+                shopId,
+                districtId:
+                  operationsShop &&
+                  operationsShop.districtId
+              }
+            );
+
         const quote =
           procurementEngine
             .bestQuote(
@@ -1168,7 +1194,12 @@ function autoRestock(
               requestedKg,
               {
                 day:
-                  runtime.day
+                  runtime.day,
+                marketIndex:
+                  Number(
+                    worldModifiers
+                      .supplyCostMultiplier
+                  ) || 1
               }
             );
 

@@ -1,6 +1,6 @@
 {
   "name": "city-restaurant-game",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "private": true,
   "scripts": {
     "pretest": "node scripts/resource-lifecycle.js sync-pools && node tests/resourceLifecycleV062.test.js && node scripts/resource-lifecycle.js gc --apply && node scripts/resource-lifecycle.js audit && node tools/devkit/devkit.js self-check && node tests/devkitV100.test.js",

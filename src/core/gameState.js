@@ -49,6 +49,24 @@ const INITIAL_STATE = {
       newsFeed: [],
 
       lastDailySnapshot: null
+    },
+
+    dynamicWorld: {
+      version: '0.8.15',
+      lastProcessedDay: null,
+      eventState: null,
+      policyState: null,
+      npcPool: [],
+      dialogueFeed: [],
+      barrageFeed: [],
+      signalHistory: [],
+      modifiers: {},
+      metrics: {
+        eventsTriggered: 0,
+        policiesProposed: 0,
+        dialoguesGenerated: 0,
+        barragesGenerated: 0
+      }
     }
   },
 
@@ -291,6 +309,35 @@ class GameState {
     }
 
     return business.restaurantOperations;
+  }
+
+  getDynamicWorld() {
+    const world =
+      this.data.world;
+
+    if (
+      !world.dynamicWorld
+    ) {
+      world.dynamicWorld = {
+        version: '0.8.15',
+        lastProcessedDay: null,
+        eventState: null,
+        policyState: null,
+        npcPool: [],
+        dialogueFeed: [],
+        barrageFeed: [],
+        signalHistory: [],
+        modifiers: {},
+        metrics: {
+          eventsTriggered: 0,
+          policiesProposed: 0,
+          dialoguesGenerated: 0,
+          barragesGenerated: 0
+        }
+      };
+    }
+
+    return world.dynamicWorld;
   }
 
   getSimulation() {

@@ -97,6 +97,12 @@ const supplyScene =
 const businessScene =
   require('./scenes/businessScene.js');
 
+const dynamicWorldScene =
+  require('./scenes/dynamicWorldScene.js');
+
+const dynamicWorldSystem =
+  require('./world/dynamicWorldSystemV0815.js');
+
 /* =========================
    手机自适应基础
 ========================= */
@@ -5292,6 +5298,11 @@ sceneManager.register(
   businessScene
 );
 
+sceneManager.register(
+  'dynamicWorld',
+  dynamicWorldScene
+);
+
 /* =========================
    总渲染
 ========================= */
@@ -5546,36 +5557,15 @@ function handleTap(
       toolId ===
       'news'
     ) {
-      const bulletin =
-        simulationSystem
-          .getBulletin();
+      trafficMode =
+        false;
 
-      if (
-        bulletin &&
-        bulletin.districtId &&
-        citySystem
-          .getDistrict(
-            bulletin.districtId
-          )
-      ) {
-        selectedDistrictId =
-          bulletin.districtId;
-
-        citySystem
-          .setCurrentDistrict(
-            bulletin.districtId
-          );
-
-        startDistrictFx(
-          bulletin.districtId
+      sceneManager
+        .switchTo(
+          'dynamicWorld'
         );
-      }
 
-      showToast(
-        bulletin.title +
-        '：' +
-        bulletin.detail
-      );
+      render();
     } else {
       showToast(
         '该城市功能已预留'
@@ -6409,6 +6399,8 @@ drawTopHud = function () {
 drawNewsTicker = function () {
   const feed = simulationSystem.getNewsFeed();
   const bulletin = simulationSystem.getBulletin();
+  const unread = dynamicWorldSystem.getUnreadCounts();
+  const unreadTotal = Number(unread.total || 0);
 
   const x = 7;
   const y = MAP_Y + 4;
@@ -6426,7 +6418,16 @@ drawNewsTicker = function () {
   );
 
   drawText('🔊', x + 15, y + 13.8, 9.4, '#FFD85C', '800', 'center');
-  drawText('城市播报', x + 30, y + 13.8, 7.4, '#FFD85C', '800');
+  drawText(
+    unreadTotal > 0
+      ? '城市播报 ' + (unreadTotal > 99 ? '99+' : unreadTotal)
+      : '城市播报',
+    x + 30,
+    y + 13.8,
+    7.4,
+    '#FFD85C',
+    '800'
+  );
 
   const items = ((feed && feed.length ? feed : [bulletin])).slice(0, 3);
   const startX = x + 87;

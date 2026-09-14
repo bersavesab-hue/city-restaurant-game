@@ -15,6 +15,9 @@ const propertyMarketSystem =
 const propertySystem =
   require('../property/propertySystem.js');
 
+const dynamicWorldSystem =
+  require('../world/dynamicWorldSystemV0815.js');
+
 const DISTRICT_IDS = [
   'university',
   'cbd',
@@ -885,6 +888,17 @@ class SimulationSystem {
       snapshot,
       events
     );
+
+    dynamicWorldSystem
+      .processDay(
+        dayOrdinal,
+        {
+          weather:
+            weather.weather,
+          temperature:
+            weather.temperature
+        }
+      );
 
     return snapshot;
   }

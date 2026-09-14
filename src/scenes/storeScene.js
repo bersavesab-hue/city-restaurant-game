@@ -52,6 +52,9 @@ const openingFinanceSystem =
 const operationsStore =
   require('../operations/operationsStoreV080.js');
 
+const floorSimulation =
+  require('../operations/floorSimulationV082.js');
+
 const customizationSystem =
   require('../ui/customizationSystem.js');
 
@@ -1479,6 +1482,35 @@ class StoreScene {
         1
       );
 
+    const runtime =
+      operationsStore
+        .getRuntime(
+          shop.id
+        );
+
+    const live =
+      runtime
+        ? floorSimulation
+            .getSnapshot(
+              runtime
+            )
+        : {
+            queueParties:0,
+            occupiedTables:0,
+            totalTables:0,
+            seatedPeople:0,
+            kitchenQueue:0,
+            kitchenActive:0,
+            deliveryWaiting:0,
+            deliveryOnRoad:0,
+            walkawaysToday:0,
+            stockoutsToday:0,
+            mistakesToday:0,
+            completedOrdersToday:0,
+            avgWaitMinutes:0,
+            avgCookMinutes:0
+          };
+
     return {
       state,
       district,
@@ -1503,6 +1535,26 @@ class StoreScene {
         Number(
           finance.profitRate
         ) || 0,
+      live,
+      queueParties:
+        live.queueParties,
+      occupiedTables:
+        live.occupiedTables,
+      totalTables:
+        live.totalTables,
+      seatedPeople:
+        live.seatedPeople,
+      kitchenQueue:
+        live.kitchenQueue,
+      deliveryActive:
+        live.deliveryWaiting +
+        live.deliveryOnRoad,
+      walkawaysToday:
+        live.walkawaysToday,
+      stockoutsToday:
+        live.stockoutsToday,
+      mistakesToday:
+        live.mistakesToday,
       realOperation:
         true
     };
@@ -3908,27 +3960,24 @@ class StoreScene {
 
     const stateItems = [
       [
-        '当前客流',
-        snap.customers +
+        '等位',
+        snap.queueParties +
+        '桌'
+      ],
+      [
+        '在座',
+        snap.seatedPeople +
         '人'
       ],
       [
-        '翻台率',
-        snap.turnover.toFixed(
-          1
-        )
+        '后厨队列',
+        snap.kitchenQueue +
+        '单'
       ],
       [
-        '客单价',
-        compactMoney(
-          snap.avgSpend
-        )
-      ],
-      [
-        '员工覆盖',
-        percent01(
-          snap.staffCoverage
-        )
+        '外卖配送',
+        snap.deliveryActive +
+        '单'
       ]
     ];
 
@@ -3977,17 +4026,27 @@ class StoreScene {
     }
 
     const warning =
-      snap.staffCoverage < 0.9
-        ? '员工覆盖不足'
-        : !snap.state
-            .readiness
-            .equipmentReady
-          ? '设备仍待完善'
-          : !snap.state
-              .readiness
-              .permitsReady
-            ? '证照仍待处理'
-            : '今日经营稳定';
+      snap.walkawaysToday > 0
+        ? '已有' +
+          snap.walkawaysToday +
+          '桌顾客等位离开'
+        : snap.stockoutsToday > 0
+          ? '今日出现' +
+            snap.stockoutsToday +
+            '次缺货'
+          : snap.kitchenQueue > 6
+            ? '后厨高峰拥堵'
+            : snap.staffCoverage < 0.9
+              ? '员工覆盖不足'
+              : !snap.state
+                  .readiness
+                  .equipmentReady
+                ? '设备仍待完善'
+                : !snap.state
+                    .readiness
+                    .permitsReady
+                  ? '证照仍待处理'
+                  : '今日经营稳定';
 
     ui.card(
       ctx,
