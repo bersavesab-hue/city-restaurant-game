@@ -1,23 +1,20 @@
 {
-  "version": "0.8.4",
-  "name": "Live People & Competitor World",
-  "baseVersion": "0.8.3",
+  "version": "0.8.5",
+  "name": "Business Management Center",
+  "baseVersion": "0.8.4",
   "files": [
-    "src/world/liveWorldSystemV084.js",
-    "scripts/install-live-world-v084.js",
-    "tests/liveWorldV084.test.js",
-    "docs/LIVE_WORLD_V084.md",
+    "src/world/managementWorldSystemV085.js",
+    "src/scenes/businessScene.js",
+    "tests/managementCenterV085.test.js",
+    "docs/MANAGEMENT_CENTER_V085.md",
     "PATCH_MANIFEST.json",
     "package.json"
   ],
   "features": [
-    "real-person recruitment",
-    "daily staff mood/stress/loyalty",
-    "turnover and entrepreneurship",
-    "300-entity tiered competitor world",
-    "competitor action and opening pipeline",
-    "real competition demand pressure",
-    "staff state capacity modifier",
-    "staff/competition UI summaries"
+    "tabbed business management center",
+    "real staff management actions",
+    "competitor center",
+    "dynamic district ranking",
+    "competition event feedback"
   ]
 }
