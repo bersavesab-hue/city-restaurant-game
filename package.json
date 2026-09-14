@@ -1,13 +1,16 @@
 {
   "name": "city-restaurant-game",
-  "version": "0.2.0",
+  "version": "0.5.2",
   "private": true,
   "scripts": {
-    "test": "node tests/core.test.js && node tests/propertyFoundation.test.js && node tests/propertyMarket.test.js && node tests/renovation.test.js && node tests/renovationUndo.test.js && node tests/renovationV17.test.js && node tests/v45RenovationPhase1.test.js && node tests/v46RenovationPlayability.test.js",
-    "build:android-js": "esbuild android/entry.js --bundle --platform=browser --format=iife --target=chrome100 --outfile=android/app/src/main/assets/game.bundle.js",
-    "test:foundation": "node tests/foundationSrcV050.test.js"
-  },
-  "devDependencies": {
-    "esbuild": "^0.25.0"
+    "postinstall": "node scripts/ci-reconcile-update-race-v052.js",
+    "test": "node scripts/run-ci-tests-v052.js",
+    "health": "node scripts/project-health-check-v052.js",
+    "repo:cleanup": "node scripts/repo-cleanup.js --untrack",
+    "repo:cleanup:dry": "node scripts/repo-cleanup.js --dry-run",
+    "build:android-js": "node scripts/build-android-js-v052.js",
+    "build:mini-assets": "node scripts/buildMiniAssets.js",
+    "player-lab": "node simulator/run100.js --report --output reports/player-lab/latest",
+    "player-lab:ci": "node simulator/run100.js --ci --report --output reports/player-lab/latest"
   }
 }

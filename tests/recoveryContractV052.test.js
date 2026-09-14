@@ -1,0 +1,12 @@
+'use strict';
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const root = path.resolve(__dirname, '..');
+const pkg = JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
+const manifest = JSON.parse(fs.readFileSync(path.join(root,'PATCH_MANIFEST.json'),'utf8'));
+assert.equal(pkg.version, '0.5.2');
+assert.ok(pkg.scripts.test.includes('run-ci-tests-v052.js'));
+assert.ok(pkg.scripts['build:android-js'].includes('build-android-js-v052.js'));
+assert.ok(manifest.notes.some(x => /does not modify \.github\/workflows/.test(x)));
+console.log('recoveryContractV052.test.js PASS');

@@ -1,27 +1,10 @@
 {
-  "patch": "底层结构总修复 V0.5.0",
-  "version": "0.5.0",
-  "purpose": "把早期错误写到项目根目录的房源、人物、foundation、systems、彩蛋模块迁移到真实 src 运行目录，并重新统一测试链。",
-  "safe": true,
-  "touchesExistingUI": false,
-  "doesNotOverwrite": [
-    "src/scenes/shopScene.js",
-    "src/main.js",
-    "android/entry.js",
-    "src/property/propertyMarketSystem.js",
-    "src/property/propertyData.js",
-    "src/property/propertySystem.js"
-  ],
-  "restores": [
-    "src/foundation",
-    "src/entities",
-    "src/systems",
-    "src/property V1 data extensions",
-    "src/person",
-    "src/easteregg"
-  ],
-  "reincludes": [
-    "src/competitor V1.1",
-    "src/customer V1.0"
+  "version": "0.5.2",
+  "name": "workflow-safe recovery",
+  "notes": [
+    "does not modify .github/workflows",
+    "reconciles legacy updater race without deleting workflows",
+    "supports android/entry.js and android/entry.js.txt",
+    "preserves an existing game.bundle.js if the source tree is temporarily incomplete"
   ]
 }
