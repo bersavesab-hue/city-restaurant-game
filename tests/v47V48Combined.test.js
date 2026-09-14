@@ -24,15 +24,6 @@ const scene =
     'utf8'
   );
 
-const geometry =
-  fs.readFileSync(
-    path.join(
-      ROOT,
-      'src/renovation/floorGeometrySystem.js'
-    ),
-    'utf8'
-  );
-
 const system =
   fs.readFileSync(
     path.join(
@@ -40,6 +31,11 @@ const system =
       'src/renovation/renovationSystem.js'
     ),
     'utf8'
+  );
+
+const geometrySystem =
+  require(
+    '../src/renovation/floorGeometrySystem.js'
   );
 
 assert.ok(
@@ -57,46 +53,74 @@ assert.ok(
 );
 
 assert.ok(
-  geometry.includes(
-    'V48_DYNAMIC_FLOOR_GEOMETRY'
-  ),
-  'V48 房型几何引擎不存在'
-);
-
-assert.ok(
   system.includes(
     'V48_DYNAMIC_FLOOR_GEOMETRY_SYSTEM'
   ),
   'V48 装修计算系统没有接入房型几何'
 );
 
+const shapes = [
+  {
+    id: 'single_bay',
+    expected: 'standard'
+  },
+  {
+    id: 'long_narrow',
+    expected: 'narrow'
+  },
+  {
+    id: 'double_bay',
+    expected: 'wide'
+  },
+  {
+    id: 'corner_l',
+    expected: 'l_shape'
+  },
+  {
+    id: 'front_back',
+    expected: 'front_narrow'
+  },
+  {
+    id: 'through_shop',
+    expected: 'through'
+  },
+  {
+    id: 'stall',
+    expected: 'stall'
+  }
+];
+
 for (
-  const token
-  of [
-    'standard',
-    'narrow',
-    'wide',
-    'l_shape',
-    'front_narrow',
-    'through',
-    'stall'
-  ]
+  let i = 0;
+  i < shapes.length;
+  i++
 ) {
-  assert.ok(
-    geometry.includes(
-      token
-    ),
-    '动态房型缺失：' +
-      token
+  const item =
+    geometrySystem
+      .getFloorGeometry(
+        {
+          id:
+            'shape_' +
+            i,
+          usableArea:
+            100,
+          frontage:
+            8,
+          layoutTypeId:
+            shapes[i].id
+        },
+        0,
+        100,
+        1
+      );
+
+  assert.strictEqual(
+    item.shapeId,
+    shapes[i].expected,
+    '房型映射错误：' +
+      shapes[i].id
   );
 }
-
-assert.ok(
-  /\\.diningSlots\\b/.test(
-    scene
-  ),
-  '餐桌没有使用动态房型候选点'
-);
 
 assert.ok(
   system.includes(

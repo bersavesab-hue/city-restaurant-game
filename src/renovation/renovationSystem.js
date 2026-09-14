@@ -1,6 +1,7 @@
 'use strict';
 
 // V46_RENOVATION_PLAYABILITY_SYSTEM
+// V48_DYNAMIC_FLOOR_GEOMETRY_SYSTEM
 
 const gameState =
   require('../core/gameState.js');
@@ -10,6 +11,9 @@ const simulationSystem =
 
 const config =
   require('./renovationConfig.js');
+
+const floorGeometrySystem =
+  require('./floorGeometrySystem.js');
 
 function clone(value) {
   return JSON.parse(
@@ -533,30 +537,143 @@ class RenovationSystem {
       return null;
     }
 
+    const shop =
+      this.getShop(
+        shopId
+      );
+
     return this.mutatePlan(
       shopId,
       plan => {
         const floor =
-          plan.floors[floorIndex];
+          plan.floors[
+            clamp(
+              floorIndex,
+              0,
+              plan.floors.length -
+                1
+            )
+          ];
 
-        floor.tables[key] =
+        const current =
+          Number(
+            floor.tables[
+              key
+            ]
+          ) || 0;
+
+        if (
+          delta > 0
+        ) {
+          const aisle =
+            config
+              .aisleModes[
+                floor.aisleMode
+              ];
+
+          const geometry =
+            floorGeometrySystem
+              .getFloorGeometry(
+                shop,
+                floor.index,
+                floor.area,
+                plan.floors.length
+              );
+
+          const zoneRatio =
+            floor.kitchenRatio +
+            floor.storageRatio +
+            floor.serviceRatio;
+
+          const rawDining =
+            Math.max(
+              0,
+              floor.area *
+              (
+                1 -
+                zoneRatio
+              )
+            );
+
+          const effectiveDining =
+            rawDining *
+            geometry
+              .efficiency
+              .dining;
+
+          let used =
+            0;
+
+          Object.keys(
+            floor.tables
+          ).forEach(
+            tableKey => {
+              used +=
+                (
+                  Number(
+                    floor.tables[
+                      tableKey
+                    ]
+                  ) ||
+                  0
+                ) *
+                config
+                  .tableFootprint[
+                    tableKey
+                  ] *
+                aisle.areaFactor;
+            }
+          );
+
+          for (
+            let i = 0;
+            i <
+            floor
+              .privateRooms
+              .length;
+            i++
+          ) {
+            const room =
+              floor
+                .privateRooms[i];
+
+            used +=
+              7 +
+              room.seats *
+              1.55;
+          }
+
+          const nextUsed =
+            used +
+            config
+              .tableFootprint[
+                key
+              ] *
+            aisle.areaFactor;
+
+          if (
+            nextUsed >
+            effectiveDining +
+              0.01
+          ) {
+            return;
+          }
+        }
+
+        floor.tables[
+          key
+        ] =
           Math.max(
             0,
             Math.min(
               40,
-              (
-                floor.tables[
-                  key
-                ] ||
-                0
-              ) +
+              current +
               delta
             )
           );
       }
     );
   }
-
   adjustDecor(
     shopId,
     decorId,
@@ -876,6 +993,15 @@ class RenovationSystem {
             floor.aisleMode
           ];
 
+      const geometry =
+        floorGeometrySystem
+          .getFloorGeometry(
+            shop,
+            i,
+            floor.area,
+            plan.floors.length
+          );
+
       const zoneRatio =
         floor.kitchenRatio +
         floor.storageRatio +
@@ -890,6 +1016,12 @@ class RenovationSystem {
             zoneRatio
           )
         );
+
+      const effectiveDiningArea =
+        diningArea *
+        geometry
+          .efficiency
+          .dining;
 
       let tableArea = 0;
       let tableSeats = 0;
@@ -965,14 +1097,14 @@ class RenovationSystem {
         roomArea;
 
       const remaining =
-        diningArea -
+        effectiveDiningArea -
         used;
 
       const crowding =
-        diningArea >
+        effectiveDiningArea >
         0
           ? used /
-            diningArea
+            effectiveDiningArea
           : 99;
 
       const valid =
@@ -992,6 +1124,14 @@ class RenovationSystem {
           Number(
             diningArea.toFixed(1)
           ),
+
+        effectiveDiningArea:
+          Number(
+            effectiveDiningArea
+              .toFixed(1)
+          ),
+
+        geometry,
         tableArea:
           Number(
             tableArea.toFixed(1)
@@ -1052,7 +1192,10 @@ class RenovationSystem {
 
       serviceScore +=
         aisle
-          .serviceEfficiency;
+          .serviceEfficiency *
+        geometry
+          .efficiency
+          .service;
     }
 
     const totalArea =

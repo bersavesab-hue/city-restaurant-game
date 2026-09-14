@@ -3,6 +3,7 @@
   "version": "0.5.2",
   "private": true,
   "scripts": {
+    "preinstall": "node tests/v48SafeReconcile.test.js && node scripts/apply-v48-dynamic-floor.js && node --check src/scenes/renovationScene.js && node --check src/renovation/floorGeometrySystem.js && node --check src/renovation/renovationSystem.js && node --check src/property/propertyNegotiationSystem.js && node tests/v48FloorGeometry.test.js && node tests/v48DynamicFloorIntegration.test.js && node tests/v47V48Combined.test.js && node tests/v48WorkspacePersistence.test.js",
     "postinstall": "node scripts/ci-reconcile-update-race-v052.js",
     "test": "node scripts/run-ci-tests-v052.js",
     "health": "node scripts/project-health-check-v052.js",
@@ -11,6 +12,7 @@
     "build:android-js": "node scripts/build-android-js-v052.js",
     "build:mini-assets": "node scripts/buildMiniAssets.js",
     "player-lab": "node simulator/run100.js --report --output reports/player-lab/latest",
-    "player-lab:ci": "node simulator/run100.js --ci --report --output reports/player-lab/latest"
+    "player-lab:ci": "node simulator/run100.js --ci --report --output reports/player-lab/latest",
+    "test:v48": "node tests/v48FloorGeometry.test.js && node tests/v48DynamicFloorIntegration.test.js && node tests/v47V48Combined.test.js"
   }
 }

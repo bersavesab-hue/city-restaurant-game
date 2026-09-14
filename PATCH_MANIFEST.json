@@ -1,10 +1,21 @@
 {
   "version": "0.5.2",
-  "name": "workflow-safe recovery",
+  "name": "V47_V48_3_COMBINED",
+  "package": "V47_V48_4_COMBINED",
+  "preserve_workspace": true,
+  "base_expected": "V46",
+  "hotfix": "V48.4_ACTIVE_UPDATE_ZIP_GUARD",
+  "contains": [
+    "V47_RENOVATION_REFERENCE_REBUILD",
+    "V48_DYNAMIC_FLOOR_GEOMETRY_UI",
+    "V48_DYNAMIC_FLOOR_GEOMETRY_SYSTEM"
+  ],
   "notes": [
     "does not modify .github/workflows",
-    "reconciles legacy updater race without deleting workflows",
-    "supports android/entry.js and android/entry.js.txt",
-    "preserves an existing game.bundle.js if the source tree is temporarily incomplete"
+    "preserves the unpacked validated update during npm install and test",
+    "keeps V0.5.2 legacy updater reconciliation for non-direct patches",
+    "includes V47 renovation UI rebuild and V48 dynamic floor geometry",
+    "active update.zip prevents git reset during validated update",
+    "preserves V47/V48 files through npm install, test and Android build"
   ]
 }

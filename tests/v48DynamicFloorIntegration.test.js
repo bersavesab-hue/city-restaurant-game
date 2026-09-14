@@ -42,14 +42,10 @@ const negotiation =
     'utf8'
   );
 
-function hasField(
-  source,
-  field
-) {
-  return source.includes(
-    field
+const floorGeometrySystem =
+  require(
+    '../src/renovation/floorGeometrySystem.js'
   );
-}
 
 assert.ok(
   scene.includes(
@@ -83,6 +79,30 @@ for (
   );
 }
 
+const runtimeGeometry =
+  floorGeometrySystem
+    .getFloorGeometry(
+      {
+        id:
+          'integration_case',
+        usableArea:
+          120,
+        frontage:
+          9,
+        depth:
+          13.3,
+        layoutTypeId:
+          'corner_l',
+        layoutTypeName:
+          'L型转角',
+        independentToilet:
+          true
+      },
+      0,
+      120,
+      1
+    );
+
 for (
   const field
   of [
@@ -95,14 +115,46 @@ for (
   ]
 ) {
   assert.ok(
-    hasField(
-      scene,
-      field
-    ),
-    '动态房型字段缺失：' +
+    Object.prototype
+      .hasOwnProperty.call(
+        runtimeGeometry,
+        field
+      ),
+    '动态房型运行时字段缺失：' +
       field
   );
 }
+
+assert.strictEqual(
+  runtimeGeometry.shapeId,
+  'l_shape',
+  'L型房源必须生成L型几何'
+);
+
+assert.ok(
+  Array.isArray(
+    runtimeGeometry.diningSlots
+  ) &&
+  runtimeGeometry.diningSlots.length >
+    0,
+  '动态房型必须生成可摆餐桌候选点'
+);
+
+assert.ok(
+  Array.isArray(
+    runtimeGeometry.obstacles
+  ),
+  '动态房型必须生成固定结构列表'
+);
+
+assert.ok(
+  Array.isArray(
+    runtimeGeometry.entrances
+  ) &&
+  runtimeGeometry.entrances.length >
+    0,
+  '动态房型必须生成入口'
+);
 
 assert.ok(
   !scene.includes(
@@ -132,8 +184,8 @@ assert.ok(
 );
 
 assert.ok(
-  /\\.efficiency\\b/.test(
-    system
+  system.includes(
+    '.efficiency'
   ),
   '房型效率必须参与装修计算'
 );

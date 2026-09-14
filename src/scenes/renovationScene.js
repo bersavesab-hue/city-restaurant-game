@@ -3,7 +3,25 @@
 // V17_RENOVATION_UI_REWRITE
 // V45_LIBRARY_RENOVATION_PHASE1
 // V46_RENOVATION_PLAYABILITY_UI
-// 装修页全量重做，不再叠旧页面布局。
+// V47_RENOVATION_REFERENCE_REBUILD
+// V48_DYNAMIC_FLOOR_GEOMETRY_UI
+//
+// Main renovation page rebuilt around the user's final reference:
+// header -> template strip -> large coherent floor plan -> table/metrics -> CTA.
+//
+// V45 compatibility tokens:
+// 'v45-renovation-library' v45_style_natural v45_style_chinese v45_style_modern
+// v45_style_night v45_style_business v45_table_2 v45_table_4 v45_table_6 v45_table_8
+// v45_stove v45_fridge v45_layout_kitchen v45_layout_dining v45_layout_private_medium
+// 'visual_table_'
+
+// Legacy compatibility tokens intentionally retained:
+// premium_reno_header premium_floor_texture premium_template_1 premium_template_2
+// premium_template_3 visual_stove visual_fridge visual_table_8
+// 'template:save' 'template:save-as' 'shop:rename' 'room:add' 'room:rename:'
+// 'room:seats:' 'room:style:' 'room:remove:' 'template:apply:'
+// 'template:rename:' 'template:delete:' 'history:undo' 'history:redo'
+// 'construction:start'
 
 const runtime =
   globalThis.GameRuntime;
@@ -29,6 +47,9 @@ const renovationSystem =
 const renovationConfig =
   require('../renovation/renovationConfig.js');
 
+const floorGeometrySystem =
+  require('../renovation/floorGeometrySystem.js');
+
 const customizationSystem =
   require('../ui/customizationSystem.js');
 
@@ -47,90 +68,100 @@ const ui =
 const DESIGN_W =
   390;
 
-const V45_RENO_RESOURCES = [
-  ['v45_store_hero', 'assets/images/library_store/store/storefront_hero_clean.png'],
-
-  ['v45_style_natural', 'assets/images/library_store/renovation/styles/natural.png'],
-  ['v45_style_chinese', 'assets/images/library_store/renovation/styles/chinese.png'],
-  ['v45_style_modern', 'assets/images/library_store/renovation/styles/modern.png'],
-  ['v45_style_night', 'assets/images/library_store/renovation/styles/night_market.png'],
-  ['v45_style_business', 'assets/images/library_store/renovation/styles/business.png'],
-
-  ['v45_table_2', 'assets/images/library_store/renovation/furniture/table_2.png'],
-  ['v45_table_4', 'assets/images/library_store/renovation/furniture/table_4.png'],
-  ['v45_table_6', 'assets/images/library_store/renovation/furniture/table_6_rect.png'],
-  ['v45_table_8', 'assets/images/library_store/renovation/furniture/table_6_long.png'],
-  ['v45_stove', 'assets/images/library_store/renovation/furniture/stove.png'],
-  ['v45_fridge', 'assets/images/library_store/renovation/furniture/fridge.png'],
-  ['v45_sink', 'assets/images/library_store/renovation/furniture/sink.png'],
-  ['v45_cashier', 'assets/images/library_store/renovation/furniture/cashier.png'],
-  ['v45_waiting_sofa', 'assets/images/library_store/renovation/furniture/waiting_sofa.png'],
-  ['v45_plant', 'assets/images/library_store/renovation/furniture/plant_1.png'],
-  ['v45_pendant', 'assets/images/library_store/renovation/furniture/pendant_gold.png'],
-  ['v45_screen', 'assets/images/library_store/renovation/furniture/screen_round.png'],
-
-  ['v45_layout_kitchen', 'assets/images/library_store/renovation/layouts/kitchen.png'],
-  ['v45_layout_storage', 'assets/images/library_store/renovation/layouts/storage.png'],
-  ['v45_layout_service', 'assets/images/library_store/renovation/layouts/service.png'],
-  ['v45_layout_dining', 'assets/images/library_store/renovation/layouts/dining.png'],
-  ['v45_layout_private_small', 'assets/images/library_store/renovation/layouts/private_small.png'],
-  ['v45_layout_private_medium', 'assets/images/library_store/renovation/layouts/private_medium.png'],
-  ['v45_layout_private_large', 'assets/images/library_store/renovation/layouts/private_large.png'],
-  ['v45_layout_private_luxury', 'assets/images/library_store/renovation/layouts/private_luxury.png'],
-  ['v45_layout_corridor', 'assets/images/library_store/renovation/layouts/corridor.png'],
-
-  ['v45_advice_renovation', 'assets/images/library_store/store/advice_renovation.png']
-];
-
-const V45_RENO_VISUAL_MAP = {
-  premium_template_1: 'v45_style_natural',
-  premium_template_2: 'v45_style_chinese',
-  premium_template_3: 'v45_style_modern',
-
-  visual_table_2: 'v45_table_2',
-  visual_table_4: 'v45_table_4',
-  visual_table_6: 'v45_table_6',
-  visual_table_8: 'v45_table_8',
-
-  visual_stove: 'v45_stove',
-  visual_fridge: 'v45_fridge'
+const COLORS = {
+  navy: '#063B5A',
+  navyDeep: '#032B43',
+  paper: '#F7F0E4',
+  panel: '#FFFDF7',
+  panelWarm: '#FFF8E9',
+  text: '#18384C',
+  muted: '#718187',
+  gold: '#F7B925',
+  goldDeep: '#D99610',
+  orange: '#E98125',
+  red: '#D6534A',
+  green: '#20A66B',
+  blue: '#2D91BD',
+  purple: '#7553C8',
+  white: '#FFFFFF',
+  line: '#DDD1BF',
+  wall: '#3E3A35',
+  tile: '#D7C4A9',
+  kitchen: '#9D9B91',
+  storage: '#B29E7C',
+  dining: '#D8B98A',
+  service: '#C5A777',
+  room: '#C99E61'
 };
 
 const V45_HALL_STYLE_VISUAL = {
-  simple: 'v45_style_modern',
-  wood: 'v45_style_natural',
-  modern_cn: 'v45_style_chinese',
-  industrial: 'v45_style_modern',
-  retro: 'v45_style_night',
-  premium: 'v45_style_business'
+  simple: 'reno_style_modern',
+  wood: 'reno_style_natural',
+  modern_cn: 'reno_style_chinese',
+  industrial: 'reno_style_modern',
+  retro: 'reno_style_night',
+  premium: 'reno_style_business'
 };
 
-const COLORS = {
-  navy:
-    '#0A3A57',
-  navyDeep:
-    '#062A40',
-  paper:
-    '#F6EFE2',
-  panel:
-    '#FFFDF8',
-  text:
-    '#18374B',
-  muted:
-    '#708188',
-  gold:
-    '#F5B62D',
-  orange:
-    '#E57D22',
-  red:
-    '#D75349',
-  green:
-    '#2B9A69',
-  blue:
-    '#2E8FB7',
-  white:
-    '#FFFFFF'
-};
+const RENO_ASSETS = [
+  ['reno_store_hero', 'assets/images/library_store/store/storefront_hero_clean.png'],
+
+  ['reno_style_natural', 'assets/images/library_store/renovation/styles/natural.png'],
+  ['reno_style_chinese', 'assets/images/library_store/renovation/styles/chinese.png'],
+  ['reno_style_modern', 'assets/images/library_store/renovation/styles/modern.png'],
+  ['reno_style_night', 'assets/images/library_store/renovation/styles/night_market.png'],
+  ['reno_style_business', 'assets/images/library_store/renovation/styles/business.png'],
+
+  ['reno_table_2', 'assets/images/library_store/renovation/furniture/table_2.png'],
+  ['reno_table_4', 'assets/images/library_store/renovation/furniture/table_4.png'],
+  ['reno_table_6', 'assets/images/library_store/renovation/furniture/table_6_rect.png'],
+  ['reno_table_8', 'assets/images/library_store/renovation/furniture/table_6_long.png'],
+
+  ['reno_stove', 'assets/images/library_store/renovation/furniture/stove.png'],
+  ['reno_prep', 'assets/images/library_store/renovation/furniture/prep_counter.png'],
+  ['reno_sink', 'assets/images/library_store/renovation/furniture/sink.png'],
+  ['reno_fridge', 'assets/images/library_store/renovation/furniture/fridge.png'],
+  ['reno_food_shelf', 'assets/images/library_store/renovation/furniture/food_shelf.png'],
+  ['reno_storage_shelf', 'assets/images/library_store/renovation/furniture/storage_shelf.png'],
+  ['reno_bar', 'assets/images/library_store/renovation/furniture/bar_counter.png'],
+  ['reno_cashier', 'assets/images/library_store/renovation/furniture/cashier.png'],
+  ['reno_sofa', 'assets/images/library_store/renovation/furniture/waiting_sofa.png'],
+
+  ['reno_plant_1', 'assets/images/library_store/renovation/furniture/plant_1.png'],
+  ['reno_plant_2', 'assets/images/library_store/renovation/furniture/plant_2.png'],
+  ['reno_plant_3', 'assets/images/library_store/renovation/furniture/plant_3.png'],
+  ['reno_pendant', 'assets/images/library_store/renovation/furniture/pendant_gold.png'],
+  ['reno_screen', 'assets/images/library_store/renovation/furniture/screen_round.png'],
+
+  ['reno_room_small', 'assets/images/library_store/renovation/layouts/private_small.png'],
+  ['reno_room_medium', 'assets/images/library_store/renovation/layouts/private_medium.png'],
+  ['reno_room_large', 'assets/images/library_store/renovation/layouts/private_large.png'],
+  ['reno_corridor', 'assets/images/library_store/renovation/layouts/corridor.png'],
+
+  ['reno_advice', 'assets/images/library_store/store/advice_renovation.png'],
+
+  ['reno_glossy_money', 'assets/images/v44_glossy/money.png'],
+  ['reno_glossy_star', 'assets/images/v44_glossy/star.png'],
+  ['reno_glossy_target', 'assets/images/v44_glossy/target.png']
+];
+
+// Historical names remain available for V45/V17 compatibility.
+const V45_RENO_RESOURCES =
+  RENO_ASSETS;
+
+function clamp(
+  value,
+  min,
+  max
+) {
+  return Math.max(
+    min,
+    Math.min(
+      max,
+      value
+    )
+  );
+}
 
 function money(value) {
   const n =
@@ -211,19 +242,6 @@ function money(value) {
     ).toLocaleString()
   );
 }
-function clamp(
-  value,
-  min,
-  max
-) {
-  return Math.max(
-    min,
-    Math.min(
-      max,
-      value
-    )
-  );
-}
 
 class RenovationScene {
   constructor() {
@@ -250,39 +268,8 @@ class RenovationScene {
   }
 
   enter(payload) {
-    for (
-      let i = 0;
-      i < V45_RENO_RESOURCES.length;
-      i++
-    ) {
-      const item =
-        V45_RENO_RESOURCES[i];
-
-      resourceManager
-        .loadImage(
-          item[0],
-          item[1],
-          'v45-renovation-library'
-        )
-        .then(
-          () => {
-            if (
-              runtime &&
-              typeof runtime.requestRender ===
-                'function'
-            ) {
-              runtime.requestRender();
-            }
-          }
-        )
-        .catch(
-          () => {}
-        );
-    }
-
     const data =
-      payload ||
-      {};
+      payload || {};
 
     if (data.shopId) {
       this.shopId =
@@ -290,8 +277,7 @@ class RenovationScene {
     }
 
     const business =
-      gameState
-        .getBusiness();
+      gameState.getBusiness();
 
     if (
       !this.shopId &&
@@ -311,8 +297,8 @@ class RenovationScene {
         'layout',
         'zones',
         'furniture',
-        'rooms',
         'style',
+        'rooms',
         'templates',
         'contractors'
       ].includes(
@@ -321,6 +307,40 @@ class RenovationScene {
         ? data.page
         : 'layout';
 
+    for (
+      let i = 0;
+      i <
+      RENO_ASSETS.length;
+      i++
+    ) {
+      const item =
+        RENO_ASSETS[i];
+
+      resourceManager
+        .loadImage(
+          item[0],
+          item[1],
+          'v47-renovation-reference'
+        )
+        .then(
+          () => {
+            if (
+              runtime &&
+              typeof runtime
+                .requestRender ===
+                'function'
+            ) {
+              runtime
+                .requestRender();
+            }
+          }
+        )
+        .catch(
+          () => {}
+        );
+    }
+
+    // Legacy visual groups remain loaded as safe fallback.
     visualAssetSystem
       .loadGroup(
         'renovation'
@@ -357,7 +377,8 @@ class RenovationScene {
         'function'
     ) {
       const info =
-        api.getSystemInfoSync();
+        api
+          .getSystemInfoSync();
 
       const w =
         Math.max(
@@ -389,8 +410,7 @@ class RenovationScene {
       height;
 
     this.navH =
-      height <
-        740
+      height < 740
         ? 60
         : 64;
 
@@ -399,110 +419,9 @@ class RenovationScene {
       this.navH;
   }
 
-  getScale() {
-    return clamp(
-      (
-        this.contentBottom -
-        82
-      ) /
-      560,
-      0.88,
-      1.13
-    );
-  }
-
-  showToast(title) {
-    if (
-      api &&
-      typeof api
-        .showToast ===
-        'function'
-    ) {
-      api.showToast({
-        title,
-        icon:
-          'none'
-      });
-    }
-  }
-
-  addButton(
-    id,
-    x,
-    y,
-    w,
-    h
-  ) {
-    const hitW =
-      Math.max(
-        42,
-        w
-      );
-
-    const hitH =
-      Math.max(
-        38,
-        h
-      );
-
-    this.buttons.push({
-      id,
-      x:
-        x -
-        (
-          hitW -
-          w
-        ) /
-        2,
-      y:
-        y -
-        (
-          hitH -
-          h
-        ) /
-        2,
-      w:
-        hitW,
-      h:
-        hitH
-    });
-  }
-
-  hitButton(
-    x,
-    y
-  ) {
-    for (
-      let i =
-        this.buttons.length -
-        1;
-      i >= 0;
-      i--
-    ) {
-      const b =
-        this.buttons[i];
-
-      if (
-        x >= b.x &&
-        x <=
-          b.x +
-          b.w &&
-        y >= b.y &&
-        y <=
-          b.y +
-          b.h
-      ) {
-        return b;
-      }
-    }
-
-    return null;
-  }
-
   getShop() {
     const business =
-      gameState
-        .getBusiness();
+      gameState.getBusiness();
 
     return (
       business.shops.find(
@@ -544,7 +463,228 @@ class RenovationScene {
       : id;
   }
 
-  drawVisual(
+  showToast(title) {
+    if (
+      api &&
+      typeof api
+        .showToast ===
+        'function'
+    ) {
+      api.showToast({
+        title,
+        icon: 'none'
+      });
+    }
+  }
+
+  text(
+    ctx,
+    value,
+    x,
+    y,
+    size,
+    color,
+    weight,
+    align
+  ) {
+    ctx.save();
+
+    const rawWeight =
+      String(
+        weight || '600'
+      );
+
+    const finalWeight =
+      rawWeight === '800'
+        ? '900'
+        : rawWeight === '700'
+          ? '800'
+          : rawWeight;
+
+    ctx.fillStyle =
+      color ||
+      COLORS.text;
+
+    ctx.font =
+      finalWeight +
+      ' ' +
+      Math.max(
+        4.8,
+        Number(size) ||
+        5.5
+      ) +
+      'px "Noto Sans SC","Microsoft YaHei",sans-serif';
+
+    ctx.textAlign =
+      align ||
+      'left';
+
+    ctx.textBaseline =
+      'middle';
+
+    ctx.fillText(
+      String(
+        value == null
+          ? ''
+          : value
+      ),
+      x,
+      y
+    );
+
+    ctx.restore();
+  }
+
+  addButton(
+    id,
+    x,
+    y,
+    w,
+    h
+  ) {
+    const hitW =
+      Math.max(
+        40,
+        w
+      );
+
+    const hitH =
+      Math.max(
+        36,
+        h
+      );
+
+    this.buttons.push({
+      id,
+      x:
+        x -
+        (
+          hitW -
+          w
+        ) /
+        2,
+      y:
+        y -
+        (
+          hitH -
+          h
+        ) /
+        2,
+      w: hitW,
+      h: hitH
+    });
+  }
+
+  hitButton(
+    x,
+    y
+  ) {
+    for (
+      let i =
+        this.buttons.length - 1;
+      i >= 0;
+      i--
+    ) {
+      const b =
+        this.buttons[i];
+
+      if (
+        x >= b.x &&
+        x <= b.x + b.w &&
+        y >= b.y &&
+        y <= b.y + b.h
+      ) {
+        return b;
+      }
+    }
+
+    return null;
+  }
+
+  roundedPath(
+    ctx,
+    x,
+    y,
+    w,
+    h,
+    r
+  ) {
+    const radius =
+      Math.min(
+        r,
+        w / 2,
+        h / 2
+      );
+
+    ctx.beginPath();
+    ctx.moveTo(
+      x + radius,
+      y
+    );
+    ctx.arcTo(
+      x + w,
+      y,
+      x + w,
+      y + h,
+      radius
+    );
+    ctx.arcTo(
+      x + w,
+      y + h,
+      x,
+      y + h,
+      radius
+    );
+    ctx.arcTo(
+      x,
+      y + h,
+      x,
+      y,
+      radius
+    );
+    ctx.arcTo(
+      x,
+      y,
+      x + w,
+      y,
+      radius
+    );
+    ctx.closePath();
+  }
+
+  drawImageCover(
+    ctx,
+    key,
+    x,
+    y,
+    w,
+    h,
+    radius,
+    overlay
+  ) {
+    const image =
+      resourceManager
+        .getImage(key);
+
+    if (!image) {
+      return false;
+    }
+
+    ui.coverImage(
+      ctx,
+      image,
+      x,
+      y,
+      w,
+      h,
+      radius || 0,
+      overlay || null
+    );
+
+    return true;
+  }
+
+  drawImageContain(
     ctx,
     key,
     x,
@@ -553,28 +693,35 @@ class RenovationScene {
     h,
     alpha
   ) {
-    const mappedKey =
-      V45_RENO_VISUAL_MAP[
-        key
-      ] ||
-      key;
-
-    const libraryImage =
-      resourceManager
-        .getImage(
-          mappedKey
-        );
-
     const image =
-      libraryImage ||
-      visualAssetSystem
-        .get(
-          key
-        );
+      resourceManager
+        .getImage(key);
 
     if (!image) {
       return false;
     }
+
+    const iw =
+      Number(
+        image.width
+      ) || w;
+
+    const ih =
+      Number(
+        image.height
+      ) || h;
+
+    const scale =
+      Math.min(
+        w / iw,
+        h / ih
+      );
+
+    const dw =
+      iw * scale;
+
+    const dh =
+      ih * scale;
 
     ctx.save();
 
@@ -587,78 +734,155 @@ class RenovationScene {
         alpha;
     }
 
-    ui.coverImage(
-      ctx,
+    ctx.drawImage(
       image,
-      x,
-      y,
-      w,
-      h,
-      7,
-      null
+      x +
+        (
+          w - dw
+        ) /
+        2,
+      y +
+        (
+          h - dh
+        ) /
+        2,
+      dw,
+      dh
     );
 
     ctx.restore();
 
     return true;
   }
+
+  drawPill(
+    ctx,
+    label,
+    x,
+    y,
+    w,
+    h,
+    fill,
+    color
+  ) {
+    ui.card(
+      ctx,
+      x,
+      y,
+      w,
+      h,
+      {
+        radius:
+          h / 2,
+        fill,
+        stroke: false,
+        shadow: false
+      }
+    );
+
+    this.text(
+      ctx,
+      label,
+      x + w / 2,
+      y + h / 2,
+      5.2,
+      color,
+      '800',
+      'center'
+    );
+  }
+
   drawHeader(
     ctx,
     shop
   ) {
-    ui.coverImage(
-      ctx,
+    const h =
+      88;
+
+    const hero =
       resourceManager
         .getImage(
-          'v45_store_hero'
-        ) ||
-      visualAssetSystem
-        .get(
-          'premium_reno_header'
-        ),
+          'reno_store_hero'
+        );
+
+    if (hero) {
+      ui.coverImage(
+        ctx,
+        hero,
+        0,
+        0,
+        DESIGN_W,
+        h,
+        0,
+        null
+      );
+    } else {
+      ctx.fillStyle =
+        COLORS.navyDeep;
+      ctx.fillRect(
+        0,
+        0,
+        DESIGN_W,
+        h
+      );
+    }
+
+    const grad =
+      ctx.createLinearGradient(
+        0,
+        0,
+        DESIGN_W,
+        0
+      );
+
+    grad.addColorStop(
       0,
-      0,
-      DESIGN_W,
-      80,
-      0,
-      'rgba(3,31,47,0.40)'
+      'rgba(3,34,48,0.86)'
+    );
+
+    grad.addColorStop(
+      0.64,
+      'rgba(3,34,48,0.48)'
+    );
+
+    grad.addColorStop(
+      1,
+      'rgba(3,34,48,0.74)'
     );
 
     ctx.fillStyle =
-      'rgba(4,34,50,0.34)';
+      grad;
 
     ctx.fillRect(
       0,
       0,
       DESIGN_W,
-      80
+      h
     );
 
     ui.card(
       ctx,
       8,
-      13,
-      38,
-      38,
+      14,
+      36,
+      36,
       {
-        radius:
-          11,
+        radius: 11,
         fill:
-          'rgba(5,48,68,0.88)',
+          'rgba(4,55,78,0.91)',
         stroke:
-          'rgba(255,255,255,0.30)',
-        shadow:
-          false
+          'rgba(255,255,255,0.32)',
+        shadow: false
       }
     );
 
-    ui.text(
+    this.text(
       ctx,
       '‹',
-      27,
+      26,
       32,
-      22,
-      '#FFE59B',
+      19,
+      '#FFE57C',
       '800',
       'center'
     );
@@ -666,75 +890,111 @@ class RenovationScene {
     this.addButton(
       'back',
       4,
-      9,
-      46,
-      46
-    );
-
-    ui.text(
-      ctx,
-      shop.name ||
-        '我的酒楼',
-      56,
-      20,
-      15.5,
-      COLORS.white,
-      '800'
-    );
-
-    ui.text(
-      ctx,
-      '位置 · ' +
-        shop.address,
-      56,
-      42,
-      6.7,
-      '#DDEBF0',
-      '600'
-    );
-
-    ui.text(
-      ctx,
-      '用心打造，让美味更有温度！',
-      56,
-      62,
-      6.6,
-      '#FFE1A0',
-      '600'
-    );
-
-    this.addButton(
-      'shop:rename',
-      52,
-      8,
-      186,
-      57
+      10,
+      44,
+      44
     );
 
     ui.card(
       ctx,
-      296,
+      51,
       10,
-      86,
+      50,
+      50,
+      {
+        radius: 9,
+        fill:
+          'rgba(255,255,255,0.92)',
+        stroke:
+          '#F0C757',
+        shadow: false
+      }
+    );
+
+    const thumb =
+      resourceManager
+        .getImage(
+          'reno_store_hero'
+        );
+
+    if (thumb) {
+      ui.coverImage(
+        ctx,
+        thumb,
+        54,
+        13,
+        44,
+        44,
+        7,
+        null
+      );
+    }
+
+    this.text(
+      ctx,
+      shop.name ||
+        '我的酒楼',
+      109,
+      19,
+      13.5,
+      COLORS.white,
+      '800'
+    );
+
+    this.text(
+      ctx,
+      '位置 · ' +
+        (
+          shop.address ||
+          '当前门店'
+        ),
+      109,
+      40,
+      5.4,
+      '#E8F0F2',
+      '600'
+    );
+
+    this.text(
+      ctx,
+      '用心打造，让美味更有温度',
+      109,
+      61,
+      5.7,
+      '#FFE19A',
+      '700'
+    );
+
+    this.addButton(
+      'shop:rename',
+      104,
+      7,
+      176,
+      58
+    );
+
+    ui.card(
+      ctx,
+      300,
+      10,
+      82,
       29,
       {
-        radius:
-          13,
+        radius: 13,
         fill:
           COLORS.gold,
         stroke:
           '#FFE19A',
-        shadow:
-          false
+        shadow: false
       }
     );
 
-    ui.text(
+    this.text(
       ctx,
       '保存模板',
-      339,
+      341,
       24.5,
-      6.6,
+      6.3,
       COLORS.text,
       '800',
       'center'
@@ -742,36 +1002,34 @@ class RenovationScene {
 
     this.addButton(
       'template:save',
-      291,
+      294,
       6,
-      96,
-      37
+      92,
+      36
     );
 
     ui.card(
       ctx,
-      296,
-      43,
-      86,
+      300,
+      45,
+      82,
       27,
       {
-        radius:
-          12,
+        radius: 13,
         fill:
           '#FFFDF7',
         stroke:
-          '#D7CDBF',
-        shadow:
-          false
+          '#DED0B9',
+        shadow: false
       }
     );
 
-    ui.text(
+    this.text(
       ctx,
-      '▧ 另存模板',
-      339,
-      56.5,
-      6.4,
+      '另存模板',
+      341,
+      58.5,
+      6.0,
       COLORS.navy,
       '800',
       'center'
@@ -779,94 +1037,95 @@ class RenovationScene {
 
     this.addButton(
       'template:save-as',
-      291,
-      39,
-      96,
+      294,
+      41,
+      92,
       35
     );
   }
 
   drawTemplateStrip(
-    ctx
+    ctx,
+    plan
   ) {
-    const sy =
-      this.getScale();
-
     const y =
-      84;
+      94;
 
     const h =
-      95 *
-      sy;
+      99;
 
     ui.card(
       ctx,
-      8,
+      7,
       y,
-      374,
+      376,
       h,
       {
-        radius:
-          14,
+        radius: 14,
         fill:
-          COLORS.panel
+          COLORS.panel,
+        stroke:
+          COLORS.line,
+        shadow: false
       }
     );
 
-    ui.text(
+    this.text(
       ctx,
       '装修模板',
-      20,
-      y + 19,
-      10.4,
+      18,
+      y + 16,
+      9.2,
       COLORS.text,
       '800'
     );
 
-    ui.text(
+    this.text(
       ctx,
-      '选择心仪风格，或保存您的专属模板',
+      '选择心仪风格，或保存专属模板',
       82,
-      y + 19,
-      5.9,
+      y + 16,
+      5.0,
       COLORS.muted,
-      '500'
+      '600'
     );
 
-    ui.text(
+    this.text(
       ctx,
       '模板管理 ›',
-      370,
-      y + 19,
-      6,
+      371,
+      y + 16,
+      5.1,
       COLORS.navy,
-      '700',
+      '800',
       'right'
     );
 
     this.addButton(
       'page:templates',
-      305,
-      y + 3,
-      73,
-      29
+      310,
+      y + 4,
+      68,
+      25
     );
 
-    const templates =
-      customizationSystem
-        .getTemplateList();
-
-    const keys = [
-      'v45_style_natural',
-      'v45_style_chinese',
-      'v45_style_business'
+    const presets = [
+      {
+        id: 'wood',
+        label: '原木风',
+        key: 'reno_style_natural'
+      },
+      {
+        id: 'modern_cn',
+        label: '新中式',
+        key: 'reno_style_chinese'
+      },
+      {
+        id: 'premium',
+        label: '商务雅间',
+        key: 'reno_style_business'
+      }
     ];
-
-    const cardY =
-      y + 28;
-
-    const cardH =
-      h - 36;
 
     for (
       let i = 0;
@@ -875,102 +1134,107 @@ class RenovationScene {
     ) {
       const x =
         14 +
-        i *
-        91;
+        i * 92;
+
+      const cardY =
+        y + 30;
+
+      const cardW =
+        84;
+
+      const cardH =
+        61;
+
+      const selected =
+        i < 3 &&
+        plan.hallStyle ===
+          presets[i].id;
 
       ui.card(
         ctx,
         x,
         cardY,
-        84,
+        cardW,
         cardH,
         {
-          radius:
-            9,
+          radius: 9,
           fill:
-            i === 0
-              ? '#FFF7DD'
-              : '#FFF9F0',
+            '#FFF9EF',
           stroke:
-            i === 0
-              ? '#E7B62B'
-              : '#DED4C7',
-          shadow:
-            false
+            selected
+              ? '#F0B619'
+              : '#E1D7C8',
+          lineWidth:
+            selected
+              ? 2
+              : 1,
+          shadow: false
         }
       );
 
-      if (
-        i < 3
-      ) {
-        this.drawVisual(
+      if (i < 3) {
+        this.drawImageCover(
           ctx,
-          keys[i],
+          presets[i].key,
           x + 3,
           cardY + 3,
-          78,
-          Math.max(
-            33,
-            cardH - 19
-          ),
-          1
+          cardW - 6,
+          40,
+          7,
+          null
         );
 
-        ui.text(
+        if (selected) {
+          this.drawPill(
+            ctx,
+            '✓',
+            x + 62,
+            cardY + 5,
+            17,
+            17,
+            '#FFD33F',
+            COLORS.text
+          );
+        }
+
+        this.text(
           ctx,
-          templates[i]
-            ? templates[i].name
-            : (
-                '装修模板' +
-                String.fromCharCode(
-                  65 + i
-                )
-              ),
-          x + 5,
-          cardY +
-            cardH -
-            7,
-          5.8,
+          presets[i].label,
+          x + 7,
+          cardY + 51,
+          5.3,
           COLORS.text,
-          '700'
+          '800'
         );
 
         this.addButton(
-          templates[i]
-            ? (
-                'template:apply:' +
-                templates[i].id
-              )
-            : 'page:templates',
+          'builtin:style:' +
+            presets[i].id,
           x,
           cardY,
-          84,
+          cardW,
           cardH
         );
       } else {
-        ui.text(
+        this.text(
           ctx,
           '+',
-          x + 42,
-          cardY +
-            cardH *
-            0.42,
-          17,
-          '#9B8F83',
-          '500',
+          x + cardW / 2,
+          cardY + 24,
+          18,
+          '#778690',
+          '600',
           'center'
         );
 
-        ui.text(
+        this.text(
           ctx,
           '新建模板',
-          x + 42,
-          cardY +
-            cardH *
-            0.72,
-          6,
+          x + cardW / 2,
+          cardY + 47,
+          5.6,
           COLORS.navy,
-          '700',
+          '800',
           'center'
         );
 
@@ -978,84 +1242,1225 @@ class RenovationScene {
           'template:save-as',
           x,
           cardY,
-          84,
+          cardW,
           cardH
         );
       }
     }
   }
 
-  drawFloorPlan(
-    ctx,
-    metrics,
-    floor
-  ) {
-    const sy =
-      this.getScale();
-
+  getMainGeometry() {
     const y =
-      184 *
-      sy -
-      80 *
-      (
-        sy -
-        1
+      200;
+
+    const footerH =
+      49;
+
+    const lowerH =
+      clamp(
+        (
+          this.contentBottom -
+          y
+        ) *
+        0.23,
+        112,
+        132
       );
 
-    const h =
-      256 *
-      sy;
+    const maxPlan =
+      this.contentBottom -
+      y -
+      lowerH -
+      footerH -
+      22;
 
+    const planH =
+      clamp(
+        maxPlan,
+        276,
+        348
+      );
+
+    const lowerY =
+      y +
+      planH +
+      8;
+
+    const footerY =
+      this.contentBottom -
+      footerH;
+
+    return {
+      y,
+      planH,
+      lowerY,
+      lowerH:
+        Math.min(
+          lowerH,
+          footerY -
+          lowerY -
+          8
+        ),
+      footerY,
+      footerH
+    };
+  }
+
+  drawZoneChip(
+    ctx,
+    label,
+    x,
+    y,
+    w
+  ) {
     ui.card(
       ctx,
-      8,
+      x,
       y,
-      374,
-      h,
+      w,
+      20,
       {
-        radius:
-          15,
+        radius: 7,
         fill:
-          COLORS.panel
+          'rgba(42,45,43,0.74)',
+        stroke:
+          'rgba(255,255,255,0.18)',
+        shadow: false
       }
     );
 
-    ui.text(
+    this.text(
+      ctx,
+      label,
+      x + w / 2,
+      y + 10,
+      5.9,
+      COLORS.white,
+      '800',
+      'center'
+    );
+  }
+
+  getGeometryFrame(
+    geometry,
+    x,
+    y,
+    w,
+    h
+  ) {
+    const margin =
+      7;
+
+    const scale =
+      Math.min(
+        (
+          w -
+          margin * 2
+        ) /
+          Math.max(
+            0.1,
+            geometry.widthM
+          ),
+        (
+          h -
+          margin * 2
+        ) /
+          Math.max(
+            0.1,
+            geometry.depthM
+          )
+      );
+
+    const drawW =
+      geometry.widthM *
+      scale;
+
+    const drawH =
+      geometry.depthM *
+      scale;
+
+    return {
+      scale,
+      x:
+        x +
+        (
+          w -
+          drawW
+        ) /
+        2,
+      y:
+        y +
+        (
+          h -
+          drawH
+        ) /
+        2,
+      w:
+        drawW,
+      h:
+        drawH
+    };
+  }
+
+  mapGeometryPoint(
+    frame,
+    point
+  ) {
+    return {
+      x:
+        frame.x +
+        point.x *
+        frame.scale,
+
+      y:
+        frame.y +
+        point.y *
+        frame.scale
+    };
+  }
+
+  geometryPath(
+    ctx,
+    geometry,
+    frame
+  ) {
+    const polygon =
+      geometry.polygon;
+
+    if (
+      !polygon ||
+      !polygon.length
+    ) {
+      return;
+    }
+
+    const first =
+      this.mapGeometryPoint(
+        frame,
+        polygon[0]
+      );
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      first.x,
+      first.y
+    );
+
+    for (
+      let i = 1;
+      i <
+      polygon.length;
+      i++
+    ) {
+      const p =
+        this.mapGeometryPoint(
+          frame,
+          polygon[i]
+        );
+
+      ctx.lineTo(
+        p.x,
+        p.y
+      );
+    }
+
+    ctx.closePath();
+  }
+
+  drawGeometryObstacle(
+    ctx,
+    obstacle,
+    frame
+  ) {
+    if (
+      obstacle.type ===
+      'column'
+    ) {
+      const p =
+        this.mapGeometryPoint(
+          frame,
+          obstacle
+        );
+
+      ctx.save();
+
+      ctx.fillStyle =
+        '#6D665E';
+
+      ctx.strokeStyle =
+        '#4D4944';
+
+      ctx.lineWidth =
+        1;
+
+      ctx.beginPath();
+
+      ctx.arc(
+        p.x,
+        p.y,
+        Math.max(
+          2.5,
+          obstacle.radius *
+          frame.scale
+        ),
+        0,
+        Math.PI * 2
+      );
+
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      return;
+    }
+
+    const x =
+      frame.x +
+      obstacle.x *
+      frame.scale;
+
+    const y =
+      frame.y +
+      obstacle.y *
+      frame.scale;
+
+    const w =
+      obstacle.w *
+      frame.scale;
+
+    const h =
+      obstacle.h *
+      frame.scale;
+
+    ui.card(
+      ctx,
+      x,
+      y,
+      w,
+      h,
+      {
+        radius:
+          3,
+        fill:
+          obstacle.type ===
+            'stair'
+            ? '#A79C8B'
+            : '#D5D1C9',
+        stroke:
+          '#746E65',
+        shadow: false
+      }
+    );
+
+    this.text(
+      ctx,
+      obstacle.type ===
+        'stair'
+        ? '楼梯'
+        : '卫生间',
+      x + w / 2,
+      y + h / 2,
+      Math.max(
+        4,
+        Math.min(
+          5.0,
+          frame.scale *
+          0.44
+        )
+      ),
+      COLORS.text,
+      '800',
+      'center'
+    );
+  }
+
+  drawGeometryShell(
+    ctx,
+    geometry,
+    x,
+    y,
+    w,
+    h
+  ) {
+    const frame =
+      this.getGeometryFrame(
+        geometry,
+        x,
+        y,
+        w,
+        h
+      );
+
+    ctx.save();
+
+    this.geometryPath(
+      ctx,
+      geometry,
+      frame
+    );
+
+    ctx.fillStyle =
+      COLORS.tile;
+
+    ctx.fill();
+
+    ctx.clip();
+
+    // 1m floor grid. Shape remains in real proportions.
+    ctx.strokeStyle =
+      'rgba(91,72,51,0.12)';
+
+    ctx.lineWidth =
+      0.65;
+
+    const meter =
+      Math.max(
+        5,
+        frame.scale
+      );
+
+    for (
+      let gx =
+        frame.x;
+      gx <=
+        frame.x +
+        frame.w +
+        0.1;
+      gx += meter
+    ) {
+      ctx.beginPath();
+      ctx.moveTo(
+        gx,
+        frame.y
+      );
+      ctx.lineTo(
+        gx,
+        frame.y +
+        frame.h
+      );
+      ctx.stroke();
+    }
+
+    for (
+      let gy =
+        frame.y;
+      gy <=
+        frame.y +
+        frame.h +
+        0.1;
+      gy += meter
+    ) {
+      ctx.beginPath();
+      ctx.moveTo(
+        frame.x,
+        gy
+      );
+      ctx.lineTo(
+        frame.x +
+        frame.w,
+        gy
+      );
+      ctx.stroke();
+    }
+
+    ctx.restore();
+
+    ctx.save();
+
+    this.geometryPath(
+      ctx,
+      geometry,
+      frame
+    );
+
+    ctx.strokeStyle =
+      COLORS.wall;
+
+    ctx.lineWidth =
+      2.4;
+
+    ctx.stroke();
+
+    ctx.restore();
+
+    return frame;
+  }
+
+  drawFloorCanvas(
+    ctx,
+    metrics,
+    floor,
+    x,
+    y,
+    w,
+    h
+  ) {
+    const shop =
+      this.getShop();
+
+    const floorGeometry =
+      floor.geometry ||
+      floorGeometrySystem
+        .getFloorGeometry(
+          shop,
+          floor.index,
+          floor.area,
+          metrics.plan
+            .floors
+            .length
+        );
+
+    const frame =
+      this.drawGeometryShell(
+        ctx,
+        geometry,
+        x,
+        y,
+        w,
+        h
+      );
+
+    const kitchenCut =
+      0.34;
+
+    const serviceCut =
+      0.23;
+
+    // All zone fills are clipped by the actual property polygon.
+    ctx.save();
+
+    this.geometryPath(
+      ctx,
+      geometry,
+      frame
+    );
+
+    ctx.clip();
+
+    ctx.fillStyle =
+      'rgba(92,98,96,0.31)';
+
+    ctx.fillRect(
+      frame.x,
+      frame.y,
+      frame.w *
+        0.66,
+      frame.h *
+        kitchenCut
+    );
+
+    ctx.fillStyle =
+      'rgba(133,112,80,0.28)';
+
+    ctx.fillRect(
+      frame.x +
+        frame.w *
+        0.66,
+      frame.y,
+      frame.w *
+        0.34,
+      frame.h *
+        kitchenCut
+    );
+
+    ctx.fillStyle =
+      'rgba(171,136,88,0.22)';
+
+    ctx.fillRect(
+      frame.x,
+      frame.y +
+        frame.h *
+        kitchenCut,
+      frame.w *
+        serviceCut,
+      frame.h *
+        (
+          1 -
+          kitchenCut
+        )
+    );
+
+    ctx.fillStyle =
+      'rgba(233,207,161,0.25)';
+
+    ctx.fillRect(
+      frame.x +
+        frame.w *
+        serviceCut,
+      frame.y +
+        frame.h *
+        kitchenCut,
+      frame.w *
+        (
+          1 -
+          serviceCut
+        ),
+      frame.h *
+        (
+          1 -
+          kitchenCut
+        )
+    );
+
+    ctx.restore();
+
+    const chipY =
+      frame.y + 6;
+
+    this.drawZoneChip(
+      ctx,
+      '后厨',
+      frame.x + 6,
+      chipY,
+      42
+    );
+
+    this.drawZoneChip(
+      ctx,
+      '仓储',
+      frame.x +
+        frame.w *
+        0.68,
+      chipY,
+      40
+    );
+
+    this.drawZoneChip(
+      ctx,
+      '服务区',
+      frame.x + 6,
+      frame.y +
+        frame.h *
+        0.47,
+      46
+    );
+
+    this.drawZoneChip(
+      ctx,
+      '堂食区',
+      frame.x +
+        frame.w *
+        0.40,
+      frame.y +
+        frame.h *
+        0.54,
+      47
+    );
+
+    // Kitchen equipment is scaled by the room's real on-screen dimensions.
+    const kitchenY =
+      frame.y +
+      frame.h *
+      0.08;
+
+    const kitchenH =
+      Math.max(
+        25,
+        frame.h *
+        0.22
+      );
+
+    this.drawImageContain(
+      ctx,
+      'reno_stove',
+      frame.x +
+        frame.w *
+        0.04,
+      kitchenY,
+      frame.w *
+        0.18,
+      kitchenH,
+      1
+    );
+
+    this.drawImageContain(
+      ctx,
+      'reno_prep',
+      frame.x +
+        frame.w *
+        0.23,
+      kitchenY,
+      frame.w *
+        0.18,
+      kitchenH,
+      1
+    );
+
+    this.drawImageContain(
+      ctx,
+      'reno_sink',
+      frame.x +
+        frame.w *
+        0.43,
+      kitchenY,
+      frame.w *
+        0.11,
+      kitchenH,
+      1
+    );
+
+    this.drawImageContain(
+      ctx,
+      'reno_fridge',
+      frame.x +
+        frame.w *
+        0.55,
+      kitchenY,
+      frame.w *
+        0.09,
+      kitchenH,
+      1
+    );
+
+    this.drawImageContain(
+      ctx,
+      'reno_storage_shelf',
+      frame.x +
+        frame.w *
+        0.72,
+      frame.y +
+        frame.h *
+        0.10,
+      frame.w *
+        0.19,
+      frame.h *
+        0.17,
+      1
+    );
+
+    this.drawImageContain(
+      ctx,
+      'reno_cashier',
+      frame.x +
+        frame.w *
+        0.03,
+      frame.y +
+        frame.h *
+        0.55,
+      frame.w *
+        0.16,
+      frame.h *
+        0.14,
+      1
+    );
+
+    // Obstacles are part of the real shell, not furniture.
+    for (
+      let i = 0;
+      i <
+      geometry
+        .obstacles
+        .length;
+      i++
+    ) {
+      this.drawGeometryObstacle(
+        ctx,
+        geometry
+          .obstacles[i],
+        frame
+      );
+    }
+
+    // Private rooms only appear when this property shape actually supports them.
+    const rooms =
+      floor.privateRooms ||
+      [];
+
+    const maxRoomDraw =
+      geometry
+        .canPrivateRoom
+        ? Math.min(
+            rooms.length,
+            Math.max(
+              1,
+              geometry
+                .recommendedMaxRooms
+            ),
+            3
+          )
+        : 0;
+
+    if (
+      maxRoomDraw > 0
+    ) {
+      const roomW =
+        Math.min(
+          frame.w * 0.27,
+          80
+        );
+
+      for (
+        let i = 0;
+        i <
+        maxRoomDraw;
+        i++
+      ) {
+        const rh =
+          frame.h *
+          0.22;
+
+        const rx =
+          frame.x +
+          frame.w -
+          roomW -
+          4;
+
+        const ry =
+          frame.y +
+          frame.h *
+          0.40 +
+          i *
+          (
+            rh + 4
+          );
+
+        ui.card(
+          ctx,
+          rx,
+          ry,
+          roomW,
+          rh,
+          {
+            radius: 5,
+            fill:
+              'rgba(255,239,199,0.86)',
+            stroke:
+              '#CFA453',
+            shadow: false
+          }
+        );
+
+        this.text(
+          ctx,
+          rooms[i].name,
+          rx +
+            roomW / 2,
+          ry + 11,
+          4.8,
+          COLORS.text,
+          '800',
+          'center'
+        );
+
+        this.drawImageContain(
+          ctx,
+          rooms[i].seats >=
+            8
+            ? 'reno_table_8'
+            : 'reno_table_6',
+          rx + 7,
+          ry + 17,
+          roomW - 14,
+          rh - 22,
+          1
+        );
+
+        this.addButton(
+          'room:rename:' +
+            rooms[i].id,
+          rx,
+          ry,
+          roomW,
+          rh
+        );
+      }
+    }
+
+    // Tables use real-space candidate slots produced by the geometry engine.
+    const tableQueue =
+      [];
+
+    for (
+      const key
+      of [
+        '8',
+        '6',
+        '4',
+        '2'
+      ]
+    ) {
+      const count =
+        Math.max(
+          0,
+          Number(
+            floor.tables[
+              key
+            ]
+          ) || 0
+        );
+
+      for (
+        let i = 0;
+        i < count;
+        i++
+      ) {
+        tableQueue.push(
+          key
+        );
+      }
+    }
+
+    const slots =
+      geometry
+        .diningSlots ||
+      [];
+
+    for (
+      let i = 0;
+      i <
+      Math.min(
+        tableQueue.length,
+        slots.length
+      );
+      i++
+    ) {
+      const key =
+        tableQueue[i];
+
+      const slot =
+        this.mapGeometryPoint(
+          frame,
+          slots[i]
+        );
+
+      const realArea =
+        renovationConfig
+          .tableFootprint[
+            key
+          ] ||
+        7.6;
+
+      const basePx =
+        Math.sqrt(
+          realArea
+        ) *
+        frame.scale *
+        0.72;
+
+      const tw =
+        clamp(
+          basePx,
+          20,
+          key ===
+            '8'
+            ? 50
+            : 43
+        );
+
+      const th =
+        clamp(
+          tw *
+          (
+            key ===
+              '8'
+              ? 0.72
+              : 0.82
+          ),
+          17,
+          38
+        );
+
+      this.drawImageContain(
+        ctx,
+        'reno_table_' +
+          key,
+        slot.x -
+          tw / 2,
+        slot.y -
+          th / 2,
+        tw,
+        th,
+        1
+      );
+    }
+
+    // Decor remains furniture and therefore follows the real shell.
+    const plants =
+      Math.min(
+        5,
+        Number(
+          metrics.decorCounts &&
+          metrics.decorCounts.plant
+        ) || 0
+      );
+
+    const plantSlots =
+      slots.filter(
+        (
+          value,
+          index
+        ) =>
+          index % 2 === 1
+      );
+
+    for (
+      let i = 0;
+      i <
+      Math.min(
+        plants,
+        plantSlots.length
+      );
+      i++
+    ) {
+      const p =
+        this.mapGeometryPoint(
+          frame,
+          plantSlots[
+            plantSlots.length -
+            1 -
+            i
+          ]
+        );
+
+      this.drawImageContain(
+        ctx,
+        i % 2
+          ? 'reno_plant_2'
+          : 'reno_plant_1',
+        p.x - 10,
+        p.y - 12,
+        20,
+        24,
+        1
+      );
+    }
+
+    // Entrances are generated by the property geometry.
+    for (
+      let i = 0;
+      i <
+      geometry
+        .entrances
+        .length;
+      i++
+    ) {
+      const entrance =
+        geometry
+          .entrances[i];
+
+      const p =
+        this.mapGeometryPoint(
+          frame,
+          entrance
+        );
+
+      ctx.save();
+
+      ctx.fillStyle =
+        i === 0
+          ? '#D6534A'
+          : '#2D91BD';
+
+      ctx.beginPath();
+
+      if (
+        entrance.side ===
+          'south'
+      ) {
+        ctx.moveTo(
+          p.x,
+          p.y + 3
+        );
+        ctx.lineTo(
+          p.x - 7,
+          p.y - 7
+        );
+        ctx.lineTo(
+          p.x + 7,
+          p.y - 7
+        );
+      } else {
+        ctx.moveTo(
+          p.x,
+          p.y - 3
+        );
+        ctx.lineTo(
+          p.x - 7,
+          p.y + 7
+        );
+        ctx.lineTo(
+          p.x + 7,
+          p.y + 7
+        );
+      }
+
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    this.text(
+      ctx,
+      geometry
+        .shapeName +
+        ' · ' +
+        geometry
+          .widthM
+          .toFixed(1) +
+        'm × ' +
+        geometry
+          .depthM
+          .toFixed(1) +
+        'm · ' +
+        geometry
+          .areaM2
+          .toFixed(0) +
+        '㎡',
+      x + w / 2,
+      y + h - 7,
+      4.6,
+      COLORS.navy,
+      '800',
+      'center'
+    );
+  }
+  drawToolButton(
+    ctx,
+    id,
+    imageKey,
+    label,
+    x,
+    y,
+    w,
+    h,
+    active
+  ) {
+    ui.card(
+      ctx,
+      x,
+      y,
+      w,
+      h,
+      {
+        radius: 10,
+        fill:
+          active
+            ? '#FFF2BF'
+            : '#FFFDF7',
+        stroke:
+          active
+            ? '#E8B326'
+            : '#DED2C1',
+        lineWidth:
+          active
+            ? 1.5
+            : 1,
+        shadow: false
+      }
+    );
+
+    this.drawImageContain(
+      ctx,
+      imageKey,
+      x + 7,
+      y + 6,
+      25,
+      h - 12,
+      1
+    );
+
+    this.text(
+      ctx,
+      label,
+      x + 42,
+      y + h / 2,
+      5.3,
+      COLORS.navy,
+      '800',
+      'center'
+    );
+
+    this.addButton(
+      id,
+      x,
+      y,
+      w,
+      h
+    );
+  }
+
+  drawFloorPlan(
+    ctx,
+    metrics,
+    floor,
+    geometry
+  ) {
+    const y =
+      geometry.y;
+
+    const h =
+      geometry.planH;
+
+    ui.card(
+      ctx,
+      7,
+      y,
+      376,
+      h,
+      {
+        radius: 14,
+        fill:
+          COLORS.panel,
+        stroke:
+          COLORS.line,
+        shadow: false
+      }
+    );
+
+    this.text(
       ctx,
       '餐厅平面图',
-      20,
-      y + 19,
-      10.5,
+      18,
+      y + 17,
+      9.8,
       COLORS.text,
       '800'
     );
 
-    ui.text(
+    const floorGeometry =
+      floor.geometry ||
+      floorGeometrySystem
+        .getFloorGeometry(
+          this.getShop(),
+          floor.index,
+          floor.area,
+          metrics.plan
+            .floors
+            .length
+        );
+
+    this.text(
       ctx,
-      '调整区域与家具，打造理想餐厅布局',
-      84,
-      y + 19,
-      5.8,
+      floorGeometry.shapeName +
+        ' · ' +
+        floorGeometry.areaM2.toFixed(0) +
+        '㎡ · 面宽' +
+        floorGeometry.widthM.toFixed(1) +
+        'm',
+      86,
+      y + 17,
+      5.0,
       COLORS.muted,
-      '500'
+      '600'
     );
 
-    ui.text(
+    this.text(
       ctx,
       '↶',
-      271,
-      y + 19,
+      267,
+      y + 17,
       10,
       COLORS.navy,
       '800',
       'center'
     );
 
-    ui.text(
+    this.text(
       ctx,
       '↷',
-      299,
-      y + 19,
+      292,
+      y + 17,
       10,
       COLORS.navy,
       '800',
@@ -1064,44 +2469,42 @@ class RenovationScene {
 
     this.addButton(
       'history:undo',
-      257,
-      y + 4,
-      29,
-      29
+      254,
+      y + 3,
+      27,
+      27
     );
 
     this.addButton(
       'history:redo',
-      285,
-      y + 4,
-      29,
-      29
+      279,
+      y + 3,
+      27,
+      27
     );
 
     ui.card(
       ctx,
-      318,
-      y + 6,
-      55,
-      26,
+      310,
+      y + 5,
+      64,
+      25,
       {
-        radius:
-          10,
+        radius: 10,
         fill:
-          '#FFF8E6',
+          '#FFF4D5',
         stroke:
-          '#E5C56F',
-        shadow:
-          false
+          '#E2C16B',
+        shadow: false
       }
     );
 
-    ui.text(
+    this.text(
       ctx,
       '全屏预览',
-      345.5,
-      y + 19,
-      5.8,
+      342,
+      y + 17.5,
+      5.2,
       COLORS.navy,
       '800',
       'center'
@@ -1109,437 +2512,77 @@ class RenovationScene {
 
     this.addButton(
       'preview',
-      314,
+      306,
       y + 2,
-      63,
-      34
+      72,
+      31
     );
 
-    const px =
-      15;
+    const planX =
+      14;
 
-    const py =
-      y + 37;
+    const planY =
+      y + 35;
 
-    const pw =
-      286;
+    const toolW =
+      70;
 
-    const ph =
-      h - 45;
+    const gap =
+      7;
 
-    ui.coverImage(
+    const planW =
+      376 -
+      14 -
+      8 -
+      toolW -
+      gap;
+
+    const planH =
+      h - 43;
+
+    this.drawFloorCanvas(
       ctx,
-      visualAssetSystem
-        .get(
-          'premium_floor_texture'
-        ),
-      px,
-      py,
-      pw,
-      ph,
-      9,
-      'rgba(255,249,240,0.48)'
+      metrics,
+      floor,
+      planX,
+      planY,
+      planW,
+      planH
     );
 
-    const serviceW =
-      pw *
-      0.44;
-
-    const roomW =
-      pw *
-      0.30;
-
-    ctx.save();
-
-    ctx.beginPath();
-    ctx.roundRect(
-      px,
-      py,
-      pw,
-      ph,
-      9
-    );
-    ctx.clip();
-
-    ctx.fillStyle =
-      'rgba(72,78,79,0.32)';
-
-    ctx.fillRect(
-      px,
-      py,
-      serviceW,
-      ph *
-        0.39
-    );
-
-    ctx.fillStyle =
-      'rgba(109,104,85,0.28)';
-
-    ctx.fillRect(
-      px + serviceW,
-      py,
-      pw -
-        serviceW -
-        roomW,
-      ph *
-        0.39
-    );
-
-    ctx.fillStyle =
-      'rgba(246,240,228,0.68)';
-
-    ctx.fillRect(
-      px,
-      py +
-        ph *
-        0.39,
-      pw -
-        roomW,
-      ph *
-        0.61
-    );
-
-    ctx.fillStyle =
-      'rgba(224,197,146,0.40)';
-
-    ctx.fillRect(
-      px +
-        pw -
-        roomW,
-      py,
-      roomW,
-      ph
-    );
-
-    ctx.restore();
-
-    ui.text(
-      ctx,
-      '后厨',
-      px +
-        serviceW /
-        2,
-      py + 17,
-      7,
-      COLORS.white,
-      '800',
-      'center'
-    );
-
-    ui.text(
-      ctx,
-      '仓储',
-      px +
-        serviceW +
-        (
-          pw -
-          serviceW -
-          roomW
-        ) /
-        2,
-      py + 17,
-      7,
-      COLORS.white,
-      '800',
-      'center'
-    );
-
-    ui.text(
-      ctx,
-      '服务区',
-      px + 45,
-      py +
-        ph *
-        0.56,
-      6.5,
-      COLORS.text,
-      '700',
-      'center'
-    );
-
-    ui.text(
-      ctx,
-      '堂食区',
-      px + 146,
-      py +
-        ph *
-        0.73,
-      6.8,
-      COLORS.text,
-      '800',
-      'center'
-    );
-
-    this.drawVisual(
-      ctx,
-      'v45_layout_kitchen',
-      px + 6,
-      py + 25,
-      serviceW - 12,
-      ph * 0.27,
-      0.88
-    );
-
-    this.drawVisual(
-      ctx,
-      'visual_stove',
-      px + 11,
-      py + 29,
-      serviceW *
-        0.52,
-      ph *
-        0.23,
-      0.98
-    );
-
-    this.drawVisual(
-      ctx,
-      'visual_fridge',
-      px +
-        serviceW *
-        0.60,
-      py + 29,
-      serviceW *
-        0.29,
-      ph *
-        0.23,
-      0.98
-    );
-
-    this.drawVisual(
-      ctx,
-      'v45_layout_dining',
-      px + 78,
-      py + ph * 0.44,
-      107,
-      ph * 0.47,
-      0.30
-    );
-
-    const rooms =
-      floor.privateRooms
-        .slice(
-          0,
-          3
-        );
-
-    for (
-      let i = 0;
-      i < 3;
-      i++
-    ) {
-      const ry =
-        py +
-        6 +
-        i *
-        (
-          ph /
-          3
-        );
-
-      ui.card(
-        ctx,
-        px +
-          pw -
-          roomW +
-          5,
-        ry,
-        roomW - 10,
-        ph /
-          3 -
-          10,
-        {
-          radius:
-            6,
-          fill:
-            'rgba(255,236,190,0.76)',
-          stroke:
-            '#D5A958',
-          shadow:
-            false
-        }
-      );
-
-      ui.text(
-        ctx,
-        rooms[i]
-          ? rooms[i].name
-          : (
-              '包厢名称' +
-              (
-                i + 1
-              )
-            ),
-        px +
-          pw -
-          roomW /
-          2,
-        ry + 13,
-        5.8,
-        COLORS.text,
-        '700',
-        'center'
-      );
-
-      this.drawVisual(
-        ctx,
-        'visual_table_8',
-        px +
-          pw -
-          roomW /
-          2 -
-          20,
-        ry + 20,
-        40,
-        Math.max(
-          27,
-          ph /
-            3 -
-            36
-        ),
-        0.98
-      );
-
-      if (
-        rooms[i]
-      ) {
-        this.addButton(
-          'room:rename:' +
-            rooms[i].id,
-          px +
-            pw -
-            roomW +
-            5,
-          ry,
-          roomW -
-            10,
-          ph /
-            3 -
-            10
-        );
-      }
-    }
-
-    const tableKeys = [
-      '2',
-      '4',
-      '6',
-      '8'
-    ];
-
-    let tableIndex =
-      0;
-
-    for (
-      let k = 0;
-      k <
-      tableKeys.length;
-      k++
-    ) {
-      const key =
-        tableKeys[k];
-
-      const count =
-        Math.min(
-          floor.tables[
-            key
-          ] ||
-          0,
-          10
-        );
-
-      for (
-        let i = 0;
-        i <
-        count;
-        i++
-      ) {
-        const col =
-          tableIndex %
-          3;
-
-        const row =
-          Math.floor(
-            tableIndex /
-            3
-          );
-
-        const tx =
-          px +
-          91 +
-          col *
-            47;
-
-        const ty =
-          py +
-          ph *
-            0.45 +
-          row *
-            39;
-
-        if (
-          ty >
-          py +
-            ph -
-            31
-        ) {
-          break;
-        }
-
-        this.drawVisual(
-          ctx,
-          'visual_table_' +
-            key,
-          tx,
-          ty,
-          key ===
-            '2'
-            ? 27
-            : key ===
-                '4'
-              ? 31
-              : key ===
-                  '6'
-                ? 34
-                : 37,
-          26,
-          0.98
-        );
-
-        tableIndex +=
-          1;
-      }
-    }
-
-    const toolbox = [
+    const tools = [
       [
         'page:zones',
-        'v45_layout_kitchen',
+        'reno_prep',
         '区域'
       ],
       [
         'page:furniture',
-        'v45_table_4',
+        'reno_table_4',
         '家具'
       ],
       [
         'page:style',
-        'v45_style_chinese',
+        V45_HALL_STYLE_VISUAL[
+          metrics.plan
+            .hallStyle
+        ] ||
+          'reno_style_natural',
         '风格'
       ],
       [
         'page:rooms',
-        'v45_layout_private_medium',
+        'reno_table_8',
         '包厢'
       ],
       [
         'aisle:cycle',
-        'v45_layout_corridor',
+        'reno_corridor',
         '动线'
       ],
       [
         'floor:next',
-        'v45_layout_corridor',
+        'reno_room_small',
         (
           '楼层 ' +
           (
@@ -1552,195 +2595,183 @@ class RenovationScene {
       ]
     ];
 
-    const toolX =
-      307;
+    const tx =
+      planX +
+      planW +
+      gap;
 
-    const toolW =
-      67;
-
-    const toolH =
+    const th =
       (
-        ph -
-        25
+        planH -
+        5 * 5
       ) /
       6;
 
     for (
       let i = 0;
       i <
-      toolbox.length;
+      tools.length;
       i++
     ) {
-      const ty =
-        py +
-        i *
-        (
-          toolH +
-          5
-        );
-
-      ui.card(
+      this.drawToolButton(
         ctx,
-        toolX,
-        ty,
+        tools[i][0],
+        tools[i][1],
+        tools[i][2],
+        tx,
+        planY +
+          i *
+          (
+            th + 5
+          ),
         toolW,
-        toolH,
-        {
-          radius:
-            9,
-          fill:
-            '#FFF9EE',
-          stroke:
-            '#DCCFBE',
-          shadow:
-            false
-        }
-      );
-
-      this.drawVisual(
-        ctx,
-        toolbox[i][1],
-        toolX + 5,
-        ty + 4,
-        24,
-        Math.max(
-          18,
-          toolH - 8
-        ),
-        1
-      );
-
-      ui.text(
-        ctx,
-        toolbox[i][2],
-        toolX + 47,
-        ty +
-          toolH /
-          2,
-        5.4,
-        COLORS.text,
-        '700',
-        'center'
-      );
-
-      this.addButton(
-        toolbox[i][0],
-        toolX,
-        ty,
-        toolW,
-        toolH
+        th,
+        false
       );
     }
   }
 
   drawTablePicker(
     ctx,
-    floor
+    floor,
+    geometry
   ) {
-    const sy =
-      this.getScale();
+    const x =
+      7;
 
     const y =
-      446 *
-      sy -
-      80 *
-      (
-        sy -
-        1
-      );
+      geometry.lowerY;
+
+    const w =
+      207;
 
     const h =
-      112 *
-      sy;
+      geometry.lowerH;
 
     ui.card(
       ctx,
-      8,
+      x,
       y,
-      203,
+      w,
       h,
       {
-        radius:
-          13,
+        radius: 13,
         fill:
-          COLORS.panel
+          COLORS.panel,
+        stroke:
+          COLORS.line,
+        shadow: false
       }
     );
 
-    ui.text(
+    this.text(
       ctx,
       '餐桌类型',
-      18,
-      y + 18,
-      9.5,
+      x + 12,
+      y + 16,
+      8.3,
       COLORS.text,
       '800'
     );
 
-    const keys = [
-      '2',
-      '4',
-      '6',
-      '8'
-    ];
+    const keys =
+      ['2', '4', '6', '8'];
+
+    const cellW =
+      47;
 
     for (
       let i = 0;
-      i <
-      keys.length;
+      i < 4;
       i++
     ) {
       const key =
         keys[i];
 
-      const x =
-        15 +
+      const cx =
+        x +
+        7 +
         i *
-        48;
+        (
+          cellW + 3
+        );
 
-      this.drawVisual(
+      const imageH =
+        Math.min(
+          61,
+          h - 52
+        );
+
+      this.drawImageContain(
         ctx,
-        'visual_table_' +
+        'reno_table_' +
           key,
-        x,
-        y + 28,
-        40,
-        Math.max(
-          35,
-          h - 67
-        ),
-        0.98
+        cx,
+        y + 26,
+        cellW,
+        imageH,
+        1
       );
 
-      ui.text(
+      this.text(
         ctx,
         key +
           '人桌',
-        x + 20,
+        cx +
+          cellW / 2,
         y +
           h -
           29,
-        5.7,
+        5.1,
         COLORS.text,
-        '700',
+        '800',
         'center'
       );
 
-      ui.text(
+      const count =
+        Number(
+          floor.tables[
+            key
+          ]
+        ) || 0;
+
+      this.text(
         ctx,
-        '−  ' +
-          (
-            floor.tables[
-              key
-            ] ||
-            0
-          ) +
-          '  +',
-        x + 20,
+        '−',
+        cx + 8,
         y +
           h -
-          11,
-        6,
+          12,
+        7.3,
+        COLORS.navy,
+        '800',
+        'center'
+      );
+
+      this.text(
+        ctx,
+        count,
+        cx +
+          cellW / 2,
+        y +
+          h -
+          12,
+        5.5,
+        COLORS.text,
+        '800',
+        'center'
+      );
+
+      this.text(
+        ctx,
+        '+',
+        cx +
+          cellW -
+          8,
+        y +
+          h -
+          12,
+        7,
         COLORS.navy,
         '800',
         'center'
@@ -1750,117 +2781,511 @@ class RenovationScene {
         'table:' +
           key +
           ':minus',
-        x - 3,
+        cx,
         y +
           h -
           25,
-        20,
-        27
+        18,
+        25
       );
 
       this.addButton(
         'table:' +
           key +
           ':plus',
-        x + 24,
+        cx +
+          cellW -
+          18,
         y +
           h -
           25,
-        20,
-        27
+        18,
+        25
+      );
+    }
+  }
+
+  drawChairIcon(
+    ctx,
+    x,
+    y
+  ) {
+    ctx.save();
+
+    ctx.fillStyle =
+      COLORS.green;
+
+    ctx.beginPath();
+    ctx.roundRect(
+      x,
+      y + 7,
+      18,
+      10,
+      3
+    );
+    ctx.fill();
+
+    ctx.fillRect(
+      x + 2,
+      y,
+      14,
+      8
+    );
+
+    ctx.fillRect(
+      x + 2,
+      y + 16,
+      3,
+      6
+    );
+
+    ctx.fillRect(
+      x + 13,
+      y + 16,
+      3,
+      6
+    );
+
+    ctx.restore();
+  }
+
+  drawCalendarIcon(
+    ctx,
+    x,
+    y
+  ) {
+    ctx.save();
+
+    ctx.strokeStyle =
+      COLORS.red;
+
+    ctx.lineWidth =
+      2;
+
+    ctx.strokeRect(
+      x,
+      y + 4,
+      20,
+      18
+    );
+
+    ctx.fillStyle =
+      COLORS.red;
+
+    ctx.fillRect(
+      x,
+      y + 8,
+      20,
+      3
+    );
+
+    ctx.fillRect(
+      x + 4,
+      y,
+      3,
+      6
+    );
+
+    ctx.fillRect(
+      x + 13,
+      y,
+      3,
+      6
+    );
+
+    ctx.restore();
+  }
+
+  drawHeartIcon(
+    ctx,
+    x,
+    y
+  ) {
+    ctx.save();
+
+    ctx.fillStyle =
+      '#F24872';
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      x + 10,
+      y + 20
+    );
+
+    ctx.bezierCurveTo(
+      x - 4,
+      y + 10,
+      x + 2,
+      y,
+      x + 10,
+      y + 6
+    );
+
+    ctx.bezierCurveTo(
+      x + 18,
+      y,
+      x + 24,
+      y + 10,
+      x + 10,
+      y + 20
+    );
+
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  drawGearIcon(
+    ctx,
+    x,
+    y
+  ) {
+    ctx.save();
+
+    ctx.strokeStyle =
+      '#238FD6';
+
+    ctx.fillStyle =
+      '#238FD6';
+
+    ctx.lineWidth =
+      2;
+
+    ctx.beginPath();
+
+    ctx.arc(
+      x + 10,
+      y + 10,
+      8,
+      0,
+      Math.PI * 2
+    );
+
+    ctx.stroke();
+
+    for (
+      let i = 0;
+      i < 8;
+      i++
+    ) {
+      const a =
+        Math.PI *
+        i /
+        4;
+
+      ctx.fillRect(
+        x +
+          9 +
+          Math.cos(a) * 10,
+        y +
+          9 +
+          Math.sin(a) * 10,
+        3,
+        3
+      );
+    }
+
+    ctx.beginPath();
+
+    ctx.arc(
+      x + 10,
+      y + 10,
+      3,
+      0,
+      Math.PI * 2
+    );
+
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  drawMetricIcon(
+    ctx,
+    type,
+    x,
+    y
+  ) {
+    if (
+      type === 'seat'
+    ) {
+      this.drawChairIcon(
+        ctx,
+        x,
+        y
+      );
+
+      return;
+    }
+
+    if (
+      type === 'budget'
+    ) {
+      if (
+        this.drawImageContain(
+          ctx,
+          'reno_glossy_money',
+          x - 2,
+          y - 2,
+          25,
+          25,
+          1
+        )
+      ) {
+        return;
+      }
+    }
+
+    if (
+      type === 'days'
+    ) {
+      this.drawCalendarIcon(
+        ctx,
+        x,
+        y
+      );
+
+      return;
+    }
+
+    if (
+      type === 'comfort'
+    ) {
+      this.drawHeartIcon(
+        ctx,
+        x,
+        y
+      );
+
+      return;
+    }
+
+    if (
+      type === 'appeal'
+    ) {
+      if (
+        this.drawImageContain(
+          ctx,
+          'reno_glossy_star',
+          x - 2,
+          y - 2,
+          25,
+          25,
+          1
+        )
+      ) {
+        return;
+      }
+    }
+
+    if (
+      type === 'efficiency'
+    ) {
+      this.drawGearIcon(
+        ctx,
+        x,
+        y
       );
     }
   }
 
   drawMetrics(
     ctx,
-    metrics
+    metrics,
+    geometry
   ) {
-    const sy =
-      this.getScale();
+    const x =
+      219;
 
     const y =
-      446 *
-      sy -
-      80 *
-      (
-        sy -
-        1
-      );
+      geometry.lowerY;
+
+    const w =
+      164;
 
     const h =
-      112 *
-      sy;
+      geometry.lowerH;
 
     ui.card(
       ctx,
-      218,
+      x,
       y,
-      164,
+      w,
       h,
       {
-        radius:
-          13,
+        radius: 13,
         fill:
-          COLORS.panel
+          COLORS.panel,
+        stroke:
+          COLORS.line,
+        shadow: false
       }
     );
 
-    ui.text(
+    this.text(
       ctx,
       '装修数据预览',
-      230,
-      y + 18,
-      9.2,
+      x + 11,
+      y + 16,
+      8.1,
       COLORS.text,
       '800'
     );
 
-    const items = [
-      [
-        '座位数',
-        metrics.totalSeats,
-        COLORS.green
-      ],
-      [
-        '预算',
-        money(
-          metrics.totalCost
-        ),
-        COLORS.orange
-      ],
-      [
-        '工期',
-        metrics.buildDays +
-          '天',
-        COLORS.red
-      ],
-      [
-        '舒适度',
-        Math.round(
-          metrics.comfort *
-          100
-        ),
-        '#D94E6A'
-      ],
-      [
-        '吸引力',
-        Math.round(
-          metrics.appeal *
-          100
-        ),
-        '#DCA72B'
-      ],
-      [
-        '运营效率',
-        Math.round(
+    this.text(
+      ctx,
+      '实时计算',
+      x + w - 10,
+      y + 16,
+      4.7,
+      COLORS.muted,
+      '600',
+      'right'
+    );
+
+    const comfort =
+      Math.round(
+        metrics.comfort *
+        100
+      );
+
+    const appeal =
+      Math.round(
+        metrics.appeal *
+        100
+      );
+
+    const efficiency =
+      Math.round(
+        metrics
+          .operationalEfficiency *
+        100
+      );
+
+    const trafficDelta =
+      Math.round(
+        (
           metrics
-            .operationalEfficiency *
-          100
-        ),
-        COLORS.blue
-      ]
+            .operatingImpact
+            .trafficFactor -
+          1
+        ) *
+        100
+      );
+
+    const spendDelta =
+      Math.round(
+        (
+          metrics
+            .operatingImpact
+            .spendFactor -
+          1
+        ) *
+        100
+      );
+
+    const serviceDelta =
+      Math.round(
+        (
+          metrics
+            .operatingImpact
+            .serviceFactor -
+          1
+        ) *
+        100
+      );
+
+    const items = [
+      {
+        type: 'seat',
+        label: '座位数',
+        value:
+          metrics.totalSeats,
+        sub:
+          '餐位'
+      },
+      {
+        type: 'budget',
+        label: '预算',
+        value:
+          money(
+            metrics.totalCost
+          ),
+        sub:
+          metrics.decorCost
+            ? (
+                '软装 ' +
+                money(
+                  metrics.decorCost
+                )
+              )
+            : '方案总额'
+      },
+      {
+        type: 'days',
+        label: '工期',
+        value:
+          metrics.buildDays +
+          '天',
+        sub:
+          '预计'
+      },
+      {
+        type: 'comfort',
+        label: '舒适度',
+        value:
+          comfort,
+        sub:
+          (
+            spendDelta >= 0
+              ? '+'
+              : ''
+          ) +
+          spendDelta +
+          '% 客单'
+      },
+      {
+        type: 'appeal',
+        label: '吸引力',
+        value:
+          appeal,
+        sub:
+          (
+            trafficDelta >= 0
+              ? '+'
+              : ''
+          ) +
+          trafficDelta +
+          '% 客流'
+      },
+      {
+        type: 'efficiency',
+        label: '运营效率',
+        value:
+          efficiency,
+        sub:
+          (
+            serviceDelta >= 0
+              ? '+'
+              : ''
+          ) +
+          serviceDelta +
+          '% 服务'
+      }
     ];
+
+    const top =
+      y + 29;
+
+    const cellW =
+      51;
+
+    const rowH =
+      (
+        h - 35
+      ) /
+      2;
 
     for (
       let i = 0;
@@ -1869,88 +3294,116 @@ class RenovationScene {
       i++
     ) {
       const col =
-        i %
-        3;
+        i % 3;
 
       const row =
         Math.floor(
-          i /
-          3
+          i / 3
         );
 
-      const x =
-        226 +
+      const cx =
+        x +
+        7 +
         col *
-          52;
+        cellW;
 
-      const iy =
-        y +
-        36 +
+      const cy =
+        top +
         row *
-          (
-            (
-              h -
-              43
-            ) /
-            2
-          );
+        rowH;
 
-      ui.text(
+      if (col > 0) {
+        ctx.fillStyle =
+          '#ECE3D7';
+
+        ctx.fillRect(
+          cx - 4,
+          cy + 3,
+          1,
+          rowH - 7
+        );
+      }
+
+      this.drawMetricIcon(
         ctx,
-        items[i][0],
-        x,
-        iy,
-        5.4,
-        COLORS.muted,
-        '600'
+        items[i].type,
+        cx,
+        cy + 3
       );
 
-      ui.text(
+      this.text(
         ctx,
-        String(
-          items[i][1]
-        ),
-        x,
-        iy + 17,
-        7.4,
-        items[i][2],
+        items[i].label,
+        cx + 25,
+        cy + 7,
+        4.4,
+        COLORS.muted,
+        '700'
+      );
+
+      this.text(
+        ctx,
+        items[i].value,
+        cx + 25,
+        cy + 24,
+        6.2,
+        i === 1
+          ? COLORS.goldDeep
+          : i === 2
+            ? COLORS.red
+            : i === 3
+              ? '#D94E6A'
+              : i === 4
+                ? '#DCA72B'
+                : i === 5
+                  ? COLORS.blue
+                  : COLORS.green,
         '800'
+      );
+
+      this.text(
+        ctx,
+        items[i].sub,
+        cx + 25,
+        cy + 39,
+        4.0,
+        COLORS.green,
+        '700'
       );
     }
   }
 
   drawFooter(
     ctx,
-    metrics
+    metrics,
+    geometry
   ) {
     const y =
-      this.contentBottom -
-      43;
+      geometry.footerY +
+      5;
 
     ui.card(
       ctx,
-      10,
+      9,
       y,
-      94,
-      34,
+      102,
+      37,
       {
-        radius:
-          17,
+        radius: 18,
         fill:
           '#FFFDF7',
         stroke:
-          '#D8CABB',
-        shadow:
-          false
+          '#D9CCBA',
+        shadow: false
       }
     );
 
-    ui.text(
+    this.text(
       ctx,
       '效果预览',
-      57,
-      y + 17,
-      7,
+      60,
+      y + 18.5,
+      6.5,
       COLORS.navy,
       '800',
       'center'
@@ -1958,42 +3411,41 @@ class RenovationScene {
 
     this.addButton(
       'preview',
-      6,
-      y - 4,
-      102,
-      42
+      5,
+      y - 3,
+      110,
+      44
     );
 
     ui.card(
       ctx,
-      112,
+      120,
       y,
-      268,
-      34,
+      262,
+      37,
       {
-        radius:
-          17,
+        radius: 18,
         fill:
           metrics.valid
             ? COLORS.gold
             : '#D9D4CB',
         stroke:
           metrics.valid
-            ? '#DB9F1F'
-            : '#C4BCAF',
-        shadow:
-          false
+            ? '#D89911'
+            : '#C6BEB2',
+        lineWidth: 1.2,
+        shadow: false
       }
     );
 
-    ui.text(
+    this.text(
       ctx,
       metrics.valid
         ? '选择施工队并开始施工  ›'
         : '当前布局存在问题，暂不能施工',
-      246,
-      y + 17,
-      8,
+      251,
+      y + 18.5,
+      7.2,
       metrics.valid
         ? COLORS.text
         : COLORS.muted,
@@ -2001,94 +3453,91 @@ class RenovationScene {
       'center'
     );
 
-    if (
-      metrics.valid
-    ) {
+    if (metrics.valid) {
       this.addButton(
         'construction:start',
-        106,
-        y - 4,
-        278,
-        42
+        116,
+        y - 3,
+        270,
+        44
       );
     }
   }
 
-  drawSecondaryHeader(
+  drawSecondaryShell(
     ctx,
     title,
     subtitle
   ) {
-    const sy =
-      this.getScale();
+    const geometry =
+      this.getMainGeometry();
 
     const y =
-      184 *
-      sy -
-      80 *
-      (
-        sy -
-        1
-      );
+      geometry.y;
+
+    const h =
+      this.contentBottom -
+      y -
+      8;
 
     ui.card(
       ctx,
-      8,
+      7,
       y,
-      374,
-      41,
+      376,
+      h,
       {
-        radius:
-          13,
+        radius: 14,
         fill:
-          COLORS.panel
+          COLORS.panel,
+        stroke:
+          COLORS.line,
+        shadow: false
       }
     );
 
-    ui.text(
+    this.text(
       ctx,
       title,
-      20,
-      y + 14,
-      10,
+      19,
+      y + 19,
+      9.6,
       COLORS.text,
       '800'
     );
 
-    ui.text(
+    this.text(
       ctx,
       subtitle,
-      20,
-      y + 29,
-      5.8,
+      19,
+      y + 39,
+      5.2,
       COLORS.muted,
-      '500'
+      '600'
     );
 
     ui.card(
       ctx,
-      304,
-      y + 8,
-      65,
-      25,
+      305,
+      y + 9,
+      62,
+      29,
       {
-        radius:
-          12,
+        radius: 14,
         fill:
-          '#FFF6E0',
+          '#FFF0BC',
         stroke:
-          '#E4C477',
-        shadow:
-          false
+          '#E0B543',
+        shadow: false
       }
     );
 
-    ui.text(
+    this.text(
       ctx,
       '返回平面图',
-      336.5,
-      y + 20.5,
-      5.9,
+      336,
+      y + 23.5,
+      5.2,
       COLORS.navy,
       '800',
       'center'
@@ -2096,13 +3545,18 @@ class RenovationScene {
 
     this.addButton(
       'page:layout',
-      298,
-      y + 4,
-      78,
-      33
+      299,
+      y + 5,
+      74,
+      37
     );
 
-    return y + 48;
+    return {
+      y:
+        y + 51,
+      h:
+        h - 59
+    };
   }
 
   renderZones(
@@ -2110,11 +3564,11 @@ class RenovationScene {
     metrics,
     floor
   ) {
-    const y =
-      this.drawSecondaryHeader(
+    const shell =
+      this.drawSecondaryShell(
         ctx,
         '区域面积',
-        '调整后厨、仓储、服务区比例，堂食面积自动联动'
+        '后厨、仓储、服务区改变后，堂食面积自动联动'
       );
 
     const rows = [
@@ -2124,7 +3578,7 @@ class RenovationScene {
         label:
           '后厨',
         image:
-          'v45_layout_kitchen',
+          'reno_stove',
         min:
           renovationConfig
             .zoneRules
@@ -2140,7 +3594,7 @@ class RenovationScene {
         label:
           '仓储',
         image:
-          'v45_layout_storage',
+          'reno_storage_shelf',
         min:
           renovationConfig
             .zoneRules
@@ -2156,7 +3610,7 @@ class RenovationScene {
         label:
           '服务区',
         image:
-          'v45_layout_service',
+          'reno_cashier',
         min:
           renovationConfig
             .zoneRules
@@ -2168,8 +3622,8 @@ class RenovationScene {
       }
     ];
 
-    let drawY =
-      y;
+    let y =
+      shell.y;
 
     for (
       let i = 0;
@@ -2187,63 +3641,62 @@ class RenovationScene {
           ]
         ) || 0;
 
-      const area =
-        floor.area *
-        ratio;
-
       ui.card(
         ctx,
-        10,
-        drawY,
-        370,
-        74,
+        16,
+        y,
+        358,
+        68,
         {
-          radius: 13,
+          radius: 12,
           fill:
-            COLORS.panel,
+            '#FFF9EF',
           stroke:
-            '#DDD2C3',
+            '#E0D5C7',
           shadow: false
         }
       );
 
-      this.drawVisual(
+      this.drawImageContain(
         ctx,
         item.image,
-        18,
-        drawY + 8,
-        74,
-        58,
+        23,
+        y + 7,
+        62,
+        54,
         1
       );
 
-      ui.text(
+      this.text(
         ctx,
         item.label,
-        105,
-        drawY + 17,
-        8.5,
+        97,
+        y + 18,
+        8.1,
         COLORS.text,
         '800'
       );
 
-      ui.text(
+      this.text(
         ctx,
         Math.round(
           ratio *
           100
         ) +
         '% · ' +
-        area.toFixed(1) +
+        (
+          floor.area *
+          ratio
+        ).toFixed(1) +
         '㎡',
-        105,
-        drawY + 38,
-        7.1,
+        97,
+        y + 40,
+        6.7,
         COLORS.orange,
         '800'
       );
 
-      ui.text(
+      this.text(
         ctx,
         '范围 ' +
         Math.round(
@@ -2256,89 +3709,56 @@ class RenovationScene {
           100
         ) +
         '%',
-        105,
-        drawY + 57,
-        5.5,
+        190,
+        y + 40,
+        4.8,
         COLORS.muted,
         '600'
       );
 
-      ui.card(
-        ctx,
-        283,
-        drawY + 17,
-        32,
-        32,
-        {
-          radius: 15,
-          fill:
-            '#F3EFE7',
-          stroke:
-            '#D3C8B9',
-          shadow: false
-        }
-      );
-
-      ui.text(
+      this.drawPill(
         ctx,
         '−',
-        299,
-        drawY + 33,
-        11,
-        COLORS.navy,
-        '800',
-        'center'
+        294,
+        y + 19,
+        29,
+        29,
+        '#F0ECE5',
+        COLORS.navy
+      );
+
+      this.drawPill(
+        ctx,
+        '+',
+        333,
+        y + 19,
+        29,
+        29,
+        COLORS.gold,
+        COLORS.text
       );
 
       this.addButton(
         'zone:' +
           item.key +
           ':minus',
-        278,
-        drawY + 12,
-        42,
-        42
-      );
-
-      ui.card(
-        ctx,
-        329,
-        drawY + 17,
-        32,
-        32,
-        {
-          radius: 15,
-          fill:
-            COLORS.gold,
-          stroke:
-            '#DDA11F',
-          shadow: false
-        }
-      );
-
-      ui.text(
-        ctx,
-        '+',
-        345,
-        drawY + 33,
-        10,
-        COLORS.text,
-        '800',
-        'center'
+        288,
+        y + 13,
+        41,
+        41
       );
 
       this.addButton(
         'zone:' +
           item.key +
           ':plus',
-        324,
-        drawY + 12,
-        42,
-        42
+        327,
+        y + 13,
+        41,
+        41
       );
 
-      drawY +=
-        81;
+      y += 76;
     }
 
     const diningRatio =
@@ -2352,71 +3772,60 @@ class RenovationScene {
 
     ui.card(
       ctx,
-      10,
-      drawY,
-      370,
-      72,
+      16,
+      y,
+      358,
+      61,
       {
-        radius: 13,
+        radius: 12,
         fill:
-          '#F5FAF7',
+          '#EFF8F2',
         stroke:
-          '#C9DFD2',
+          '#C4DECD',
         shadow: false
       }
     );
 
-    this.drawVisual(
+    this.drawImageContain(
       ctx,
-      'v45_layout_dining',
-      18,
-      drawY + 8,
-      84,
-      56,
+      'reno_table_4',
+      22,
+      y + 6,
+      59,
+      49,
       1
     );
 
-    ui.text(
+    this.text(
       ctx,
       '堂食区',
-      114,
-      drawY + 19,
-      8.5,
+      96,
+      y + 18,
+      7.8,
       COLORS.text,
       '800'
     );
 
-    ui.text(
+    this.text(
       ctx,
       Math.round(
         diningRatio *
         100
       ) +
-      '% · ' +
-      (
-        floor.area *
-        diningRatio
-      ).toFixed(1) +
-      '㎡',
-      114,
-      drawY + 43,
-      7.2,
+        '% · ' +
+        (
+          floor.area *
+          diningRatio
+        ).toFixed(1) +
+        '㎡',
+      96,
+      y + 41,
+      6.6,
       COLORS.green,
       '800'
     );
 
-    ui.text(
-      ctx,
-      '餐位与包厢共用堂食面积',
-      250,
-      drawY + 43,
-      5.3,
-      COLORS.muted,
-      '600'
-    );
-
-    drawY +=
-      80;
+    y += 70;
 
     const aisle =
       renovationConfig
@@ -2426,44 +3835,44 @@ class RenovationScene {
 
     ui.card(
       ctx,
-      10,
-      drawY,
-      370,
-      62,
+      16,
+      y,
+      358,
+      58,
       {
-        radius: 13,
+        radius: 12,
         fill:
-          '#FFF8E8',
+          '#FFF6DD',
         stroke:
-          '#E5C975',
+          '#E3C36B',
         shadow: false
       }
     );
 
-    this.drawVisual(
+    this.drawImageContain(
       ctx,
-      'v45_layout_corridor',
-      18,
-      drawY + 8,
-      70,
+      'reno_corridor',
+      22,
+      y + 6,
+      60,
       46,
       1
     );
 
-    ui.text(
+    this.text(
       ctx,
-      '动线模式',
-      101,
-      drawY + 18,
-      7.6,
+      '动线 · ' +
+        aisle.name,
+      96,
+      y + 18,
+      7.2,
       COLORS.text,
       '800'
     );
 
-    ui.text(
+    this.text(
       ctx,
-      aisle.name +
-        ' · 舒适 ' +
+      '舒适 ' +
         Math.round(
           aisle.comfort *
           100
@@ -2474,45 +3883,29 @@ class RenovationScene {
             .serviceEfficiency *
           100
         ),
-      101,
-      drawY + 41,
-      5.6,
+      96,
+      y + 39,
+      5.2,
       COLORS.muted,
       '600'
     );
 
-    ui.card(
-      ctx,
-      300,
-      drawY + 14,
-      62,
-      31,
-      {
-        radius: 15,
-        fill:
-          COLORS.gold,
-        stroke:
-          '#DDA11F',
-        shadow: false
-      }
-    );
-
-    ui.text(
+    this.drawPill(
       ctx,
       '切换',
-      331,
-      drawY + 29.5,
-      6.2,
-      COLORS.text,
-      '800',
-      'center'
+      306,
+      y + 15,
+      51,
+      29,
+      COLORS.gold,
+      COLORS.text
     );
 
     this.addButton(
       'aisle:cycle',
-      294,
-      drawY + 9,
-      74,
+      300,
+      y + 9,
+      63,
       41
     );
   }
@@ -2522,29 +3915,28 @@ class RenovationScene {
     metrics,
     floor
   ) {
-    const y =
-      this.drawSecondaryHeader(
+    const shell =
+      this.drawSecondaryShell(
         ctx,
-        '家具配置',
-        '餐桌决定餐位，软装影响舒适度、吸引力和预算'
+        '家具与软装',
+        '餐桌决定餐位，软装影响舒适度、吸引力与预算'
       );
 
-    ui.text(
+    const tableY =
+      shell.y;
+
+    this.text(
       ctx,
-      '餐桌组合',
-      18,
-      y + 13,
-      8.3,
+      '餐桌',
+      19,
+      tableY + 9,
+      7.8,
       COLORS.text,
       '800'
     );
 
-    const tableKeys = [
-      '2',
-      '4',
-      '6',
-      '8'
-    ];
+    const keys =
+      ['2', '4', '6', '8'];
 
     for (
       let i = 0;
@@ -2552,89 +3944,83 @@ class RenovationScene {
       i++
     ) {
       const key =
-        tableKeys[i];
+        keys[i];
 
       const x =
-        10 +
-        i * 93;
+        16 +
+        i * 89;
 
       ui.card(
         ctx,
         x,
-        y + 27,
-        86,
-        126,
+        tableY + 21,
+        82,
+        111,
         {
-          radius: 12,
+          radius: 11,
           fill:
             '#FFF9EF',
           stroke:
-            '#DDD2C3',
+            '#DFD5C8',
           shadow: false
         }
       );
 
-      this.drawVisual(
+      this.drawImageContain(
         ctx,
-        'visual_table_' +
+        'reno_table_' +
           key,
-        x + 8,
-        y + 34,
+        x + 6,
+        tableY + 27,
         70,
-        63,
+        58,
         1
       );
 
-      ui.text(
+      this.text(
         ctx,
         key +
           '人桌',
-        x + 43,
-        y + 103,
-        6.2,
+        x + 41,
+        tableY + 88,
+        5.6,
         COLORS.text,
         '800',
         'center'
       );
 
-      ui.text(
+      this.text(
         ctx,
-        '数量 ' +
-        (
-          floor.tables[
-            key
-          ] || 0
-        ),
-        x + 43,
-        y + 121,
-        5.5,
-        COLORS.muted,
-        '600',
+        '−',
+        x + 13,
+        tableY + 112,
+        7,
+        COLORS.navy,
+        '800',
         'center'
       );
 
-      ui.card(
+      this.text(
         ctx,
-        x + 7,
-        y + 130,
-        30,
-        18,
-        {
-          radius: 8,
-          fill:
-            '#F2EEE7',
-          stroke:
-            '#D4C9BB',
-          shadow: false
-        }
+        Number(
+          floor.tables[
+            key
+          ]
+        ) || 0,
+        x + 41,
+        tableY + 112,
+        5.8,
+        COLORS.text,
+        '800',
+        'center'
       );
 
-      ui.text(
+      this.text(
         ctx,
-        '−',
-        x + 22,
-        y + 139,
-        8,
+        '+',
+        x + 69,
+        tableY + 112,
+        7,
         COLORS.navy,
         '800',
         'center'
@@ -2644,164 +4030,137 @@ class RenovationScene {
         'table:' +
           key +
           ':minus',
-        x + 4,
-        y + 126,
-        36,
-        26
-      );
-
-      ui.card(
-        ctx,
-        x + 49,
-        y + 130,
-        30,
-        18,
-        {
-          radius: 8,
-          fill:
-            COLORS.gold,
-          stroke:
-            '#DDA11F',
-          shadow: false
-        }
-      );
-
-      ui.text(
-        ctx,
-        '+',
-        x + 64,
-        y + 139,
-        7,
-        COLORS.text,
-        '800',
-        'center'
+        x + 2,
+        tableY + 98,
+        28,
+        28
       );
 
       this.addButton(
         'table:' +
           key +
           ':plus',
-        x + 46,
-        y + 126,
-        36,
-        26
+        x + 54,
+        tableY + 98,
+        28,
+        28
       );
     }
 
     const decorY =
-      y + 169;
+      tableY + 148;
 
-    ui.text(
+    this.text(
       ctx,
-      '软装配置',
-      18,
+      '软装',
+      19,
       decorY,
-      8.3,
+      7.8,
       COLORS.text,
       '800'
     );
 
-    const decorItems =
+    const items =
       renovationConfig
-        .decorItems;
+        .decorItems ||
+      [];
 
     for (
       let i = 0;
       i <
-      decorItems.length;
+      Math.min(
+        items.length,
+        4
+      );
       i++
     ) {
       const item =
-        decorItems[i];
+        items[i];
 
       const x =
-        10 +
-        i * 93;
+        16 +
+        i * 89;
 
       const count =
         Number(
-          metrics
-            .decorCounts[
-              item.id
-            ]
+          metrics.decorCounts &&
+          metrics.decorCounts[
+            item.id
+          ]
         ) || 0;
 
       ui.card(
         ctx,
         x,
-        decorY + 14,
-        86,
-        128,
+        decorY + 13,
+        82,
+        116,
         {
-          radius: 12,
+          radius: 11,
           fill:
             '#FFF9EF',
           stroke:
-            '#DDD2C3',
+            '#DFD5C8',
           shadow: false
         }
       );
 
-      this.drawVisual(
+      const imageMap = {
+        plant:
+          'reno_plant_1',
+        pendant:
+          'reno_pendant',
+        screen:
+          'reno_screen',
+        sofa:
+          'reno_sofa'
+      };
+
+      this.drawImageContain(
         ctx,
-        item.imageKey,
-        x + 8,
-        decorY + 21,
-        70,
-        63,
+        imageMap[
+          item.id
+        ] ||
+          'reno_plant_1',
+        x + 7,
+        decorY + 19,
+        68,
+        56,
         1
       );
 
-      ui.text(
+      this.text(
         ctx,
         item.name,
-        x + 43,
-        decorY + 91,
-        6.1,
+        x + 41,
+        decorY + 82,
+        5.5,
         COLORS.text,
         '800',
         'center'
       );
 
-      ui.text(
+      this.text(
         ctx,
         money(
           item.cost
-        ) +
-          ' · ' +
-          count +
-          '/' +
-          item.max,
-        x + 43,
-        decorY + 108,
-        4.8,
-        COLORS.muted,
-        '600',
+        ),
+        x + 41,
+        decorY + 98,
+        4.5,
+        COLORS.orange,
+        '700',
         'center'
       );
 
-      ui.card(
+      this.text(
         ctx,
-        x + 7,
+        '− ' +
+          count +
+          ' +',
+        x + 41,
         decorY + 116,
-        30,
-        18,
-        {
-          radius: 8,
-          fill:
-            '#F2EEE7',
-          stroke:
-            '#D4C9BB',
-          shadow: false
-        }
-      );
-
-      ui.text(
-        ctx,
-        '−',
-        x + 22,
-        decorY + 125,
-        8,
+        5.7,
         COLORS.navy,
         '800',
         'center'
@@ -2812,94 +4171,57 @@ class RenovationScene {
           item.id +
           ':minus',
         x + 4,
-        decorY + 112,
-        36,
-        26
-      );
-
-      ui.card(
-        ctx,
-        x + 49,
-        decorY + 116,
-        30,
-        18,
-        {
-          radius: 8,
-          fill:
-            COLORS.gold,
-          stroke:
-            '#DDA11F',
-          shadow: false
-        }
-      );
-
-      ui.text(
-        ctx,
-        '+',
-        x + 64,
-        decorY + 125,
-        7,
-        COLORS.text,
-        '800',
-        'center'
+        decorY + 101,
+        28,
+        28
       );
 
       this.addButton(
         'decor:' +
           item.id +
           ':plus',
-        x + 46,
-        decorY + 112,
-        36,
-        26
+        x + 51,
+        decorY + 101,
+        28,
+        28
       );
     }
 
     const impactY =
-      decorY + 151;
+      decorY + 143;
 
     ui.card(
       ctx,
-      10,
+      16,
       impactY,
-      370,
-      63,
+      358,
+      60,
       {
-        radius: 13,
+        radius: 12,
         fill:
-          '#F3F8FA',
+          '#EFF7FA',
         stroke:
-          '#C7DCE6',
+          '#C5DDE8',
         shadow: false
       }
     );
 
-    ui.text(
+    this.text(
       ctx,
-      '当前软装 ' +
+      '装修评分 ' +
+        metrics.renovationScore +
+        ' · 软装 ' +
         money(
           metrics.decorCost
         ),
-      22,
-      impactY + 19,
-      7.1,
+      28,
+      impactY + 18,
+      7.0,
       COLORS.text,
       '800'
     );
 
-    ui.text(
-      ctx,
-      '装修评分 ' +
-        metrics
-          .renovationScore,
-      151,
-      impactY + 19,
-      7.1,
-      COLORS.orange,
-      '800'
-    );
-
-    ui.text(
+    this.text(
       ctx,
       '客流 ×' +
         metrics
@@ -2916,275 +4238,167 @@ class RenovationScene {
           .operatingImpact
           .serviceFactor
           .toFixed(2),
-      22,
-      impactY + 44,
-      5.4,
+      28,
+      impactY + 41,
+      5.2,
       COLORS.muted,
       '600'
     );
   }
 
-  renderContractors(
+  renderStyle(
     ctx,
     metrics
   ) {
-    const y =
-      this.drawSecondaryHeader(
+    const shell =
+      this.drawSecondaryShell(
         ctx,
-        '选择施工队',
-        '报价、工期、可靠度和质量均来自当前装修方案'
+        '装修风格',
+        '大厅、材料、灯光共同影响成本、舒适度与吸引力'
       );
 
     const plan =
       metrics.plan;
 
-    const quotes =
-      renovationSystem
-        .getContractorQuotes(
-          this.shopId
-        );
+    const rows = [
+      {
+        action:
+          'style:hall',
+        label:
+          '大厅风格',
+        value:
+          this.getName(
+            renovationConfig
+              .hallStyles,
+            plan.hallStyle
+          ),
+        key:
+          V45_HALL_STYLE_VISUAL[
+            plan.hallStyle
+          ] ||
+          'reno_style_natural'
+      },
+      {
+        action:
+          'style:material',
+        label:
+          '装修材料',
+        value:
+          this.getName(
+            renovationConfig
+              .materialGrades,
+            plan.materialGrade
+          ),
+        key:
+          plan.materialGrade ===
+            'premium'
+            ? 'reno_style_business'
+            : plan.materialGrade ===
+                'good'
+              ? 'reno_style_chinese'
+              : 'reno_style_natural'
+      },
+      {
+        action:
+          'style:lighting',
+        label:
+          '灯光氛围',
+        value:
+          this.getName(
+            renovationConfig
+              .lightingLevels,
+            plan.lightingLevel
+          ),
+        key:
+          plan.lightingLevel ===
+            'premium'
+            ? 'reno_style_business'
+            : plan.lightingLevel ===
+                'layered'
+              ? 'reno_style_modern'
+              : 'reno_style_natural'
+      }
+    ];
 
-    let drawY =
-      y;
+    let y =
+      shell.y;
 
     for (
       let i = 0;
       i <
-      quotes.length;
+      rows.length;
       i++
     ) {
-      const quote =
-        quotes[i];
-
-      const selected =
-        plan
-          .selectedContractorId ===
-        quote.id ||
-        (
-          !plan
-            .selectedContractorId &&
-          i === 0
-        );
+      const item =
+        rows[i];
 
       ui.card(
         ctx,
-        10,
-        drawY,
-        370,
-        88,
+        16,
+        y,
+        358,
+        90,
         {
-          radius: 13,
+          radius: 12,
           fill:
-            selected
-              ? '#FFF8DE'
-              : COLORS.panel,
+            '#FFF9EF',
           stroke:
-            selected
-              ? '#E2B52B'
-              : '#DDD2C3',
+            '#DED3C5',
           shadow: false
         }
       );
 
-      this.drawVisual(
+      this.drawImageCover(
         ctx,
-        'v45_advice_renovation',
-        18,
-        drawY + 9,
-        64,
-        70,
-        1
+        item.key,
+        23,
+        y + 8,
+        112,
+        74,
+        9,
+        null
       );
 
-      ui.text(
+      this.text(
         ctx,
-        quote.name,
-        95,
-        drawY + 19,
-        8.1,
+        item.label,
+        151,
+        y + 23,
+        8.2,
         COLORS.text,
         '800'
       );
 
-      ui.text(
+      this.text(
         ctx,
-        '报价 ' +
-          money(
-            quote.price
-          ) +
-          ' · 工期 ' +
-          quote.days +
-          '天',
-        95,
-        drawY + 41,
-        6.1,
+        item.value,
+        151,
+        y + 51,
+        7.0,
         COLORS.orange,
         '800'
       );
 
-      ui.text(
+      this.drawPill(
         ctx,
-        '可靠度 ' +
-          quote
-            .reliability +
-          ' · 质量 ' +
-          quote
-            .quality,
-        95,
-        drawY + 62,
-        5.5,
-        COLORS.muted,
-        '600'
-      );
-
-      ui.card(
-        ctx,
-        303,
-        drawY + 24,
-        57,
-        32,
-        {
-          radius: 15,
-          fill:
-            selected
-              ? COLORS.gold
-              : '#E7F2F7',
-          stroke:
-            selected
-              ? '#DDA11F'
-              : '#AFCFDD',
-          shadow: false
-        }
-      );
-
-      ui.text(
-        ctx,
-        selected
-          ? '已选'
-          : '选择',
-        331.5,
-        drawY + 40,
-        6.2,
-        COLORS.text,
-        '800',
-        'center'
+        '切换 ›',
+        297,
+        y + 28,
+        59,
+        33,
+        COLORS.gold,
+        COLORS.text
       );
 
       this.addButton(
-        'contractor:select:' +
-          quote.id,
-        296,
-        drawY + 18,
+        item.action,
+        291,
+        y + 22,
         71,
-        44
+        45
       );
 
-      drawY +=
-        96;
-    }
-
-    ui.card(
-      ctx,
-      10,
-      drawY,
-      370,
-      73,
-      {
-        radius: 13,
-        fill:
-          metrics.valid
-            ? '#F2F9F4'
-            : '#FFF1EC',
-        stroke:
-          metrics.valid
-            ? '#BDDCC7'
-            : '#E4B6A9',
-        shadow: false
-      }
-    );
-
-    ui.text(
-      ctx,
-      '装修评分 ' +
-        metrics
-          .renovationScore +
-        ' · 预算 ' +
-        money(
-          metrics.totalCost
-        ),
-      22,
-      drawY + 20,
-      7.2,
-      metrics.valid
-        ? COLORS.green
-        : COLORS.red,
-      '800'
-    );
-
-    ui.text(
-      ctx,
-      '预计经营影响：客流 ×' +
-        metrics
-          .operatingImpact
-          .trafficFactor
-          .toFixed(2) +
-        ' · 客单 ×' +
-        metrics
-          .operatingImpact
-          .spendFactor
-          .toFixed(2),
-      22,
-      drawY + 43,
-      5.3,
-      COLORS.muted,
-      '600'
-    );
-
-    ui.card(
-      ctx,
-      252,
-      drawY + 17,
-      108,
-      38,
-      {
-        radius: 18,
-        fill:
-          metrics.valid
-            ? COLORS.gold
-            : '#D9D4CB',
-        stroke:
-          metrics.valid
-            ? '#DDA11F'
-            : '#C4BCAF',
-        shadow: false
-      }
-    );
-
-    ui.text(
-      ctx,
-      metrics.valid
-        ? '确认施工'
-        : '方案无效',
-      306,
-      drawY + 36,
-      7,
-      metrics.valid
-        ? COLORS.text
-        : COLORS.muted,
-      '800',
-      'center'
-    );
-
-    if (
-      metrics.valid
-    ) {
-      this.addButton(
-        'construction:confirm',
-        245,
-        drawY + 11,
-        122,
-        50
-      );
+      y += 98;
     }
   }
 
@@ -3193,51 +4407,29 @@ class RenovationScene {
     metrics,
     floor
   ) {
-    const y =
-      this.drawSecondaryHeader(
+    const shell =
+      this.drawSecondaryShell(
         ctx,
         '包厢管理',
         '添加、改名、调整人数和风格'
       );
 
-    const bottom =
-      this.contentBottom -
-      12;
-
-    const available =
-      bottom -
-      y;
-
     const rooms =
-      floor.privateRooms;
+      floor.privateRooms ||
+      [];
 
-    const rowH =
-      Math.max(
-        56,
-        Math.min(
-          74,
-          available /
-            Math.max(
-              1,
-              Math.min(
-                rooms.length +
-                  1,
-                6
-              )
-            )
-        )
-      );
+    let y =
+      shell.y;
 
-    let drawY =
-      y;
-
-    for (
-      let i = 0;
-      i <
+    const maxDraw =
       Math.min(
         rooms.length,
         5
       );
+
+    for (
+      let i = 0;
+      i < maxDraw;
       i++
     ) {
       const room =
@@ -3245,43 +4437,41 @@ class RenovationScene {
 
       ui.card(
         ctx,
-        10,
-        drawY,
-        370,
-        rowH - 6,
+        16,
+        y,
+        358,
+        62,
         {
-          radius:
-            12,
+          radius: 11,
           fill:
             '#FFF9EF',
           stroke:
-            '#DDD2C3',
-          shadow:
-            false
+            '#DED3C5',
+          shadow: false
         }
       );
 
-      this.drawVisual(
+      this.drawImageContain(
         ctx,
-        'visual_table_8',
-        19,
-        drawY + 7,
-        47,
-        rowH - 20,
-        0.98
+        'reno_table_8',
+        23,
+        y + 7,
+        58,
+        48,
+        1
       );
 
-      ui.text(
+      this.text(
         ctx,
         room.name,
-        76,
-        drawY + 18,
-        8.2,
+        94,
+        y + 19,
+        7.6,
         COLORS.text,
         '800'
       );
 
-      ui.text(
+      this.text(
         ctx,
         room.seats +
           '人 · ' +
@@ -3290,14 +4480,14 @@ class RenovationScene {
               .privateRoomStyles,
             room.style
           ),
-        76,
-        drawY + 38,
-        6.2,
+        94,
+        y + 42,
+        5.3,
         COLORS.muted,
         '600'
       );
 
-      const controls = [
+      const actions = [
         [
           'room:rename:' +
             room.id,
@@ -3322,93 +4512,65 @@ class RenovationScene {
 
       for (
         let j = 0;
-        j <
-        controls.length;
+        j < 4;
         j++
       ) {
-        const x =
-          196 +
-          j * 43;
+        const ax =
+          216 +
+          j * 37;
 
-        ui.card(
+        this.drawPill(
           ctx,
-          x,
-          drawY + 14,
-          38,
+          actions[j][1],
+          ax,
+          y + 18,
+          33,
           27,
-          {
-            radius:
-              10,
-            fill:
-              j === 3
-                ? '#FFF0EB'
-                : '#FFF5D9',
-            stroke:
-              j === 3
-                ? '#E8B1A8'
-                : '#E1C16D',
-            shadow:
-              false
-          }
-        );
-
-        ui.text(
-          ctx,
-          controls[j][1],
-          x + 19,
-          drawY + 27.5,
-          5.7,
+          j === 3
+            ? '#FFF0EA'
+            : '#FFF2C9',
           j === 3
             ? COLORS.red
-            : COLORS.navy,
-          '800',
-          'center'
+            : COLORS.navy
         );
 
         this.addButton(
-          controls[j][0],
-          x - 3,
-          drawY + 10,
-          44,
+          actions[j][0],
+          ax - 2,
+          y + 14,
+          37,
           35
         );
       }
 
-      drawY +=
-        rowH;
+      y += 69;
     }
 
     if (
-      rooms.length <
-      8 &&
-      drawY <
-        bottom -
-        45
+      rooms.length < 8
     ) {
       ui.card(
         ctx,
-        10,
-        drawY,
-        370,
-        39,
+        16,
+        y,
+        358,
+        42,
         {
-          radius:
-            14,
+          radius: 13,
           fill:
-            '#FFF8E4',
+            '#FFF5D4',
           stroke:
-            '#E8C874',
-          shadow:
-            false
+            '#E3BD51',
+          shadow: false
         }
       );
 
-      ui.text(
+      this.text(
         ctx,
         '+ 添加一个新包厢',
         195,
-        drawY + 19.5,
-        7.4,
+        y + 21,
+        6.6,
         COLORS.navy,
         '800',
         'center'
@@ -3416,233 +4578,65 @@ class RenovationScene {
 
       this.addButton(
         'room:add',
-        6,
-        drawY - 3,
-        378,
-        45
+        12,
+        y - 2,
+        366,
+        46
       );
-    }
-  }
-
-  renderStyle(
-    ctx,
-    metrics
-  ) {
-    const y =
-      this.drawSecondaryHeader(
-        ctx,
-        '装修风格',
-        '大厅、材料和灯光均会联动成本与吸引力'
-      );
-
-    const plan =
-      metrics.plan;
-
-    const rows = [
-      {
-        id:
-          'style:hall',
-        label:
-          '大厅风格',
-        value:
-          this.getName(
-            renovationConfig
-              .hallStyles,
-            plan.hallStyle
-          ),
-        key:
-          V45_HALL_STYLE_VISUAL[
-            plan.hallStyle
-          ] ||
-          'v45_style_natural'
-      },
-      {
-        id:
-          'style:material',
-        label:
-          '装修材料',
-        value:
-          this.getName(
-            renovationConfig
-              .materialGrades,
-            plan.materialGrade
-          ),
-        key:
-          plan.materialGrade === 'premium'
-            ? 'v45_style_business'
-            : plan.materialGrade === 'good'
-              ? 'v45_style_chinese'
-              : 'v45_style_natural'
-      },
-      {
-        id:
-          'style:lighting',
-        label:
-          '灯光氛围',
-        value:
-          this.getName(
-            renovationConfig
-              .lightingLevels,
-            plan.lightingLevel
-          ),
-        key:
-          plan.lightingLevel === 'premium'
-            ? 'v45_style_business'
-            : plan.lightingLevel === 'layered'
-              ? 'v45_style_modern'
-              : 'v45_style_natural'
-      }
-    ];
-
-    let drawY =
-      y;
-
-    for (
-      let i = 0;
-      i <
-      rows.length;
-      i++
-    ) {
-      const item =
-        rows[i];
-
-      ui.card(
-        ctx,
-        10,
-        drawY,
-        370,
-        82,
-        {
-          radius:
-            14,
-          fill:
-            COLORS.panel
-        }
-      );
-
-      this.drawVisual(
-        ctx,
-        item.key,
-        18,
-        drawY + 8,
-        96,
-        66,
-        1
-      );
-
-      ui.text(
-        ctx,
-        item.label,
-        128,
-        drawY + 24,
-        8.5,
-        COLORS.text,
-        '800'
-      );
-
-      ui.text(
-        ctx,
-        item.value,
-        128,
-        drawY + 50,
-        7.5,
-        COLORS.orange,
-        '700'
-      );
-
-      ui.card(
-        ctx,
-        292,
-        drawY + 23,
-        69,
-        34,
-        {
-          radius:
-            16,
-          fill:
-            COLORS.gold,
-          stroke:
-            '#DDA11F',
-          shadow:
-            false
-        }
-      );
-
-      ui.text(
-        ctx,
-        '切换 ›',
-        326.5,
-        drawY + 40,
-        6.7,
-        COLORS.text,
-        '800',
-        'center'
-      );
-
-      this.addButton(
-        item.id,
-        286,
-        drawY + 18,
-        81,
-        44
-      );
-
-      drawY +=
-        90;
     }
   }
 
   renderTemplates(
     ctx
   ) {
-    const y =
-      this.drawSecondaryHeader(
+    const shell =
+      this.drawSecondaryShell(
         ctx,
         '模板管理',
-        '保存、套用、改名或删除你的装修模板'
+        '保存、套用、改名或删除装修模板'
       );
 
     const templates =
       customizationSystem
         .getTemplateList();
 
-    let drawY =
-      y;
+    let y =
+      shell.y;
 
-    if (
-      !templates.length
-    ) {
+    if (!templates.length) {
       ui.card(
         ctx,
-        10,
-        drawY,
-        370,
-        96,
+        16,
+        y,
+        358,
+        92,
         {
-          radius:
-            14,
+          radius: 12,
           fill:
-            COLORS.panel
+            '#FFF9EF',
+          stroke:
+            '#DED3C5',
+          shadow: false
         }
       );
 
-      ui.text(
+      this.text(
         ctx,
         '暂时还没有自定义模板',
         195,
-        drawY + 31,
-        9,
+        y + 31,
+        8.0,
         COLORS.text,
         '800',
         'center'
       );
 
-      ui.text(
+      this.text(
         ctx,
-        '点击顶部“保存模板”即可保存当前装修方案。',
+        '点击顶部“保存模板”即可保存当前方案',
         195,
-        drawY + 57,
-        6.3,
+        y + 58,
+        5.3,
         COLORS.muted,
         '600',
         'center'
@@ -3665,33 +4659,31 @@ class RenovationScene {
 
       ui.card(
         ctx,
-        10,
-        drawY,
-        370,
-        57,
+        16,
+        y,
+        358,
+        58,
         {
-          radius:
-            12,
+          radius: 11,
           fill:
             '#FFF9EF',
           stroke:
-            '#DDD2C3',
-          shadow:
-            false
+            '#DED3C5',
+          shadow: false
         }
       );
 
-      ui.text(
+      this.text(
         ctx,
         item.name,
-        22,
-        drawY + 19,
-        8.1,
+        28,
+        y + 19,
+        7.4,
         COLORS.text,
         '800'
       );
 
-      ui.text(
+      this.text(
         ctx,
         item.sourceFloorCount +
           '层 · 原面积 ' +
@@ -3699,9 +4691,9 @@ class RenovationScene {
             item.sourceArea
           ) +
           '㎡',
-        22,
-        drawY + 38,
-        5.8,
+        28,
+        y + 40,
+        5.0,
         COLORS.muted,
         '600'
       );
@@ -3726,60 +4718,259 @@ class RenovationScene {
 
       for (
         let j = 0;
-        j <
-        actions.length;
+        j < 3;
         j++
       ) {
-        const x =
-          239 +
-          j * 44;
+        const ax =
+          247 +
+          j * 38;
 
-        ui.card(
-          ctx,
-          x,
-          drawY + 14,
-          39,
-          28,
-          {
-            radius:
-              10,
-            fill:
-              j === 2
-                ? '#FFF0EB'
-                : '#FFF5D9',
-            stroke:
-              j === 2
-                ? '#E7B0A6'
-                : '#E1C16D',
-            shadow:
-              false
-          }
-        );
-
-        ui.text(
+        this.drawPill(
           ctx,
           actions[j][1],
-          x + 19.5,
-          drawY + 28,
-          5.7,
+          ax,
+          y + 15,
+          34,
+          28,
+          j === 2
+            ? '#FFF0EA'
+            : '#FFF2C9',
           j === 2
             ? COLORS.red
-            : COLORS.navy,
-          '800',
-          'center'
+            : COLORS.navy
         );
 
         this.addButton(
           actions[j][0],
-          x - 3,
-          drawY + 10,
-          45,
+          ax - 2,
+          y + 11,
+          38,
           36
         );
       }
 
-      drawY +=
-        64;
+      y += 65;
+    }
+  }
+
+  renderContractors(
+    ctx,
+    metrics
+  ) {
+    const shell =
+      this.drawSecondaryShell(
+        ctx,
+        '选择施工队',
+        '报价、工期、可靠度和质量均来自当前装修方案'
+      );
+
+    const plan =
+      metrics.plan;
+
+    const quotes =
+      renovationSystem
+        .getContractorQuotes(
+          this.shopId
+        );
+
+    let y =
+      shell.y;
+
+    for (
+      let i = 0;
+      i <
+      quotes.length;
+      i++
+    ) {
+      const quote =
+        quotes[i];
+
+      const selected =
+        plan
+          .selectedContractorId ===
+        quote.id ||
+        (
+          !plan
+            .selectedContractorId &&
+          i === 0
+        );
+
+      ui.card(
+        ctx,
+        16,
+        y,
+        358,
+        82,
+        {
+          radius: 12,
+          fill:
+            selected
+              ? '#FFF5D1'
+              : '#FFF9EF',
+          stroke:
+            selected
+              ? '#E3B32A'
+              : '#DED3C5',
+          shadow: false
+        }
+      );
+
+      this.drawImageContain(
+        ctx,
+        'reno_advice',
+        22,
+        y + 8,
+        58,
+        66,
+        1
+      );
+
+      this.text(
+        ctx,
+        quote.name,
+        92,
+        y + 18,
+        7.8,
+        COLORS.text,
+        '800'
+      );
+
+      this.text(
+        ctx,
+        '报价 ' +
+          money(
+            quote.price
+          ) +
+          ' · 工期 ' +
+          quote.days +
+          '天',
+        92,
+        y + 41,
+        5.8,
+        COLORS.orange,
+        '800'
+      );
+
+      this.text(
+        ctx,
+        '可靠度 ' +
+          quote.reliability +
+          ' · 质量 ' +
+          quote.quality,
+        92,
+        y + 62,
+        5.0,
+        COLORS.muted,
+        '600'
+      );
+
+      this.drawPill(
+        ctx,
+        selected
+          ? '已选'
+          : '选择',
+        304,
+        y + 26,
+        54,
+        31,
+        selected
+          ? COLORS.gold
+          : '#E7F3F8',
+        COLORS.text
+      );
+
+      this.addButton(
+        'contractor:select:' +
+          quote.id,
+        298,
+        y + 20,
+        66,
+        43
+      );
+
+      y += 90;
+    }
+
+    ui.card(
+      ctx,
+      16,
+      y,
+      358,
+      71,
+      {
+        radius: 12,
+        fill:
+          '#EFF8F2',
+        stroke:
+          '#C4DECD',
+        shadow: false
+      }
+    );
+
+    this.text(
+      ctx,
+      '装修评分 ' +
+        metrics.renovationScore +
+        ' · 预算 ' +
+        money(
+          metrics.totalCost
+        ),
+      28,
+      y + 19,
+      6.8,
+      COLORS.green,
+      '800'
+    );
+
+    this.text(
+      ctx,
+      '客流 ×' +
+        metrics
+          .operatingImpact
+          .trafficFactor
+          .toFixed(2) +
+        ' · 客单 ×' +
+        metrics
+          .operatingImpact
+          .spendFactor
+          .toFixed(2) +
+        ' · 服务 ×' +
+        metrics
+          .operatingImpact
+          .serviceFactor
+          .toFixed(2),
+      28,
+      y + 43,
+      5.0,
+      COLORS.muted,
+      '600'
+    );
+
+    this.drawPill(
+      ctx,
+      metrics.valid
+        ? '确认施工'
+        : '方案无效',
+      286,
+      y + 22,
+      72,
+      34,
+      metrics.valid
+        ? COLORS.gold
+        : '#D9D4CB',
+      metrics.valid
+        ? COLORS.text
+        : COLORS.muted
+    );
+
+    if (metrics.valid) {
+      this.addButton(
+        'construction:confirm',
+        280,
+        y + 16,
+        84,
+        46
+      );
     }
   }
 
@@ -3798,56 +4989,61 @@ class RenovationScene {
 
     ui.card(
       ctx,
-      15,
-      120,
-      360,
-      258,
+      16,
+      118,
+      358,
+      270,
       {
-        radius:
-          18,
+        radius: 17,
         fill:
-          COLORS.panel
+          COLORS.panel,
+        stroke:
+          COLORS.line,
+        shadow: false
       }
     );
 
-    this.drawVisual(
+    this.drawImageCover(
       ctx,
-      'v45_advice_renovation',
-      28,
-      137,
-      78,
-      95,
-      1
+      'reno_advice',
+      29,
+      135,
+      88,
+      114,
+      11,
+      null
     );
 
-    ui.text(
+    this.text(
       ctx,
       plan.status ===
         'completed'
         ? '装修已经完工'
         : '装修施工中',
-      228,
-      157,
-      16,
+      233,
+      156,
+      15,
       COLORS.text,
       '800',
       'center'
     );
 
-    ui.text(
+    this.text(
       ctx,
       construction
-        ? construction.contractor.name
+        ? construction
+            .contractor
+            .name
         : '施工团队',
-      195,
-      192,
-      8.3,
+      232,
+      190,
+      7.5,
       COLORS.orange,
-      '700',
+      '800',
       'center'
     );
 
-    ui.text(
+    this.text(
       ctx,
       construction
         ? (
@@ -3856,13 +5052,15 @@ class RenovationScene {
               construction.paid
             ) +
             ' · 预计 ' +
-            construction.contractor.days +
-            ' 天'
+            construction
+              .contractor
+              .days +
+            '天'
           )
         : '',
-      195,
-      222,
-      7,
+      232,
+      216,
+      6.1,
       COLORS.muted,
       '600',
       'center'
@@ -3870,92 +5068,68 @@ class RenovationScene {
 
     ui.card(
       ctx,
-      45,
-      256,
-      300,
+      41,
+      273,
+      308,
       12,
       {
-        radius:
-          6,
+        radius: 6,
         fill:
-          '#E7E0D5',
-        stroke:
-          false,
-        shadow:
-          false
+          '#E7DFD2',
+        stroke: false,
+        shadow: false
       }
     );
 
     ui.card(
       ctx,
-      45,
-      256,
+      41,
+      273,
       plan.status ===
         'completed'
-        ? 300
-        : 168,
+        ? 308
+        : 174,
       12,
       {
-        radius:
-          6,
+        radius: 6,
         fill:
           COLORS.gold,
-        stroke:
-          false,
-        shadow:
-          false
+        stroke: false,
+        shadow: false
       }
     );
 
-    ui.text(
+    this.text(
       ctx,
       plan.status ===
         'completed'
         ? '可以返回门店继续筹备开业'
-        : '施工期间仍可查看进度，完成后自动进入下一阶段',
+        : '施工期间仍可查看进度，完工后自动进入下一阶段',
       195,
-      306,
-      6.8,
+      320,
+      5.8,
       COLORS.muted,
       '600',
       'center'
     );
 
-    ui.card(
+    this.drawPill(
       ctx,
-      69,
-      330,
-      252,
-      36,
-      {
-        radius:
-          18,
-        fill:
-          COLORS.gold,
-        stroke:
-          '#DDA11F',
-        shadow:
-          false
-      }
-    );
-
-    ui.text(
-      ctx,
-      '返回门店  ›',
-      195,
-      348,
-      8,
-      COLORS.text,
-      '800',
-      'center'
+      '返回门店 ›',
+      95,
+      344,
+      200,
+      35,
+      COLORS.gold,
+      COLORS.text
     );
 
     this.addButton(
       'back',
-      63,
-      325,
-      264,
-      46
+      88,
+      338,
+      214,
+      47
     );
   }
 
@@ -4031,15 +5205,47 @@ class RenovationScene {
     );
 
     this.drawTemplateStrip(
-      ctx
+      ctx,
+      plan
     );
 
     const floor =
-      metrics.floors[
+      plan.floors[
         plan.activeFloor
       ];
 
     if (
+      this.page ===
+        'layout'
+    ) {
+      const geometry =
+        this.getMainGeometry();
+
+      this.drawFloorPlan(
+        ctx,
+        metrics,
+        floor,
+        geometry
+      );
+
+      this.drawTablePicker(
+        ctx,
+        floor,
+        geometry
+      );
+
+      this.drawMetrics(
+        ctx,
+        metrics,
+        geometry
+      );
+
+      this.drawFooter(
+        ctx,
+        metrics,
+        geometry
+      );
+    } else if (
       this.page ===
         'zones'
     ) {
@@ -4059,9 +5265,9 @@ class RenovationScene {
       );
     } else if (
       this.page ===
-        'contractors'
+        'style'
     ) {
-      this.renderContractors(
+      this.renderStyle(
         ctx,
         metrics
       );
@@ -4076,37 +5282,16 @@ class RenovationScene {
       );
     } else if (
       this.page ===
-        'style'
-    ) {
-      this.renderStyle(
-        ctx,
-        metrics
-      );
-    } else if (
-      this.page ===
         'templates'
     ) {
       this.renderTemplates(
         ctx
       );
-    } else {
-      this.drawFloorPlan(
-        ctx,
-        metrics,
-        floor
-      );
-
-      this.drawTablePicker(
-        ctx,
-        floor
-      );
-
-      this.drawMetrics(
-        ctx,
-        metrics
-      );
-
-      this.drawFooter(
+    } else if (
+      this.page ===
+        'contractors'
+    ) {
+      this.renderContractors(
         ctx,
         metrics
       );
@@ -4115,9 +5300,7 @@ class RenovationScene {
     ctx.restore();
   }
 
-  saveTemplate(
-    mode
-  ) {
+  saveTemplate(mode) {
     const templates =
       customizationSystem
         .getTemplateList();
@@ -4187,8 +5370,7 @@ class RenovationScene {
       item.id;
 
     if (
-      id ===
-      'back'
+      id === 'back'
     ) {
       sceneManager
         .switchTo(
@@ -4214,8 +5396,7 @@ class RenovationScene {
           title:
             '修改酒楼名称',
           value:
-            shop.name ||
-            '',
+            shop.name || '',
           placeholder:
             '请输入酒楼名称',
           maxLength:
@@ -4314,15 +5495,17 @@ class RenovationScene {
       if (metrics) {
         this.showToast(
           '装修评分 ' +
-            metrics.renovationScore +
+            metrics
+              .renovationScore +
             ' · 座位 ' +
-            metrics.totalSeats +
-            ' · 舒适度 ' +
+            metrics
+              .totalSeats +
+            ' · 舒适 ' +
             Math.round(
               metrics.comfort *
               100
             ) +
-            ' · 吸引力 ' +
+            ' · 吸引 ' +
             Math.round(
               metrics.appeal *
               100
@@ -4371,84 +5554,62 @@ class RenovationScene {
 
     if (
       id.indexOf(
-        'zone:'
-      ) ===
-      0
-    ) {
-      const parts =
-        id.split(':');
-
-      const key =
-        parts[1];
-
-      const delta =
-        parts[2] ===
-          'plus'
-          ? 0.02
-          : -0.02;
-
-      const plan =
-        this.getPlan();
-
-      renovationSystem
-        .adjustZone(
-          this.shopId,
-          plan.activeFloor,
-          key,
-          delta
-        );
-
-      return true;
-    }
-
-    if (
-      id.indexOf(
-        'decor:'
-      ) ===
-      0
-    ) {
-      const parts =
-        id.split(':');
-
-      renovationSystem
-        .adjustDecor(
-          this.shopId,
-          parts[1],
-          parts[2] ===
-            'plus'
-            ? 1
-            : -1
-        );
-
-      return true;
-    }
-
-    if (
-      id.indexOf(
-        'contractor:select:'
-      ) ===
-      0
-    ) {
-      renovationSystem
-        .selectContractor(
-          this.shopId,
-          id.slice(
-            'contractor:select:'
-              .length
-          )
-        );
-
-      return true;
-    }
-
-    if (
-      id.indexOf(
         'page:'
       ) ===
       0
     ) {
       this.page =
         id.split(':')[1];
+
+      return true;
+    }
+
+    if (
+      id.indexOf(
+        'builtin:style:'
+      ) ===
+      0
+    ) {
+      const style =
+        id.slice(
+          'builtin:style:'
+            .length
+        );
+
+      renovationSystem
+        .mutatePlan(
+          this.shopId,
+          plan => {
+            plan.hallStyle =
+              style;
+
+            if (
+              style ===
+              'premium'
+            ) {
+              plan.materialGrade =
+                'premium';
+
+              plan.lightingLevel =
+                'premium';
+            } else if (
+              style ===
+              'modern_cn'
+            ) {
+              plan.materialGrade =
+                'good';
+
+              plan.lightingLevel =
+                'layered';
+            } else {
+              plan.materialGrade =
+                'standard';
+
+              plan.lightingLevel =
+                'warm';
+            }
+          }
+        );
 
       return true;
     }
@@ -4485,6 +5646,51 @@ class RenovationScene {
     }
 
     if (
+      id.indexOf(
+        'zone:'
+      ) ===
+      0
+    ) {
+      const parts =
+        id.split(':');
+
+      renovationSystem
+        .adjustZone(
+          this.shopId,
+          floorIndex,
+          parts[1],
+          parts[2] ===
+            'plus'
+            ? 0.02
+            : -0.02
+        );
+
+      return true;
+    }
+
+    if (
+      id.indexOf(
+        'decor:'
+      ) ===
+      0
+    ) {
+      const parts =
+        id.split(':');
+
+      renovationSystem
+        .adjustDecor(
+          this.shopId,
+          parts[1],
+          parts[2] ===
+            'plus'
+            ? 1
+            : -1
+        );
+
+      return true;
+    }
+
+    if (
       id ===
       'style:hall'
     ) {
@@ -4493,9 +5699,6 @@ class RenovationScene {
           this.shopId,
           'hallStyle'
         );
-
-      this.page =
-        'style';
 
       return true;
     }
@@ -4510,9 +5713,6 @@ class RenovationScene {
           'materialGrade'
         );
 
-      this.page =
-        'style';
-
       return true;
     }
 
@@ -4525,9 +5725,6 @@ class RenovationScene {
           this.shopId,
           'lightingLevel'
         );
-
-      this.page =
-        'style';
 
       return true;
     }
@@ -4553,7 +5750,8 @@ class RenovationScene {
     ) {
       const roomId =
         id.slice(
-          'room:rename:'.length
+          'room:rename:'
+            .length
         );
 
       const room =
@@ -4574,8 +5772,7 @@ class RenovationScene {
             title:
               '修改包厢名称',
             value:
-              room.name ||
-              '',
+              room.name || '',
             placeholder:
               '例如：牡丹厅',
             maxLength:
@@ -4785,6 +5982,24 @@ class RenovationScene {
     }
 
     if (
+      id.indexOf(
+        'contractor:select:'
+      ) ===
+      0
+    ) {
+      renovationSystem
+        .selectContractor(
+          this.shopId,
+          id.slice(
+            'contractor:select:'
+              .length
+          )
+        );
+
+      return true;
+    }
+
+    if (
       id ===
       'construction:start'
     ) {
@@ -4804,11 +6019,11 @@ class RenovationScene {
             this.shopId
           );
 
-      const plan =
+      const current =
         this.getPlan();
 
       if (
-        !plan
+        !current
           .selectedContractorId &&
         quotes[0]
       ) {

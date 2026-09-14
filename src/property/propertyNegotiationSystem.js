@@ -1,5 +1,7 @@
 'use strict';
 
+// V48_PROPERTY_GEOMETRY_FIELDS
+
 const gameState =
   require('../core/gameState.js');
 
@@ -1475,8 +1477,14 @@ class PropertyNegotiationSystem {
       seatEstimate:
         listing.seatEstimate,
 
+      propertyTypeId:
+        listing.propertyTypeId,
+
       propertyTypeName:
         listing.propertyTypeName,
+
+      layoutTypeId:
+        listing.layoutTypeId,
 
       layoutTypeName:
         listing.layoutTypeName,
@@ -1492,6 +1500,22 @@ class PropertyNegotiationSystem {
 
       ceilingHeight:
         listing.ceilingHeight,
+
+      corner:
+        Boolean(
+          listing.corner
+        ),
+
+      independentToilet:
+        Boolean(
+          listing.independentToilet
+        ),
+
+      loadingAccess:
+        listing.loadingAccess,
+
+      propertyShapeVersion:
+        1,
 
       exhaust:
         listing.exhaust,
