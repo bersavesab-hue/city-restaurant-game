@@ -38,5 +38,7 @@ module.exports = {
   random:
     require('../core/globalRandomEngineV0832.js'),
   growth:
-    require('../progress/growthAchievementSystemV0833.js')
+    require('../progress/growthAchievementSystemV0833.js'),
+  multiStoreBrand:
+    require('../brand/multiStoreBrandRankingV0834.js')
 };

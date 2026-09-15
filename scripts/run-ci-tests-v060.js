@@ -198,6 +198,9 @@ for (
     'tests/growthAchievementSystemV0833.test.js',
     'tests/megaRegulatorySocialGrowthV0833.test.js',
     'tests/updateInfrastructureV0833.test.js',
+    'tests/multiStoreBrandRankingV0834.test.js',
+    'tests/fullIntegrationSimulationV0835.test.js',
+    'tests/updateInfrastructureV0835.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

@@ -1,0 +1,31 @@
+{
+  "id": "V0834_V0835_FINAL_INTEGRATION",
+  "baseVersion": "0.8.33",
+  "targetVersion": "0.8.35",
+  "passes": [
+    "25/26",
+    "26/26"
+  ],
+  "modules": [
+    {
+      "version": "0.8.34",
+      "title": "多店 / 品牌 / 扩张 / 排行榜",
+      "file": "src/brand/multiStoreBrandRankingV0834.js"
+    },
+    {
+      "version": "0.8.35",
+      "title": "全系统整合 / 100局经营模拟",
+      "file": "src/simulator/fullIntegrationSimulationV0835.js"
+    }
+  ],
+  "simulationRuns": 100,
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false,
+  "tests": [
+    "tests/multiStoreBrandRankingV0834.test.js",
+    "tests/fullIntegrationSimulationV0835.test.js",
+    "tests/updateInfrastructureV0835.test.js"
+  ]
+}

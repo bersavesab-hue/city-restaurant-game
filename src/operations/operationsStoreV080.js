@@ -42,6 +42,9 @@ const globalRandomEngine =
 const growthAchievementSystem =
   require('../progress/growthAchievementSystemV0833.js');
 
+const multiStoreBrandRanking =
+  require('../brand/multiStoreBrandRankingV0834.js');
+
 const customerRandomDatabase =
   require('../customer/customerRandomDatabaseV0821.js');
 
@@ -2114,6 +2117,16 @@ function closeOperatingDay(
               }
             );
 
+        multiStoreBrandRanking
+          .registerShop(
+            shopId,
+            runtime,
+            {
+              day:
+                closedDay
+            }
+          );
+
         growthAchievementSystem
           .rollHidden(
             shopId,
@@ -2787,6 +2800,150 @@ function rollEasterEggEvent(
         shopId,
         context || {}
       )
+  );
+}
+
+function brandPortfolioSnapshot() {
+  const business =
+    gameState.getBusiness();
+
+  for (
+    const shop
+    of business.shops ||
+    []
+  ) {
+    const runtime =
+      getRuntime(
+        shop.id
+      );
+
+    if (runtime) {
+      multiStoreBrandRanking
+        .registerShop(
+          shop.id,
+          runtime,
+          {
+            day:
+              currentDay()
+          }
+        );
+    }
+  }
+
+  return (
+    multiStoreBrandRanking
+      .portfolioSnapshot()
+  );
+}
+
+function brandExpansionCatalog(
+  cityId
+) {
+  return (
+    multiStoreBrandRanking
+      .expansionCatalog(
+        cityId
+      )
+  );
+}
+
+function createBrandExpansionPlan(
+  districtId,
+  options
+) {
+  return (
+    multiStoreBrandRanking
+      .createExpansionPlan(
+        districtId,
+        {
+          ...(options || {}),
+          day:
+            options &&
+            options.day != null
+              ? Number(
+                  options.day
+                )
+              : currentDay()
+        }
+      )
+  );
+}
+
+function commitBrandExpansionPlan(
+  planId,
+  options
+) {
+  return (
+    multiStoreBrandRanking
+      .commitExpansionPlan(
+        planId,
+        {
+          ...(options || {}),
+          day:
+            options &&
+            options.day != null
+              ? Number(
+                  options.day
+                )
+              : currentDay()
+        }
+      )
+  );
+}
+
+function attachBrandExpansionShop(
+  planId,
+  shopId,
+  options
+) {
+  return (
+    multiStoreBrandRanking
+      .attachExpansionShop(
+        planId,
+        shopId,
+        getRuntime(
+          shopId
+        ),
+        {
+          ...(options || {}),
+          day:
+            options &&
+            options.day != null
+              ? Number(
+                  options.day
+                )
+              : currentDay()
+        }
+      )
+  );
+}
+
+function brandRankingSnapshot(
+  options
+) {
+  brandPortfolioSnapshot();
+
+  return (
+    multiStoreBrandRanking
+      .buildRanking({
+        ...(options || {}),
+        day:
+          options &&
+          options.day != null
+            ? Number(
+                options.day
+              )
+            : currentDay()
+      })
+  );
+}
+
+function storeRankingSnapshot() {
+  brandPortfolioSnapshot();
+
+  return (
+    multiStoreBrandRanking
+      .storeRanking()
   );
 }
 
@@ -3645,6 +3802,13 @@ module.exports = {
   discoverHiddenContent,
   rollHiddenEncounter,
   rollEasterEggEvent,
+  brandPortfolioSnapshot,
+  brandExpansionCatalog,
+  createBrandExpansionPlan,
+  commitBrandExpansionPlan,
+  attachBrandExpansionShop,
+  brandRankingSnapshot,
+  storeRankingSnapshot,
   generateCustomer,
   customerRows,
   customerInsights,
