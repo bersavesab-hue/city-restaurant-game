@@ -148,6 +148,9 @@ for (
     'tests/globalStateBusV0811.test.js',
     'tests/stateBridgeV0811.test.js',
     'tests/updateInfrastructureV0811.test.js',
+    'tests/timeScheduleCoordinatorV0812.test.js',
+    'tests/timedProgressionV0812.test.js',
+    'tests/updateInfrastructureV0812.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

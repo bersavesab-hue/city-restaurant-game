@@ -6,6 +6,9 @@ const gameState =
 const simulationConfig =
   require('./simulationConfig.js');
 
+const timeScheduleCoordinator =
+  require('./timeScheduleCoordinatorV0812.js');
+
 const citySystem =
   require('../city/citySystem.js');
 
@@ -87,99 +90,21 @@ function hashFloat(
 class SimulationSystem {
   isLeapYear(year) {
     return (
-      year % 400 ===
-        0 ||
-      (
-        year % 4 ===
-          0 &&
-        year % 100 !==
-          0
-      )
+      timeScheduleCoordinator
+        .isLeapYear(
+          year
+        )
     );
   }
 
   getDayOrdinal(
     time
   ) {
-    const y =
-      Math.max(
-        1,
-        Number(
-          time.year
-        ) ||
-        1
-      );
-
-    const m =
-      clamp(
-        Number(
-          time.month
-        ) ||
-        1,
-        1,
-        12
-      );
-
-    const d =
-      Math.max(
-        1,
-        Number(
-          time.day
-        ) ||
-        1
-      );
-
-    const y0 =
-      y -
-      1;
-
-    let days =
-      y0 *
-        365 +
-      Math.floor(
-        y0 /
-        4
-      ) -
-      Math.floor(
-        y0 /
-        100
-      ) +
-      Math.floor(
-        y0 /
-        400
-      );
-
-    const monthDays = [
-      31,
-      this.isLeapYear(
-        y
-      )
-        ? 29
-        : 28,
-      31,
-      30,
-      31,
-      30,
-      31,
-      31,
-      30,
-      31,
-      30,
-      31
-    ];
-
-    for (
-      let i = 0;
-      i < m - 1;
-      i++
-    ) {
-      days +=
-        monthDays[i];
-    }
-
     return (
-      days +
-      d
+      timeScheduleCoordinator
+        .dayOrdinal(
+          time
+        )
     );
   }
 

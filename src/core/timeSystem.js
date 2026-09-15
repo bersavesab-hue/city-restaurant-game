@@ -6,6 +6,9 @@ const gameState =
 const simulationConfig =
   require('./simulationConfig.js');
 
+const timeScheduleCoordinator =
+  require('./timeScheduleCoordinatorV0812.js');
+
 const DAYS_IN_MONTH = [
   31,
   28,
@@ -209,11 +212,10 @@ class TimeSystem {
 
   isLeapYear(year) {
     return (
-      year % 400 === 0 ||
-      (
-        year % 4 === 0 &&
-        year % 100 !== 0
-      )
+      timeScheduleCoordinator
+        .isLeapYear(
+          year
+        )
     );
   }
 
@@ -221,17 +223,12 @@ class TimeSystem {
     year,
     month
   ) {
-    if (
-      month === 2 &&
-      this.isLeapYear(year)
-    ) {
-      return 29;
-    }
-
     return (
-      DAYS_IN_MONTH[
-        month - 1
-      ]
+      timeScheduleCoordinator
+        .daysInMonth(
+          year,
+          month
+        )
     );
   }
 
@@ -456,41 +453,15 @@ class TimeSystem {
   }
 
   getMealPeriod() {
-    const hour =
-      gameState
-        .getTime()
-        .hour;
-
-    if (
-      hour >= 6 &&
-      hour < 10
-    ) {
-      return 'breakfast';
-    }
-
-    if (
-      hour >= 10 &&
-      hour < 14
-    ) {
-      return 'lunch';
-    }
-
-    if (
-      hour >= 14 &&
-      hour < 17
-    ) {
-      return 'afternoon';
-    }
-
-    if (
-      hour >= 17 &&
-      hour < 21
-    ) {
-      return 'dinner';
-    }
-
-    return 'night';
+    return (
+      timeScheduleCoordinator
+        .mealPeriod(
+          gameState
+            .getTime()
+        )
+    );
   }
+
 }
 
 const timeSystem =

@@ -242,49 +242,26 @@ function dailyPayroll(
 
 function businessHours(shop) {
   // V083_UNIFIED_DEMAND
-  const raw =
-    shop &&
-    shop.businessHours &&
-    typeof shop.businessHours === 'object'
-      ? shop.businessHours
-      : {};
-
-  const openHour =
-    Number.isFinite(Number(raw.openHour))
-      ? Number(raw.openHour)
-      : Number.isFinite(Number(shop && shop.openHour))
-        ? Number(shop.openHour)
-        : 6;
-
-  const closeHour =
-    Number.isFinite(Number(raw.closeHour))
-      ? Number(raw.closeHour)
-      : Number.isFinite(Number(shop && shop.closeHour))
-        ? Number(shop.closeHour)
-        : 23;
-
-  return {
-    openHour: clamp(openHour, 0, 24),
-    closeHour: clamp(closeHour, 0, 24)
-  };
+  return (
+    operationsSchedule
+      .getBusinessHours(
+        shop
+      )
+  );
 }
 
-function isWithinBusinessHours(shop, time) {
-  const hours = businessHours(shop);
-  const t = time || gameState.getTime();
-  const value =
-    Number(t.hour || 0) +
-    Number(t.minute || 0) / 60;
-
-  if (hours.openHour === hours.closeHour) {
-    return true;
-  }
-
-  if (hours.closeHour > hours.openHour) {
-    return value >= hours.openHour && value < hours.closeHour;
-  }
-
-  return value >= hours.openHour || value < hours.closeHour;
+function isWithinBusinessHours(
+  shop,
+  time
+) {
+  return (
+    operationsSchedule
+      .isOpenAt(
+        shop,
+        time ||
+        gameState.getTime()
+      )
+  );
 }
 
 function expectedArrivalsPerMinute(

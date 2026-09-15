@@ -6,6 +6,9 @@ const gameState =
 const openingPrepSystem =
   require('../opening/openingPrepSystem.js');
 
+const timeScheduleCoordinator =
+  require('../core/timeScheduleCoordinatorV0812.js');
+
 const ROLE_WEIGHTS = {
   manager:0.15,
   chef:0.35,
@@ -52,11 +55,10 @@ function clamp(
 
 function isLeapYear(year) {
   return (
-    year % 400 === 0 ||
-    (
-      year % 4 === 0 &&
-      year % 100 !== 0
-    )
+    timeScheduleCoordinator
+      .isLeapYear(
+        year
+      )
   );
 }
 
@@ -64,84 +66,33 @@ function daysInMonth(
   year,
   month
 ) {
-  if (month === 2) {
-    return isLeapYear(year)
-      ? 29
-      : 28;
-  }
-
-  return [
-    4,
-    6,
-    9,
-    11
-  ].includes(month)
-    ? 30
-    : 31;
+  return (
+    timeScheduleCoordinator
+      .daysInMonth(
+        year,
+        month
+      )
+  );
 }
 
 function dayOrdinal(time) {
-  const year =
-    Math.max(
-      1,
-      Number(time.year) || 1
-    );
-
-  const month =
-    clamp(
-      Number(time.month) || 1,
-      1,
-      12
-    );
-
-  const day =
-    Math.max(
-      1,
-      Number(time.day) || 1
-    );
-
-  let total =
-    0;
-
-  for (
-    let y = 1;
-    y < year;
-    y++
-  ) {
-    total +=
-      isLeapYear(y)
-        ? 366
-        : 365;
-  }
-
-  for (
-    let m = 1;
-    m < month;
-    m++
-  ) {
-    total +=
-      daysInMonth(
-        year,
-        m
-      );
-  }
-
-  return total +
-    day;
+  return (
+    timeScheduleCoordinator
+      .dayOrdinal(
+        time
+      )
+  );
 }
 
 function weekDay(
   time
 ) {
   return (
-    (
-      dayOrdinal(
+    timeScheduleCoordinator
+      .weekDay(
         time ||
         gameState.getTime()
-      ) -
-      1
-    ) %
-    7
+      )
   );
 }
 
@@ -270,6 +221,129 @@ function normalizeHours(
     openHour,
     closeHour
   };
+}
+
+function getBusinessHours(
+  shopOrId
+) {
+  const shop =
+    typeof shopOrId ===
+      'object'
+      ? shopOrId
+      : getShop(
+          shopOrId
+        );
+
+  if (!shop) {
+    return {
+      openHour:6,
+      closeHour:23
+    };
+  }
+
+  const liveShop =
+    shop.id == null
+      ? null
+      : getShop(
+          shop.id
+        );
+
+  // 兼容历史测试、预览对象和跨午夜营业对象：
+  // 只有正式进入 business.shops 的门店才读取持久化排班。
+  if (!liveShop) {
+    const raw =
+      shop.businessHours &&
+      typeof shop.businessHours ===
+        'object'
+        ? shop.businessHours
+        : {};
+
+    const openHour =
+      Number.isFinite(
+        Number(
+          raw.openHour
+        )
+      )
+        ? Number(
+            raw.openHour
+          )
+        : Number.isFinite(
+            Number(
+              shop.openHour
+            )
+          )
+          ? Number(
+              shop.openHour
+            )
+          : 6;
+
+    const closeHour =
+      Number.isFinite(
+        Number(
+          raw.closeHour
+        )
+      )
+        ? Number(
+            raw.closeHour
+          )
+        : Number.isFinite(
+            Number(
+              shop.closeHour
+            )
+          )
+          ? Number(
+              shop.closeHour
+            )
+          : 23;
+
+    return {
+      openHour:
+        clamp(
+          openHour,
+          0,
+          24
+        ),
+      closeHour:
+        clamp(
+          closeHour,
+          0,
+          24
+        )
+    };
+  }
+
+  const state =
+    ensureShop(
+      liveShop.id
+    );
+
+  return clone(
+    state &&
+    state.businessHours
+      ? state.businessHours
+      : normalizeHours(
+          liveShop
+        )
+  );
+}
+
+function isOpenAt(
+  shopOrId,
+  time
+) {
+  const hours =
+    getBusinessHours(
+      shopOrId
+    );
+
+  return (
+    timeScheduleCoordinator
+      .isWithinHours(
+        hours,
+        time ||
+        gameState.getTime()
+      )
+  );
 }
 
 function defaultPreset(
@@ -543,6 +617,12 @@ function setBusinessHours(
       gameState.getTime()
     );
 
+  timeScheduleCoordinator
+    .notifyScheduleChange(
+      shopId,
+      'business-hours'
+    );
+
   return {
     ok:true,
     businessHours:
@@ -749,6 +829,12 @@ function setEmployeeShift(
   ].preset =
     preset;
 
+  timeScheduleCoordinator
+    .notifyScheduleChange(
+      shopId,
+      'employee-shift'
+    );
+
   return {
     ok:true,
     preset
@@ -838,6 +924,12 @@ function setEmployeeOffDay(
       7
     ) %
     7;
+
+  timeScheduleCoordinator
+    .notifyScheduleChange(
+      shopId,
+      'employee-off-day'
+    );
 
   return {
     ok:true,
@@ -1271,7 +1363,10 @@ module.exports = {
   ROLE_WEIGHTS,
   PRESETS,
   DAY_NAMES,
+  dayOrdinal,
   weekDay,
+  getBusinessHours,
+  isOpenAt,
   ensureShop,
   setBusinessHours,
   adjustOpenHour,

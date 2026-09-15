@@ -45,6 +45,9 @@ const globalStateBus =
 const stateBridge =
   require('./core/stateBridgeV0811.js');
 
+const timeScheduleCoordinator =
+  require('./core/timeScheduleCoordinatorV0812.js');
+
 const animationManager =
   require('./core/animationManager.js');
 
@@ -5361,6 +5364,11 @@ stateBridge.install();
 runtime.stateBus =
   globalStateBus;
 
+// V0812_TIME_SCHEDULE_BOOT
+timeScheduleCoordinator.install();
+runtime.timeSchedule =
+  timeScheduleCoordinator;
+
 /* =========================
    总渲染
 ========================= */
@@ -7588,5 +7596,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V0.8.11 全局状态总线启动成功'
+  '城市餐饮经营小游戏 V0.8.12 时间与营业日程统一版启动成功'
 );

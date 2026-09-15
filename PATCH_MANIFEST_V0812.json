@@ -1,0 +1,34 @@
+{
+  "id": "V0812_TIME_DATE_BUSINESS_SCHEDULE",
+  "baseVersion": "0.8.11",
+  "targetVersion": "0.8.12",
+  "pass": "3/26",
+  "title": "时间 / 日期 / 营业日程统一",
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsWorkflowFiles": false,
+  "androidRunnerCompatibility": true,
+  "features": [
+    "统一闰年/月天数/日序/星期/绝对分钟",
+    "统一 timeSystem 与 simulationSystem 日历来源",
+    "统一经营模拟与排班系统营业时间",
+    "时间推进自动结算装修进度",
+    "跨日自动结算设备与证照进度",
+    "营业开始/结束边界事件",
+    "排班变更进入全局状态总线"
+  ],
+  "tests": [
+    "tests/timeScheduleCoordinatorV0812.test.js",
+    "tests/timedProgressionV0812.test.js",
+    "tests/updateInfrastructureV0812.test.js"
+  ],
+  "revision": "r3-calendar-overflow-compat",
+  "fixes": [
+    "保留 V083_UNIFIED_DEMAND 历史回归标记",
+    "兼容 18:00-02:00 跨午夜临时门店对象",
+    "基础设施测试兼容多行代码格式",
+    "统一日历支持非法日期自动进位/借位（如4月31日=>5月1日）",
+    "支持小时/分钟溢出跨日归一化",
+    "继续保留 Android SDK runner 自动兼容"
+  ]
+}

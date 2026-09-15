@@ -9,6 +9,9 @@ const openingPrepSystem =
 const renovationSystem =
   require('../renovation/renovationSystem.js');
 
+const timeScheduleCoordinator =
+  require('./timeScheduleCoordinatorV0812.js');
+
 function clone(value) {
   return JSON.parse(
     JSON.stringify(value)
@@ -112,8 +115,12 @@ function dayOrdinal(
 }
 
 function currentDay() {
-  return dayOrdinal(
-    gameState.getTime()
+  return (
+    timeScheduleCoordinator
+      .dayOrdinal(
+        gameState
+          .getTime()
+      )
   );
 }
 
