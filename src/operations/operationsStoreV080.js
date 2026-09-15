@@ -30,6 +30,18 @@ const commercialEcologySystem =
 const environmentWorldCoordinator =
   require('../world/environmentWorldCoordinatorV0829.js');
 
+const regulatoryFoodSafetySystem =
+  require('../regulatory/regulatoryFoodSafetySystemV0830.js');
+
+const socialInteractionSystem =
+  require('../social/socialInteractionSystemV0831.js');
+
+const globalRandomEngine =
+  require('../core/globalRandomEngineV0832.js');
+
+const growthAchievementSystem =
+  require('../progress/growthAchievementSystemV0833.js');
+
 const customerRandomDatabase =
   require('../customer/customerRandomDatabaseV0821.js');
 
@@ -1581,6 +1593,26 @@ function hireStaffCandidate(
         }
       );
 
+    socialInteractionSystem
+      .registerActor(
+        shopId,
+        result.staff &&
+        (
+          result.staff.personProfile ||
+          result.staff
+        ) ||
+        {},
+        {
+          roleId:
+            result.staff &&
+            result.staff.roleId ||
+            null,
+          source:'staff',
+          day:
+            currentDay()
+        }
+      );
+
     persist(
       shopId
     );
@@ -1910,6 +1942,228 @@ function closeOperatingDay(
           shopId,
           {}
         );
+
+        const shop =
+          getShop(
+            shopId
+          );
+
+        regulatoryFoodSafetySystem
+          .processDay(
+            shopId,
+            closedDay,
+            {
+              districtId:
+                shop &&
+                shop.districtId
+            }
+          );
+
+        const financeView =
+          completeFinanceSystem
+            .snapshot(
+              shopId,
+              runtime.ledger
+            );
+
+        const dailyStatements =
+          financeView &&
+          Array.isArray(
+            financeView
+              .dailyStatements
+          )
+            ? financeView
+                .dailyStatements
+            : [];
+
+        const marketingView =
+          marketingPlatformMembership
+            .overview(
+              shopId,
+              runtime
+            );
+
+        const regulatoryView =
+          regulatoryFoodSafetySystem
+            .overview(
+              shopId
+            );
+
+        const staffView =
+          staffManagement
+            .teamSnapshot(
+              shopId,
+              gameState
+                .getTime()
+            );
+
+        const profitDays =
+          dailyStatements
+            .filter(
+              item =>
+                Number(
+                  item.profit
+                ) >
+                0
+            )
+            .length;
+
+        const bestDailyRevenue =
+          dailyStatements
+            .reduce(
+              (
+                best,
+                item
+              ) =>
+                Math.max(
+                  best,
+                  Number(
+                    item.revenue
+                  ) ||
+                  0
+                ),
+              0
+            );
+
+        const totalCustomers =
+          dailyStatements
+            .reduce(
+              (
+                total,
+                item
+              ) =>
+                total +
+                (
+                  Number(
+                    item.customers
+                  ) ||
+                  0
+                ),
+              0
+            );
+
+        const latestViolation =
+          regulatoryView
+            .latestInspections
+            .find(
+              item =>
+                item.result !==
+                'pass'
+            );
+
+        const noViolationStreak =
+          latestViolation
+            ? Math.max(
+                0,
+                closedDay -
+                Number(
+                  latestViolation.day
+                )
+              )
+            : closedDay;
+
+        const growthResult =
+          growthAchievementSystem
+            .evaluate(
+              shopId,
+              runtime,
+              {
+                daysPlayed:
+                  closedDay,
+                profitDays,
+                bestDailyRevenue,
+                dailyRevenue:
+                  result
+                    .result
+                    .financial
+                    .revenue,
+                totalCustomers,
+                reviewCount:
+                  Number(
+                    runtime
+                      .shop
+                      .reviewCount
+                  ) ||
+                  0,
+                rating:
+                  Number(
+                    runtime
+                      .shop
+                      .rating
+                  ) ||
+                  4,
+                memberCount:
+                  marketingView
+                    .memberCount,
+                staffCount:
+                  staffView
+                    .headcount,
+                campaignCount:
+                  marketingView
+                    .metrics
+                    .campaignsStarted,
+                supplierCount:
+                  runtime
+                    .supplierNetwork
+                    .length,
+                inspectionsPassed:
+                  regulatoryView
+                    .metrics
+                    .passed,
+                noViolationStreak
+              }
+            );
+
+        growthAchievementSystem
+          .rollHidden(
+            shopId,
+            {
+              daysPlayed:
+                closedDay,
+              reviewCount:
+                Number(
+                  runtime
+                    .shop
+                    .reviewCount
+                ) ||
+                0,
+              storeQuality:
+                Math.round(
+                  (
+                    Number(
+                      runtime
+                        .shop
+                        .rating
+                    ) ||
+                    4
+                  ) *
+                  20
+                ),
+              quality:
+                Math.round(
+                  (
+                    Number(
+                      runtime
+                        .shop
+                        .rating
+                    ) ||
+                    4
+                  ) *
+                  20
+                ),
+              storeCount:
+                gameState
+                  .getBusiness()
+                  .shops
+                  .length,
+              minProfitDays:
+                profitDays,
+              profitDays,
+              cashflowScore:
+                growthResult
+                  .achievementPoints
+            }
+          );
       }
 
       return result;
@@ -2214,6 +2468,326 @@ function processEnvironmentDay(
         ...(options || {})
       }
     );
+}
+
+function regulatorySnapshot(
+  shopId
+) {
+  return (
+    regulatoryFoodSafetySystem
+      .overview(
+        shopId
+      )
+  );
+}
+
+function runRegulatoryInspection(
+  shopId,
+  options
+) {
+  const opts =
+    options || {};
+
+  const shop =
+    getShop(
+      shopId
+    );
+
+  return (
+    regulatoryFoodSafetySystem
+      .runInspection(
+        shopId,
+        opts.day == null
+          ? currentDay()
+          : Number(
+              opts.day
+            ),
+        {
+          ...opts,
+          districtId:
+            opts.districtId ||
+            shop &&
+            shop.districtId ||
+            null
+        }
+      )
+  );
+}
+
+function remediateRegulatoryInspection(
+  shopId,
+  inspectionId,
+  options
+) {
+  return (
+    regulatoryFoodSafetySystem
+      .remediate(
+        shopId,
+        inspectionId,
+        {
+          ...(options || {}),
+          day:
+            options &&
+            options.day != null
+              ? Number(
+                  options.day
+                )
+              : currentDay()
+        }
+      )
+  );
+}
+
+function processRegulatoryDay(
+  shopId,
+  day,
+  options
+) {
+  const shop =
+    getShop(
+      shopId
+    );
+
+  return (
+    regulatoryFoodSafetySystem
+      .processDay(
+        shopId,
+        day == null
+          ? currentDay()
+          : Number(day),
+        {
+          ...(options || {}),
+          districtId:
+            options &&
+            options.districtId ||
+            shop &&
+            shop.districtId ||
+            null
+        }
+      )
+  );
+}
+
+function registerSocialActor(
+  shopId,
+  actor,
+  options
+) {
+  return (
+    socialInteractionSystem
+      .registerActor(
+        shopId,
+        actor,
+        options || {}
+      )
+  );
+}
+
+function socialInteract(
+  shopId,
+  actorId,
+  otherId,
+  effect,
+  options
+) {
+  return (
+    socialInteractionSystem
+      .interact(
+        shopId,
+        actorId,
+        otherId,
+        effect || {},
+        options || {}
+      )
+  );
+}
+
+function generateSocialDialogue(
+  shopId,
+  actorId,
+  otherId,
+  options
+) {
+  return (
+    socialInteractionSystem
+      .generateDialogue(
+        shopId,
+        actorId,
+        otherId,
+        options || {}
+      )
+  );
+}
+
+function generateSocialBarrage(
+  shopId,
+  options
+) {
+  return (
+    socialInteractionSystem
+      .generateBarrage(
+        shopId,
+        options || {}
+      )
+  );
+}
+
+function socialNetwork(
+  shopId,
+  actorId
+) {
+  return (
+    socialInteractionSystem
+      .network(
+        shopId,
+        actorId
+      )
+  );
+}
+
+function socialSnapshot(
+  shopId
+) {
+  return (
+    socialInteractionSystem
+      .overview(
+        shopId
+      )
+  );
+}
+
+function randomSnapshot() {
+  return (
+    globalRandomEngine
+      .snapshot()
+  );
+}
+
+function randomInt(
+  namespace,
+  scope,
+  min,
+  max
+) {
+  return (
+    globalRandomEngine
+      .int(
+        namespace,
+        scope,
+        min,
+        max
+      )
+  );
+}
+
+function randomChance(
+  namespace,
+  scope,
+  probability
+) {
+  return (
+    globalRandomEngine
+      .chance(
+        namespace,
+        scope,
+        probability
+      )
+  );
+}
+
+function resetRandomStream(
+  namespace,
+  scope
+) {
+  return (
+    globalRandomEngine
+      .resetStream(
+        namespace,
+        scope
+      )
+  );
+}
+
+function growthSnapshot(
+  shopId
+) {
+  return (
+    growthAchievementSystem
+      .overview(
+        shopId,
+        getRuntime(
+          shopId
+        )
+      )
+  );
+}
+
+function evaluateGrowth(
+  shopId,
+  context
+) {
+  return (
+    growthAchievementSystem
+      .evaluate(
+        shopId,
+        getRuntime(
+          shopId
+        ),
+        context || {}
+      )
+  );
+}
+
+function addHiddenClue(
+  hiddenId,
+  clue
+) {
+  return (
+    growthAchievementSystem
+      .addClue(
+        hiddenId,
+        clue
+      )
+  );
+}
+
+function discoverHiddenContent(
+  shopId,
+  hiddenId
+) {
+  return (
+    growthAchievementSystem
+      .discoverHidden(
+        shopId,
+        hiddenId
+      )
+  );
+}
+
+function rollHiddenEncounter(
+  shopId,
+  context
+) {
+  return (
+    growthAchievementSystem
+      .rollHidden(
+        shopId,
+        context || {}
+      )
+  );
+}
+
+function rollEasterEggEvent(
+  shopId,
+  context
+) {
+  return (
+    growthAchievementSystem
+      .rollEasterEvent(
+        shopId,
+        context || {}
+      )
+  );
 }
 
 function supplierCatalog(
@@ -3051,6 +3625,26 @@ module.exports = {
   processCommercialEcologyDay,
   environmentSnapshot,
   processEnvironmentDay,
+  regulatorySnapshot,
+  runRegulatoryInspection,
+  remediateRegulatoryInspection,
+  processRegulatoryDay,
+  registerSocialActor,
+  socialInteract,
+  generateSocialDialogue,
+  generateSocialBarrage,
+  socialNetwork,
+  socialSnapshot,
+  randomSnapshot,
+  randomInt,
+  randomChance,
+  resetRandomStream,
+  growthSnapshot,
+  evaluateGrowth,
+  addHiddenClue,
+  discoverHiddenContent,
+  rollHiddenEncounter,
+  rollEasterEggEvent,
   generateCustomer,
   customerRows,
   customerInsights,

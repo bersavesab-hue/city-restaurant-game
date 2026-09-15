@@ -192,6 +192,12 @@ for (
     'tests/environmentWorldCoordinatorV0829.test.js',
     'tests/megaMarketingWorldV0829.test.js',
     'tests/updateInfrastructureV0829.test.js',
+    'tests/regulatoryFoodSafetySystemV0830.test.js',
+    'tests/socialInteractionSystemV0831.test.js',
+    'tests/globalRandomEngineV0832.test.js',
+    'tests/growthAchievementSystemV0833.test.js',
+    'tests/megaRegulatorySocialGrowthV0833.test.js',
+    'tests/updateInfrastructureV0833.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

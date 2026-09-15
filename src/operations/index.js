@@ -30,5 +30,13 @@ module.exports = {
   commercialEcology:
     require('../world/commercialEcologySystemV0828.js'),
   environment:
-    require('../world/environmentWorldCoordinatorV0829.js')
+    require('../world/environmentWorldCoordinatorV0829.js'),
+  regulatory:
+    require('../regulatory/regulatoryFoodSafetySystemV0830.js'),
+  social:
+    require('../social/socialInteractionSystemV0831.js'),
+  random:
+    require('../core/globalRandomEngineV0832.js'),
+  growth:
+    require('../progress/growthAchievementSystemV0833.js')
 };
