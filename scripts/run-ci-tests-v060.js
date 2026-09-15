@@ -186,6 +186,12 @@ for (
     'tests/completeFinanceSystemV0825.test.js',
     'tests/megaOperationsFinanceV0825.test.js',
     'tests/updateInfrastructureV0825.test.js',
+    'tests/marketingPlatformMembershipV0826.test.js',
+    'tests/reputationMediaSystemV0827.test.js',
+    'tests/commercialEcologySystemV0828.test.js',
+    'tests/environmentWorldCoordinatorV0829.test.js',
+    'tests/megaMarketingWorldV0829.test.js',
+    'tests/updateInfrastructureV0829.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

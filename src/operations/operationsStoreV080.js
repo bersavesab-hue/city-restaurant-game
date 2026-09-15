@@ -18,6 +18,18 @@ const liveOperations =
 const completeFinanceSystem =
   require('../finance/completeFinanceSystemV0825.js');
 
+const marketingPlatformMembership =
+  require('./marketingPlatformMembershipV0826.js');
+
+const reputationMediaSystem =
+  require('../reputation/reputationMediaSystemV0827.js');
+
+const commercialEcologySystem =
+  require('../world/commercialEcologySystemV0828.js');
+
+const environmentWorldCoordinator =
+  require('../world/environmentWorldCoordinatorV0829.js');
+
 const customerRandomDatabase =
   require('../customer/customerRandomDatabaseV0821.js');
 
@@ -1810,6 +1822,31 @@ function simulateCustomerVisit(
               applyCash:true
             }
           );
+
+        marketingPlatformMembership
+          .recordMemberSpend(
+            shopId,
+            profile &&
+            profile.id,
+            Number(
+              result.settlement &&
+              result.settlement.revenue
+            ) || 0,
+            {
+              day:runtime.day,
+              visits:1
+            }
+          );
+
+        reputationMediaSystem
+          .recordVisitOutcome(
+            shopId,
+            runtime.shop,
+            result,
+            {
+              day:runtime.day
+            }
+          );
       }
 
       return result;
@@ -1848,6 +1885,31 @@ function closeOperatingDay(
               .result
               .day
           );
+
+        const closedDay=
+          result
+            .result
+            .day;
+
+        reputationMediaSystem
+          .processDay(
+            shopId,
+            closedDay
+          );
+
+        commercialEcologySystem
+          .processDay(
+            closedDay,
+            {
+              shopId
+            }
+          );
+
+        processEnvironmentDay(
+          closedDay,
+          shopId,
+          {}
+        );
       }
 
       return result;
@@ -1921,6 +1983,237 @@ function openingCreditStatus(
         shopId
       )
   );
+}
+
+function marketingCatalog() {
+  return marketingPlatformMembership
+    .campaignCatalog();
+}
+
+function marketingPlatformCatalog() {
+  return marketingPlatformMembership
+    .platformCatalog();
+}
+
+function configureMarketingPlatform(
+  shopId,
+  platformId,
+  options
+) {
+  return marketingPlatformMembership
+    .configurePlatform(
+      shopId,
+      platformId,
+      options || {}
+    );
+}
+
+function startMarketingCampaign(
+  shopId,
+  typeId,
+  budget,
+  days,
+  options
+) {
+  return mutate(
+    shopId,
+    runtime =>
+      marketingPlatformMembership
+        .startCampaign(
+          shopId,
+          runtime,
+          typeId,
+          budget,
+          days,
+          {
+            ...(options || {}),
+            day:
+              options &&
+              options.day != null
+                ? options.day
+                : runtime.day
+          }
+        )
+  );
+}
+
+function enrollMember(
+  shopId,
+  customerId,
+  options
+) {
+  return marketingPlatformMembership
+    .enrollMember(
+      shopId,
+      customerId,
+      options || {}
+    );
+}
+
+function recordMemberSpend(
+  shopId,
+  customerId,
+  amount,
+  options
+) {
+  return marketingPlatformMembership
+    .recordMemberSpend(
+      shopId,
+      customerId,
+      amount,
+      options || {}
+    );
+}
+
+function redeemMemberPoints(
+  shopId,
+  customerId,
+  points
+) {
+  return marketingPlatformMembership
+    .redeemPoints(
+      shopId,
+      customerId,
+      points
+    );
+}
+
+function marketingMembershipSnapshot(
+  shopId
+) {
+  return marketingPlatformMembership
+    .overview(
+      shopId,
+      getRuntime(shopId)
+    );
+}
+
+function reputationSnapshot(
+  shopId
+) {
+  return reputationMediaSystem
+    .overview(
+      shopId,
+      getShop(shopId)
+    );
+}
+
+function recordManualReview(
+  shopId,
+  experience,
+  options
+) {
+  return reputationMediaSystem
+    .recordReview(
+      shopId,
+      getShop(shopId),
+      experience || {},
+      {
+        ...(options || {}),
+        applyShopRating:
+          options &&
+          options.applyShopRating === false
+            ? false
+            : true
+      }
+    );
+}
+
+function createReputationRumor(
+  shopId,
+  options
+) {
+  return reputationMediaSystem
+    .createRumor(
+      shopId,
+      options || {}
+    );
+}
+
+function resolveReputationRumor(
+  shopId,
+  rumorId,
+  options
+) {
+  return reputationMediaSystem
+    .resolveRumor(
+      shopId,
+      rumorId,
+      options || {}
+    );
+}
+
+function publishReputationMedia(
+  shopId,
+  options
+) {
+  return reputationMediaSystem
+    .publishMediaPost(
+      shopId,
+      options || {}
+    );
+}
+
+function commercialEcologySnapshot(
+  shopId,
+  options
+) {
+  return commercialEcologySystem
+    .snapshot(
+      shopId,
+      options || {}
+    );
+}
+
+function processCommercialEcologyDay(
+  day,
+  options
+) {
+  return commercialEcologySystem
+    .processDay(
+      day,
+      options || {}
+    );
+}
+
+function environmentSnapshot(
+  shopId,
+  options
+) {
+  const shop=getShop(shopId);
+  return environmentWorldCoordinator
+    .snapshot({
+      shopId,
+      districtId:
+        options &&
+        options.districtId ||
+        shop &&
+        shop.districtId ||
+        null,
+      ...(options || {})
+    });
+}
+
+function processEnvironmentDay(
+  day,
+  shopId,
+  options
+) {
+  const shop=getShop(shopId);
+  return environmentWorldCoordinator
+    .processDay(
+      day,
+      {
+        shopId,
+        districtId:
+          options &&
+          options.districtId ||
+          shop &&
+          shop.districtId ||
+          null,
+        ...(options || {})
+      }
+    );
 }
 
 function supplierCatalog(
@@ -2741,6 +3034,23 @@ module.exports = {
   financeTransactions,
   recordFinanceExpense,
   openingCreditStatus,
+  marketingCatalog,
+  marketingPlatformCatalog,
+  configureMarketingPlatform,
+  startMarketingCampaign,
+  enrollMember,
+  recordMemberSpend,
+  redeemMemberPoints,
+  marketingMembershipSnapshot,
+  reputationSnapshot,
+  recordManualReview,
+  createReputationRumor,
+  resolveReputationRumor,
+  publishReputationMedia,
+  commercialEcologySnapshot,
+  processCommercialEcologyDay,
+  environmentSnapshot,
+  processEnvironmentDay,
   generateCustomer,
   customerRows,
   customerInsights,

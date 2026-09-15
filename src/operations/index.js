@@ -15,6 +15,8 @@ module.exports = {
     require('./deliveryEngineV10.js'),
   marketing:
     require('./marketingEngineV10.js'),
+  marketingPlatformMembership:
+    require('./marketingPlatformMembershipV0826.js'),
   brand:
     require('./brandGrowthEngineV10.js'),
   events:
@@ -22,5 +24,11 @@ module.exports = {
   runtime:
     require('./restaurantRuntimeV10.js'),
   finance:
-    require('../finance/completeFinanceSystemV0825.js')
+    require('../finance/completeFinanceSystemV0825.js'),
+  reputation:
+    require('../reputation/reputationMediaSystemV0827.js'),
+  commercialEcology:
+    require('../world/commercialEcologySystemV0828.js'),
+  environment:
+    require('../world/environmentWorldCoordinatorV0829.js')
 };
