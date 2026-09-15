@@ -1024,6 +1024,18 @@ function brief(shopId) {
   const state =
     ensureShop(shopId);
 
+  const latestClosed =
+    state.history.find(
+      item =>
+        item &&
+        item.status ===
+          'closed' &&
+        item.financial &&
+        typeof item.financial ===
+          'object'
+    ) ||
+    null;
+
   if (state.active) {
     return {
       version:VERSION,
@@ -1035,9 +1047,9 @@ function brief(shopId) {
           state.active
         ),
       latestClosed:
-        state.history[0]
+        latestClosed
           ? clone(
-              state.history[0]
+              latestClosed
             )
           : null
     };
@@ -1048,14 +1060,14 @@ function brief(shopId) {
     shopId:
       String(shopId),
     status:
-      state.history.length
+      latestClosed
         ? 'closed'
         : 'idle',
     active:null,
     latestClosed:
-      state.history[0]
+      latestClosed
         ? clone(
-            state.history[0]
+            latestClosed
           )
         : null
   };

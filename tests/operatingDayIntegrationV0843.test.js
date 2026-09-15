@@ -61,6 +61,49 @@ assert.equal(after.status,'closed');
 assert.ok(after.latestClosed);
 assert.ok(after.latestClosed.financial.orders>=1);
 
+const cycleRoot=
+  gameState
+    .getBusiness()
+    .dailyOperatingCycle;
+
+const cycleShop=
+  cycleRoot
+    .shops[
+      'shop_v0843_integration'
+    ];
+
+cycleShop.history.unshift({
+  id:'legacy_interrupted_day',
+  version:'0.8.40',
+  shopId:'shop_v0843_integration',
+  day:11,
+  status:'interrupted',
+  baseline:{},
+  visits:{},
+  decisionRefs:[],
+  events:[]
+});
+
+const legacySafe=
+  operations
+    .operatingDaySnapshot(
+      'shop_v0843_integration'
+    );
+
+assert.equal(
+  legacySafe.status,
+  'closed',
+  '中断记录不能把已日结门店误判为未完成'
+);
+
+assert.ok(
+  legacySafe.latestClosed &&
+  legacySafe.latestClosed.status ===
+    'closed' &&
+  legacySafe.latestClosed.financial,
+  '旧存档存在 interrupted 历史时必须跳过并返回最近完整日结'
+);
+
 const feedback=operations.decisionFeedbackSnapshot('shop_v0843_integration');
 assert.ok(feedback.recent.some(x=>x.type==='menu_price'));
 

@@ -92,9 +92,19 @@
         box.style.display =
           'block';
 
+        const detail =
+          event &&
+          event.error &&
+          (
+            event.error.stack ||
+            event.error.message
+          ) ||
+          event.message ||
+          '未知脚本异常';
+
         box.textContent =
-          '游戏启动错误：\n' +
-          event.message +
+          '游戏运行错误：\n' +
+          detail +
           '\n\n' +
           (
             event.filename ||

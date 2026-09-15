@@ -1,0 +1,21 @@
+{
+  "id": "V0850_LEGACY_HISTORY_RUNTIME_FIX_R2",
+  "baseVersion": "0.8.49",
+  "targetVersion": "0.8.50",
+  "category": "真机运行时/旧存档兼容修复（第二版）",
+  "features": [
+    "修复旧存档interrupted营业历史导致经营页Script error",
+    "latestClosed只返回完整已日结财务记录",
+    "连续经营趋势跳过interrupted与不完整历史",
+    "新增旧存档混合历史回归测试",
+    "修复V0.8.49基础设施测试写死版本0.8.49导致后续升级必失败",
+    "V0.8.49测试改为允许0.8.49及更高版本",
+    "Android versionName继续强制与package.json一致",
+    "安卓错误框显示真实异常栈和错误信息",
+    "安卓与项目版本同步到0.8.50"
+  ],
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false
+}

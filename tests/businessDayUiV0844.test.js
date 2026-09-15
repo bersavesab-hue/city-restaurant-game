@@ -227,6 +227,18 @@ assert.ok(
   ) &&
   businessSource.includes(
     '.operatingDayHistory('
+  ) &&
+  businessSource.includes(
+    "item.status ==="
+  ) &&
+  businessSource.includes(
+    "'closed'"
+  ) &&
+  businessSource.includes(
+    'item.financial'
+  ) &&
+  businessSource.includes(
+    'closedHistory'
   ),
   '试营业必须能进入营业日、读取真实经营数据，并从日结直达第一次经营改善'
 );

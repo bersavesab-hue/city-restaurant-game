@@ -593,14 +593,29 @@ class BusinessScene {
       operations
         .operatingDayHistory(
           shop.id,
-          2
+          120
         );
 
+    const closedHistory =
+      Array.isArray(
+        dayHistory
+      )
+        ? dayHistory
+            .filter(
+              item =>
+                item &&
+                item.status ===
+                  'closed' &&
+                item.financial &&
+                typeof item.financial ===
+                  'object'
+            )
+        : [];
+
     const previous =
-      dayHistory &&
-      dayHistory.length >
+      closedHistory.length >
         1
-        ? dayHistory[1]
+        ? closedHistory[1]
         : null;
 
     const dashboard =
