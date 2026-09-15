@@ -180,6 +180,12 @@ for (
     'tests/customerEngineIntegrationV0821.test.js',
     'tests/customerOperationsIntegrationV0821.test.js',
     'tests/updateInfrastructureV0821.test.js',
+    'tests/personEmployeeDatabaseV0822.test.js',
+    'tests/staffManagementCoordinatorV0823.test.js',
+    'tests/liveOperationsCoordinatorV0824.test.js',
+    'tests/completeFinanceSystemV0825.test.js',
+    'tests/megaOperationsFinanceV0825.test.js',
+    'tests/updateInfrastructureV0825.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

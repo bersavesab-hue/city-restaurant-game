@@ -9,6 +9,15 @@ const simulationSystem =
 const runtimeEngine =
   require('./restaurantRuntimeV10.js');
 
+const staffManagement =
+  require('./staffManagementCoordinatorV0823.js');
+
+const liveOperations =
+  require('./liveOperationsCoordinatorV0824.js');
+
+const completeFinanceSystem =
+  require('../finance/completeFinanceSystemV0825.js');
+
 const customerRandomDatabase =
   require('../customer/customerRandomDatabaseV0821.js');
 
@@ -475,6 +484,17 @@ function buildRuntime(
       .normalizeCustomerMap(
         runtime.customers
       );
+
+  staffManagement
+    .syncRuntimeStaff(
+      runtime,
+      shopId
+    );
+
+  liveOperations
+    .ensureRuntime(
+      runtime
+    );
 
   normalizeLegacyCalendar(
     runtime
@@ -1490,6 +1510,419 @@ function customerInsights(
   );
 }
 
+function staffCandidateRows(
+  shopId
+) {
+  return (
+    staffManagement
+      .candidatePool(
+        shopId
+      )
+  );
+}
+
+function hireStaffCandidate(
+  shopId,
+  candidateId
+) {
+  const result =
+    staffManagement
+      .hireCandidate(
+        shopId,
+        candidateId
+      );
+
+  if (
+    result &&
+    result.ok
+  ) {
+    const runtime =
+      getRuntime(
+        shopId
+      );
+
+    staffManagement
+      .syncRuntimeStaff(
+        runtime,
+        shopId
+      );
+
+    completeFinanceSystem
+      .recordStaffExpense(
+        shopId,
+        'hiring',
+        Number(
+          result.signOnCost
+        ) ||
+        0,
+        {
+          day:
+            currentDay(),
+          referenceId:
+            'hire:' +
+            (
+              result.staff &&
+              result.staff.id ||
+              candidateId
+            ),
+          note:'招聘入职成本'
+        }
+      );
+
+    persist(
+      shopId
+    );
+  }
+
+  return result;
+}
+
+function dismissStaffMember(
+  shopId,
+  staffId
+) {
+  const ok =
+    staffManagement
+      .dismissStaff(
+        shopId,
+        staffId
+      );
+
+  if (ok) {
+    const runtime =
+      getRuntime(
+        shopId
+      );
+
+    staffManagement
+      .syncRuntimeStaff(
+        runtime,
+        shopId
+      );
+
+    persist(
+      shopId
+    );
+  }
+
+  return ok;
+}
+
+function staffManagementSnapshot(
+  shopId
+) {
+  return (
+    staffManagement
+      .teamSnapshot(
+        shopId,
+        gameState
+          .getTime()
+      )
+  );
+}
+
+function trainStaffMember(
+  shopId,
+  staffId
+) {
+  const result =
+    staffManagement
+      .startTraining(
+        shopId,
+        staffId
+      );
+
+  if (
+    result &&
+    result.ok
+  ) {
+    completeFinanceSystem
+      .recordStaffExpense(
+        shopId,
+        'training',
+        Number(
+          result.cost
+        ) ||
+        0,
+        {
+          day:
+            currentDay(),
+          referenceId:
+            [
+              'training',
+              staffId,
+              currentDay()
+            ].join(':'),
+          note:'员工培训'
+        }
+      );
+  }
+
+  return result;
+}
+
+function raiseStaffMember(
+  shopId,
+  staffId
+) {
+  return (
+    staffManagement
+      .giveRaise(
+        shopId,
+        staffId
+      )
+  );
+}
+
+function promoteStaffMember(
+  shopId,
+  staffId
+) {
+  return (
+    staffManagement
+      .promote(
+        shopId,
+        staffId
+      )
+  );
+}
+
+function approveStaffLeave(
+  shopId,
+  staffId,
+  days
+) {
+  return (
+    staffManagement
+      .approveLeave(
+        shopId,
+        staffId,
+        days
+      )
+  );
+}
+
+function coachStaffMember(
+  shopId,
+  staffId
+) {
+  return (
+    staffManagement
+      .coach(
+        shopId,
+        staffId
+      )
+  );
+}
+
+function liveOperationsSnapshot(
+  shopId
+) {
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  if (!runtime) {
+    return null;
+  }
+
+  return (
+    liveOperations
+      .snapshot(
+        runtime,
+        {
+          staff:
+            staffManagement
+              .teamSnapshot(
+                shopId,
+                gameState
+                  .getTime()
+              )
+        }
+      )
+  );
+}
+
+function simulateCustomerVisit(
+  shopId,
+  customerId,
+  options
+) {
+  return mutate(
+    shopId,
+    runtime => {
+      staffManagement
+        .syncRuntimeStaff(
+          runtime,
+          shopId
+        );
+
+      const profile =
+        customerId &&
+        runtime.customers[
+          customerId
+        ]
+          ? runtime
+              .customers[
+                customerId
+              ]
+          : liveOperations
+              .resolveCustomer(
+                runtime,
+                null,
+                options ||
+                {}
+              );
+
+      const result =
+        liveOperations
+          .simulateVisit(
+            runtime,
+            profile,
+            options ||
+            {}
+          );
+
+      if (
+        result &&
+        result.ok
+      ) {
+        completeFinanceSystem
+          .recordOrderSettlement(
+            shopId,
+            result.settlement,
+            {
+              day:
+                runtime.day,
+              orderId:
+                result.order &&
+                result.order.id,
+              referenceId:
+                'order:' +
+                (
+                  result.order &&
+                  result.order.id ||
+                  runtime
+                    .history
+                    .length
+                ),
+              applyCash:true
+            }
+          );
+      }
+
+      return result;
+    }
+  );
+}
+
+function closeOperatingDay(
+  shopId,
+  options
+) {
+  return mutate(
+    shopId,
+    runtime => {
+      const result =
+        liveOperations
+          .closeDay(
+            runtime,
+            options ||
+            {}
+          );
+
+      if (
+        result &&
+        result.ok &&
+        result.result &&
+        result.result.financial
+      ) {
+        completeFinanceSystem
+          .syncDailyStatement(
+            shopId,
+            result
+              .result
+              .financial,
+            result
+              .result
+              .day
+          );
+      }
+
+      return result;
+    }
+  );
+}
+
+function financeSnapshot(
+  shopId
+) {
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  return (
+    completeFinanceSystem
+      .snapshot(
+        shopId,
+        runtime &&
+        runtime.ledger
+      )
+  );
+}
+
+function financeTransactions(
+  shopId,
+  filters
+) {
+  return (
+    completeFinanceSystem
+      .getTransactions(
+        shopId,
+        filters ||
+        {}
+      )
+  );
+}
+
+function recordFinanceExpense(
+  shopId,
+  category,
+  amount,
+  options
+) {
+  return (
+    completeFinanceSystem
+      .recordExternalExpense(
+        shopId,
+        category,
+        amount,
+        {
+          ...(options || {}),
+          applyCash:
+            options &&
+            options.applyCash ===
+              false
+              ? false
+              : true
+        }
+      )
+  );
+}
+
+function openingCreditStatus(
+  shopId
+) {
+  return (
+    completeFinanceSystem
+      .openingCreditStatus(
+        shopId
+      )
+  );
+}
+
 function supplierCatalog(
   shopId,
   filters
@@ -1864,6 +2297,19 @@ function receiveManualPurchaseOrder(
       po.paidDay =
         runtime.day;
 
+      completeFinanceSystem
+        .recordProcurement(
+          shopId,
+          po,
+          {
+            day:
+              runtime.day,
+            referenceId:
+              'po:' +
+              po.id
+          }
+        );
+
       return {
         ok:true,
         po,
@@ -2097,6 +2543,19 @@ function autoRestock(
           continue;
         }
 
+        completeFinanceSystem
+          .recordProcurement(
+            shopId,
+            created.po,
+            {
+              day:
+                runtime.day,
+              referenceId:
+                'po:' +
+                created.po.id
+            }
+          );
+
         spent +=
           quote.total;
 
@@ -2266,6 +2725,22 @@ module.exports = {
   inventoryRows,
   inventoryLotRows,
   inventoryHealth,
+  staffCandidateRows,
+  hireStaffCandidate,
+  dismissStaffMember,
+  staffManagementSnapshot,
+  trainStaffMember,
+  raiseStaffMember,
+  promoteStaffMember,
+  approveStaffLeave,
+  coachStaffMember,
+  liveOperationsSnapshot,
+  simulateCustomerVisit,
+  closeOperatingDay,
+  financeSnapshot,
+  financeTransactions,
+  recordFinanceExpense,
+  openingCreditStatus,
   generateCustomer,
   customerRows,
   customerInsights,
