@@ -7,6 +7,7 @@
 // V48_DYNAMIC_FLOOR_GEOMETRY_UI
 // V0849_AREA_TRUTH_RENOVATION_UI
 // V0849_HOTFIX_RENOVATION_INTERACTION_LAYOUT
+// V0850_FINAL_RENOVATION_MOBILE_FIX
 //
 // Main renovation page rebuilt around the user's final reference:
 // header -> template strip -> large coherent floor plan -> table/metrics -> CTA.
@@ -497,6 +498,16 @@ class RenovationScene {
         title,
         icon: 'none'
       });
+    }
+  }
+
+  requestRenderNow() {
+    if (
+      runtime &&
+      typeof runtime.requestRender ===
+        'function'
+    ) {
+      runtime.requestRender();
     }
   }
 
@@ -1273,23 +1284,27 @@ class RenovationScene {
   }
 
   getMainGeometry() {
+    // V0850：主平面图优先。默认页不再被模板条挤压，
+    // 600px 矮屏和常见 780px 手机都保留足够编辑空间。
     const y =
       this.viewH < 700
         ? 94
-        : 200;
+        : 104;
 
     const footerH =
       49;
 
+    const available =
+      Math.max(
+        320,
+        this.contentBottom - y
+      );
+
     const lowerH =
       clamp(
-        (
-          this.contentBottom -
-          y
-        ) *
-        0.23,
-        112,
-        132
+        available * 0.19,
+        96,
+        118
       );
 
     const maxPlan =
@@ -1297,15 +1312,15 @@ class RenovationScene {
       y -
       lowerH -
       footerH -
-      22;
+      16;
 
     const planH =
       clamp(
         maxPlan,
         this.viewH < 700
-          ? 220
-          : 276,
-        348
+          ? 258
+          : 330,
+        432
       );
 
     const lowerY =
@@ -1323,7 +1338,7 @@ class RenovationScene {
       lowerY,
       lowerH:
         Math.max(
-          86,
+          90,
           Math.min(
             lowerH,
             footerY -
@@ -2064,6 +2079,44 @@ class RenovationScene {
       ctx.restore();
     }
 
+    // V0850_DRAG_LIVE_FEEDBACK
+    if (
+      this.areaDrag &&
+      this.areaDrag.floorIndex === floor.index
+    ) {
+      const liveLabel =
+        this.areaDrag.type === 'back'
+          ? '正在调整 后厨/后区'
+          : this.areaDrag.type === 'kitchen-storage'
+            ? '正在调整 后厨/仓储'
+            : '正在调整 服务/堂食';
+
+      ui.card(
+        ctx,
+        frame.x + Math.max(5, frame.w - 128),
+        frame.y + Math.max(5, frame.h - 29),
+        122,
+        23,
+        {
+          radius: 10,
+          fill: 'rgba(255,244,213,0.96)',
+          stroke: '#E2B843',
+          shadow: false
+        }
+      );
+
+      this.text(
+        ctx,
+        liveLabel,
+        frame.x + frame.w - 67,
+        frame.y + frame.h - 17.5,
+        4.7,
+        COLORS.navy,
+        '800',
+        'center'
+      );
+    }
+
     this.floorCanvasInteraction = {
       frame,
       floorIndex: floor.index,
@@ -2717,22 +2770,10 @@ class RenovationScene {
       h,
       {
         radius: 14,
-        fill:
-          COLORS.panel,
-        stroke:
-          COLORS.line,
+        fill: COLORS.panel,
+        stroke: COLORS.line,
         shadow: false
       }
-    );
-
-    this.text(
-      ctx,
-      '平面图',
-      18,
-      y + 17,
-      9.8,
-      COLORS.text,
-      '800'
     );
 
     const floorGeometry =
@@ -2742,10 +2783,18 @@ class RenovationScene {
           this.getShop(),
           floor.index,
           floor.area,
-          metrics.plan
-            .floors
-            .length
+          metrics.plan.floors.length
         );
+
+    this.text(
+      ctx,
+      '平面编辑',
+      18,
+      y + 18,
+      9.4,
+      COLORS.text,
+      '800'
+    );
 
     this.text(
       ctx,
@@ -2754,114 +2803,86 @@ class RenovationScene {
         ' · ' +
         floorGeometry.areaM2.toFixed(0) +
         '㎡',
-      64,
-      y + 17,
-      4.9,
+      82,
+      y + 18,
+      4.7,
       COLORS.muted,
-      '600'
-    );
-
-    this.text(
-      ctx,
-      '↶',
-      263,
-      y + 17,
-      10,
-      COLORS.navy,
-      '800',
-      'center'
-    );
-
-    this.text(
-      ctx,
-      '↷',
-      301,
-      y + 17,
-      10,
-      COLORS.navy,
-      '800',
-      'center'
-    );
-
-    this.addButton(
-      'history:undo',
-      245,
-      y + 3,
-      36,
-      27
-    );
-
-    this.addButton(
-      'history:redo',
-      283,
-      y + 3,
-      36,
-      27
+      '700'
     );
 
     ui.card(
       ctx,
-      323,
+      194,
       y + 5,
-      51,
-      25,
+      44,
+      26,
       {
         radius: 10,
-        fill:
-          '#FFF4D5',
-        stroke:
-          '#E2C16B',
+        fill: '#EAF4F7',
+        stroke: '#BDD6DF',
         shadow: false
       }
     );
 
     this.text(
       ctx,
-      '全屏预览',
-      348.5,
-      y + 17.5,
-      5.2,
+      (metrics.plan.activeFloor + 1) + 'F',
+      216,
+      y + 18,
+      5.8,
       COLORS.navy,
       '800',
       'center'
     );
 
     this.addButton(
-      'preview',
-      321,
-      y + 2,
-      55,
-      31
+      'floor:next',
+      190,
+      y + 1,
+      52,
+      34
     );
 
-    const planX =
-      14;
+    this.text(ctx, '↶', 259, y + 18, 10, COLORS.navy, '800', 'center');
+    this.text(ctx, '↷', 295, y + 18, 10, COLORS.navy, '800', 'center');
 
-    const planY =
-      y + 35;
+    this.addButton('history:undo', 242, y + 2, 34, 32);
+    this.addButton('history:redo', 278, y + 2, 34, 32);
 
-    const planW =
-      362;
+    ui.card(
+      ctx,
+      319,
+      y + 5,
+      55,
+      26,
+      {
+        radius: 10,
+        fill: '#FFF4D5',
+        stroke: '#E2C16B',
+        shadow: false
+      }
+    );
 
-    const toolGap =
-      4;
+    this.text(
+      ctx,
+      '预览',
+      346.5,
+      y + 18,
+      5.4,
+      COLORS.navy,
+      '800',
+      'center'
+    );
 
-    const toolH =
-      40;
+    this.addButton('preview', 315, y + 1, 63, 34);
 
-    const toolY =
-      y +
-      h -
-      toolH -
-      7;
-
-    const planH =
-      Math.max(
-        120,
-        toolY -
-        planY -
-        6
-      );
+    const planX = 14;
+    const planY = y + 40;
+    const planW = 362;
+    const toolGap = 4;
+    const toolH = 40;
+    const toolY = y + h - toolH - 7;
+    const planH = Math.max(150, toolY - planY - 7);
 
     this.drawFloorCanvas(
       ctx,
@@ -2874,59 +2895,32 @@ class RenovationScene {
     );
 
     const tools = [
-      ['page:zones', 'reno_prep', '区域'],
+      ['page:zones', 'reno_prep', '分区'],
       ['page:furniture', 'reno_table_4', '家具'],
       [
         'page:style',
-        V45_HALL_STYLE_VISUAL[
-          metrics.plan
-            .hallStyle
-        ] ||
-          'reno_style_natural',
+        V45_HALL_STYLE_VISUAL[metrics.plan.hallStyle] || 'reno_style_natural',
         '风格'
       ],
       ['page:rooms', 'reno_table_8', '包厢'],
-      ['aisle:cycle', 'reno_corridor', '动线'],
-      [
-        'floor:next',
-        'reno_room_small',
-        '楼层' +
-          (
-            metrics.plan
-              .activeFloor +
-            1
-          )
-      ]
+      ['page:templates', 'reno_room_medium', '模板'],
+      ['aisle:cycle', 'reno_corridor', '动线']
     ];
 
     const toolW =
       (
         planW -
-        toolGap *
-        (
-          tools.length -
-          1
-        )
+        toolGap * (tools.length - 1)
       ) /
       tools.length;
 
-    for (
-      let i = 0;
-      i <
-      tools.length;
-      i++
-    ) {
+    for (let i = 0; i < tools.length; i++) {
       this.drawToolButton(
         ctx,
         tools[i][0],
         tools[i][1],
         tools[i][2],
-        planX +
-          i *
-          (
-            toolW +
-            toolGap
-          ),
+        planX + i * (toolW + toolGap),
         toolY,
         toolW,
         toolH,
@@ -2940,17 +2934,10 @@ class RenovationScene {
     floor,
     geometry
   ) {
-    const x =
-      7;
-
-    const y =
-      geometry.lowerY;
-
-    const w =
-      207;
-
-    const h =
-      geometry.lowerH;
+    const x = 7;
+    const y = geometry.lowerY;
+    const w = 207;
+    const h = geometry.lowerH;
 
     ui.card(
       ctx,
@@ -2960,110 +2947,115 @@ class RenovationScene {
       h,
       {
         radius: 13,
-        fill:
-          COLORS.panel,
-        stroke:
-          COLORS.line,
+        fill: COLORS.panel,
+        stroke: COLORS.line,
+        shadow: false
+      }
+    );
+
+    const keys = ['2', '4', '6', '8'];
+    const cols =
+      2;
+    const totalTables = keys.reduce(
+      (sum, key) =>
+        sum + Math.max(0, Number(floor.tables[key]) || 0),
+      0
+    );
+    const totalSeats = keys.reduce(
+      (sum, key) =>
+        sum +
+        (Math.max(0, Number(floor.tables[key]) || 0) * Number(key)),
+      0
+    );
+
+    this.text(
+      ctx,
+      '本层餐桌',
+      x + 11,
+      y + 15,
+      7.7,
+      COLORS.text,
+      '800'
+    );
+
+    this.text(
+      ctx,
+      totalTables + '张 · ' + totalSeats + '席',
+      x + w - 10,
+      y + 15,
+      5.0,
+      COLORS.green,
+      '800',
+      'right'
+    );
+
+    const chipY = y + 27;
+    const chipW = 43;
+
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const cx = x + 10 + i * 46;
+
+      ui.card(
+        ctx,
+        cx,
+        chipY,
+        chipW,
+        28,
+        {
+          radius: 8,
+          fill: '#FFF8EA',
+          stroke: '#E2D6C5',
+          shadow: false
+        }
+      );
+
+      this.text(
+        ctx,
+        key + '人×' + (Number(floor.tables[key]) || 0),
+        cx + chipW / 2,
+        chipY + 14,
+        4.8,
+        COLORS.navy,
+        '800',
+        'center'
+      );
+    }
+
+    const buttonY = y + h - 31;
+
+    ui.card(
+      ctx,
+      x + 10,
+      buttonY,
+      w - 20,
+      25,
+      {
+        radius: 10,
+        fill: '#FFE39A',
+        stroke: '#E1B43A',
         shadow: false
       }
     );
 
     this.text(
       ctx,
-      '餐桌类型',
-      x + 12,
-      y + 16,
-      8.3,
+      '编辑家具与餐桌  ›',
+      x + w / 2,
+      buttonY + 12.5,
+      5.8,
       COLORS.text,
-      '800'
+      '800',
+      'center'
     );
 
-    const keys =
-      ['2', '4', '6', '8'];
-
-    const cellW =
-      47;
-
-    for (
-      let i = 0;
-      i < 4;
-      i++
-    ) {
-      const key =
-        keys[i];
-
-      const cx =
-        x +
-        7 +
-        i *
-        (
-          cellW + 3
-        );
-
-      const imageH =
-        Math.min(
-          61,
-          h - 52
-        );
-
-      this.drawImageContain(
-        ctx,
-        'reno_table_' +
-          key,
-        cx,
-        y + 26,
-        cellW,
-        imageH,
-        1
-      );
-
-      this.text(
-        ctx,
-        key +
-          '人桌',
-        cx +
-          cellW / 2,
-        y +
-          h -
-          29,
-        5.1,
-        COLORS.text,
-        '800',
-        'center'
-      );
-
-      const count =
-        Number(
-          floor.tables[
-            key
-          ]
-        ) || 0;
-
-      this.text(
-        ctx,
-        '数量 ' +
-          count,
-        cx +
-          cellW / 2,
-        y +
-          h -
-          12,
-        5.1,
-        COLORS.navy,
-        '800',
-        'center'
-      );
-
-      this.addButton(
-        'table:' +
-          key +
-          ':plus',
-        cx,
-        y + 24,
-        cellW,
-        h - 24
-      );
-    }
+    this.addButton(
+      'page:furniture',
+      x + 6,
+      buttonY - 4,
+      w - 12,
+      33
+    );
   }
 
   drawChairIcon(
@@ -3356,17 +3348,10 @@ class RenovationScene {
     metrics,
     geometry
   ) {
-    const x =
-      219;
-
-    const y =
-      geometry.lowerY;
-
-    const w =
-      164;
-
-    const h =
-      geometry.lowerH;
+    const x = 219;
+    const y = geometry.lowerY;
+    const w = 164;
+    const h = geometry.lowerH;
 
     ui.card(
       ctx,
@@ -3376,263 +3361,93 @@ class RenovationScene {
       h,
       {
         radius: 13,
-        fill:
-          COLORS.panel,
-        stroke:
-          COLORS.line,
+        fill: COLORS.panel,
+        stroke: COLORS.line,
+        shadow: false
+      }
+    );
+
+    const floor =
+      metrics.floors[
+        metrics.plan.activeFloor
+      ];
+
+    this.text(
+      ctx,
+      '空间状态',
+      x + 11,
+      y + 15,
+      7.7,
+      COLORS.text,
+      '800'
+    );
+
+    ui.card(
+      ctx,
+      x + 103,
+      y + 6,
+      50,
+      20,
+      {
+        radius: 10,
+        fill: floor.valid ? '#E8F7EF' : '#FFF0EA',
+        stroke: floor.valid ? '#B9DDC7' : '#E8B3A9',
         shadow: false
       }
     );
 
     this.text(
       ctx,
-      '装修数据预览',
-      x + 11,
-      y + 16,
-      8.1,
-      COLORS.text,
-      '800'
-    );
-
-    this.text(
-      ctx,
-      '实时计算',
-      x + w - 10,
+      floor.valid ? '可施工' : '需调整',
+      x + 128,
       y + 16,
       4.7,
-      COLORS.muted,
-      '600',
-      'right'
+      floor.valid ? COLORS.green : COLORS.red,
+      '800',
+      'center'
     );
 
-    const comfort =
-      Math.round(
-        metrics.comfort *
-        100
-      );
-
-    const appeal =
-      Math.round(
-        metrics.appeal *
-        100
-      );
-
-    const efficiency =
-      Math.round(
-        metrics
-          .operationalEfficiency *
-        100
-      );
-
-    const trafficDelta =
-      Math.round(
-        (
-          metrics
-            .operatingImpact
-            .trafficFactor -
-          1
-        ) *
-        100
-      );
-
-    const spendDelta =
-      Math.round(
-        (
-          metrics
-            .operatingImpact
-            .spendFactor -
-          1
-        ) *
-        100
-      );
-
-    const serviceDelta =
-      Math.round(
-        (
-          metrics
-            .operatingImpact
-            .serviceFactor -
-          1
-        ) *
-        100
-      );
-
-    const floor =
-      metrics.floors[
-        metrics.plan
-          .activeFloor
-      ];
-
-    const remaining =
-      floor
-        .remainingArea;
-
-    const items = [
-      {
-        type: 'efficiency',
-        label: '本层面积',
-        value:
-          floor.area +
-          '㎡',
-        sub:
-          '房源可用'
-      },
-      {
-        type: 'comfort',
-        label: '可摆面积',
-        value:
-          floor
-            .effectiveDiningArea +
-          '㎡',
-        sub:
-          '已扣结构净空'
-      },
-      {
-        type:
-          remaining >= 0
-            ? 'appeal'
-            : 'days',
-        label: '剩余面积',
-        value:
-          remaining +
-          '㎡',
-        sub:
-          remaining >= 0
-            ? '仍可布置'
-            : '已经超出'
-      },
-      {
-        type: 'seat',
-        label: '总座位',
-        value:
-          metrics.totalSeats,
-        sub:
-          '全部楼层'
-      },
-      {
-        type: 'budget',
-        label: '总预算',
-        value:
-          money(
-            metrics.totalCost
-          ),
-        sub:
-          metrics.buildDays +
-          '天工期'
-      },
-      {
-        type: 'efficiency',
-        label: '面积状态',
-        value:
-          floor.valid
-            ? '可施工'
-            : '需调整',
-        sub:
-          floor.valid
-            ? Math.round(
-                floor
-                  .areaUtilization *
-                100
-              ) +
-              '%占用'
-            : floor
-                .areaWarnings[0]
-      }
+    const rows = [
+      ['本层面积', floor.area + '㎡'],
+      ['可摆面积', floor.effectiveDiningArea + '㎡'],
+      ['剩余面积', floor.remainingArea + '㎡']
     ];
 
-    const top =
-      y + 29;
-
-    const cellW =
-      51;
-
-    const rowH =
-      (
-        h - 35
-      ) /
-      2;
-
-    for (
-      let i = 0;
-      i <
-      items.length;
-      i++
-    ) {
-      const col =
-        i % 3;
-
-      const row =
-        Math.floor(
-          i / 3
-        );
-
-      const cx =
-        x +
-        7 +
-        col *
-        cellW;
-
-      const cy =
-        top +
-        row *
-        rowH;
-
-      if (col > 0) {
-        ctx.fillStyle =
-          '#ECE3D7';
-
-        ctx.fillRect(
-          cx - 4,
-          cy + 3,
-          1,
-          rowH - 7
-        );
-      }
-
-      this.drawMetricIcon(
-        ctx,
-        items[i].type,
-        cx,
-        cy + 3
-      );
+    for (let i = 0; i < rows.length; i++) {
+      const ry = y + 36 + i * 22;
 
       this.text(
         ctx,
-        items[i].label,
-        cx + 25,
-        cy + 7,
-        4.4,
+        rows[i][0],
+        x + 12,
+        ry,
+        4.8,
         COLORS.muted,
         '700'
       );
 
       this.text(
         ctx,
-        items[i].value,
-        cx + 25,
-        cy + 24,
-        6.2,
-        i === 1
-          ? COLORS.goldDeep
-          : i === 2
-            ? COLORS.red
-            : i === 3
-              ? '#D94E6A'
-              : i === 4
-                ? '#DCA72B'
-                : i === 5
-                  ? COLORS.blue
-                  : COLORS.green,
-        '800'
+        rows[i][1],
+        x + w - 11,
+        ry,
+        5.7,
+        i === 2 && floor.remainingArea < 0
+          ? COLORS.red
+          : COLORS.navy,
+        '800',
+        'right'
       );
+    }
 
+    if (!floor.valid && floor.areaWarnings && floor.areaWarnings[0]) {
       this.text(
         ctx,
-        items[i].sub,
-        cx + 25,
-        cy + 39,
-        4.0,
-        COLORS.green,
+        floor.areaWarnings[0],
+        x + 12,
+        y + h - 8,
+        4.1,
+        COLORS.red,
         '700'
       );
     }
@@ -4184,81 +3999,87 @@ class RenovationScene {
       this.drawSecondaryShell(
         ctx,
         '家具与软装',
-        '餐桌决定餐位；空间不足时会明确提示，不再出现“按钮没反应”'
+        '餐桌自动落到可用餐位点；按钮状态会直接告诉你还能不能放'
       );
 
-    const tableY =
-      shell.y;
+    const floorMetric =
+      metrics.floors.find(
+        value => value.index === floor.index
+      ) ||
+      metrics.floors[metrics.plan.activeFloor];
+
+    const keys = ['2', '4', '6', '8'];
+    const cols =
+      2;
+    const totalTables = keys.reduce(
+      (sum, key) =>
+        sum + Math.max(0, Number(floor.tables[key]) || 0),
+      0
+    );
+    const slotCount =
+      floorMetric &&
+      floorMetric.usableDiningSlots
+        ? floorMetric.usableDiningSlots.length
+        : 0;
+
+    let y = shell.y;
+
+    ui.card(
+      ctx,
+      16,
+      y,
+      358,
+      45,
+      {
+        radius: 11,
+        fill: '#EFF7FA',
+        stroke: '#C5DDE8',
+        shadow: false
+      }
+    );
 
     this.text(
       ctx,
-      '餐桌',
-      19,
-      tableY + 9,
-      7.8,
-      COLORS.text,
+      '本层 ' + totalTables + '/' + slotCount + ' 个餐桌落位点',
+      28,
+      y + 16,
+      6.1,
+      COLORS.navy,
       '800'
     );
 
-    const keys =
-      ['2', '4', '6', '8'];
+    this.text(
+      ctx,
+      '可摆 ' + floorMetric.effectiveDiningArea +
+        '㎡ · 已用 ' + floorMetric.occupiedArea +
+        '㎡ · 剩余 ' + floorMetric.remainingArea + '㎡',
+      28,
+      y + 34,
+      4.8,
+      floorMetric.remainingArea >= 0 ? COLORS.green : COLORS.red,
+      '700'
+    );
 
-    const cols =
-      2;
+    y += 53;
 
-    const cardGap =
-      8;
+    const cardGap = 8;
+    const cardW = 171;
+    const cardH = 73;
 
-    const cardW =
-      171;
-
-    const cardH =
-      78;
-
-    const tableStartY =
-      tableY + 21;
-
-    for (
-      let i = 0;
-      i <
-      keys.length;
-      i++
-    ) {
-      const key =
-        keys[i];
-
-      const col =
-        i %
-        cols;
-
-      const row =
-        Math.floor(
-          i /
-          cols
-        );
-
-      const x =
-        16 +
-        col *
-        (
-          cardW +
-          cardGap
-        );
-
-      const cardY =
-        tableStartY +
-        row *
-        (
-          cardH +
-          cardGap
-        );
-
-      const count =
-        Number(
-          floor.tables[
-            key
-          ]
-        ) || 0;
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const x = 16 + col * (cardW + cardGap);
+      const cardY = y + row * (cardH + cardGap);
+      const count = Number(floor.tables[key]) || 0;
+      const extraArea =
+        (renovationConfig.tableFootprint[key] || 0) *
+        (floorMetric.aisle ? floorMetric.aisle.areaFactor : 1);
+      const canAdd =
+        totalTables < slotCount &&
+        floorMetric.occupiedArea + extraArea <=
+          floorMetric.effectiveDiningArea + 0.01;
 
       ui.card(
         ctx,
@@ -4268,69 +4089,56 @@ class RenovationScene {
         cardH,
         {
           radius: 11,
-          fill:
-            '#FFF9EF',
-          stroke:
-            '#DFD5C8',
+          fill: '#FFF9EF',
+          stroke: canAdd ? '#DFD5C8' : '#DDD7CF',
           shadow: false
         }
       );
 
       this.drawImageContain(
         ctx,
-        'reno_table_' +
-          key,
+        'reno_table_' + key,
         x + 7,
         cardY + 8,
-        69,
-        55,
+        62,
+        50,
         1
       );
 
       this.text(
         ctx,
-        key +
-          '人桌',
-        x + 88,
-        cardY + 17,
-        6.0,
+        key + '人桌',
+        x + 79,
+        cardY + 16,
+        5.9,
         COLORS.text,
         '800'
       );
 
       this.text(
         ctx,
-        '已摆 ' +
-          count +
-          ' 张',
-        x + 88,
-        cardY + 35,
-        5.1,
+        '已摆 ' + count + ' 张',
+        x + 79,
+        cardY + 33,
+        4.8,
         COLORS.muted,
         '700'
       );
 
-      const minusX =
-        x + 91;
-
-      const plusX =
-        x + 132;
-
-      const buttonY =
-        cardY + 47;
+      const minusX = x + 79;
+      const plusX = x + 126;
+      const buttonY = cardY + 42;
 
       ui.card(
         ctx,
         minusX,
         buttonY,
-        32,
-        24,
+        39,
+        25,
         {
           radius: 9,
-          fill:
-            '#F2EEE7',
-          stroke:
-            '#D7CCBC',
+          fill: count > 0 ? '#F2EEE7' : '#ECE9E4',
+          stroke: '#D7CCBC',
           shadow: false
         }
       );
@@ -4339,14 +4147,12 @@ class RenovationScene {
         ctx,
         plusX,
         buttonY,
-        32,
-        24,
+        39,
+        25,
         {
           radius: 9,
-          fill:
-            '#FFE49A',
-          stroke:
-            '#E1B43A',
+          fill: canAdd ? '#FFE49A' : '#E8E4DC',
+          stroke: canAdd ? '#E1B43A' : '#D3CDC4',
           shadow: false
         }
       );
@@ -4354,10 +4160,10 @@ class RenovationScene {
       this.text(
         ctx,
         '−',
-        minusX + 16,
-        buttonY + 12,
-        8.5,
-        COLORS.navy,
+        minusX + 19.5,
+        buttonY + 12.5,
+        8.3,
+        count > 0 ? COLORS.navy : COLORS.muted,
         '800',
         'center'
       );
@@ -4365,129 +4171,88 @@ class RenovationScene {
       this.text(
         ctx,
         '+',
-        plusX + 16,
-        buttonY + 12,
-        8.5,
-        COLORS.navy,
+        plusX + 19.5,
+        buttonY + 12.5,
+        8.3,
+        canAdd ? COLORS.navy : COLORS.muted,
         '800',
         'center'
       );
 
       this.addButton(
-        'table:' +
-          key +
-          ':minus',
-        minusX - 2,
-        buttonY - 4,
-        36,
-        32
+        'table:' + key + ':minus',
+        minusX - 4,
+        buttonY - 5,
+        47,
+        35
       );
 
       this.addButton(
-        'table:' +
-          key +
-          ':plus',
-        plusX - 2,
-        buttonY - 4,
-        36,
-        32
+        'table:' + key + ':plus',
+        plusX - 4,
+        buttonY - 5,
+        47,
+        35
       );
     }
 
-    const decorY =
-      tableStartY +
-      2 *
-      (
-        cardH +
-        cardGap
-      ) +
-      7;
+    const decorY = y + 2 * (cardH + cardGap) + 4;
 
     this.text(
       ctx,
       '软装',
       19,
-      decorY,
-      7.8,
+      decorY + 8,
+      7.2,
       COLORS.text,
       '800'
     );
 
-    const items =
-      renovationConfig
-        .decorItems ||
-      [];
+    const items = renovationConfig.decorItems || [];
+    const itemY = decorY + 18;
 
-    for (
-      let i = 0;
-      i <
-      Math.min(
-        items.length,
-        4
-      );
-      i++
-    ) {
-      const item =
-        items[i];
-
-      const x =
-        16 +
-        i * 89;
-
+    for (let i = 0; i < Math.min(items.length, 4); i++) {
+      const item = items[i];
+      const x = 16 + i * 89;
       const count =
-        Number(
-          metrics.decorCounts &&
-          metrics.decorCounts[
-            item.id
-          ]
-        ) || 0;
+        Number(metrics.decorCounts && metrics.decorCounts[item.id]) || 0;
+      const imageMap = {
+        plant: 'reno_plant_1',
+        pendant: 'reno_pendant',
+        screen: 'reno_screen',
+        sofa: 'reno_sofa'
+      };
 
       ui.card(
         ctx,
         x,
-        decorY + 13,
+        itemY,
         82,
-        90,
+        68,
         {
-          radius: 11,
-          fill:
-            '#FFF9EF',
-          stroke:
-            '#DFD5C8',
+          radius: 10,
+          fill: '#FFF9EF',
+          stroke: '#DFD5C8',
           shadow: false
         }
       );
 
-      const imageMap = {
-        plant:
-          'reno_plant_1',
-        pendant:
-          'reno_pendant',
-        screen:
-          'reno_screen',
-        sofa:
-          'reno_sofa'
-      };
-
       this.drawImageContain(
         ctx,
-        imageMap[
-          item.id
-        ] ||
-          'reno_plant_1',
-        x + 8,
-        decorY + 19,
-        66,
-        39,
+        imageMap[item.id] || 'reno_plant_1',
+        x + 7,
+        itemY + 5,
+        35,
+        31,
         1
       );
 
       this.text(
         ctx,
         item.name,
-        x + 41,
-        decorY + 61,
-        5.2,
+        x + 60,
+        itemY + 15,
+        4.6,
         COLORS.text,
         '800',
         'center'
@@ -4495,94 +4260,59 @@ class RenovationScene {
 
       this.text(
         ctx,
-        '− ' +
-          count +
-          ' +',
-        x + 41,
-        decorY + 88,
-        5.8,
+        '×' + count,
+        x + 60,
+        itemY + 31,
+        5.0,
         COLORS.navy,
         '800',
         'center'
       );
 
-      this.addButton(
-        'decor:' +
-          item.id +
-          ':minus',
-        x + 3,
-        decorY + 73,
-        32,
-        30
-      );
+      this.text(ctx, '−', x + 19, itemY + 53, 7.4, COLORS.navy, '800', 'center');
+      this.text(ctx, '+', x + 63, itemY + 53, 7.4, COLORS.navy, '800', 'center');
 
-      this.addButton(
-        'decor:' +
-          item.id +
-          ':plus',
-        x + 48,
-        decorY + 73,
-        32,
-        30
-      );
+      this.addButton('decor:' + item.id + ':minus', x + 1, itemY + 36, 36, 31);
+      this.addButton('decor:' + item.id + ':plus', x + 45, itemY + 36, 36, 31);
     }
 
-    const impactY =
-      decorY + 117;
+    const impactY = itemY + 76;
 
     ui.card(
       ctx,
       16,
       impactY,
       358,
-      56,
+      48,
       {
-        radius: 12,
-        fill:
-          '#EFF7FA',
-        stroke:
-          '#C5DDE8',
+        radius: 11,
+        fill: '#FFF6DD',
+        stroke: '#E3C36B',
         shadow: false
       }
     );
 
     this.text(
       ctx,
-      '装修评分 ' +
-        metrics.renovationScore +
-        ' · 软装 ' +
-        money(
-          metrics.decorCost
-        ),
+      '装修评分 ' + metrics.renovationScore +
+        ' · 软装 ' + money(metrics.decorCost),
       28,
-      impactY + 17,
-      7.0,
+      impactY + 16,
+      6.4,
       COLORS.text,
       '800'
     );
 
     this.text(
       ctx,
-      '客流 ×' +
-        metrics
-          .operatingImpact
-          .trafficFactor
-          .toFixed(2) +
-        ' · 客单 ×' +
-        metrics
-          .operatingImpact
-          .spendFactor
-          .toFixed(2) +
-        ' · 服务 ×' +
-        metrics
-          .operatingImpact
-          .serviceFactor
-          .toFixed(2),
+      '客流 ×' + metrics.operatingImpact.trafficFactor.toFixed(2) +
+        ' · 客单 ×' + metrics.operatingImpact.spendFactor.toFixed(2) +
+        ' · 服务 ×' + metrics.operatingImpact.serviceFactor.toFixed(2),
       28,
-      impactY + 38,
-      5.2,
+      impactY + 34,
+      4.8,
       COLORS.muted,
-      '600'
+      '700'
     );
   }
 
@@ -5759,12 +5489,7 @@ class RenovationScene {
       shop
     );
 
-    if (this.viewH >= 700) {
-      this.drawTemplateStrip(
-        ctx,
-        plan
-      );
-    }
+    // V0850：模板条从默认装修页移出，主平面图优先。
 
     const floor =
       plan.floors[
@@ -6310,11 +6035,23 @@ class RenovationScene {
             ? '餐桌落位点已满，请拖动分区扩大堂食区'
             : '堂食可用面积不足，请扩大堂食区或减少其他家具'
         );
+      } else if (
+        delta < 0 &&
+        beforeCount <= 0
+      ) {
+        this.showToast(
+          '当前没有' + tableKey + '人桌可移除'
+        );
       } else {
-        saveSystem
-          .autoSave(true);
+        saveSystem.autoSave(true);
+        this.showToast(
+          delta > 0
+            ? '已添加' + tableKey + '人桌 · 本层共' + afterCount + '张'
+            : '已移除' + tableKey + '人桌 · 本层剩' + afterCount + '张'
+        );
       }
 
+      this.requestRenderNow();
       return true;
     }
 
@@ -6786,64 +6523,40 @@ class RenovationScene {
 
     if (
       !data ||
-      this.page !==
-        'layout' ||
+      this.page !== 'layout' ||
       this.previewMode
     ) {
       return false;
     }
 
-    const frame =
-      data.frame;
+    const frame = data.frame;
 
     if (
-      x < frame.x ||
-      x > frame.x + frame.w ||
-      y < frame.y ||
-      y > frame.y + frame.h
+      x < frame.x - 8 ||
+      x > frame.x + frame.w + 8 ||
+      y < frame.y - 8 ||
+      y > frame.y + frame.h + 8
     ) {
       return false;
     }
 
-    const horizontalY =
-      frame.y +
-      frame.h *
-      data.backRatio;
-
-    const topSplitX =
-      frame.x +
-      frame.w *
-      data.kitchenWidthRatio;
-
-    const serviceSplitX =
-      frame.x +
-      frame.w *
-      data.serviceWidthRatio;
+    const horizontalY = frame.y + frame.h * data.backRatio;
+    const topSplitX = frame.x + frame.w * data.kitchenWidthRatio;
+    const serviceSplitX = frame.x + frame.w * data.serviceWidthRatio;
 
     let type = null;
+    const hit = 26;
 
-    if (
-      Math.abs(
-        y -
-        horizontalY
-      ) <= 18
-    ) {
+    if (Math.abs(y - horizontalY) <= hit) {
       type = 'back';
     } else if (
-      y < horizontalY &&
-      Math.abs(
-        x -
-        topSplitX
-      ) <= 18
+      y < horizontalY + 8 &&
+      Math.abs(x - topSplitX) <= hit
     ) {
-      type =
-        'kitchen-storage';
+      type = 'kitchen-storage';
     } else if (
-      y > horizontalY &&
-      Math.abs(
-        x -
-        serviceSplitX
-      ) <= 18
+      y > horizontalY - 8 &&
+      Math.abs(x - serviceSplitX) <= hit
     ) {
       type = 'service';
     }
@@ -6852,39 +6565,25 @@ class RenovationScene {
       return false;
     }
 
-    const plan =
-      this.getPlan();
+    const plan = this.getPlan();
 
-    renovationSystem
-      .mutatePlan(
-        this.shopId,
-        () => {},
-        {
-          skipHistory: false
-        }
-      );
+    renovationSystem.mutatePlan(
+      this.shopId,
+      () => {},
+      { skipHistory: false }
+    );
 
     this.areaDrag = {
       type,
-      floorIndex:
-        data.floorIndex,
-      start:
-        {
-          kitchenRatio:
-            plan.floors[
-              data.floorIndex
-            ].kitchenRatio,
-          storageRatio:
-            plan.floors[
-              data.floorIndex
-            ].storageRatio,
-          serviceRatio:
-            plan.floors[
-              data.floorIndex
-            ].serviceRatio
-        }
+      floorIndex: data.floorIndex,
+      start: {
+        kitchenRatio: plan.floors[data.floorIndex].kitchenRatio,
+        storageRatio: plan.floors[data.floorIndex].storageRatio,
+        serviceRatio: plan.floors[data.floorIndex].serviceRatio
+      }
     };
 
+    this.requestRenderNow();
     return true;
   }
 
@@ -6899,96 +6598,58 @@ class RenovationScene {
       return false;
     }
 
-    const drag =
-      this.areaDrag;
+    const drag = this.areaDrag;
+    const frame = this.floorCanvasInteraction.frame;
+    const values = { ...drag.start };
 
-    const frame =
-      this.floorCanvasInteraction
-        .frame;
-
-    const values = {
-      ...drag.start
-    };
-
-    if (
-      drag.type ===
-        'back'
-    ) {
-      const back =
-        clamp(
-          (
-            y -
-            frame.y
-          ) /
-          frame.h,
-          renovationConfig
-            .zoneRules
-            .minKitchenRatio +
-          renovationConfig
-            .zoneRules
-            .minStorageRatio,
-          1 -
-          renovationConfig
-            .zoneRules
-            .minDiningRatio -
-          values.serviceRatio
-        );
-
-      values.kitchenRatio =
-        back -
-        values.storageRatio;
-    } else if (
-      drag.type ===
-        'kitchen-storage'
-    ) {
-      const back =
-        values.kitchenRatio +
-        values.storageRatio;
-
-      values.kitchenRatio =
-        clamp(
-          (
-            x -
-            frame.x
-          ) /
-          frame.w *
-          back,
-          renovationConfig
-            .zoneRules
-            .minKitchenRatio,
-          renovationConfig
-            .zoneRules
-            .maxKitchenRatio
-        );
-
-      values.storageRatio =
-        back -
-        values.kitchenRatio;
-    } else {
-      const lower =
+    if (drag.type === 'back') {
+      const back = clamp(
+        (y - frame.y) / frame.h,
+        renovationConfig.zoneRules.minKitchenRatio +
+          renovationConfig.zoneRules.minStorageRatio,
         1 -
-        values.kitchenRatio -
-        values.storageRatio;
-
-      values.serviceRatio =
-        (
-          x -
-          frame.x
-        ) /
-        frame.w *
-        lower;
-    }
-
-    renovationSystem
-      .setZoneRatios(
-        this.shopId,
-        drag.floorIndex,
-        values,
-        {
-          skipHistory: true
-        }
+          renovationConfig.zoneRules.minDiningRatio -
+          values.serviceRatio
       );
 
+      values.kitchenRatio =
+        back - values.storageRatio;
+    } else if (drag.type === 'kitchen-storage') {
+      const back = values.kitchenRatio + values.storageRatio;
+
+      values.kitchenRatio = clamp(
+        ((x - frame.x) / frame.w) * back,
+        renovationConfig.zoneRules.minKitchenRatio,
+        Math.min(
+          renovationConfig.zoneRules.maxKitchenRatio,
+          back - renovationConfig.zoneRules.minStorageRatio
+        )
+      );
+
+      values.storageRatio =
+        back - values.kitchenRatio;
+    } else {
+      const lower =
+        1 - values.kitchenRatio - values.storageRatio;
+
+      values.serviceRatio = clamp(
+        ((x - frame.x) / frame.w) * lower,
+        renovationConfig.zoneRules.minServiceRatio,
+        Math.min(
+          renovationConfig.zoneRules.maxServiceRatio,
+          lower - renovationConfig.zoneRules.minDiningRatio
+        )
+      );
+    }
+
+    renovationSystem.setZoneRatios(
+      this.shopId,
+      drag.floorIndex,
+      values,
+      { skipHistory: true }
+    );
+
+    this.requestRenderNow();
     return true;
   }
 
@@ -6997,14 +6658,12 @@ class RenovationScene {
       return false;
     }
 
-    this.areaDrag =
-      null;
-
-    saveSystem
-      .autoSave(true);
-
+    this.areaDrag = null;
+    saveSystem.autoSave(true);
+    this.requestRenderNow();
     return true;
   }
+
 }
 
 module.exports =

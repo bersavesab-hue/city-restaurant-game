@@ -13,6 +13,7 @@ const ctx = canvas.getContext('2d');
 if (!ctx) throw new Error('无法创建 Canvas 2D 环境');
 
 // V0849_HOTFIX_TOUCH_BRIDGE
+// V0850_FINAL_RENOVATION_TOUCH_GUARD
 // 装修分区拖拽需要完整 touchstart -> touchmove -> touchend 生命周期。
 canvas.style.touchAction = 'none';
 
@@ -281,21 +282,43 @@ const androidApi = {
   },
 
   onTouchEnd(callback) {
+    if (typeof callback !== 'function') {
+      return;
+    }
+
+    function finishTouch(event) {
+      lastTouchAt = Date.now();
+
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+
+      const changed =
+        event.changedTouches &&
+        event.changedTouches.length
+          ? event.changedTouches
+          : [
+              {
+                clientX: 0,
+                clientY: 0
+              }
+            ];
+
+      callback({
+        changedTouches: changed,
+        cancelled: event.type === 'touchcancel'
+      });
+    }
+
     canvas.addEventListener(
       'touchend',
-      function (event) {
-        lastTouchAt = Date.now();
+      finishTouch,
+      { passive: false }
+    );
 
-        if (event.cancelable) {
-          event.preventDefault();
-        }
-
-        if (!event.changedTouches) return;
-
-        callback({
-          changedTouches: event.changedTouches
-        });
-      },
+    canvas.addEventListener(
+      'touchcancel',
+      finishTouch,
       { passive: false }
     );
 

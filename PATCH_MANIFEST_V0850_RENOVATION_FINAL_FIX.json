@@ -1,0 +1,22 @@
+{
+  "id": "V0850_FINAL_RENOVATION_MOBILE_FIX",
+  "baseVersion": "0.8.49",
+  "targetVersion": "0.8.49",
+  "hotfixRevision": 4,
+  "category": "装修页面最终交互与手机布局修复（全回归兼容修正版）",
+  "features": [
+    "默认页移除高占用模板条，主平面图扩展为核心操作区",
+    "主页面取消误触式点图加桌，统一进入家具编辑页",
+    "家具页增加餐桌落位点、已用面积、剩余面积实时状态",
+    "餐桌加减按钮扩大并显示是否还能继续放置",
+    "分区拖动触控容差扩大到26px并实时强制重绘",
+    "拖动中显示正在调整的区域反馈",
+    "Android增加touchcancel收尾，避免拖动状态卡死",
+    "600/667/780手机高度点击区回归测试",
+    "保留真实房源面积、户型、障碍物与落位点约束"
+  ],
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false
+}
