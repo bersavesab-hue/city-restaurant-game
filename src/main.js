@@ -5540,6 +5540,34 @@ sceneManager.register(
 );
 
 function render() {
+  // V095_RENDER_THROTTLE_BEGIN
+  // 只节流昂贵的整屏 Canvas 重绘；时间、经营模拟、场景更新仍逐帧执行。
+  const __v095Now = Date.now();
+  const __v095Speed =
+    timeSystem && typeof timeSystem.getSpeed === 'function'
+      ? Number(timeSystem.getSpeed()) || 1
+      : 1;
+  const __v095Paused =
+    timeSystem && typeof timeSystem.isPaused === 'function'
+      ? !!timeSystem.isPaused()
+      : false;
+  const __v095Interval =
+    __v095Speed >= 10 ? 50 :
+    __v095Speed >= 5 ? 40 :
+    __v095Speed >= 2 ? 25 : 0;
+
+  if (
+    !needsResize &&
+    !__v095Paused &&
+    __v095Interval > 0 &&
+    __v095Now - (render.__v095LastTime || 0) < __v095Interval
+  ) {
+    return;
+  }
+
+  render.__v095LastTime = __v095Now;
+  // V095_RENDER_THROTTLE_END
+
   // V093_RENDER_THROTTLE_BEGIN
   // 只节流昂贵的整屏 Canvas 重绘，不改变时间、场景或经营模拟更新。
   const __v093Now = Date.now();

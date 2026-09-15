@@ -1,0 +1,2 @@
+V0.9.5 adaptive selected mode: throttle
+仅整屏重绘节流

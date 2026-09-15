@@ -1,16 +1,14 @@
-# 餐饮模拟器 V0.9.3 自适应倍速稳定补丁
+# 餐饮 V0.9.5 倍速卡顿稳定修复
 
-本包只处理倍速卡顿及其导致的构建兼容问题，不改 UI，不覆盖 workflow，也不直接携带 package.json。
+V0.9.5 修复 V0.9.4 的最后一个高风险点：自适应候选以前会重复执行仓库原 `pretest`。你的项目历史上存在会生成/修复源码的 `pretest`，重复运行可能产生副作用，导致明明 baseline 可通过却被后续候选污染。
 
-核心变化：不再改游戏时间推进频率，不再改 sceneManager/timeSystem 更新节奏；只优化昂贵的 Canvas 全屏重绘和 Android 高分屏绘制负担。
+现在流程改为：
 
-为避免旧测试再次把构建卡死，本包会在 GitHub Actions 的原 `npm test` 阶段自动用仓库原测试验证候选方案：
+1. 不修改 `src/main.js`，先在仓库 baseline 上执行原 `pretest` **一次**；
+2. 保存 pretest 完成后的源码/包状态；
+3. 只对 `full -> throttle -> resolution -> baseline` 分别执行原 `test`；
+4. 只对第一个通过 test 的候选执行原 `posttest` **一次**；
+5. 恢复 package.json 到 pretest 完成态，清理临时 runner；
+6. 输出 `docs/V095_SELECTED_MODE.txt`。
 
-1. full：重绘节流 + 分辨率/缓存降载
-2. throttle：仅重绘节流
-3. resolution：仅分辨率/缓存降载
-4. baseline：完整恢复原 `src/main.js`
-
-第一个通过仓库原测试的方案会被保留，并写入 `docs/V093_SELECTED_MODE.txt`。失败候选会自动撤销。
-
-如果连 baseline 都失败，Actions 会显示原仓库自身真实的 AssertionError；这时可以确认失败与本轮倍速补丁无关。
+本包不改 UI，不覆盖 workflow，不直接覆盖 package.json。
