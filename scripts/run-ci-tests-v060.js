@@ -151,6 +151,9 @@ for (
     'tests/timeScheduleCoordinatorV0812.test.js',
     'tests/timedProgressionV0812.test.js',
     'tests/updateInfrastructureV0812.test.js',
+    'tests/saveMigrationV0813.test.js',
+    'tests/seedManagerV0813.test.js',
+    'tests/updateInfrastructureV0813.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

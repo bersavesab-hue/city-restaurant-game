@@ -9,6 +9,9 @@ const simulationConfig =
 const timeScheduleCoordinator =
   require('./timeScheduleCoordinatorV0812.js');
 
+const seedManager =
+  require('./seedManagerV0813.js');
+
 const citySystem =
   require('../city/citySystem.js');
 
@@ -146,43 +149,17 @@ class SimulationSystem {
       gameState
         .getSimulation();
 
+    // Preserve explicit/legacy simulation.seed values exactly.
     if (
       simulation.seed ==
       null
     ) {
-      const world =
-        gameState
-          .getWorld();
-
-      const time =
-        gameState
-          .getTime();
-
-      const raw =
-        (
-          world.currentCityId ||
-          'city'
-        ) +
-        ':' +
-        (
-          world.cityName ||
-          'unnamed'
-        ) +
-        ':' +
-        time.year +
-        ':' +
-        time.month +
-        ':' +
-        time.day;
-
       simulation.seed =
-        Math.floor(
-          hashFloat(
-            raw
-          ) *
-          2147483646
-        ) +
-        1;
+        seedManager
+          .deriveSeed(
+            'simulation',
+            'world'
+          );
     }
 
     return simulation.seed;

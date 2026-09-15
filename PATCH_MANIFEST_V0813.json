@@ -1,0 +1,40 @@
+{
+  "id": "V0813_SAVE_MIGRATION_SEED",
+  "pass": "4/26",
+  "baseVersion": "0.8.12",
+  "targetVersion": "0.8.13",
+  "title": "存档 / 版本迁移 / 随机种子",
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false,
+  "legacySaveKeyPreserved": true,
+  "legacyGameStateVersionPreserved": true,
+  "androidRunnerCompatibility": true,
+  "newFiles": [
+    "src/core/saveMigrationV0813.js",
+    "src/core/seedManagerV0813.js",
+    "tests/saveMigrationV0813.test.js",
+    "tests/seedManagerV0813.test.js",
+    "tests/updateInfrastructureV0813.test.js"
+  ],
+  "replacedFiles": [
+    "src/core/saveSystem.js"
+  ],
+  "installerPatches": [
+    "package.json -> 0.8.13",
+    "package-lock.json -> 0.8.13",
+    "src/core/simulationSystem.js -> seed manager integration",
+    "scripts/run-ci-tests-v060.js -> V0813 permanent tests"
+  ],
+  "compatibilityChecks": [
+    "V083_SAVE_THROTTLE retained",
+    "autoSaveIntervalMs = 20000 retained",
+    "flush() retained",
+    "legacy simulation.seed override retained",
+    "V1 save envelope migrates",
+    "raw gameData migrates",
+    "corrupt primary falls back to backup",
+    "future save version is rejected"
+  ]
+}
