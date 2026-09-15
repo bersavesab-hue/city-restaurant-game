@@ -1,6 +1,6 @@
 {
   "name": "city-restaurant-game",
-  "version": "0.8.51",
+  "version": "0.8.60",
   "private": true,
   "scripts": {
     "pretest": "node scripts/patch-safety-v089.js && node scripts/quality-gate-v089.js && node tests/updateInfrastructureV089.test.js && node tests/staffWorkloadV089.test.js && node tests/updateInfrastructureV088.test.js && node tests/staffCareerV088.test.js && node tests/operationsScheduleV087.test.js && node tests/businessLifecycleV086.test.js && node tests/managementCenterV085.test.js && node tests/liveWorldV084.test.js && node tests/foundationFixesV083.test.js && node scripts/resource-lifecycle.js sync-pools && node tests/resourceLifecycleV062.test.js && node scripts/resource-lifecycle.js gc --apply && node scripts/resource-lifecycle.js audit && node tools/devkit/devkit.js self-check && node tests/devkitV100.test.js",

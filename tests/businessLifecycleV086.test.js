@@ -222,6 +222,17 @@ gameState
       {
         day:
           day -
+          3,
+        financial:{
+          revenue:99999,
+          profit:99999,
+          orders:999,
+          customers:999
+        }
+      },
+      {
+        day:
+          day -
           2,
         financial:{
           revenue:6200,
@@ -322,10 +333,11 @@ assert.equal(
   '试营业结束后必须停在复盘状态'
 );
 
+assert.equal(shop.trialReport.days,3,'试营业复盘必须按3个不同营业日统计');
 assert.equal(
   shop.trialReport.revenue,
   18300,
-  '试营业必须生成真实三日经营复盘'
+  '同一天重复快照不能重复计入试营业收入'
 );
 
 assert.equal(
@@ -441,13 +453,11 @@ const restaurantSource =
   );
 
 assert.ok(
-  restaurantSource.includes(
-    "'trial_opening'"
-  ) &&
-  restaurantSource.includes(
-    'trialFactor'
-  ),
-  '试营业必须进入真实餐厅模拟'
+  restaurantSource.includes("'trial_opening'") &&
+  restaurantSource.includes('trialFactor') &&
+  restaurantSource.includes('finalizeExternalOperatingDay') &&
+  restaurantSource.includes('.startOperatingDay('),
+  '试营业必须进入真实模拟，并由自动营业日统一结算'
 );
 
 const storeSource =

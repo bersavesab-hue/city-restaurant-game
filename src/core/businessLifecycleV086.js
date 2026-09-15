@@ -1144,127 +1144,47 @@ function processLoan(
   return true;
 }
 
+function getTrialRows(
+  shop
+) {
+  const stored=gameState.getRestaurantOperations().shops[shop.id];
+  const snapshots=stored&&Array.isArray(stored.dailySnapshots)?stored.dailySnapshots:[];
+  const startDay=Number(shop.trialOpenedDay)||0;
+  const byDay=new Map();
+
+  for (const row of snapshots) {
+    const day=Number(row&&row.day);
+    if (!row || !row.financial || !Number.isFinite(day) || day<startDay || byDay.has(day)) continue;
+    byDay.set(day,row);
+  }
+
+  return Array.from(byDay.values()).sort((a,b)=>Number(a.day)-Number(b.day)).slice(0,3);
+}
+
 function buildTrialReport(
   shop
 ) {
-  const stored =
-    gameState
-      .getRestaurantOperations()
-      .shops[
-        shop.id
-      ];
+  const stored=gameState.getRestaurantOperations().shops[shop.id];
+  const rows=getTrialRows(shop);
+  let revenue=0,profit=0,orders=0,customers=0;
 
-  const snapshots =
-    stored &&
-    Array.isArray(
-      stored.dailySnapshots
-    )
-      ? stored.dailySnapshots
-      : [];
-
-  const startDay =
-    Number(
-      shop.trialOpenedDay
-    ) ||
-    0;
-
-  const rows =
-    snapshots
-      .filter(
-        row =>
-          Number(
-            row.day
-          ) >=
-          startDay
-      )
-      .slice(
-        -3
-      );
-
-  let revenue =
-    0;
-
-  let profit =
-    0;
-
-  let orders =
-    0;
-
-  let customers =
-    0;
-
-  for (
-    const row
-    of rows
-  ) {
-    const financial =
-      row.financial ||
-      {};
-
-    revenue +=
-      Number(
-        financial.revenue
-      ) ||
-      0;
-
-    profit +=
-      Number(
-        financial.profit
-      ) ||
-      0;
-
-    orders +=
-      Number(
-        financial.orders
-      ) ||
-      0;
-
-    customers +=
-      Number(
-        financial.customers
-      ) ||
-      0;
+  for (const row of rows) {
+    const financial=row.financial||{};
+    revenue+=Number(financial.revenue)||0;
+    profit+=Number(financial.profit)||0;
+    orders+=Number(financial.orders)||0;
+    customers+=Number(financial.customers)||0;
   }
 
-  const rating =
-    stored &&
-    stored.shop
-      ? Number(
-          stored.shop.rating
-        ) ||
-        4
-      : 4;
-
+  const rating=stored&&stored.shop?Number(stored.shop.rating)||4:4;
   return {
-    days:
-      Math.max(
-        1,
-        rows.length
-      ),
-    revenue:
-      Math.round(
-        revenue
-      ),
-    profit:
-      Math.round(
-        profit
-      ),
-    orders:
-      Math.round(
-        orders
-      ),
-    customers:
-      Math.round(
-        customers
-      ),
-    rating:
-      Number(
-        rating.toFixed(
-          1
-        )
-      ),
-    generatedDay:
-      currentDay()
+    days:rows.length,
+    revenue:Math.round(revenue),
+    profit:Math.round(profit),
+    orders:Math.round(orders),
+    customers:Math.round(customers),
+    rating:Number(rating.toFixed(1)),
+    generatedDay:currentDay()
   };
 }
 
@@ -1272,47 +1192,18 @@ function processTrial(
   shop,
   day
 ) {
-  if (
-    shop.status !==
-      'trial_opening'
-  ) {
-    return false;
-  }
+  if (shop.status!=='trial_opening') return false;
+  const endDay=Number(shop.trialEndDay)||(Number(shop.trialOpenedDay)+3);
+  if (day<endDay) return false;
 
-  const endDay =
-    Number(
-      shop.trialEndDay
-    ) ||
-    (
-      Number(
-        shop.trialOpenedDay
-      ) +
-      3
-    );
+  const rows=getTrialRows(shop);
+  // 到期但没有3个真实营业日，不能靠空跑日期直接完成试营业。
+  if (rows.length<3) return false;
 
-  if (
-    day <
-    endDay
-  ) {
-    return false;
-  }
-
-  shop.status =
-    'trial_complete';
-
-  shop.trialCompletedDay =
-    day;
-
-  shop.trialReport =
-    buildTrialReport(
-      shop
-    );
-
-  ensureState()
-    .metrics
-    .trialsCompleted +=
-    1;
-
+  shop.status='trial_complete';
+  shop.trialCompletedDay=day;
+  shop.trialReport=buildTrialReport(shop);
+  ensureState().metrics.trialsCompleted+=1;
   return true;
 }
 

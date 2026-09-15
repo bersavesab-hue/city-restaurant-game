@@ -121,112 +121,29 @@ function currentDay() {
 function normalizeLegacyCalendar(
   runtime
 ) {
-  const expected =
-    currentDay();
-
-  const oldDay =
-    Number(
-      runtime.day
-    ) ||
-    expected;
-
-  if (
-    Math.abs(
-      oldDay -
-      expected
-    ) <=
-    90
-  ) {
-    return;
-  }
-
-  const delta =
-    expected -
-    oldDay;
-
-  runtime.day =
-    expected;
-
-  if (
-    runtime.inventory
-  ) {
-    runtime
-      .inventory
-      .day =
-      (
-        Number(
-          runtime
-            .inventory
-            .day
-        ) ||
-        oldDay
-      ) +
-      delta;
-
-    for (
-      const lot
-      of runtime
-          .inventory
-          .lots ||
-        []
-    ) {
-      lot.receivedDay =
-        (
-          Number(
-            lot.receivedDay
-          ) ||
-          oldDay
-        ) +
-        delta;
-
-      lot.expiryDay =
-        (
-          Number(
-            lot.expiryDay
-          ) ||
-          oldDay
-        ) +
-        delta;
+  const expected = currentDay();
+  const oldDay = Number(runtime.day) || expected;
+  if (oldDay === expected) return;
+  // 正常落后1~90天交给自动跨日逐日结算；领先则属于旧版手动日结漂移。
+  if (oldDay < expected && expected - oldDay <= 90) return;
+  const delta = expected - oldDay;
+  runtime.day = expected;
+  if (runtime.inventory) {
+    runtime.inventory.day = (Number(runtime.inventory.day) || oldDay) + delta;
+    for (const lot of runtime.inventory.lots || []) {
+      lot.receivedDay = (Number(lot.receivedDay) || oldDay) + delta;
+      lot.expiryDay = (Number(lot.expiryDay) || oldDay) + delta;
     }
   }
-
-  if (
-    runtime.procurement &&
-    Array.isArray(
-      runtime
-        .procurement
-        .purchaseOrders
-    )
-  ) {
-    for (
-      const po
-      of runtime
-          .procurement
-          .purchaseOrders
-    ) {
-      for (
-        const key
-        of [
-          'orderedDay',
-          'expectedDay',
-          'paymentDueDay',
-          'receivedDay'
-        ]
-      ) {
-        if (
-          po[key] !=
-          null
-        ) {
-          po[key] =
-            Number(
-              po[key]
-            ) +
-            delta;
-        }
+  if (runtime.procurement && Array.isArray(runtime.procurement.purchaseOrders)) {
+    for (const po of runtime.procurement.purchaseOrders) {
+      for (const key of ['orderedDay','expectedDay','paymentDueDay','receivedDay']) {
+        if (po[key] != null) po[key] = Number(po[key]) + delta;
       }
     }
   }
 }
+
 function getRoot() {
   const business =
     gameState.getBusiness();
@@ -2319,411 +2236,124 @@ function simulateCustomerVisit(
   );
 }
 
-function closeOperatingDay(
-  shopId,
-  options
-) {
-  return mutate(
-    shopId,
-    runtime => {
-      dailyOperatingCycle
-        .beginDay(
-          shopId,
-          runtime.day,
-          decisionContextSnapshot(
-            shopId,
-            runtime
-          )
-        );
+function normalizeClosedResult(closeResult) {
+  if (closeResult && closeResult.result && closeResult.result.financial) {
+    return {ok:closeResult.ok!==false,envelope:closeResult,closed:closeResult.result};
+  }
+  if (closeResult && closeResult.financial) {
+    return {ok:true,envelope:{ok:true,result:closeResult},closed:closeResult};
+  }
+  return {ok:false,envelope:closeResult||{ok:false,reason:'缺少日结结果'},closed:null};
+}
 
-      const result =
-        liveOperations
-          .closeDay(
-            runtime,
-            options ||
-            {}
-          );
+function profitStreakFromStatements(rows) {
+  const ordered=(Array.isArray(rows)?rows:[]).slice().sort((a,b)=>Number(b.day)-Number(a.day));
+  let streak=0;
+  for (const row of ordered) {
+    if (Number(row.profit)>0) streak+=1;
+    else break;
+  }
+  return streak;
+}
 
-      if (
-        result &&
-        result.ok &&
-        result.result &&
-        result.result.financial
-      ) {
-        completeFinanceSystem
-          .syncDailyStatement(
-            shopId,
-            result
-              .result
-              .financial,
-            result
-              .result
-              .day
-          );
+function finalizeClosedOperatingDay(shopId,runtime,closeResult,options) {
+  const normalized=normalizeClosedResult(closeResult);
+  if (!normalized.ok || !normalized.closed) return normalized.envelope;
+  const envelope=normalized.envelope;
+  const closed=normalized.closed;
+  const closedDay=Number(closed.day)||Math.max(1,Number(runtime&&runtime.day)-1);
 
-        const closedDay=
-          result
-            .result
-            .day;
+  runtime.simulation=runtime.simulation||{};
 
-        reputationMediaSystem
-          .processDay(
-            shopId,
-            closedDay
-          );
-
-        commercialEcologySystem
-          .processDay(
-            closedDay,
-            {
-              shopId
-            }
-          );
-
-        processEnvironmentDay(
-          closedDay,
-          shopId,
-          {}
-        );
-
-        const shop =
-          getShop(
-            shopId
-          );
-
-        regulatoryFoodSafetySystem
-          .processDay(
-            shopId,
-            closedDay,
-            {
-              districtId:
-                shop &&
-                shop.districtId
-            }
-          );
-
-        const financeView =
-          completeFinanceSystem
-            .snapshot(
-              shopId,
-              runtime.ledger
-            );
-
-        const dailyStatements =
-          financeView &&
-          Array.isArray(
-            financeView
-              .dailyStatements
-          )
-            ? financeView
-                .dailyStatements
-            : [];
-
-        const marketingView =
-          marketingPlatformMembership
-            .overview(
-              shopId,
-              runtime
-            );
-
-        const regulatoryView =
-          regulatoryFoodSafetySystem
-            .overview(
-              shopId
-            );
-
-        const staffView =
-          staffManagement
-            .teamSnapshot(
-              shopId,
-              gameState
-                .getTime()
-            );
-
-        const profitDays =
-          dailyStatements
-            .filter(
-              item =>
-                Number(
-                  item.profit
-                ) >
-                0
-            )
-            .length;
-
-        const bestDailyRevenue =
-          dailyStatements
-            .reduce(
-              (
-                best,
-                item
-              ) =>
-                Math.max(
-                  best,
-                  Number(
-                    item.revenue
-                  ) ||
-                  0
-                ),
-              0
-            );
-
-        const totalCustomers =
-          dailyStatements
-            .reduce(
-              (
-                total,
-                item
-              ) =>
-                total +
-                (
-                  Number(
-                    item.customers
-                  ) ||
-                  0
-                ),
-              0
-            );
-
-        const latestViolation =
-          regulatoryView
-            .latestInspections
-            .find(
-              item =>
-                item.result !==
-                'pass'
-            );
-
-        const noViolationStreak =
-          latestViolation
-            ? Math.max(
-                0,
-                closedDay -
-                Number(
-                  latestViolation.day
-                )
-              )
-            : closedDay;
-
-        const growthResult =
-          growthAchievementSystem
-            .evaluate(
-              shopId,
-              runtime,
-              {
-                daysPlayed:
-                  closedDay,
-                profitDays,
-                bestDailyRevenue,
-                dailyRevenue:
-                  result
-                    .result
-                    .financial
-                    .revenue,
-                totalCustomers,
-                reviewCount:
-                  Number(
-                    runtime
-                      .shop
-                      .reviewCount
-                  ) ||
-                  0,
-                rating:
-                  Number(
-                    runtime
-                      .shop
-                      .rating
-                  ) ||
-                  4,
-                memberCount:
-                  marketingView
-                    .memberCount,
-                staffCount:
-                  staffView
-                    .headcount,
-                campaignCount:
-                  marketingView
-                    .metrics
-                    .campaignsStarted,
-                supplierCount:
-                  runtime
-                    .supplierNetwork
-                    .length,
-                inspectionsPassed:
-                  regulatoryView
-                    .metrics
-                    .passed,
-                noViolationStreak
-              }
-            );
-
-        multiStoreBrandRanking
-          .registerShop(
-            shopId,
-            runtime,
-            {
-              day:
-                closedDay
-            }
-          );
-
-        growthAchievementSystem
-          .rollHidden(
-            shopId,
-            {
-              daysPlayed:
-                closedDay,
-              reviewCount:
-                Number(
-                  runtime
-                    .shop
-                    .reviewCount
-                ) ||
-                0,
-              storeQuality:
-                Math.round(
-                  (
-                    Number(
-                      runtime
-                        .shop
-                        .rating
-                    ) ||
-                    4
-                  ) *
-                  20
-                ),
-              quality:
-                Math.round(
-                  (
-                    Number(
-                      runtime
-                        .shop
-                        .rating
-                    ) ||
-                    4
-                  ) *
-                  20
-                ),
-              storeCount:
-                gameState
-                  .getBusiness()
-                  .shops
-                  .length,
-              minProfitDays:
-                profitDays,
-              profitDays,
-              cashflowScore:
-                growthResult
-                  .achievementPoints
-            }
-          );
-      }
-
-      if (
-        result &&
-        result.ok &&
-        result.result &&
-        result.result.financial
-      ) {
-        const closedDay =
-          Number(
-            result.result.day
-          ) ||
-          Math.max(
-            1,
-            Number(
-              runtime.day
-            ) -
-            1
-          );
-
-        const endSnapshot =
-          decisionContextSnapshot(
-            shopId,
-            runtime,
-            result.result.financial
-          );
-
-        const balanceV2 =
-          operatingBalanceTuner
-            .assessDay(
-              result.result.financial,
-              {
-                tensionScore:
-                  endSnapshot
-                    .tensionScore
-              }
-            );
-
-        const regulatoryView =
-          regulatoryFoodSafetySystem
-            .overview(
-              shopId
-            );
-
-        const decisions =
-          decisionFeedback
-            .resolveDay(
-              shopId,
-              closedDay,
-              endSnapshot
-            );
-
-        const daily =
-          dailyOperatingCycle
-            .finalizeDay(
-              shopId,
-              closedDay,
-              result.result,
-              endSnapshot,
-              {
-                balance:
-                  balanceV2,
-                decisionFeedback:
-                  decisions,
-                regulatory:{
-                  openViolations:
-                    regulatoryView &&
-                    Array.isArray(
-                      regulatoryView
-                        .openViolations
-                    )
-                      ? regulatoryView
-                          .openViolations
-                          .length
-                      : 0
-                }
-              }
-            );
-
-        const health =
-          playtestHealth
-            .record(
-              shopId,
-              playtestContextSnapshot(
-                shopId,
-                runtime
-              )
-            );
-
-        result.dailyBrief =
-          daily &&
-          daily.brief ||
-          null;
-
-        result.decisionFeedback =
-          decisions;
-
-        result.balanceDiagnosis =
-          balanceV2;
-
-        result.playtestHealth =
-          health;
-      }
-
-      return result;
-    }
+  const existingCycle=dailyOperatingCycle.history(shopId,120).find(
+    item=>item&&item.status==='closed'&&Number(item.day)===closedDay&&item.financial
   );
+
+  // 旧版可能已人工结算过同一天；自动跨日再次遇到时禁止二次跑口碑/监管/成长。
+  if (existingCycle) {
+    runtime.simulation.lastUnifiedClosedDay=Math.max(Number(runtime.simulation.lastUnifiedClosedDay)||0,closedDay);
+    return {...envelope,ok:true,existing:true,dailyBrief:existingCycle};
+  }
+
+  dailyOperatingCycle.beginDay(shopId,closedDay,decisionContextSnapshot(shopId,runtime,closed.financial));
+  completeFinanceSystem.syncDailyStatement(shopId,closed.financial,closedDay);
+  reputationMediaSystem.processDay(shopId,closedDay);
+  commercialEcologySystem.processDay(closedDay,{shopId});
+  processEnvironmentDay(closedDay,shopId,{});
+
+  const shop=getShop(shopId);
+  regulatoryFoodSafetySystem.processDay(shopId,closedDay,{districtId:shop&&shop.districtId});
+
+  const financeView=completeFinanceSystem.snapshot(shopId,runtime&&runtime.ledger);
+  const dailyStatements=financeView&&Array.isArray(financeView.dailyStatements)?financeView.dailyStatements:[];
+  const marketingView=marketingPlatformMembership.overview(shopId,runtime);
+  const regulatoryView=regulatoryFoodSafetySystem.overview(shopId);
+  const staffView=staffManagement.teamSnapshot(shopId,gameState.getTime());
+
+  const profitDays=dailyStatements.filter(item=>Number(item.profit)>0).length;
+  const profitStreak=profitStreakFromStatements(dailyStatements);
+  const bestDailyRevenue=dailyStatements.reduce((best,item)=>Math.max(best,Number(item.revenue)||0),0);
+  const totalCustomers=dailyStatements.reduce((total,item)=>total+(Number(item.customers)||0),0);
+  const latestViolation=regulatoryView&&Array.isArray(regulatoryView.latestInspections)
+    ? regulatoryView.latestInspections.find(item=>item.result!=='pass')
+    : null;
+  const noViolationStreak=latestViolation?Math.max(0,closedDay-Number(latestViolation.day)):closedDay;
+
+  const growthResult=growthAchievementSystem.evaluate(shopId,runtime,{
+    daysPlayed:closedDay,
+    profitDays,
+    profitStreak,
+    bestDailyRevenue,
+    dailyRevenue:closed.financial.revenue,
+    totalCustomers,
+    reviewCount:Number(runtime&&runtime.shop&&runtime.shop.reviewCount)||0,
+    rating:Number(runtime&&runtime.shop&&runtime.shop.rating)||4,
+    memberCount:marketingView&&marketingView.memberCount||0,
+    staffCount:staffView&&staffView.headcount||0,
+    campaignCount:marketingView&&marketingView.metrics&&marketingView.metrics.campaignsStarted||0,
+    supplierCount:runtime&&Array.isArray(runtime.supplierNetwork)?runtime.supplierNetwork.length:0,
+    inspectionsPassed:regulatoryView&&regulatoryView.metrics?regulatoryView.metrics.passed||0:0,
+    noViolationStreak
+  });
+
+  multiStoreBrandRanking.registerShop(shopId,runtime,{day:closedDay});
+  growthAchievementSystem.rollHidden(shopId,{
+    daysPlayed:closedDay,
+    reviewCount:Number(runtime&&runtime.shop&&runtime.shop.reviewCount)||0,
+    storeQuality:Math.round((Number(runtime&&runtime.shop&&runtime.shop.rating)||4)*20),
+    quality:Math.round((Number(runtime&&runtime.shop&&runtime.shop.rating)||4)*20),
+    storeCount:gameState.getBusiness().shops.length,
+    minProfitDays:profitDays,
+    profitDays,
+    cashflowScore:growthResult.achievementPoints
+  });
+
+  const endSnapshot=decisionContextSnapshot(shopId,runtime,closed.financial);
+  const balanceV2=operatingBalanceTuner.assessDay(closed.financial,{tensionScore:endSnapshot.tensionScore});
+  const decisions=decisionFeedback.resolveDay(shopId,closedDay,endSnapshot);
+  const daily=dailyOperatingCycle.finalizeDay(shopId,closedDay,closed,endSnapshot,{
+    balance:balanceV2,
+    decisionFeedback:decisions,
+    source:options&&options.source||'unified',
+    regulatory:{openViolations:regulatoryView&&Array.isArray(regulatoryView.openViolations)?regulatoryView.openViolations.length:0}
+  });
+  const health=playtestHealth.record(shopId,playtestContextSnapshot(shopId,runtime));
+
+  runtime.simulation.lastUnifiedClosedDay=closedDay;
+  return {...envelope,ok:true,dailyBrief:daily&&daily.brief||null,decisionFeedback:decisions,balanceDiagnosis:balanceV2,playtestHealth:health,growthResult};
+}
+
+function finalizeExternalOperatingDay(shopId,runtime,closeResult,options) {
+  return finalizeClosedOperatingDay(shopId,runtime,closeResult,options||{source:'automatic'});
+}
+
+function closeOperatingDay(shopId,options) {
+  return mutate(shopId,runtime=>{
+    dailyOperatingCycle.beginDay(shopId,runtime.day,decisionContextSnapshot(shopId,runtime));
+    const raw=liveOperations.closeDay(runtime,options||{});
+    if (!raw || raw.ok===false) return raw;
+    return finalizeClosedOperatingDay(shopId,runtime,raw,{source:'legacy_manual'});
+  });
 }
 
 function financeSnapshot(
@@ -4590,6 +4220,7 @@ module.exports = {
   liveOperationsSnapshot,
   simulateCustomerVisit,
   closeOperatingDay,
+  finalizeExternalOperatingDay,
   financeSnapshot,
   financeTransactions,
   recordFinanceExpense,

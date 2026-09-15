@@ -197,6 +197,18 @@ const storeSource =
     'utf8'
   );
 
+const operatingRender =
+  businessSource.slice(
+    businessSource.indexOf('renderOperatingDay'),
+    businessSource.indexOf('renderStaff')
+  );
+
+assert.ok(
+  !operatingRender.includes("'day:start'") &&
+  !operatingRender.includes("'day:close'"),
+  '真实营业页不能再暴露假开始/手动推进日结按钮'
+);
+
 assert.ok(
   businessSource.includes(
     'renderOperatingDay'
@@ -247,7 +259,13 @@ assert.ok(
     'goalResult'
   ) &&
   businessSource.includes(
-    'goalStreak'
+    'stabilityLevel'
+  ) &&
+  businessSource.includes(
+    'showingCurrent'
+  ) &&
+  businessSource.includes(
+    '自动营业 · 跨日后统一结算'
   ),
   '试营业必须能进入营业日、读取真实经营数据，并从日结直达第一次经营改善'
 );

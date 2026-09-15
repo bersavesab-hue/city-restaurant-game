@@ -1,0 +1,42 @@
+{
+  "id": "V0860_COMPREHENSIVE_OPERATING_CORE_FIX",
+  "baseVersion": "0.8.51",
+  "targetVersion": "0.8.60",
+  "category": "经营核心整合/逻辑一致性/旧存档兼容",
+  "supersedes": [
+    "未应用的V0.8.52经营里程碑包",
+    "未应用的V0.8.52说明型经营循环包"
+  ],
+  "fixes": [
+    "统一自动跨日与兼容手动日结的后处理管线",
+    "自动日结补齐财务日报、口碑、商业生态、环境、监管、成长、排名、决策反馈、经营健康度",
+    "营业日随真实游戏时间自动创建，不再要求玩家点击假开始营业",
+    "经营页不再暴露开始营业日/手动推进日结按钮",
+    "当前营业数据与最近日结数据严格按active营业日区分",
+    "经营健康和平衡在无active日时优先读取最近完整日结",
+    "旧版手动日结造成runtime.day领先世界日期时自动纠偏",
+    "运行日正常落后世界日期时保留逐日自动结算，不直接跳过历史",
+    "每日目标删除利润必须比昨日增长5%的反向惩罚",
+    "库存目标改为逐步降低预警，不强迫一次清零",
+    "食材成本目标按昨日水平渐进改善",
+    "新增接近完成near状态，减少随机波动造成的挫败",
+    "新增经营稳定度stabilityLevel，失败只下降1级，不整段清零",
+    "真正连续目标goalStreak仍保持严格连续语义",
+    "试营业必须存在3个不同且真实有financial的营业日才完成",
+    "试营业报告按营业日去重，重复快照不重复计入收入利润",
+    "连续盈利成就改为读取真实profitStreak，不再用累计盈利天数冒充",
+    "自动日结重复遇到旧版已结算日期时跳过二次口碑/监管/成长处理",
+    "旧存档缺失新增经营指标时自动补默认值",
+    "保留V0.8.50 interrupted历史过滤修复与V0.8.51目标基础"
+  ],
+  "testsUpdated": [
+    "tests/operatingDayIntegrationV0843.test.js",
+    "tests/businessDayUiV0844.test.js",
+    "tests/businessLifecycleV086.test.js",
+    "tests/growthAchievementSystemV0833.test.js"
+  ],
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false
+}

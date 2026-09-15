@@ -24,8 +24,8 @@ const ACHIEVEMENTS =
     {id:'three_shops',name:'三店成势',metric:'storeCount',target:3,points:30},
     {id:'five_shops',name:'五店连锁',metric:'storeCount',target:5,points:60},
     {id:'first_profit_day',name:'首个盈利日',metric:'profitDays',target:1,points:10},
-    {id:'profit_week',name:'连续盈利基础',metric:'profitDays',target:7,points:35},
-    {id:'profit_month',name:'稳定盈利',metric:'profitDays',target:30,points:90},
+    {id:'profit_week',name:'连续盈利7天',metric:'profitStreak',target:7,points:35},
+    {id:'profit_month',name:'连续盈利30天',metric:'profitStreak',target:30,points:90},
     {id:'revenue_10k',name:'单日破万',metric:'bestDailyRevenue',target:10000,points:30},
     {id:'revenue_50k',name:'单日五万',metric:'bestDailyRevenue',target:50000,points:70},
     {id:'customers_100',name:'百人到店',metric:'totalCustomers',target:100,points:15},
@@ -161,6 +161,7 @@ function ensureShop(shopId) {
       metrics:{
         daysPlayed:0,
         profitDays:0,
+        profitStreak:0,
         bestDailyRevenue:0,
         totalCustomers:0,
         reviewCount:0,
@@ -311,6 +312,14 @@ function collectRuntimeMetrics(
         ctx.profitDays
       ) ||
       0,
+    profitStreak:
+      Math.max(
+        0,
+        Number(
+          ctx.profitStreak
+        ) ||
+        0
+      ),
     bestDailyRevenue:
       Math.max(
         Number(

@@ -1112,71 +1112,24 @@ function closeElapsedDays(
   runtime,
   currentDay
 ) {
-  let changed =
-    false;
+  let changed=false;
+  while (Number(runtime.day)<currentDay) {
+    const closed=runtimeEngine.closeDay(runtime);
+    closed.floor=floorSimulation.closeDay(runtime);
+    runtime.dailySnapshots.push(closed);
+    dynamicWorldSystem.onShopDayClosed(shop,runtime,closed);
 
-  while (
-    Number(
-      runtime.day
-    ) <
-    currentDay
-  ) {
-    const closed =
-      runtimeEngine
-        .closeDay(
-          runtime
-        );
+    const unified=operations.finalizeExternalOperatingDay(shop.id,runtime,closed,{source:'automatic'});
+    runtime.simulation=runtime.simulation||{};
+    runtime.simulation.lastAutoCloseResult=unified&&unified.ok
+      ? {day:closed.day,ok:true}
+      : {day:closed.day,ok:false,reason:unified&&unified.reason||'自动日结后处理失败'};
 
-    closed.floor =
-      floorSimulation
-        .closeDay(
-          runtime
-        );
-
-    runtime
-      .dailySnapshots
-      .push(
-        closed
-      );
-
-    dynamicWorldSystem
-      .onShopDayClosed(
-        shop,
-        runtime,
-        closed
-      );
-
-    if (
-      runtime
-        .dailySnapshots
-        .length >
-      45
-    ) {
-      runtime
-        .dailySnapshots
-        .splice(
-          0,
-          runtime
-            .dailySnapshots
-            .length -
-            45
-        );
-    }
-
-    runtime
-      .simulation
-      .todayOrders =
-      0;
-
-    runtime
-      .simulation
-      .todayCustomers =
-      0;
-
-    changed =
-      true;
+    if (runtime.dailySnapshots.length>45) runtime.dailySnapshots.splice(0,runtime.dailySnapshots.length-45);
+    runtime.simulation.todayOrders=0;
+    runtime.simulation.todayCustomers=0;
+    changed=true;
   }
-
   return changed;
 }
 
@@ -1209,6 +1162,21 @@ function simulateShop(
       runtime,
       currentDay
     );
+
+  // 营业日由真实时间自动创建；正式页面不再需要“假开始营业”按钮。
+  const operatingDay =
+    operations
+      .startOperatingDay(
+        shop.id
+      );
+
+  if (
+    operatingDay &&
+    operatingDay.ok &&
+    !operatingDay.existing
+  ) {
+    changed = true;
+  }
 
   serviceOperatingPayables(
     runtime

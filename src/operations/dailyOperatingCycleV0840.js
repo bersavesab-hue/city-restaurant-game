@@ -162,9 +162,12 @@ function ensureShop(shopId) {
         totalRevenue:0,
         totalProfit:0,
         goalsCompleted:0,
+        goalsNear:0,
         goalsMissed:0,
         goalStreak:0,
-        bestGoalStreak:0
+        bestGoalStreak:0,
+        stabilityLevel:0,
+        bestStabilityLevel:0
       }
     };
   }
@@ -188,6 +191,25 @@ function ensureShop(shopId) {
       'object'
       ? state.metrics
       : {};
+
+  const metricDefaults = {
+    daysOpened:0,
+    visits:0,
+    failedVisits:0,
+    totalRevenue:0,
+    totalProfit:0,
+    goalsCompleted:0,
+    goalsNear:0,
+    goalsMissed:0,
+    goalStreak:0,
+    bestGoalStreak:0,
+    stabilityLevel:0,
+    bestStabilityLevel:0
+  };
+
+  for (const [key,value] of Object.entries(metricDefaults)) {
+    if (state.metrics[key] == null) state.metrics[key] = value;
+  }
 
   return state;
 }
@@ -641,173 +663,39 @@ function financialFromClose(
 function buildDailyGoal(
   state
 ) {
-  const previous =
-    state.history.find(
-      item =>
-        item &&
-        item.status ===
-          'closed' &&
-        item.financial &&
-        typeof item.financial ===
-          'object'
-    ) ||
-    null;
+  const previous = state.history.find(
+    item => item && item.status === 'closed' && item.financial && typeof item.financial === 'object'
+  ) || null;
 
   if (!previous) {
-    return {
-      id:'first_order',
-      kind:'orders_at_least',
-      label:'拿下今天第一笔有效订单',
-      target:1,
-      routeId:'shop',
-      sourceDay:null,
-      status:'active'
-    };
+    return {id:'first_order',kind:'orders_at_least',label:'完成今天第一笔有效订单',target:1,routeId:'shop',sourceDay:null,status:'active'};
   }
 
-  const financial =
-    previous.financial ||
-    {};
+  const financial = previous.financial || {};
+  const end = previous.endSnapshot || {};
 
-  const end =
-    previous.endSnapshot ||
-    {};
-
-  if (
-    Number(
-      financial.orders
-    ) <=
-    0
-  ) {
-    return {
-      id:'recover_orders',
-      kind:'orders_at_least',
-      label:'今天至少完成1笔有效订单',
-      target:1,
-      routeId:'shop',
-      sourceDay:
-        previous.day,
-      status:'active'
-    };
+  if (Number(end.tensionScore) >= 90) {
+    return {id:'cash_relief',kind:'tension_at_most',label:'把现金压力降到90以下',target:89,routeId:'business',sourceDay:previous.day,status:'active'};
   }
 
-  if (
-    Number(
-      end.tensionScore
-    ) >=
-    90
-  ) {
-    return {
-      id:'cash_relief',
-      kind:'tension_at_most',
-      label:'把现金压力降到90以下',
-      target:89,
-      routeId:'business',
-      sourceDay:
-        previous.day,
-      status:'active'
-    };
+  const alerts = Math.max(0,Number(end.inventoryAlerts)||0);
+  if (alerts > 0) {
+    const target=Math.max(0,alerts-1);
+    return {id:'reduce_inventory_alerts',kind:'inventory_alerts_at_most',label:target===0?'解决现有库存预警':'把库存预警降到'+target+'项以内',target,routeId:'supply',sourceDay:previous.day,status:'active'};
   }
 
-  if (
-    Number(
-      end.inventoryAlerts
-    ) >
-    0
-  ) {
-    return {
-      id:'clear_inventory_alerts',
-      kind:'inventory_alerts_at_most',
-      label:'把库存预警清零',
-      target:0,
-      routeId:'supply',
-      sourceDay:
-        previous.day,
-      status:'active'
-    };
+  const foodCostRate=Number(financial.foodCostRate)||0;
+  if (Number(financial.orders)>0 && foodCostRate>42) {
+    const target=Math.max(38,Math.min(42,round(foodCostRate-1)));
+    return {id:'food_cost_control',kind:'food_cost_at_most',label:'把食材成本率控制到'+target+'%以内',target,routeId:'research',sourceDay:previous.day,status:'active'};
   }
 
-  if (
-    Number(
-      financial.foodCostRate
-    ) >
-    42
-  ) {
-    return {
-      id:'food_cost_control',
-      kind:'food_cost_at_most',
-      label:'把食材成本率压到42%以内',
-      target:42,
-      routeId:'research',
-      sourceDay:
-        previous.day,
-      status:'active'
-    };
+  if (Number(financial.profit)<=0) {
+    return {id:'profit_turnaround',kind:'profit_at_least',label:'争取今天实现正利润',target:1,routeId:'business',sourceDay:previous.day,status:'active'};
   }
 
-  if (
-    Number(
-      financial.profit
-    ) <=
-    0
-  ) {
-    return {
-      id:'profit_turnaround',
-      kind:'profit_at_least',
-      label:'让今天净利润转正',
-      target:1,
-      routeId:'business',
-      sourceDay:
-        previous.day,
-      status:'active'
-    };
-  }
-
-  if (
-    Number(
-      end.rating
-    ) >
-      0 &&
-    Number(
-      end.rating
-    ) <
-      3.8
-  ) {
-    return {
-      id:'rating_recovery',
-      kind:'rating_at_least',
-      label:'把门店评分提升到3.8以上',
-      target:3.8,
-      routeId:'business',
-      sourceDay:
-        previous.day,
-      status:'active'
-    };
-  }
-
-  return {
-    id:'profit_growth',
-    kind:'profit_at_least',
-    label:'今天净利润比昨日提升5%',
-    target:
-      Math.max(
-        1,
-        round(
-          Number(
-            financial.profit
-          ) *
-          1.05
-        )
-      ),
-    baselineValue:
-      round(
-        financial.profit
-      ),
-    routeId:'shop',
-    sourceDay:
-      previous.day,
-    status:'active'
-  };
+  // 删除“昨天越赚、今天任务越难”的利润+5%反向惩罚。
+  return {id:'sustain_profit',kind:'profit_at_least',label:'保持今天继续盈利',target:1,routeId:'shop',sourceDay:previous.day,status:'active'};
 }
 
 function evaluateDailyGoal(
@@ -815,130 +703,37 @@ function evaluateDailyGoal(
   financial,
   endSnapshot
 ) {
-  if (
-    !goal ||
-    typeof goal !==
-      'object'
-  ) {
-    return null;
+  if (!goal || typeof goal !== 'object') return null;
+  let actual=0;
+  let completed=false;
+  let near=false;
+
+  if (goal.kind==='orders_at_least') {
+    actual=Math.max(0,Number(financial.orders)||0);
+    completed=actual>=Number(goal.target);
+  } else if (goal.kind==='profit_at_least') {
+    actual=round(financial.profit);
+    completed=actual>=Number(goal.target);
+    if (!completed) {
+      const tolerance=Math.max(100,(Number(financial.revenue)||0)*0.05);
+      near=actual>=-tolerance;
+    }
+  } else if (goal.kind==='food_cost_at_most') {
+    actual=round(financial.foodCostRate);
+    completed=Number(financial.orders)>0 && actual<=Number(goal.target);
+    near=!completed && Number(financial.orders)>0 && actual<=Number(goal.target)+2;
+  } else if (goal.kind==='inventory_alerts_at_most') {
+    actual=Math.max(0,Number(endSnapshot.inventoryAlerts)||0);
+    completed=actual<=Number(goal.target);
+    near=!completed && actual<=Number(goal.target)+1;
+  } else if (goal.kind==='tension_at_most') {
+    actual=round(endSnapshot.tensionScore);
+    completed=actual<=Number(goal.target);
+    near=!completed && actual<=95;
   }
 
-  let actual = 0;
-  let completed = false;
-
-  if (
-    goal.kind ===
-      'orders_at_least'
-  ) {
-    actual =
-      Math.max(
-        0,
-        Number(
-          financial.orders
-        ) ||
-        0
-      );
-
-    completed =
-      actual >=
-      Number(
-        goal.target
-      );
-  } else if (
-    goal.kind ===
-      'profit_at_least'
-  ) {
-    actual =
-      round(
-        financial.profit
-      );
-
-    completed =
-      actual >=
-      Number(
-        goal.target
-      );
-  } else if (
-    goal.kind ===
-      'food_cost_at_most'
-  ) {
-    actual =
-      round(
-        financial.foodCostRate
-      );
-
-    completed =
-      Number(
-        financial.orders
-      ) >
-        0 &&
-      actual <=
-        Number(
-          goal.target
-        );
-  } else if (
-    goal.kind ===
-      'inventory_alerts_at_most'
-  ) {
-    actual =
-      Math.max(
-        0,
-        Number(
-          endSnapshot.inventoryAlerts
-        ) ||
-        0
-      );
-
-    completed =
-      actual <=
-      Number(
-        goal.target
-      );
-  } else if (
-    goal.kind ===
-      'tension_at_most'
-  ) {
-    actual =
-      round(
-        endSnapshot.tensionScore
-      );
-
-    completed =
-      actual <=
-      Number(
-        goal.target
-      );
-  } else if (
-    goal.kind ===
-      'rating_at_least'
-  ) {
-    actual =
-      round(
-        endSnapshot.rating
-      );
-
-    completed =
-      actual >=
-      Number(
-        goal.target
-      );
-  }
-
-  return {
-    ...clone(
-      goal
-    ),
-    status:
-      completed
-        ? 'completed'
-        : 'missed',
-    completed,
-    actual,
-    message:
-      completed
-        ? '今日目标完成'
-        : '今日目标未完成'
-  };
+  const status=completed?'completed':near?'near':'missed';
+  return {...clone(goal),status,completed,near,actual,message:completed?'今日目标完成':near?'今日目标接近完成':'今日目标未完成'};
 }
 
 function buildReasons(
@@ -1318,58 +1113,21 @@ function finalizeDay(
     null;
 
   if (goalResult) {
-    if (
-      goalResult.completed
-    ) {
-      state.metrics
-        .goalsCompleted =
-        (
-          Number(
-            state.metrics
-              .goalsCompleted
-          ) ||
-          0
-        ) +
-        1;
-
-      state.metrics
-        .goalStreak =
-        (
-          Number(
-            state.metrics
-              .goalStreak
-          ) ||
-          0
-        ) +
-        1;
-
-      state.metrics
-        .bestGoalStreak =
-        Math.max(
-          Number(
-            state.metrics
-              .bestGoalStreak
-          ) ||
-          0,
-          state.metrics
-            .goalStreak
-        );
+    if (goalResult.completed) {
+      state.metrics.goalsCompleted=(Number(state.metrics.goalsCompleted)||0)+1;
+      state.metrics.goalStreak=(Number(state.metrics.goalStreak)||0)+1;
+      state.metrics.bestGoalStreak=Math.max(Number(state.metrics.bestGoalStreak)||0,state.metrics.goalStreak);
+      state.metrics.stabilityLevel=Math.min(30,(Number(state.metrics.stabilityLevel)||0)+1);
+    } else if (goalResult.near) {
+      state.metrics.goalsNear=(Number(state.metrics.goalsNear)||0)+1;
+      // 连续完成保持严格语义，但长期稳定度不因“差一点”而归零。
+      state.metrics.goalStreak=0;
     } else {
-      state.metrics
-        .goalsMissed =
-        (
-          Number(
-            state.metrics
-              .goalsMissed
-          ) ||
-          0
-        ) +
-        1;
-
-      state.metrics
-        .goalStreak =
-        0;
+      state.metrics.goalsMissed=(Number(state.metrics.goalsMissed)||0)+1;
+      state.metrics.goalStreak=0;
+      state.metrics.stabilityLevel=Math.max(0,(Number(state.metrics.stabilityLevel)||0)-1);
     }
+    state.metrics.bestStabilityLevel=Math.max(Number(state.metrics.bestStabilityLevel)||0,Number(state.metrics.stabilityLevel)||0);
   }
 
   state.metrics.totalRevenue =

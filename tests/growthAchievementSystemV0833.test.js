@@ -77,6 +77,7 @@ const result =
       {
         daysPlayed:40,
         profitDays:32,
+        profitStreak:8,
         bestDailyRevenue:56000,
         totalCustomers:12000,
         reviewCount:620,
@@ -107,6 +108,8 @@ assert.equal(overview.achievementCatalog.length,32);
 assert.equal(overview.featureCatalog.length,18);
 assert.ok(overview.achievements.length>=10);
 assert.ok(overview.unlockedFeatures.length>=5);
+assert.ok(overview.achievements.some(item=>item.id==='profit_week'),'连续盈利成就必须读取真实连续盈利天数');
+assert.ok(!overview.achievements.some(item=>item.id==='profit_month'),'累计盈利天数不能冒充连续30天盈利');
 
 const firstHidden =
   easterPack

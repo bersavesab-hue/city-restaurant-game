@@ -80,6 +80,11 @@ assert.ok(
     1,
   '完成目标后必须形成连续完成记录'
 );
+assert.ok(
+  operations.operatingDaySnapshot('shop_v0843_integration').metrics.stabilityLevel>=1,
+  '完成目标后必须提升经营稳定度'
+);
+assert.equal(typeof operations.finalizeExternalOperatingDay,'function','自动跨日必须接入统一日结后处理入口');
 assert.ok(Array.isArray(closed.decisionFeedback));
 assert.ok(closed.balanceDiagnosis);
 assert.ok(closed.playtestHealth);

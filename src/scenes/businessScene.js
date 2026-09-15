@@ -638,8 +638,11 @@ class BusinessScene {
         shop.status
       );
 
+    const showingCurrent =
+      !!active;
+
     const source =
-      operational
+      showingCurrent
         ? liveFinance
         : latest &&
           latest.financial ||
@@ -657,11 +660,20 @@ class BusinessScene {
           shop.id
         );
 
-    const balance =
+    const liveBalance =
       operations
         .operatingBalanceSnapshot(
           shop.id
         );
+
+    const balance =
+      showingCurrent
+        ? liveBalance
+        : latest &&
+          latest.extra &&
+          latest.extra.balance
+          ? latest.extra.balance
+          : liveBalance;
 
     this.sectionCard(
       ctx,
@@ -669,7 +681,7 @@ class BusinessScene {
       138,
       362,
       86,
-      '营业日控制'
+      '营业日状态'
     );
 
     const statusText =
@@ -695,12 +707,12 @@ class BusinessScene {
       '800'
     );
 
-    const goalStreak =
+    const stabilityLevel =
       cycle &&
       cycle.metrics
         ? Number(
             cycle.metrics
-              .goalStreak
+              .stabilityLevel
           ) ||
           0
         : 0;
@@ -710,14 +722,9 @@ class BusinessScene {
       active.goal
         ? '今日目标：' +
           active.goal.label +
-          (
-            goalStreak >
-              0
-              ? ' · 连续' +
-                goalStreak +
-                '天'
-              : ''
-          )
+          ' · 稳定度' +
+          stabilityLevel +
+          '/30'
         : latest &&
           latest.goalResult
           ? (
@@ -725,17 +732,21 @@ class BusinessScene {
                 .goalResult
                 .completed
                 ? '上次目标完成：'
-                : '上次目标未完成：'
+                : latest
+                    .goalResult
+                    .near
+                  ? '上次目标接近完成：'
+                  : '上次目标未完成：'
             ) +
             latest
               .goalResult
               .label
           : shop.status ===
               'trial_opening'
-            ? '试营业中 · 顾客订单、营业额和成本会实时计入今日经营'
+            ? '试营业中 · 营业日随游戏时间自动运行'
             : shop.status ===
                 'open'
-              ? '营业数据、决策和诊断会在日结时统一结算'
+              ? '营业日随游戏时间自动运行并跨日结算'
               : '完成开店筹备后即可进入试营业';
 
     ui.text(
@@ -753,7 +764,11 @@ class BusinessScene {
               .goalResult
               .completed
               ? '#248B63'
-              : '#C85242'
+              : latest
+                  .goalResult
+                  .near
+                ? '#C08824'
+                : '#C85242'
           : '#71858F',
       active &&
       active.goal
@@ -761,37 +776,27 @@ class BusinessScene {
         : '600'
     );
 
-    if (
+    ui.text(
+      ctx,
       operational
-    ) {
-      opUi.button(
-        ctx,
-        active
-          ? '完成日结'
-          : '开始营业日',
-        244,
-        157,
-        118,
-        42,
-        active
-          ? 'danger'
-          : 'gold'
-      );
+        ? (
+            active
+              ? '自动营业 · 跨日后统一结算'
+              : '等待下一营业日数据'
+          )
+        : '当前门店未处于营业状态',
+      306,
+      184,
+      5.9,
+      '#71858F',
+      '700',
+      'center'
+    );
 
-      this.addButton(
-        active
-          ? 'day:close'
-          : 'day:start',
-        244,
-        157,
-        118,
-        42
-      );
-    }
 
     this.metric(
       ctx,
-      operational
+      showingCurrent
         ? '今日有效订单'
         : '最近日结订单',
       String(
@@ -806,7 +811,7 @@ class BusinessScene {
 
     this.metric(
       ctx,
-      operational
+      showingCurrent
         ? '今日顾客'
         : '最近日结顾客',
       String(
@@ -821,7 +826,7 @@ class BusinessScene {
 
     this.metric(
       ctx,
-      operational
+      showingCurrent
         ? '今日营业额'
         : '最近日结营收',
       opUi.money(
@@ -837,7 +842,7 @@ class BusinessScene {
 
     this.metric(
       ctx,
-      operational
+      showingCurrent
         ? '今日净利润'
         : '最近日结利润',
       opUi.money(
