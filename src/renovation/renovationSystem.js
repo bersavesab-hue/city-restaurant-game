@@ -12,8 +12,11 @@ const simulationSystem =
 const shopLifecycle =
   require('../core/shopLifecycleV0816.js');
 
+const database =
+  require('./renovationEquipmentDatabaseV0817.js');
+
 const config =
-  require('./renovationConfig.js');
+  database.renovationConfig;
 
 const floorGeometrySystem =
   require('./floorGeometrySystem.js');
@@ -1590,6 +1593,16 @@ class RenovationSystem {
       appeal,
       operationalEfficiency,
       totalCost,
+
+      constructionBreakdown:
+        database
+          .estimateConstructionBreakdown({
+            totalArea,
+            kitchenArea,
+            totalCost,
+            buildDays
+          }),
+
       buildDays
     };
   }
@@ -1612,120 +1625,13 @@ class RenovationSystem {
         .seed ||
       1;
 
-    const quotes = [];
-
-    for (
-      let i = 0;
-      i < 3;
-      i++
-    ) {
-      const r1 =
-        hashFloat(
-          shopId +
-          ':contractor:' +
-          seed +
-          ':' +
-          i
-        );
-
-      const r2 =
-        hashFloat(
-          shopId +
-          ':contractor2:' +
-          seed +
-          ':' +
-          i
-        );
-
-      const prefix =
-        config
-          .contractorNameParts
-          .prefix[
-            Math.floor(
-              r1 *
-              config
-                .contractorNameParts
-                .prefix.length
-            ) %
-            config
-              .contractorNameParts
-              .prefix.length
-          ];
-
-      const suffix =
-        config
-          .contractorNameParts
-          .suffix[
-            Math.floor(
-              r2 *
-              config
-                .contractorNameParts
-                .suffix.length
-            ) %
-            config
-              .contractorNameParts
-              .suffix.length
-          ];
-
-      const priceFactor =
-        0.88 +
-        r1 *
-          0.30;
-
-      const speedFactor =
-        0.84 +
-        r2 *
-          0.30;
-
-      const reliability =
-        Math.round(
-          68 +
-          (
-            r1 *
-              0.45 +
-            r2 *
-              0.55
-          ) *
-            29
-        );
-
-      quotes.push({
-        id:
-          'contractor_' +
-          i,
-        name:
-          prefix +
-          suffix,
-        price:
-          Math.round(
-            metrics.totalCost *
-            priceFactor
-          ),
-        days:
-          Math.max(
-            4,
-            Math.round(
-              metrics.buildDays *
-              speedFactor
-            )
-          ),
-        reliability,
-        quality:
-          Math.round(
-            65 +
-            r2 *
-              32
-          )
-      });
-    }
-
-    return quotes.sort(
-      (
-        a,
-        b
-      ) =>
-        a.price -
-        b.price
+    return (
+      database
+        .quoteContractors(
+          metrics,
+          shopId,
+          seed
+        )
     );
   }
 

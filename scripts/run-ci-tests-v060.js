@@ -163,6 +163,9 @@ for (
     'tests/shopLifecycleV0816.test.js',
     'tests/shopLifecycleIntegrationV0816.test.js',
     'tests/updateInfrastructureV0816.test.js',
+    'tests/renovationEquipmentDatabaseV0817.test.js',
+    'tests/renovationEquipmentIntegrationV0817.test.js',
+    'tests/updateInfrastructureV0817.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

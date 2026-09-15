@@ -12,8 +12,11 @@ const renovationSystem =
 const shopLifecycle =
   require('../core/shopLifecycleV0816.js');
 
+const equipmentDatabase =
+  require('../renovation/renovationEquipmentDatabaseV0817.js');
+
 const config =
-  require('./openingConfig.js');
+  equipmentDatabase.openingConfig;
 
 const personRules =
   require('../person/personRulesV10.js');
@@ -385,7 +388,14 @@ class OpeningPrepSystem {
             )
           ),
         reliability:
-          grade.reliability
+          grade.reliability,
+
+        availableModels:
+          equipmentDatabase
+            .getEquipmentSkus({
+              groupId:
+                item.id
+            })
       });
     }
 
@@ -463,6 +473,8 @@ class OpeningPrepSystem {
       );
 
     return {
+      databaseVersion:
+        equipmentDatabase.VERSION,
       shopId,
       lines,
       total:
@@ -493,6 +505,21 @@ class OpeningPrepSystem {
         marketDelay,
       marketFactor
     };
+  }
+
+  getEquipmentCatalog(
+    groupId
+  ) {
+    return (
+      equipmentDatabase
+        .getEquipmentSkus(
+          groupId
+            ? {
+                groupId
+              }
+            : {}
+        )
+    );
   }
 
   adjustEquipment(

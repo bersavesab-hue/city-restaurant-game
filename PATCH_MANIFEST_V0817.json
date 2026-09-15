@@ -1,0 +1,30 @@
+{
+  "id": "V0817_RENOVATION_EQUIPMENT_DATABASE",
+  "baseVersion": "0.8.16",
+  "targetVersion": "0.8.17",
+  "pass": "8/26",
+  "title": "装修 / 设备 / 施工数据库统一",
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false,
+  "androidRunnerCompatibility": true,
+  "databaseScale": {
+    "constructionPackages": 12,
+    "materials": 24,
+    "contractorProfiles": 12,
+    "hallStyles": 6,
+    "privateRoomStyles": 5,
+    "materialGrades": 4,
+    "lightingLevels": 4,
+    "decorItems": 4,
+    "equipmentGroups": 5,
+    "equipmentSkus": 25,
+    "equipmentGrades": 3
+  },
+  "tests": [
+    "tests/renovationEquipmentDatabaseV0817.test.js",
+    "tests/renovationEquipmentIntegrationV0817.test.js",
+    "tests/updateInfrastructureV0817.test.js"
+  ]
+}
