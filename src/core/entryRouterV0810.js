@@ -20,6 +20,7 @@ const ROUTES = Object.freeze({
   research:      { target: 'research',      label: '菜单研发' },
   supply:        { target: 'supply',        label: '供应链' },
   business:      { target: 'business',      label: '经营数据' },
+  advancedManagement:{ target: 'advancedManagement',label: '经营中心' },
   dynamicWorld:  { target: 'dynamicWorld',  label: '城市动态' },
   system:        { target: 'system',        label: '系统' },
   featureHub:    { target: 'featureHub',    label: '功能中心' }
@@ -36,6 +37,9 @@ const ALIASES = Object.freeze({
   employees: 'staff',
   team: 'staffCareer',
   finance: 'business',
+  management: 'advancedManagement',
+  marketing: 'advancedManagement',
+  membership: 'advancedManagement',
   data: 'business',
   world: 'dynamicWorld',
   settings: 'system',

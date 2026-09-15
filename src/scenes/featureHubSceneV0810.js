@@ -31,6 +31,7 @@ const ITEMS = [
   ['schedule', '营业排班'],
   ['staffCareer', '团队成长'],
   ['business', '经营数据'],
+  ['advancedManagement', '经营中心'],
   ['dynamicWorld', '城市动态'],
   ['system', '系统']
 ];

@@ -142,6 +142,9 @@ const supplyScene =
 const businessScene =
   require('./scenes/businessScene.js');
 
+const advancedManagementScene =
+  require('./scenes/advancedManagementSceneV0862.js');
+
 const dynamicWorldScene =
   require('./scenes/dynamicWorldScene.js');
 
@@ -5445,6 +5448,11 @@ sceneManager.register(
 sceneManager.register(
   'business',
   businessScene
+);
+
+sceneManager.register(
+  'advancedManagement',
+  advancedManagementScene
 );
 
 sceneManager.register(

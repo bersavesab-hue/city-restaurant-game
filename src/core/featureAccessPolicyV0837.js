@@ -38,7 +38,8 @@ const SHOP_REQUIRED =
     'staffCareer',
     'research',
     'supply',
-    'business'
+    'business',
+    'advancedManagement'
   ]);
 
 function clone(value) {
@@ -243,7 +244,8 @@ function createPolicy(options) {
         'research',
         'supply',
         'schedule',
-        'business'
+        'business',
+        'advancedManagement'
       ];
 
       const trialUnlocked =

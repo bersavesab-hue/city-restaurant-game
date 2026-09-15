@@ -37,6 +37,7 @@ function scene(id) {
   'research',
   'supply',
   'business',
+  'advancedManagement',
   'dynamicWorld',
   'system',
   'featureHub'

@@ -12,7 +12,7 @@ const seedManager =
 // Keep the original storage key so existing players never lose their save.
 const SAVE_KEY = 'city_restaurant_save_v1';
 const BACKUP_KEY = 'city_restaurant_save_v1_backup';
-const GAME_VERSION = '0.8.13';
+const GAME_VERSION = '0.8.62';
 
 class SaveSystem {
   constructor(options) {
