@@ -1,0 +1,7 @@
+V0.9.3 adaptive speed stability patch
+scripts/apply-update-patch.js
+scripts/v093-adaptive-test-runner.js
+scripts/v093-perf-lib.js
+docs/V093_SPEED_FIX.md
+PATCH_NOTES.md
+MANIFEST_V093.txt

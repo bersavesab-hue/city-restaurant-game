@@ -1,0 +1,2 @@
+V0.9.3 adaptive selected mode: full
+整屏重绘节流 + Android 高分屏/地图缓存降载

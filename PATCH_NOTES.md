@@ -1,38 +1,16 @@
-# 餐饮经营数据系统 V1.0
+# 餐饮模拟器 V0.9.3 自适应倍速稳定补丁
 
-本包是增量更新，不直接覆盖 `package.json` 或 GitHub workflow。
-上传为仓库根目录 `update.zip` 后，现有 `apply-update.yml` 会解压文件并运行 `scripts/apply-update-patch.js`。
+本包只处理倍速卡顿及其导致的构建兼容问题，不改 UI，不覆盖 workflow，也不直接携带 package.json。
 
-## 本次实际接入
+核心变化：不再改游戏时间推进频率，不再改 sceneManager/timeSystem 更新节奏；只优化昂贵的 Canvas 全屏重绘和 Android 高分屏绘制负担。
 
-- 新增统一经营数据中枢 `src/analytics/businessDataHub.js`。
-- 兼容旧 `store.dailyHistory`；按日最多保留 180 个经营日。
-- 同步留存商圈、库存、员工、产能、菜品快照，为后续趋势比较提供底座。
-- 新增商圈详情：概览 / 客群需求 / 竞争成本。
-- 新增门店详情：今日经营 / 顾客漏斗 / 产能装修 / 预警现金。
-- 新增经营数据中枢：总览 / 损益 / 菜品 / 库存人效 / 产能现金。
-- 地图“进入商圈”改为先进入商圈详情，不再直接跳找铺。
-- “门店”导航：已有门店进入门店详情；未开店进入找铺。
-- 旧找铺页面保留，并注册为 `property` 路由。
-- 旧 business 页面保留为 `businessLegacy`，新 `business` 入口使用数据中枢。
-- 新增新版 `restaurantSimulationV081.js` 运行时桥接，尽可能读取当前经营引擎真实状态。
-- 新增数据单元测试；安装器会把它增量追加到现有 `npm test`，不会覆盖原测试。
+为避免旧测试再次把构建卡死，本包会在 GitHub Actions 的原 `npm test` 阶段自动用仓库原测试验证候选方案：
 
-## 数据原则
+1. full：重绘节流 + 分辨率/缓存降载
+2. throttle：仅重绘节流
+3. resolution：仅分辨率/缓存降载
+4. baseline：完整恢复原 `src/main.js`
 
-1. 同一指标只在数据中枢定义一次，各页面读取同一口径。
-2. 营业额、利润、现金流分开，避免“利润增加但现金没增加”的误解。
-3. 订单必须能追溯到需求、潜在订单、产能/库存限制、实际成交和流失原因。
-4. 经营数字尽量提供昨日或前7日对比；没有历史时不伪造。
-5. 旧存档缺失的新字段显示 0 / 未记录，不反推虚假历史。
-6. 业务页只展示与当前决策相关的数据；完整账表集中到数据中枢。
+第一个通过仓库原测试的方案会被保留，并写入 `docs/V093_SELECTED_MODE.txt`。失败候选会自动撤销。
 
-详细页面放置规则见 `docs/DATA_SYSTEM.md`。
-
-## V1.0.1 构建修复
-
-- 修复 GitHub Actions `Run all game tests` 失败。
-- 原因：旧基线 `scripts/v60-audit.js` 要求 `package.json` 的 `scripts.test` 严格保持 `node scripts/run-ci-tests-v060.js`。
-- 本版不再修改 `scripts.test`；数据中枢桥接与 `businessDataHub.test.js` 只追加到 `pretest`。
-- 增加保护：安装器执行时禁止数据中枢改写 `scripts.test`。
-- 已验证重复安装不会重复追加命令。
+如果连 baseline 都失败，Actions 会显示原仓库自身真实的 AssertionError；这时可以确认失败与本轮倍速补丁无关。

@@ -523,6 +523,7 @@ function resizeCanvas() {
    * 对小游戏已经足够清晰，
    * 同时明显减轻动画重绘压力。
    */
+  // V093_RESOLUTION_TUNE_BEGIN
   pixelRatio =
     Math.min(
       3,
@@ -3186,7 +3187,7 @@ function buildMapCache() {
   }
 
   const cacheScale =
-    2;
+    1.25;
 
   const c =
     createOffscreenCanvas(
@@ -5539,6 +5540,34 @@ sceneManager.register(
 );
 
 function render() {
+  // V093_RENDER_THROTTLE_BEGIN
+  // 只节流昂贵的整屏 Canvas 重绘，不改变时间、场景或经营模拟更新。
+  const __v093Now = Date.now();
+  const __v093Speed =
+    timeSystem && typeof timeSystem.getSpeed === 'function'
+      ? Number(timeSystem.getSpeed()) || 1
+      : 1;
+  const __v093Paused =
+    timeSystem && typeof timeSystem.isPaused === 'function'
+      ? !!timeSystem.isPaused()
+      : false;
+  const __v093Interval =
+    __v093Speed >= 10 ? 50 :
+    __v093Speed >= 5 ? 40 :
+    __v093Speed >= 2 ? 25 : 0;
+
+  if (
+    !needsResize &&
+    !__v093Paused &&
+    __v093Interval > 0 &&
+    __v093Now - (render.__v093LastTime || 0) < __v093Interval
+  ) {
+    return;
+  }
+
+  render.__v093LastTime = __v093Now;
+  // V093_RENDER_THROTTLE_END
+
   if (needsResize) {
     resizeCanvas();
   }
