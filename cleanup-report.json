@@ -1,0 +1,978 @@
+{
+  "mode": "apply",
+  "generatedAt": "2026-09-15T18:37:45.565Z",
+  "deleted": [
+    {
+      "file": "scripts/repair-v05-layout.js",
+      "reason": "provably-unreferenced-old-or-residual"
+    }
+  ],
+  "keptActive": [],
+  "groups": [
+    {
+      "family": "scripts/build-android-js.js",
+      "canonicalExists": false,
+      "active": [
+        "scripts/build-android-js-v060.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "scripts/patch-safety.js",
+      "canonicalExists": false,
+      "active": [
+        "scripts/patch-safety-v089.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "scripts/quality-gate.js",
+      "canonicalExists": false,
+      "active": [
+        "scripts/quality-gate-v089.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "scripts/run-ci-tests.js",
+      "canonicalExists": false,
+      "active": [
+        "scripts/run-ci-tests-v060.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "simulator/run100GameLoops.js",
+      "canonicalExists": false,
+      "active": [
+        "simulator/run100GameLoopsV0835.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/balance/operatingBalanceTuner.js",
+      "canonicalExists": false,
+      "active": [
+        "src/balance/operatingBalanceTunerV0843.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/barrage/barrageEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/barrage/barrageEngineV0815.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/barrage/barragePack.js",
+      "canonicalExists": false,
+      "active": [
+        "src/barrage/barragePackV0815.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/brand/multiStoreBrandRanking.js",
+      "canonicalExists": false,
+      "active": [
+        "src/brand/multiStoreBrandRankingV0834.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/competitor/competitorEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/competitor/competitorEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/competitor/competitorPack.js",
+      "canonicalExists": false,
+      "active": [
+        "src/competitor/competitorPackV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/competitor/competitorRules.js",
+      "canonicalExists": false,
+      "active": [
+        "src/competitor/competitorRulesV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/core/businessLifecycle.js",
+      "canonicalExists": false,
+      "active": [
+        "src/core/businessLifecycleV086.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/core/economyBalanceGuard.js",
+      "canonicalExists": false,
+      "active": [
+        "src/core/economyBalanceGuardV0839.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/core/entryRouter.js",
+      "canonicalExists": false,
+      "active": [
+        "src/core/entryRouterV0810.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/core/featureAccessPolicy.js",
+      "canonicalExists": false,
+      "active": [
+        "src/core/featureAccessPolicyV0837.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/core/gameplayFlowCoordinator.js",
+      "canonicalExists": false,
+      "active": [
+        "src/core/gameplayFlowCoordinatorV0836.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/core/globalRandomEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/core/globalRandomEngineV0832.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/core/globalStateBus.js",
+      "canonicalExists": false,
+      "active": [
+        "src/core/globalStateBusV0811.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/core/globalTimeline.js",
+      "canonicalExists": false,
+      "active": [
+        "src/core/globalTimelineV0821.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/core/interactionRecoverySystem.js",
+      "canonicalExists": false,
+      "active": [
+        "src/core/interactionRecoverySystemV0838.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/core/newGameFlow.js",
+      "canonicalExists": false,
+      "active": [
+        "src/core/newGameFlowV0814.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/core/saveMigration.js",
+      "canonicalExists": false,
+      "active": [
+        "src/core/saveMigrationV0813.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/core/seedManager.js",
+      "canonicalExists": false,
+      "active": [
+        "src/core/seedManagerV0813.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/core/shopLifecycle.js",
+      "canonicalExists": false,
+      "active": [
+        "src/core/shopLifecycleV0816.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/core/stateBridge.js",
+      "canonicalExists": false,
+      "active": [
+        "src/core/stateBridgeV0811.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/core/timeScheduleCoordinator.js",
+      "canonicalExists": false,
+      "active": [
+        "src/core/timeScheduleCoordinatorV0812.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/customer/customerEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/customer/customerEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/customer/customerPack.js",
+      "canonicalExists": false,
+      "active": [
+        "src/customer/customerPackV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/customer/customerRandomDatabase.js",
+      "canonicalExists": false,
+      "active": [
+        "src/customer/customerRandomDatabaseV0821.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/customer/customerRules.js",
+      "canonicalExists": false,
+      "active": [
+        "src/customer/customerRulesV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/diagnostics/playtestHealth.js",
+      "canonicalExists": false,
+      "active": [
+        "src/diagnostics/playtestHealthV0842.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/dialogue/dialogueEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/dialogue/dialogueEngineV0815.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/dialogue/dialoguePack.js",
+      "canonicalExists": false,
+      "active": [
+        "src/dialogue/dialoguePackV0815.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/easteregg/easterEggEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/easteregg/easterEggEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/easteregg/easterEggPack.js",
+      "canonicalExists": false,
+      "active": [
+        "src/easteregg/easterEggPackV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/finance/completeFinanceSystem.js",
+      "canonicalExists": false,
+      "active": [
+        "src/finance/completeFinanceSystemV0825.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/finance/financialSystem.js",
+      "canonicalExists": false,
+      "active": [
+        "src/finance/financialSystemV103.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/food/foodPack.js",
+      "canonicalExists": false,
+      "active": [
+        "src/food/foodPackV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/food/foodResearchDatabase.js",
+      "canonicalExists": false,
+      "active": [
+        "src/food/foodResearchDatabaseV0818.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/food/foodResearchSystem.js",
+      "canonicalExists": false,
+      "active": [
+        "src/food/foodResearchSystemV0818.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/food/foodRules.js",
+      "canonicalExists": false,
+      "active": [
+        "src/food/foodRulesV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/food/menuEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/food/menuEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/food/recipeEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/food/recipeEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/inventory/ingredientInventoryDatabase.js",
+      "canonicalExists": false,
+      "active": [
+        "src/inventory/ingredientInventoryDatabaseV0819.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/inventory/inventoryEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/inventory/inventoryEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/inventory/inventoryRules.js",
+      "canonicalExists": false,
+      "active": [
+        "src/inventory/inventoryRulesV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/kitchen/kitchenEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/kitchen/kitchenEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/brandGrowthEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/brandGrowthEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/dailyOperatingCycle.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/dailyOperatingCycleV0840.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/decisionFeedback.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/decisionFeedbackV0841.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/deliveryEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/deliveryEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/floorSimulation.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/floorSimulationV082.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/liveOperationsCoordinator.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/liveOperationsCoordinatorV0824.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/marketingEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/marketingEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/marketingPlatformMembership.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/marketingPlatformMembershipV0826.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/operationsSchedule.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/operationsScheduleV087.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/operationsStore.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/operationsStoreV080.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/restaurantEventEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/restaurantEventEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/restaurantRuntime.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/restaurantRuntimeV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/restaurantSimulation.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/restaurantSimulationV081.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/retentionEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/retentionEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/settlementEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/settlementEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/staffCareer.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/staffCareerV088.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/staffManagementCoordinator.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/staffManagementCoordinatorV0823.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/staffOperationsEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/staffOperationsEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/operations/staffWorkload.js",
+      "canonicalExists": false,
+      "active": [
+        "src/operations/staffWorkloadV089.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/order/orderEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/order/orderEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/person/personEmployeeDatabase.js",
+      "canonicalExists": false,
+      "active": [
+        "src/person/personEmployeeDatabaseV0822.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/person/personPack.js",
+      "canonicalExists": false,
+      "active": [
+        "src/person/personPackV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/person/personRules.js",
+      "canonicalExists": false,
+      "active": [
+        "src/person/personRulesV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/progress/growthAchievementSystem.js",
+      "canonicalExists": false,
+      "active": [
+        "src/progress/growthAchievementSystemV0833.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/progress/operatingProgress.js",
+      "canonicalExists": false,
+      "active": [
+        "src/progress/operatingProgressV0862.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/property/cityPropertyDatabase.js",
+      "canonicalExists": false,
+      "active": [
+        "src/property/cityPropertyDatabaseV0815.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/property/propertyAdapter.js",
+      "canonicalExists": false,
+      "active": [
+        "src/property/propertyAdapterV02.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/property/propertyPack.js",
+      "canonicalExists": false,
+      "active": [
+        "src/property/propertyPackV02.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/property/propertyRules.js",
+      "canonicalExists": false,
+      "active": [
+        "src/property/propertyRulesV02.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/regulatory/regulatoryFoodSafetySystem.js",
+      "canonicalExists": false,
+      "active": [
+        "src/regulatory/regulatoryFoodSafetySystemV0830.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/renovation/renovationEditor.js",
+      "canonicalExists": false,
+      "active": [
+        "src/renovation/renovationEditorV0862.js",
+        "src/renovation/renovationEditorV0864.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/renovation/renovationEquipmentDatabase.js",
+      "canonicalExists": false,
+      "active": [
+        "src/renovation/renovationEquipmentDatabaseV0817.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/renovation/renovationSpatial.js",
+      "canonicalExists": false,
+      "active": [
+        "src/renovation/renovationSpatialV0864.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/reputation/reputationMediaSystem.js",
+      "canonicalExists": false,
+      "active": [
+        "src/reputation/reputationMediaSystemV0827.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/scenes/advancedManagementScene.js",
+      "canonicalExists": false,
+      "active": [
+        "src/scenes/advancedManagementSceneV0862.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/scenes/featureHubScene.js",
+      "canonicalExists": false,
+      "active": [
+        "src/scenes/featureHubSceneV0810.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/scenes/financeCenterScene.js",
+      "canonicalExists": false,
+      "active": [
+        "src/scenes/financeCenterSceneV103.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/scenes/newGameScene.js",
+      "canonicalExists": false,
+      "active": [
+        "src/scenes/newGameSceneV0814.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/scenes/scheduleScene.js",
+      "canonicalExists": false,
+      "active": [
+        "src/scenes/scheduleSceneV087.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/scenes/staffCareerScene.js",
+      "canonicalExists": false,
+      "active": [
+        "src/scenes/staffCareerSceneV088.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/scenes/systemScene.js",
+      "canonicalExists": false,
+      "active": [
+        "src/scenes/systemSceneV086.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/service/serviceEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/service/serviceEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/simulator/fullIntegrationSimulation.js",
+      "canonicalExists": false,
+      "active": [
+        "src/simulator/fullIntegrationSimulationV0835.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/social/socialInteractionSystem.js",
+      "canonicalExists": false,
+      "active": [
+        "src/social/socialInteractionSystemV0831.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/supplier/procurementEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/supplier/procurementEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/supplier/supplierEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/supplier/supplierEngineV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/supplier/supplierPack.js",
+      "canonicalExists": false,
+      "active": [
+        "src/supplier/supplierPackV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/supplier/supplierProcurementDatabase.js",
+      "canonicalExists": false,
+      "active": [
+        "src/supplier/supplierProcurementDatabaseV0820.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/supplier/supplierRules.js",
+      "canonicalExists": false,
+      "active": [
+        "src/supplier/supplierRulesV10.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/ui/operationsUi.js",
+      "canonicalExists": false,
+      "active": [
+        "src/ui/operationsUiV080.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/world/commercialEcologySystem.js",
+      "canonicalExists": false,
+      "active": [
+        "src/world/commercialEcologySystemV0828.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/world/dynamicWorldSystem.js",
+      "canonicalExists": false,
+      "active": [
+        "src/world/dynamicWorldSystemV0815.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/world/environmentWorldCoordinator.js",
+      "canonicalExists": false,
+      "active": [
+        "src/world/environmentWorldCoordinatorV0829.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/world/eventEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/world/eventEngineV0815.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/world/eventPack.js",
+      "canonicalExists": false,
+      "active": [
+        "src/world/eventPackV0815.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/world/liveWorldSystem.js",
+      "canonicalExists": false,
+      "active": [
+        "src/world/liveWorldSystemV084.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/world/managementWorldSystem.js",
+      "canonicalExists": false,
+      "active": [
+        "src/world/managementWorldSystemV085.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/world/policyEngine.js",
+      "canonicalExists": false,
+      "active": [
+        "src/world/policyEngineV0815.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    },
+    {
+      "family": "src/world/policyPack.js",
+      "canonicalExists": false,
+      "active": [
+        "src/world/policyPackV0815.js"
+      ],
+      "inactive": [],
+      "deleted": []
+    }
+  ],
+  "warnings": []
+}

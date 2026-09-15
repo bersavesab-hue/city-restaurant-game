@@ -26,6 +26,8 @@
     "build:android-js": "node scripts/build-android-js-v060.js",
     "build:mini-assets": "node scripts/buildMiniAssets.js",
     "player-lab": "node simulator/run100.js --report --output reports/player-lab/latest",
-    "player-lab:ci": "node simulator/run100.js --ci --report --output reports/player-lab/latest"
+    "player-lab:ci": "node simulator/run100.js --ci --report --output reports/player-lab/latest",
+    "cleanup:scan": "node scripts/project-cleaner.js",
+    "cleanup:apply": "node scripts/project-cleaner.js --apply"
   }
 }
