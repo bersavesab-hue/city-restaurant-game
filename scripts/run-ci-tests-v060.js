@@ -201,6 +201,13 @@ for (
     'tests/multiStoreBrandRankingV0834.test.js',
     'tests/fullIntegrationSimulationV0835.test.js',
     'tests/updateInfrastructureV0835.test.js',
+    'tests/gameplayFlowCoordinatorV0836.test.js',
+    'tests/featureAccessPolicyV0837.test.js',
+    'tests/routerGuardIntegrationV0837.test.js',
+    'tests/interactionRecoverySystemV0838.test.js',
+    'tests/economyBalanceGuardV0839.test.js',
+    'tests/gameplayExperienceIntegrationV0839.test.js',
+    'tests/updateInfrastructureV0839.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

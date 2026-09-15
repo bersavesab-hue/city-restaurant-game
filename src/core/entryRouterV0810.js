@@ -48,6 +48,7 @@ let history = [];
 let rememberedParams = Object.create(null);
 let lastError = null;
 let currentRouteId = null;
+let routeGuard = null;
 
 function cloneParams(value) {
   if (!value || typeof value !== 'object') {
@@ -166,6 +167,41 @@ function open(routeId, params, options) {
     return false;
   }
 
+  if (
+    !opts.ignoreGuard &&
+    routeGuard
+  ) {
+    const access =
+      getGuardStatus(
+        resolved.id,
+        params
+      );
+
+    if (
+      !access.allowed
+    ) {
+      lastError = {
+        code:'ROUTE_BLOCKED',
+        guardCode:
+          access.code ||
+          'ROUTE_BLOCKED',
+        routeId:
+          resolved.id,
+        target:
+          resolved.target,
+        reason:
+          access.reason ||
+          '该功能当前不可用',
+        recommended:
+          access.recommended ||
+          null,
+        at:Date.now()
+      };
+
+      return false;
+    }
+  }
+
   const payload = mergedParams(resolved.id, params);
   const previousRoute = currentRouteId || sceneManager.getCurrentId();
   const previousParams = previousRoute
@@ -261,6 +297,114 @@ function install() {
   return true;
 }
 
+function setGuard(guard) {
+  routeGuard =
+    typeof guard ===
+    'function'
+      ? guard
+      : null;
+
+  return !!routeGuard;
+}
+
+function getGuardStatus(
+  routeId,
+  params
+) {
+  const resolved =
+    resolve(
+      routeId
+    );
+
+  if (!resolved) {
+    return {
+      allowed:false,
+      code:'ROUTE_NOT_FOUND',
+      routeId:
+        String(
+          routeId ||
+          ''
+        ),
+      reason:'入口不存在'
+    };
+  }
+
+  if (!routeGuard) {
+    return {
+      allowed:true,
+      routeId:
+        resolved.id
+    };
+  }
+
+  try {
+    const result =
+      routeGuard(
+        resolved.id,
+        cloneParams(
+          params
+        )
+      );
+
+    if (
+      result ===
+      false
+    ) {
+      return {
+        allowed:false,
+        routeId:
+          resolved.id,
+        code:'ROUTE_BLOCKED',
+        reason:
+          '该功能当前不可用'
+      };
+    }
+
+    if (
+      result ===
+      true ||
+      result == null
+    ) {
+      return {
+        allowed:true,
+        routeId:
+          resolved.id
+      };
+    }
+
+    if (
+      typeof result ===
+      'object'
+    ) {
+      return {
+        routeId:
+          resolved.id,
+        allowed:
+          result.allowed !==
+          false,
+        ...result
+      };
+    }
+
+    return {
+      allowed:true,
+      routeId:
+        resolved.id
+    };
+  } catch (error) {
+    return {
+      allowed:false,
+      routeId:
+        resolved.id,
+      code:'ROUTE_GUARD_ERROR',
+      reason:
+        error &&
+        error.message ||
+        '入口权限检查异常'
+    };
+  }
+}
+
 function listRoutes() {
   return Object.keys(ROUTES).map(id => ({
     id,
@@ -304,6 +448,8 @@ function diagnose() {
     currentRouteId: getCurrentRoute(),
     historyDepth: history.length,
     routeCount: Object.keys(ROUTES).length,
+    guardInstalled:
+      !!routeGuard,
     missing
   };
 }
@@ -313,6 +459,7 @@ function resetForTests() {
   rememberedParams = Object.create(null);
   lastError = null;
   currentRouteId = null;
+  routeGuard = null;
 }
 
 module.exports = {
@@ -324,6 +471,8 @@ module.exports = {
   open,
   back,
   resolve,
+  setGuard,
+  getGuardStatus,
   listRoutes,
   getHistory,
   getCurrentRoute,

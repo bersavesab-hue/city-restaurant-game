@@ -1,0 +1,47 @@
+{
+  "id": "V0836_V0839_GAMEPLAY_EXPERIENCE",
+  "baseVersion": "0.8.35",
+  "targetVersion": "0.8.39",
+  "phase": "第二阶段",
+  "bundle": [
+    {
+      "version": "0.8.36",
+      "title": "完整主循环协调",
+      "file": "src/core/gameplayFlowCoordinatorV0836.js"
+    },
+    {
+      "version": "0.8.37",
+      "title": "功能入口与权限统一",
+      "file": "src/core/featureAccessPolicyV0837.js"
+    },
+    {
+      "version": "0.8.38",
+      "title": "交互异常与事务回退",
+      "file": "src/core/interactionRecoverySystemV0838.js"
+    },
+    {
+      "version": "0.8.39",
+      "title": "第一轮经济平衡与防卡死",
+      "file": "src/core/economyBalanceGuardV0839.js"
+    }
+  ],
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false,
+  "tests": [
+    "tests/gameplayFlowCoordinatorV0836.test.js",
+    "tests/featureAccessPolicyV0837.test.js",
+    "tests/routerGuardIntegrationV0837.test.js",
+    "tests/interactionRecoverySystemV0838.test.js",
+    "tests/economyBalanceGuardV0839.test.js",
+    "tests/gameplayExperienceIntegrationV0839.test.js",
+    "tests/updateInfrastructureV0839.test.js"
+  ],
+  "revision": "r2-v0814-startup-compat",
+  "fixes": [
+    "保留 newGameFlow.getStartupRoute() 历史启动契约",
+    "gameplayFlowCoordinator 在旧启动路线基础上决定最终推荐路线",
+    "兼容 tests/updateInfrastructureV0814.test.js"
+  ]
+}

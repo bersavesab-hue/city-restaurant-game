@@ -51,6 +51,18 @@ const timeScheduleCoordinator =
 const newGameFlow =
   require('./core/newGameFlowV0814.js');
 
+const gameplayFlowCoordinator =
+  require('./core/gameplayFlowCoordinatorV0836.js');
+
+const featureAccessPolicy =
+  require('./core/featureAccessPolicyV0837.js');
+
+const interactionRecoverySystem =
+  require('./core/interactionRecoverySystemV0838.js');
+
+const economyBalanceGuard =
+  require('./core/economyBalanceGuardV0839.js');
+
 const foodResearchSystem =
   require('./food/foodResearchSystemV0818.js');
 
@@ -1629,6 +1641,22 @@ function drawDistrictPictogram(
 }
 
 function getHomeGoalState() {
+  try {
+    const unified =
+      gameplayFlowCoordinator.goal();
+
+    if (
+      unified &&
+      Array.isArray(
+        unified.steps
+      ) &&
+      unified.steps.length
+    ) {
+      return unified;
+    }
+  } catch (error) {
+  }
+
   const business =
     gameState
       .getBusiness();
@@ -5236,38 +5264,107 @@ const cityScene = {
       target.id ===
       'goal:current'
     ) {
-      const business =
-        gameState
-          .getBusiness();
-
-      if (
-        business.hasShop &&
-        business.shops.length
-      ) {
-        sceneManager
-          .switchTo(
-            'shop'
+      const action =
+        interactionRecoverySystem
+          .run(
+            'home.goal.primary',
+            () =>
+              gameplayFlowCoordinator
+                .executePrimary(),
+            {
+              transactional:true,
+              rollbackOnFailure:true
+            }
           );
 
+      if (!action.ok) {
+        showToast(
+          action.value &&
+          action.value.message ||
+          action.error &&
+          action.error.message ||
+          '当前操作没有完成'
+        );
+
+        return true;
+      }
+
+      const result =
+        action.value ||
+        {};
+
+      const route =
+        result.route ||
+        result.next ||
+        null;
+
+      if (
+        route &&
+        route.routeId
+      ) {
+        if (
+          !entryRouter.open(
+            route.routeId,
+            route.params ||
+            {}
+          )
+        ) {
+          const routeError =
+            entryRouter
+              .getLastError();
+
+          if (
+            routeError &&
+            routeError.recommended &&
+            routeError
+              .recommended
+              .routeId
+          ) {
+            entryRouter.open(
+              routeError
+                .recommended
+                .routeId,
+              routeError
+                .recommended
+                .params ||
+                {}
+            );
+          }
+
+          showToast(
+            routeError &&
+            routeError.reason ||
+            '该功能暂未解锁'
+          );
+        }
+
+        render();
+
         return true;
       }
 
       if (
-        !selectedDistrictId
+        result.ok
       ) {
-        selectBusiestDistrict();
+        showToast(
+          result.actionId ===
+            'start_trial'
+            ? '已开始试营业'
+            : result.actionId ===
+                'formal_open'
+              ? '门店已正式开业'
+              : '操作完成'
+        );
+
+        render();
 
         return true;
       }
 
-      sceneManager
-        .switchTo(
-          'district',
-          {
-            districtId:
-              selectedDistrictId
-          }
-        );
+      showToast(
+        result.message ||
+        '当前目标暂时无法推进'
+      );
 
       return true;
     }
@@ -5386,6 +5483,19 @@ runtime.timeSchedule =
 // V0814_NEW_GAME_FLOW_BOOT
 runtime.newGameFlow =
   newGameFlow;
+
+// V0836_V0839_GAMEPLAY_EXPERIENCE_BOOT
+runtime.gameplayFlow =
+  gameplayFlowCoordinator;
+
+runtime.gameplayAccess =
+  featureAccessPolicy;
+
+runtime.interactionSafety =
+  interactionRecoverySystem;
+
+runtime.economyBalance =
+  economyBalanceGuard;
 
 /* =========================
    总渲染
@@ -7598,6 +7708,16 @@ newGameFlow
     restoredFromSave
   });
 
+gameplayFlowCoordinator
+  .repairSafeInvariants();
+
+interactionRecoverySystem
+  .repairCriticalState();
+
+entryRouter.setGuard(
+  featureAccessPolicy.guard
+);
+
 simulationSystem
   .initialize();
 
@@ -7619,9 +7739,14 @@ if (
   );
 }
 
-const startupRoute =
+const legacyStartupRoute =
   newGameFlow
     .getStartupRoute();
+
+const startupRoute =
+  gameplayFlowCoordinator
+    .startupRoute() ||
+  legacyStartupRoute;
 
 sceneManager
   .switchTo(
@@ -7638,5 +7763,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V0.8.35 功能总集成版启动成功'
+  '城市餐饮经营小游戏 V0.8.39 玩法串联与平衡版启动成功'
 );

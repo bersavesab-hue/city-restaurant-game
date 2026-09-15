@@ -45,6 +45,9 @@ const growthAchievementSystem =
 const multiStoreBrandRanking =
   require('../brand/multiStoreBrandRankingV0834.js');
 
+const economyBalanceGuard =
+  require('../core/economyBalanceGuardV0839.js');
+
 const customerRandomDatabase =
   require('../customer/customerRandomDatabaseV0821.js');
 
@@ -2947,6 +2950,43 @@ function storeRankingSnapshot() {
   );
 }
 
+function economyBalanceSnapshot(
+  shopId
+) {
+  return (
+    economyBalanceGuard
+      .snapshot(
+        shopId
+      )
+  );
+}
+
+function assessPlannedSpend(
+  shopId,
+  amount,
+  category
+) {
+  return (
+    economyBalanceGuard
+      .assessSpend(
+        shopId,
+        amount,
+        category
+      )
+  );
+}
+
+function economyRecoveryOptions(
+  shopId
+) {
+  return (
+    economyBalanceGuard
+      .recoveryOptions(
+        shopId
+      )
+  );
+}
+
 function supplierCatalog(
   shopId,
   filters
@@ -3809,6 +3849,9 @@ module.exports = {
   attachBrandExpansionShop,
   brandRankingSnapshot,
   storeRankingSnapshot,
+  economyBalanceSnapshot,
+  assessPlannedSpend,
+  economyRecoveryOptions,
   generateCustomer,
   customerRows,
   customerInsights,
