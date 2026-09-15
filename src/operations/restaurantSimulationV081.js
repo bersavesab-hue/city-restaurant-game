@@ -1453,3 +1453,11 @@ module.exports = {
   simulateShop,
   update
 };
+
+
+/* BUSINESS_DATA_RUNTIME_BRIDGE_V1 */
+try {
+  if (typeof globalThis !== 'undefined') {
+    globalThis.restaurantSimulation = module.exports;
+  }
+} catch (e) {}

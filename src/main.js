@@ -160,6 +160,12 @@ const newGameScene =
 const dynamicWorldSystem =
   require('./world/dynamicWorldSystemV0815.js');
 
+
+// DATA_HUB_V1_20260916
+const businessDataHub = require('./analytics/businessDataHub.js');
+const districtDetailScene = require('./scenes/districtDetailScene.js');
+const storeDetailScene = require('./scenes/storeDetailScene.js');
+const businessDataScene = require('./scenes/businessDataScene.js');
 /* =========================
    手机自适应基础
 ========================= */
@@ -5446,8 +5452,13 @@ sceneManager.register(
 );
 
 sceneManager.register(
-  'business',
+  'businessLegacy',
   businessScene
+);
+
+sceneManager.register(
+  'business',
+  businessDataScene
 );
 
 sceneManager.register(
@@ -5508,6 +5519,24 @@ runtime.economyBalance =
 /* =========================
    总渲染
 ========================= */
+
+
+sceneManager.register(
+  'property',
+  shopScene
+);
+
+
+sceneManager.register(
+  'districtDetail',
+  districtDetailScene
+);
+
+
+sceneManager.register(
+  'storeDetail',
+  storeDetailScene
+);
 
 function render() {
   if (needsResize) {
@@ -5793,6 +5822,12 @@ function handleTap(
       target.id
         .split(':')[1];
 
+    // DATA_HUB_NAV_ROUTE_V1
+    const routedSceneId =
+      sceneId === 'shop'
+        ? (businessDataHub.hasStore({ gameState, citySystem, demandSystem }) ? 'storeDetail' : 'property')
+        : sceneId;
+
     if (
       sceneId ===
       'traffic'
@@ -5887,7 +5922,7 @@ function handleTap(
     if (
       sceneManager
         .switchTo(
-          sceneId
+          routedSceneId
         )
     ) {
       render();
