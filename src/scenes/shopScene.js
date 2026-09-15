@@ -6709,3 +6709,46 @@ class ShopScene {
 
 module.exports =
   new ShopScene();
+
+
+/* V104_SHOP_BRIDGE_START */
+const __v104TrafficShop = require('../city/customerTrafficSystem.js');
+const __v104ShopScene = module.exports;
+
+if (__v104ShopScene && !__v104ShopScene.__v104TrafficBridge) {
+  __v104ShopScene.__v104TrafficBridge = true;
+
+  if (typeof __v104ShopScene.makeLiveListing === 'function') {
+    const __oldMakeLiveListingV104 = __v104ShopScene.makeLiveListing;
+    __v104ShopScene.makeLiveListing = function makeLiveListingV104(item) {
+      const live = __oldMakeLiveListingV104.call(this, item);
+      const format = __v104TrafficShop.classifyStore(live || item || {});
+      return {
+        ...live,
+        businessFormat: format,
+        businessFormatId: format.id,
+        businessFormatName: format.name,
+        dineInAllowed: format.dineInAllowed,
+        seatCapacityByFormat: format.seatCapacity,
+        hotKitchenReady: format.hotKitchenReady
+      };
+    };
+  }
+
+  // 房源详情标题直接告诉玩家“这个铺位适合干什么”，不额外挤一个大页面。
+  if (typeof __v104ShopScene.drawHeader === 'function') {
+    const __oldDrawHeaderV104 = __v104ShopScene.drawHeader;
+    __v104ShopScene.drawHeader = function drawHeaderV104(ctx, title, subtitle, backId) {
+      let nextSubtitle = subtitle;
+      if (title === '房源详情' && typeof this.getSelectedListing === 'function') {
+        const item = this.getSelectedListing();
+        if (item) {
+          const format = item.businessFormat || __v104TrafficShop.classifyStore(item);
+          nextSubtitle = (item.address || '当前铺位') + ' · ' + format.name + (format.dineInAllowed ? ' · ' + format.seatCapacity + '座' : ' · 非堂食');
+        }
+      }
+      return __oldDrawHeaderV104.call(this, ctx, title, nextSubtitle, backId);
+    };
+  }
+}
+/* V104_SHOP_BRIDGE_END */

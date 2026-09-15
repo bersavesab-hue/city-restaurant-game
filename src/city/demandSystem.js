@@ -644,3 +644,31 @@ const demandSystem =
 
 module.exports =
   demandSystem;
+
+
+/* V104_TRAFFIC_API_START */
+const __v104Traffic = require('./customerTrafficSystem.js');
+
+demandSystem.getStoreFormat = function getStoreFormatV104(store) {
+  return __v104Traffic.classifyStore(store || {});
+};
+
+demandSystem.getTrafficFunnel = function getTrafficFunnelV104(districtId, store, options) {
+  const pool = this.createDemandPool(districtId);
+  if (!pool) return null;
+
+  const result = __v104Traffic.simulate({
+    district: citySystem.getDistrict(districtId),
+    demandPool: pool,
+    store: store || {},
+    customerTypes: CUSTOMER_TYPES,
+    weatherModifier: this.getWeatherModifier(),
+    mealPeriod: pool.mealPeriod,
+    ...(options || {})
+  });
+
+  // 本次返回的是经营快照；不直接永久扣减全局商圈需求，避免每次打开数据页就“吃掉客流”。
+  result.demandPool = pool;
+  return result;
+};
+/* V104_TRAFFIC_API_END */
