@@ -684,6 +684,12 @@ class BusinessScene {
             .operatingSignals
         : null;
 
+    const strategy =
+      operations
+        .operatingStrategyRecommendation(
+          shop.id
+        );
+
     this.sectionCard(
       ctx,
       14,
@@ -1150,20 +1156,47 @@ class BusinessScene {
 
     ui.text(
       ctx,
-      nextAction
-        ? '明日建议：' +
-          nextAction.message
-        : '明日建议：等待首次完整日结',
+      strategy
+        ? '首要策略：' +
+          strategy.label
+        : nextAction
+          ? '明日建议：' +
+            nextAction.message
+          : '明日建议：等待首次完整日结',
       28,
       620,
       6.5,
-      nextAction
+      strategy &&
+      strategy.executable
         ? '#C08824'
-        : '#71858F',
+        : nextAction
+          ? '#C08824'
+          : '#71858F',
       '700'
     );
 
     if (
+      strategy &&
+      strategy.executable
+    ) {
+      opUi.button(
+        ctx,
+        '执行策略',
+        272,
+        632,
+        90,
+        32,
+        'gold'
+      );
+
+      this.addButton(
+        'day:strategy',
+        264,
+        626,
+        106,
+        44
+      );
+    } else if (
       nextAction &&
       nextAction.routeId
     ) {
@@ -2168,6 +2201,36 @@ class BusinessScene {
           result.score +
           ' · ' +
           result.grade
+        );
+
+        return true;
+      }
+
+      if (
+        target.id ===
+        'day:strategy'
+      ) {
+        const result =
+          operations
+            .applyOperatingStrategy(
+              shop.id
+            );
+
+        if (
+          result &&
+          result.ok
+        ) {
+          saveSystem
+            .autoSave(true);
+        }
+
+        opUi.toast(
+          result &&
+          (
+            result.message ||
+            result.reason
+          ) ||
+          '策略执行失败'
         );
 
         return true;

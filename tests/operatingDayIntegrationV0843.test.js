@@ -156,4 +156,86 @@ const calibration=operations.runOperatingBalanceCalibration(100,{seed:20260915})
 assert.ok(calibration.pass);
 assert.equal(calibration.total,100);
 
+/*
+ * 策略执行会登记为下一营业日决策，
+ * 因而可能创建下一营业日 active。
+ * 必须放在所有“上一营业日仍为closed”的兼容断言之后测试。
+ */
+for (
+  const item
+  of runtime.menu
+) {
+  item.featured =
+    false;
+}
+
+const strategy =
+  operations
+    .operatingStrategyRecommendation(
+      'shop_v0843_integration'
+    );
+
+assert.ok(
+  strategy &&
+  typeof strategy.label ===
+    'string',
+  '日结后必须生成首要经营策略'
+);
+
+assert.ok(
+  strategy.executable,
+  '测试门店必须获得一条可执行策略'
+);
+
+const appliedStrategy =
+  operations
+    .applyOperatingStrategy(
+      'shop_v0843_integration'
+    );
+
+assert.ok(
+  appliedStrategy.ok,
+  '一键经营策略必须真正执行到底层系统'
+);
+
+const postStrategyCycle =
+  operations
+    .operatingDaySnapshot(
+      'shop_v0843_integration'
+    );
+
+assert.equal(
+  postStrategyCycle.status,
+  'open',
+  '执行日结后策略应登记到下一营业日，而不是篡改已结算营业日'
+);
+
+assert.ok(
+  postStrategyCycle.latestClosed &&
+  postStrategyCycle.latestClosed.financial,
+  '创建下一营业日后必须继续保留上一完整日结'
+);
+
+const repeatedStrategy =
+  operations
+    .applyOperatingStrategy(
+      'shop_v0843_integration'
+    );
+
+assert.equal(
+  repeatedStrategy.ok,
+  false,
+  '同一营业日不能无限重复执行一键策略'
+);
+
+assert.ok(
+  String(
+    repeatedStrategy.reason ||
+    ''
+  ).includes(
+    '等待日结评估'
+  ),
+  '执行一次策略后必须等待下一营业日评估'
+);
+
 console.log('V0.8.40-0.8.43 operating day integration tests passed');

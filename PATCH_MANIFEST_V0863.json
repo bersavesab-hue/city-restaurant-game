@@ -1,0 +1,27 @@
+{
+  "id": "V0863_ACTIVE_OPERATING_STRATEGY",
+  "baseVersion": "0.8.62",
+  "targetVersion": "0.8.63",
+  "category": "核心玩法深化：主动经营决策",
+  "features": [
+    "根据最近日结自动生成一条首要经营策略",
+    "策略直接复用真实菜单、库存、顾客和日结数据",
+    "缺货明显时可一键执行真实补货",
+    "价格流失明显时可对高价高溢价菜进行小幅安全降价",
+    "过期损耗明显时可暂时下架低销菜以收窄备货范围",
+    "复购偏弱或热销菜未形成招牌时可一键设置真实热销菜为招牌菜",
+    "降价保留成本安全线，不会一键降到亏本价",
+    "每天只允许执行一次一键策略，防止连续点击破坏数值",
+    "执行动作继续进入原有decisionFeedback，下一营业日自动评估效果",
+    "经营页显示首要策略并提供执行策略按钮",
+    "没有必要调整时明确建议继续观察，不为了操作而操作",
+    "清理历史误上传city-restaurant-v0853-core-content-update.zip",
+    "补充V0.8.61因果闭环与筹备中心的分拆归档清单"
+  ],
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false,
+  "revision": "R2",
+  "fix": "回归测试顺序修正：策略执行会创建下一营业日active，兼容closed断言必须先完成"
+}

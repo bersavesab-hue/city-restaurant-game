@@ -271,6 +271,15 @@ assert.ok(
     '热销菜：'
   ) &&
   businessSource.includes(
+    '首要策略：'
+  ) &&
+  businessSource.includes(
+    "'day:strategy'"
+  ) &&
+  businessSource.includes(
+    '.applyOperatingStrategy('
+  ) &&
+  businessSource.includes(
     'showingCurrent'
   ) &&
   businessSource.includes(

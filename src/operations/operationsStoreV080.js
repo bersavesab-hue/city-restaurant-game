@@ -4286,6 +4286,681 @@ function autoRestock(
   );
 }
 
+function strategyMenuRows(
+  shopId,
+  runtime
+) {
+  return (
+    runtime.menu ||
+    []
+  )
+    .filter(
+      item =>
+        item &&
+        item.active !==
+          false
+    )
+    .map(
+      item => {
+        const stats =
+          item.stats ||
+          {};
+
+        const orders =
+          Math.max(
+            0,
+            Number(
+              stats.orders
+            ) ||
+            0
+          );
+
+        const revenue =
+          Number(
+            stats.revenue
+          ) ||
+          0;
+
+        const variableCost =
+          Number(
+            stats.variableCost
+          ) ||
+          0;
+
+        const estimatedCost =
+          Math.max(
+            0,
+            estimateMenuItemCost(
+              shopId,
+              item
+            )
+          );
+
+        const contribution =
+          orders >
+            0
+            ? (
+                revenue -
+                variableCost
+              ) /
+              orders
+            : (
+                Number(
+                  item.listPrice
+                ) ||
+                0
+              ) -
+              estimatedCost;
+
+        const ratingCount =
+          Math.max(
+            0,
+            Number(
+              stats.ratingCount
+            ) ||
+            0
+          );
+
+        const rating =
+          ratingCount >
+            0
+            ? (
+                Number(
+                  stats.ratingSum
+                ) ||
+                0
+              ) /
+              ratingCount
+            : 0;
+
+        return {
+          item,
+          orders,
+          revenue,
+          variableCost,
+          estimatedCost,
+          contribution,
+          rating
+        };
+      }
+    );
+}
+
+function operatingStrategyRecommendation(
+  shopId
+) {
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  if (!runtime) {
+    return {
+      id:'runtime_missing',
+      executable:false,
+      label:'门店运行数据不存在',
+      detail:'等待门店运行时初始化'
+    };
+  }
+
+  runtime.simulation =
+    runtime.simulation ||
+    {};
+
+  if (
+    Number(
+      runtime
+        .simulation
+        .lastStrategyDay
+    ) ===
+      Number(
+        runtime.day
+      )
+  ) {
+    return {
+      id:'strategy_wait',
+      executable:false,
+      label:'今日策略已执行，等待日结评估',
+      detail:
+        runtime
+          .simulation
+          .lastStrategyLabel ||
+        '等待下一营业日重新诊断'
+    };
+  }
+
+  const cycle =
+    dailyOperatingCycle
+      .brief(
+        shopId
+      );
+
+  const latest =
+    cycle &&
+    cycle.latestClosed;
+
+  const signals =
+    latest &&
+    latest.extra &&
+    latest.extra
+      .operatingSignals &&
+    typeof latest.extra
+      .operatingSignals ===
+      'object'
+      ? latest.extra
+          .operatingSignals
+      : {};
+
+  const rows =
+    strategyMenuRows(
+      shopId,
+      runtime
+    );
+
+  if (!rows.length) {
+    return {
+      id:'menu_missing',
+      executable:false,
+      label:'当前没有可经营菜品',
+      detail:'先恢复至少一道在售菜品'
+    };
+  }
+
+  const bestSeller =
+    rows
+      .slice()
+      .sort(
+        (a,b) =>
+          b.orders -
+            a.orders ||
+          b.rating -
+            a.rating ||
+          b.contribution -
+            a.contribution
+      )[0];
+
+  const featured =
+    rows.find(
+      row =>
+        row.item.featured
+    ) ||
+    null;
+
+  const lowestSeller =
+    rows
+      .filter(
+        row =>
+          !bestSeller ||
+          row.item.id !==
+            bestSeller.item.id
+      )
+      .slice()
+      .sort(
+        (a,b) =>
+          a.orders -
+            b.orders ||
+          a.contribution -
+            b.contribution
+      )[0] ||
+    null;
+
+  const financial =
+    latest &&
+    latest.financial ||
+    {};
+
+  const waste =
+    Math.max(
+      0,
+      Number(
+        signals.expiredWasteValue
+      ) ||
+      0
+    );
+
+  const wasteHigh =
+    waste >
+    Math.max(
+      30,
+      (
+        Number(
+          financial.revenue
+        ) ||
+        0
+      ) *
+      0.02
+    );
+
+  if (
+    wasteHigh &&
+    rows.length >
+      1 &&
+    lowestSeller
+  ) {
+    return {
+      id:'reduce_waste',
+      action:'deactivate_low_seller',
+      executable:true,
+      menuItemId:
+        lowestSeller
+          .item.id,
+      label:
+        '暂时下架低销菜「' +
+        lowestSeller
+          .item.name +
+        '」',
+      detail:
+        '上次过期损耗' +
+        Math.round(
+          waste
+        ) +
+        '元，先收窄菜单减少备货分散',
+      successMessage:
+        '已暂时下架低销菜，下一营业日观察损耗变化'
+    };
+  }
+
+  if (
+    Number(
+      signals.stockouts
+    ) >
+      0 &&
+    !wasteHigh
+  ) {
+    return {
+      id:'repair_stockout',
+      action:'restock',
+      executable:true,
+      label:'按当前菜单补齐缺货食材',
+      detail:
+        '上次有' +
+        Number(
+          signals.stockouts
+        ) +
+        '次缺货流失',
+      successMessage:
+        '已执行库存补充，下一营业日观察缺货与利润'
+    };
+  }
+
+  if (
+    Number(
+      signals.priceWalkaways
+    ) >
+    0
+  ) {
+    const priceCandidate =
+      rows
+        .slice()
+        .sort(
+          (a,b) => {
+            const aRatio =
+              (
+                Number(
+                  a.item.listPrice
+                ) ||
+                0
+              ) /
+              Math.max(
+                1,
+                a.estimatedCost
+              );
+
+            const bRatio =
+              (
+                Number(
+                  b.item.listPrice
+                ) ||
+                0
+              ) /
+              Math.max(
+                1,
+                b.estimatedCost
+              );
+
+            return (
+              bRatio -
+                aRatio ||
+              b.item.listPrice -
+                a.item.listPrice ||
+              a.orders -
+                b.orders
+            );
+          }
+        )
+        .find(
+          row => {
+            const price =
+              Number(
+                row.item.listPrice
+              ) ||
+              0;
+
+            const floor =
+              Math.max(
+                3,
+                row.estimatedCost *
+                  1.6
+              );
+
+            return (
+              price -
+              Math.max(
+                floor,
+                price *
+                  0.92
+              )
+            ) >=
+              0.5;
+          }
+        );
+
+    if (priceCandidate) {
+      const price =
+        Number(
+          priceCandidate
+            .item
+            .listPrice
+        ) ||
+        0;
+
+      const floor =
+        Math.max(
+          3,
+          priceCandidate
+            .estimatedCost *
+            1.6
+        );
+
+      const target =
+        Math.max(
+          floor,
+          price *
+            0.92
+        );
+
+      const delta =
+        Math.round(
+          (
+            target -
+            price
+          ) *
+          10
+        ) /
+        10;
+
+      return {
+        id:'repair_price',
+        action:'price_cut',
+        executable:true,
+        menuItemId:
+          priceCandidate
+            .item.id,
+        delta,
+        label:
+          '小幅下调「' +
+          priceCandidate
+            .item.name +
+          '」售价',
+        detail:
+          '上次有' +
+          Number(
+            signals.priceWalkaways
+          ) +
+          '位顾客因价格超预算离开',
+        successMessage:
+          '已小幅调价，下一营业日观察客流、客单和利润'
+      };
+    }
+  }
+
+  const repeatWeak =
+    (
+      Number(
+        signals.repeatGuests
+      ) +
+      Number(
+        signals.newGuests
+      )
+    ) >=
+      8 &&
+    Number(
+      signals.avgRepeatIntent
+    ) >
+      0 &&
+    Number(
+      signals.avgRepeatIntent
+    ) <
+      0.38;
+
+  if (
+    bestSeller &&
+    (
+      repeatWeak ||
+      !featured ||
+      featured.item.id !==
+        bestSeller.item.id
+    )
+  ) {
+    return {
+      id:
+        repeatWeak
+          ? 'repair_repeat'
+          : 'feature_best_seller',
+      action:'feature_dish',
+      executable:true,
+      menuItemId:
+        bestSeller
+          .item.id,
+      label:
+        '设「' +
+        bestSeller
+          .item.name +
+        '」为招牌菜',
+      detail:
+        repeatWeak
+          ? '复购意向偏弱，先集中稳定最受欢迎菜品'
+          : '把真实热销菜强化为门店记忆点',
+      successMessage:
+        '招牌菜已调整，下一营业日观察点单与复购变化'
+    };
+  }
+
+  return {
+    id:'observe',
+    executable:false,
+    label:'当前经营结构稳定，继续观察1个营业日',
+    detail:'暂时不建议为了操作而操作'
+  };
+}
+
+function applyOperatingStrategy(
+  shopId
+) {
+  const recommendation =
+    operatingStrategyRecommendation(
+      shopId
+    );
+
+  if (
+    !recommendation ||
+    !recommendation.executable
+  ) {
+    return {
+      ok:false,
+      reason:
+        recommendation &&
+        recommendation.label ||
+        '当前没有可执行策略',
+      recommendation
+    };
+  }
+
+  const baseline =
+    decisionContextSnapshot(
+      shopId
+    );
+
+  let result =
+    null;
+
+  if (
+    recommendation.action ===
+      'restock'
+  ) {
+    result =
+      autoRestock(
+        shopId
+      );
+
+    if (
+      result &&
+      result.ok
+    ) {
+      recordTrackedDecision(
+        shopId,
+        'strategy_restock',
+        {
+          orders:
+            Number(
+              result.orders
+            ) ||
+            0,
+          spent:
+            Number(
+              result.spent
+            ) ||
+            0,
+          source:'active_strategy'
+        },
+        baseline
+      );
+    }
+  } else if (
+    recommendation.action ===
+      'price_cut'
+  ) {
+    result =
+      adjustMenuPrice(
+        shopId,
+        recommendation
+          .menuItemId,
+        recommendation.delta
+      );
+  } else if (
+    recommendation.action ===
+      'feature_dish'
+  ) {
+    result =
+      setMenuFeatured(
+        shopId,
+        recommendation
+          .menuItemId
+      );
+  } else if (
+    recommendation.action ===
+      'deactivate_low_seller'
+  ) {
+    result =
+      setMenuActive(
+        shopId,
+        recommendation
+          .menuItemId,
+        false
+      );
+
+    if (
+      result &&
+      result.ok
+    ) {
+      recordTrackedDecision(
+        shopId,
+        'menu_focus',
+        {
+          menuItemId:
+            recommendation
+              .menuItemId,
+          name:
+            result.item &&
+            result.item.name ||
+            null,
+          action:'deactivate',
+          source:'active_strategy'
+        },
+        baseline
+      );
+    }
+  } else {
+    return {
+      ok:false,
+      reason:'策略动作暂不支持',
+      recommendation
+    };
+  }
+
+  if (
+    !result ||
+    result.ok ===
+      false
+  ) {
+    return {
+      ok:false,
+      reason:
+        result &&
+        (
+          result.reason ||
+          result.message
+        ) ||
+        '策略执行失败',
+      recommendation,
+      result
+    };
+  }
+
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  if (runtime) {
+    runtime.simulation =
+      runtime.simulation ||
+      {};
+
+    runtime
+      .simulation
+      .lastStrategyDay =
+      Number(
+        runtime.day
+      ) ||
+      currentDay();
+
+    runtime
+      .simulation
+      .lastStrategyAction =
+      recommendation.id;
+
+    runtime
+      .simulation
+      .lastStrategyLabel =
+      recommendation.label;
+
+    persist(
+      shopId
+    );
+  }
+
+  return {
+    ok:true,
+    message:
+      recommendation
+        .successMessage ||
+      '经营策略已执行',
+    recommendation,
+    result
+  };
+}
+
 function dashboard(
   shopId
 ) {
@@ -4500,5 +5175,7 @@ module.exports = {
   cancelManualPurchaseOrder,
   procurementOverview,
   autoRestock,
+  operatingStrategyRecommendation,
+  applyOperatingStrategy,
   dashboard
 };
