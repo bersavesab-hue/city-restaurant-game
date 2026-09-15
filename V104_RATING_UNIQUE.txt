@@ -1,0 +1,2 @@
+CITY_RESTAURANT_V104_RATING_VISUALIZATION_20260916
+Unified rating engine: employee + dish + store + brand, embedded into existing pages.

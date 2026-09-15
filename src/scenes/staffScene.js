@@ -24,6 +24,9 @@ const openingPrepSystem =
 const openingConfig =
   require('../opening/openingConfig.js');
 
+const ratingSystem =
+  require('../rating/ratingSystemV104.js'); // V104_RATING_VISUALIZATION
+
 const DESIGN_W =
   390;
 
@@ -632,6 +635,17 @@ class StaffScene {
       const candidate =
         candidates[i];
 
+      const candidateRating =
+        ratingSystem
+          .evaluateEmployee(
+            candidate,
+            {
+              roleId:
+                candidate.roleId ||
+                this.roleId
+            }
+          );
+
       this.rounded(
         ctx,
         10,
@@ -699,29 +713,16 @@ class StaffScene {
 
       this.text(
         ctx,
-        '技能 ' +
+        '能力 Lv.' +
+          candidateRating.growthLevel +
+          ' ' +
+          candidateRating.tier +
+          ' · 技能 ' +
           candidate.skill +
-          ' · ' +
-          (
-            candidate
-              .personalityLabels &&
-            candidate
-              .personalityLabels
-              .length
-              ? candidate
-                  .personalityLabels
-                  .slice(
-                    0,
-                    2
-                  )
-                  .join(
-                    '/'
-                  )
-              : '稳定 ' +
-                candidate.stability
-          ) +
           ' · 综合 ' +
-          candidate.score,
+          Math.round(
+            candidateRating.score
+          ),
         22,
         y + 76,
         7,

@@ -20,6 +20,12 @@ const sceneManager =
 const staffCareer =
   require('../operations/staffCareerV088.js');
 
+const ratingSystem =
+  require('../rating/ratingSystemV104.js');
+
+const ratingUi =
+  require('../ui/ratingWidgetsV104.js'); // V104_RATING_VISUALIZATION
+
 const ui =
   require('../ui/premiumUi.js');
 
@@ -394,6 +400,12 @@ class StaffCareerScene {
         row.id ===
         this.selectedId;
 
+      const rowRating =
+        ratingSystem
+          .evaluateEmployee(
+            row
+          );
+
       ui.card(
         ctx,
         14,
@@ -429,8 +441,10 @@ class StaffCareerScene {
 
       ui.text(
         ctx,
-        '技能 ' +
-          row.skill +
+        '能力 Lv.' +
+          rowRating.growthLevel +
+          ' ' +
+          rowRating.tier +
           ' · 绩效 ' +
           row.performance +
           ' · ' +
@@ -504,6 +518,12 @@ class StaffCareerScene {
       );
 
     if (selected) {
+      const selectedRating =
+        ratingSystem
+          .evaluateEmployee(
+            selected
+          );
+
       const detailY =
         424;
 
@@ -524,16 +544,26 @@ class StaffCareerScene {
       ui.text(
         ctx,
         selected.name +
-          ' · Lv.' +
-          selected.level +
-          ' ' +
-          selected.title,
+          ' · ' +
+          selected.title +
+          ' · 能力Lv.' +
+          selectedRating.growthLevel,
         28,
         detailY +
           22,
         9.1,
         '#173D54',
         '800'
+      );
+
+      ratingUi.badge(
+        ctx,
+        302,
+        detailY + 10,
+        58,
+        22,
+        selectedRating.grade,
+        selectedRating.score
       );
 
       ui.text(

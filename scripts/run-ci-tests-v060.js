@@ -250,6 +250,7 @@ for (
     'tests/preparationCommandCenterV0861.test.js',
     'tests/advancedManagementV0862.test.js',
     'tests/updateInfrastructureV0849.test.js',
+    'tests/ratingSystemV104.test.js',
     'tests/financialSystemV103.test.js',
     'tests/v60CleanBase.test.js'
   ]

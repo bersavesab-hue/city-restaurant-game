@@ -7,6 +7,8 @@ const citySystem = require('../city/citySystem.js');
 const demandSystem = require('../city/demandSystem.js');
 const analytics = require('../analytics/businessDataHub.js');
 const ui = require('../ui/dataWidgets.js');
+const ratingSystem = require('../rating/ratingSystemV104.js');
+const ratingUi = require('../ui/ratingWidgetsV104.js'); // V104_RATING_VISUALIZATION
 
 class StoreDetailScene extends DataSceneBase {
   constructor() {
@@ -147,6 +149,43 @@ class StoreDetailScene extends DataSceneBase {
     }
   }
 
+
+  drawRating(ctx, d) {
+    const rating = ratingSystem.evaluateStoreFromDashboard(d);
+    const dishes = Array.isArray(d.dishes)
+      ? d.dishes.map(item => ratingSystem.evaluateDish(item)).sort((a, b) => b.score - a.score)
+      : [];
+    const employees = d.staff && Array.isArray(d.staff.staff)
+      ? d.staff.staff.map(item => ratingSystem.evaluateEmployee(item)).sort((a, b) => b.score - a.score)
+      : [];
+
+    ui.sectionTitle(ctx, '门店经营评级', 116, '经营能力与消费者口碑分开看', 390);
+    ui.metricCard(ctx, 10, 130, 116, 72, '经营评级', rating.grade + ' · ' + Math.round(rating.score), rating.gradeLabel, { valueColor: ratingUi.colorForGrade(rating.grade) });
+    ui.metricCard(ctx, 137, 130, 116, 72, '消费者口碑', rating.consumerStars.toFixed(2) + ' / 5', '顾客评分，不等于经营评级');
+    ui.metricCard(ctx, 264, 130, 116, 72, '较上期', rating.delta == null ? '—' : ((rating.delta > 0 ? '+' : '') + rating.delta.toFixed(1)), rating.trendLabel, { valueColor: rating.delta > 0 ? ui.COLORS.green : rating.delta < 0 ? ui.COLORS.red : ui.COLORS.muted });
+
+    ui.sectionTitle(ctx, '六维结构', 229, '一眼看出真正的短板', 390);
+    ui.rect(ctx, 10, 243, 370, 174, { fill: ui.COLORS.panel, stroke: ui.COLORS.line });
+    ratingUi.dimensionRows(ctx, 24, 265, 334, rating, { limit: 6, rowHeight: 24 });
+
+    ui.sectionTitle(ctx, '诊断', 444, '', 390);
+    ui.rect(ctx, 10, 458, 370, 72, { fill: ui.COLORS.paleBlue, stroke: '#BCD3DE' });
+    ui.text(ctx, ratingUi.insightLine(rating) || '数据积累后会给出优势与短板。', 24, 480, 6.8, ui.COLORS.text, '700');
+    const weak = rating.weaknesses && rating.weaknesses[0];
+    ui.text(ctx, weak ? ('优先改善：' + weak.label + '，当前 ' + Math.round(weak.score) + ' 分') : '当前没有明显短板', 24, 507, 6.6, weak && weak.score < 70 ? ui.COLORS.red : ui.COLORS.muted, '600');
+
+    ui.sectionTitle(ctx, '菜品与团队', 556, '评级来自现有经营数据', 390);
+    ui.rect(ctx, 10, 570, 370, 68, { fill: ui.COLORS.panel, stroke: ui.COLORS.line });
+    const topDish = dishes[0];
+    const weakDish = dishes.length ? dishes[dishes.length - 1] : null;
+    const topEmployee = employees[0];
+    ui.row(ctx, 24, 590, 334, '最高菜品', topDish ? (topDish.name + ' · ' + topDish.grade + ' ' + Math.round(topDish.score)) : '暂无菜品数据', topDish ? ratingUi.colorForGrade(topDish.grade) : ui.COLORS.muted);
+    ui.row(ctx, 24, 612, 334, '团队代表', topEmployee ? (topEmployee.name + ' · Lv.' + topEmployee.growthLevel + ' ' + topEmployee.tier) : '暂无员工数据');
+    if (weakDish && topDish && weakDish.id !== topDish.id) {
+      ui.text(ctx, '菜品短板：' + weakDish.name + ' ' + weakDish.grade + ' ' + Math.round(weakDish.score), 24, 632, 6.2, ui.COLORS.muted, '600');
+    }
+  }
+
   drawActions(ctx) {
     const y = this.contentBottom - 48;
     const buttons = [
@@ -182,11 +221,12 @@ class StoreDetailScene extends DataSceneBase {
     }
 
     ui.header(ctx, store.name + ' · 门店详情', (store.address || '当前门店') + ' · 数据用于解释今天为什么赚/亏', 390, ui.money(player && player.cash));
-    ui.tabBar(ctx, [{label:'今日'}, {label:'顾客漏斗'}, {label:'产能装修'}, {label:'预警现金'}], this.tab, 75, this.addButton.bind(this), 390);
+    ui.tabBar(ctx, [{label:'今日'}, {label:'顾客漏斗'}, {label:'产能装修'}, {label:'预警现金'}, {label:'评级'}], this.tab, 75, this.addButton.bind(this), 390);
     if (this.tab === 0) this.drawToday(ctx, d);
     else if (this.tab === 1) this.drawFunnel(ctx, d);
     else if (this.tab === 2) this.drawCapacity(ctx, d);
-    else this.drawRisks(ctx, d);
+    else if (this.tab === 3) this.drawRisks(ctx, d);
+    else this.drawRating(ctx, d);
     this.drawActions(ctx);
     this.end(ctx);
   }

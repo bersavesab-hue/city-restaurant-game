@@ -8,6 +8,7 @@ const saveSystem = require('../core/saveSystem.js');
 const operations = require('../operations/operationsStoreV080.js');
 const marketingState = require('../operations/marketingPlatformMembershipV0826.js');
 const progressSystem = require('../progress/operatingProgressV0862.js');
+const ratingSystem = require('../rating/ratingSystemV104.js'); // V104_RATING_VISUALIZATION
 const ui = require('../ui/premiumUi.js');
 const opUi = require('../ui/operationsUiV080.js');
 
@@ -297,9 +298,15 @@ class AdvancedManagementScene {
   renderGrowth(ctx,shop,h) {
     const growth=operations.growthSnapshot(shop.id)||{};
     const portfolio=operations.brandPortfolioSnapshot()||{};
+    const brandRating=ratingSystem.evaluateBrand({
+      brand:growth.brand||{},
+      portfolio,
+      store:shop,
+      growth
+    });
     const pctx=this.progressContext(shop);
     const progress=progressSystem.overview(shop.id,pctx);
-    this.summaryCard(ctx,'品牌成长','Lv.'+num(growth.brand&&growth.brand.level)+' · '+(growth.brand&&growth.brand.name||'起步品牌'),'管理点 '+progress.managementPoints+' · 成就点 '+num(growth.achievementPoints),136);
+    this.summaryCard(ctx,'品牌成长','Lv.'+num(growth.brand&&growth.brand.level)+' · '+(growth.brand&&growth.brand.name||'起步品牌'),'评级 '+brandRating.grade+' '+Math.round(brandRating.score)+' · '+brandRating.tier+' · 管理点 '+progress.managementPoints,136);
 
     ui.text(ctx,'本周目标',18,223,7.4,'#173D54','800');
     let y=244;

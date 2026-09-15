@@ -1,0 +1,34 @@
+{
+  "version": "V104_RATING_VISUALIZATION",
+  "base": "main after V103_FINANCE",
+  "purpose": "Unified employee/dish/store/brand ratings with in-place visualization",
+  "newFiles": [
+    "src/rating/ratingSystemV104.js",
+    "src/ui/ratingWidgetsV104.js",
+    "tests/ratingSystemV104.test.js",
+    "README_V104_RATING.md",
+    "V104_RATING_UNIQUE.txt",
+    "RATING_SYSTEM_SPEC.md"
+  ],
+  "patchedByInstaller": [
+    "src/main.js",
+    "src/scenes/storeDetailScene.js",
+    "src/scenes/researchScene.js",
+    "src/scenes/staffScene.js",
+    "src/scenes/staffCareerSceneV088.js",
+    "src/scenes/advancedManagementSceneV0862.js",
+    "scripts/run-ci-tests-v060.js"
+  ],
+  "ratingScale": "0-100",
+  "grades": [
+    "D",
+    "C",
+    "B",
+    "A",
+    "S"
+  ],
+  "employeeLevel": "1-50",
+  "brandLevel": "1-20",
+  "separateStoreConsumerRating": true,
+  "createsStandaloneDataPage": false
+}

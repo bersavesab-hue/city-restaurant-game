@@ -15,6 +15,12 @@ const ui =
 const opUi =
   require('../ui/operationsUiV080.js');
 
+const ratingSystem =
+  require('../rating/ratingSystemV104.js');
+
+const ratingUi =
+  require('../ui/ratingWidgetsV104.js'); // V104_RATING_VISUALIZATION
+
 class ResearchScene {
   constructor() {
     this.id =
@@ -314,6 +320,18 @@ class ResearchScene {
             item
           );
 
+      const dishRating =
+        ratingSystem
+          .evaluateDish(
+            item,
+            {
+              cost,
+              craftable,
+              shop,
+              runtime
+            }
+          );
+
       ui.card(
         ctx,
         14,
@@ -359,6 +377,16 @@ class ResearchScene {
           '800'
         );
       }
+
+      ratingUi.badge(
+        ctx,
+        236,
+        y + 8,
+        52,
+        22,
+        dishRating.grade,
+        dishRating.score
+      );
 
       ui.text(
         ctx,

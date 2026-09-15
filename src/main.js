@@ -169,6 +169,7 @@ const businessDataScene = require('./scenes/businessDataScene.js');
 const moreScene = require('./scenes/moreScene.js');
 const financeCenterScene = require('./scenes/financeCenterSceneV103.js');
 const financialSystem = require('./finance/financialSystemV103.js');
+const ratingSystem = require('./rating/ratingSystemV104.js'); // V104_RATING_VISUALIZATION
 /* =========================
    手机自适应基础
 ========================= */
@@ -5522,6 +5523,9 @@ runtime.economyBalance =
 
 runtime.financialSystem =
   financialSystem;
+
+runtime.ratingSystem =
+  ratingSystem; // V104_RATING_VISUALIZATION
 
 /* =========================
    总渲染
