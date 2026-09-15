@@ -5524,7 +5524,7 @@ runtime.economyBalance =
 
 sceneManager.register(
   'property',
-  shopScene
+  propertyMarketScene
 );
 
 
@@ -7981,5 +7981,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V0.8.64 真实空间装修体验版启动成功'
+  '城市餐饮经营小游戏 V0.8.65 启动热修复版启动成功'
 );

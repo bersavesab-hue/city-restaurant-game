@@ -66,6 +66,12 @@ assert.ok(!pkg.scripts.postinstall, '不能重新引入旧恢复型postinstall')
 
 assert.equal(pkg.scripts.test, 'node scripts/run-ci-tests-v060.js');
 assert.equal(pkg.scripts['build:android-js'], 'node scripts/build-android-js-v060.js');
+assert.ok(
+  String(pkg.scripts.pretest || '').includes(
+    'node tests/androidStartupSmoke.test.js'
+  ),
+  '必须保留 Android 启动冒烟测试，防止真机启动级回归'
+);
 
 const main = read('src/main.js');
 

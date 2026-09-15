@@ -1,0 +1,16 @@
+{
+  "id": "V0865_ANDROID_STARTUP_HOTFIX",
+  "baseVersion": "0.8.64",
+  "targetVersion": "0.8.65",
+  "category": "致命启动修复",
+  "rootCause": "src/main.js 注册 property 路由时引用未定义变量 shopScene；正确变量为 propertyMarketScene",
+  "verification": [
+    "实际拆解0.8.64 APK并执行game.bundle.js，稳定复现 ReferenceError: shopScene is not defined",
+    "在实际0.8.64 bundle中替换为propertyMarketScene后，完整启动输出 BUNDLE_BOOT_OK",
+    "新增tests/androidStartupSmoke.test.js，真正require android/entry.js并执行完整main启动",
+    "v60-audit强制保留Android启动冒烟测试"
+  ],
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsWorkflowFiles": false
+}
