@@ -149,9 +149,57 @@ for (
     'renovation',
     'equipment',
     'license',
-    'staff',
+    'staff'
+  ]
+) {
+  assert.ok(
+    policy
+      .evaluate(
+        route
+      )
+      .allowed,
+    route
+  );
+}
+
+for (
+  const route
+  of [
     'research',
     'supply',
+    'schedule',
+    'business',
+    'staffCareer'
+  ]
+) {
+  const result =
+    policy
+      .evaluate(
+        route
+      );
+
+  assert.equal(
+    result.allowed,
+    false,
+    route
+  );
+
+  assert.equal(
+    result.code,
+    'OPENING_FOCUS_REQUIRED',
+    route
+  );
+}
+
+stage =
+  'trial';
+
+for (
+  const route
+  of [
+    'research',
+    'supply',
+    'schedule',
     'business'
   ]
 ) {
@@ -165,6 +213,29 @@ for (
   );
 }
 
+assert.equal(
+  policy
+    .evaluate(
+      'staffCareer'
+    )
+    .allowed,
+  false
+);
+
+stage =
+  'complete';
+
+assert.ok(
+  policy
+    .evaluate(
+      'staffCareer'
+    )
+    .allowed
+);
+
+stage =
+  'renovation';
+
 const diagnostic =
   policy
     .diagnose([
@@ -175,18 +246,18 @@ const diagnostic =
         id:'shop'
       },
       {
-        id:'staff'
+        id:'staffCareer'
       }
     ]);
 
 assert.equal(
   diagnostic.available,
-  3
+  2
 );
 
 assert.equal(
   diagnostic.blocked,
-  0
+  1
 );
 
 console.log(

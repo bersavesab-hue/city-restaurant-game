@@ -78,9 +78,33 @@ class FeatureHubScene {
 
     ctx.save();
     opUi.background(ctx, h);
-    opUi.header(ctx, '功能中心', '统一入口 · 所有核心功能从这里直达');
+    opUi.header(ctx, '功能中心', '按经营阶段逐步开放 · 当前只突出真正需要的功能');
 
     const status = entryRouter.diagnose();
+
+    const accessRows =
+      ITEMS.map(
+        item => ({
+          item,
+          access:
+            entryRouter
+              .getGuardStatus(
+                item[0],
+                {}
+              )
+        })
+      );
+
+    const availableCount =
+      accessRows.filter(
+        row =>
+          row.access &&
+          row.access.allowed
+      ).length;
+
+    const lockedCount =
+      accessRows.length -
+      availableCount;
 
     ui.card(
       ctx,
@@ -98,7 +122,7 @@ class FeatureHubScene {
 
     ui.text(
       ctx,
-      '路由 ' + status.routeCount + ' 项 · 历史 ' + status.historyDepth + ' 层',
+      '可用 ' + availableCount + ' 项 · 待解锁 ' + lockedCount + ' 项',
       28,
       113,
       8,
@@ -110,7 +134,7 @@ class FeatureHubScene {
       ctx,
       status.missing.length
         ? '有 ' + status.missing.length + ' 个入口尚未注册'
-        : '入口检测正常',
+        : '锁定入口会随首店经营进度自动开放',
       28,
       137,
       7,
@@ -125,6 +149,17 @@ class FeatureHubScene {
     const gapY = 9;
 
     ITEMS.forEach((item, index) => {
+      const access =
+        entryRouter
+          .getGuardStatus(
+            item[0],
+            {}
+          );
+
+      const locked =
+        !access ||
+        !access.allowed;
+
       const col = index % 2;
       const row = Math.floor(index / 2);
       const x = 14 + col * (cellW + gapX);
@@ -138,8 +173,14 @@ class FeatureHubScene {
         cellH,
         {
           radius: 12,
-          fill: '#FFFDF8',
-          stroke: '#D9D0C4',
+          fill:
+            locked
+              ? '#F0F1ED'
+              : '#FFFDF8',
+          stroke:
+            locked
+              ? '#D4D7D2'
+              : '#D9D0C4',
           shadow: false
         }
       );
@@ -150,27 +191,39 @@ class FeatureHubScene {
         x + 14,
         y + 21,
         8.3,
-        '#173D54',
+        locked
+          ? '#7D8588'
+          : '#173D54',
         '800'
       );
 
       ui.text(
         ctx,
-        item[0],
+        locked
+          ? '待解锁'
+          : item[0],
         x + 14,
         y + 41,
         5.8,
-        '#7A8A92',
+        locked
+          ? '#9A9F9F'
+          : '#7A8A92',
         '600'
       );
 
       ui.text(
         ctx,
-        '›',
+        locked
+          ? '锁'
+          : '›',
         x + cellW - 16,
         y + cellH / 2,
-        13,
-        '#D99D2D',
+        locked
+          ? 7
+          : 13,
+        locked
+          ? '#929999'
+          : '#D99D2D',
         '800',
         'center'
       );
@@ -193,8 +246,15 @@ class FeatureHubScene {
       const ok = sceneManager.switchTo(routeId);
 
       if (!ok && api && typeof api.showToast === 'function') {
+        const error =
+          entryRouter
+            .getLastError();
+
         api.showToast({
-          title: '入口暂不可用',
+          title:
+            error &&
+            error.reason ||
+            '入口暂不可用',
           icon: 'none'
         });
       }

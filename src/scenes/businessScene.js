@@ -586,9 +586,29 @@ class BusinessScene {
     const latest =
       cycle.latestClosed;
 
+    const dashboard =
+      operations
+        .dashboard(
+          shop.id
+        );
+
+    const liveFinance =
+      dashboard &&
+      dashboard.finance
+        ? dashboard.finance
+        : {};
+
+    const operational =
+      [
+        'open',
+        'trial_opening'
+      ].includes(
+        shop.status
+      );
+
     const source =
-      active
-        ? active.visits
+      operational
+        ? liveFinance
         : latest &&
           latest.financial ||
           {};
@@ -646,9 +666,12 @@ class BusinessScene {
     ui.text(
       ctx,
       shop.status ===
-        'open'
-        ? '营业数据、决策和诊断会在日结时统一结算'
-        : '门店正式营业后才能开启经营日',
+        'trial_opening'
+        ? '试营业中 · 顾客订单、营业额和成本会实时计入今日经营'
+        : shop.status ===
+            'open'
+          ? '营业数据、决策和诊断会在日结时统一结算'
+          : '完成开店筹备后即可进入试营业',
       28,
       207,
       6.5,
@@ -657,8 +680,7 @@ class BusinessScene {
     );
 
     if (
-      shop.status ===
-      'open'
+      operational
     ) {
       opUi.button(
         ctx,
@@ -687,14 +709,12 @@ class BusinessScene {
 
     this.metric(
       ctx,
-      active
+      operational
         ? '今日有效订单'
         : '最近日结订单',
       String(
         Number(
-          active
-            ? source.success
-            : source.orders
+          source.orders
         ) ||
         0
       ),
@@ -704,7 +724,7 @@ class BusinessScene {
 
     this.metric(
       ctx,
-      active
+      operational
         ? '今日顾客'
         : '最近日结顾客',
       String(
@@ -719,7 +739,7 @@ class BusinessScene {
 
     this.metric(
       ctx,
-      active
+      operational
         ? '今日营业额'
         : '最近日结营收',
       opUi.money(
@@ -735,23 +755,19 @@ class BusinessScene {
 
     this.metric(
       ctx,
-      active
-        ? '今日贡献毛利'
+      operational
+        ? '今日净利润'
         : '最近日结利润',
       opUi.money(
         Number(
-          active
-            ? source.contribution
-            : source.profit
+          source.profit
         ) ||
         0
       ),
       206,
       314,
       Number(
-        active
-          ? source.contribution
-          : source.profit
+        source.profit
       ) >= 0
         ? '#248B63'
         : '#C85242'

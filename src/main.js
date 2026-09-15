@@ -5883,8 +5883,20 @@ function handleTap(
         )
     ) {
       render();
+      return;
     }
 
+    const routeError =
+      entryRouter
+        .getLastError();
+
+    showToast(
+      routeError &&
+      routeError.reason ||
+      '该功能暂未解锁'
+    );
+
+    render();
     return;
   }
   const scene =
@@ -7763,5 +7775,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V0.8.44 稳定接线修复版启动成功'
+  '城市餐饮经营小游戏 V0.8.46 首店真实营业优化版启动成功'
 );

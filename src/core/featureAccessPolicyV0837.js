@@ -206,9 +206,6 @@ function createPolicy(options) {
     }
 
     if (
-      SHOP_REQUIRED.includes(
-        id
-      ) ||
       NO_SHOP_ALLOWED.includes(
         id
       )
@@ -218,6 +215,85 @@ function createPolicy(options) {
         routeId:id,
         state:'available',
         reason:null,
+        recommended:
+          clone(recommended)
+      };
+    }
+
+    if (
+      SHOP_REQUIRED.includes(
+        id
+      )
+    ) {
+      const stage =
+        String(
+          flow.stage ||
+          ''
+        );
+
+      const preparationRoutes = [
+        'shop',
+        'renovation',
+        'equipment',
+        'license',
+        'staff'
+      ];
+
+      const trialRoutes = [
+        'research',
+        'supply',
+        'schedule',
+        'business'
+      ];
+
+      const trialUnlocked =
+        [
+          'trial',
+          'formal_open',
+          'complete'
+        ].includes(
+          stage
+        );
+
+      const available =
+        preparationRoutes.includes(
+          id
+        ) ||
+        (
+          trialUnlocked &&
+          trialRoutes.includes(
+            id
+          )
+        ) ||
+        (
+          id ===
+            'staffCareer' &&
+          stage ===
+            'complete'
+        );
+
+      if (available) {
+        return {
+          allowed:true,
+          routeId:id,
+          state:'available',
+          reason:null,
+          recommended:
+            clone(recommended)
+        };
+      }
+
+      return {
+        allowed:false,
+        routeId:id,
+        state:'blocked',
+        code:
+          'OPENING_FOCUS_REQUIRED',
+        reason:
+          id ===
+            'staffCareer'
+            ? '团队成长会在首店正式开业后开放'
+            : '菜单、供应链、排班和经营数据会在首店试营业阶段开放；当前先完成开店筹备',
         recommended:
           clone(recommended)
       };

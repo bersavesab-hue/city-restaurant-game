@@ -26,9 +26,35 @@ const pkg =
     )
   );
 
-assert.equal(
-  pkg.version,
-  '0.8.44'
+const versionParts =
+  String(
+    pkg.version ||
+    '0.0.0'
+  )
+    .split('.')
+    .map(
+      value =>
+        Number(value) ||
+        0
+    );
+
+const versionNumber =
+  (
+    versionParts[0] || 0
+  ) *
+    1000000 +
+  (
+    versionParts[1] || 0
+  ) *
+    1000 +
+  (
+    versionParts[2] || 0
+  );
+
+assert.ok(
+  versionNumber >=
+    8044,
+  '项目版本不得低于0.8.44'
 );
 
 assert.ok(
@@ -85,13 +111,30 @@ const gradle =
     'utf8'
   );
 
+const versionCodeMatch =
+  gradle.match(
+    /versionCode\s+(\d+)/
+  );
+
+const versionNameMatch =
+  gradle.match(
+    /versionName\s+'([^']+)'/
+  );
+
 assert.ok(
-  gradle.includes(
-    'versionCode 844'
-  ) &&
-  gradle.includes(
-    "versionName '0.8.44'"
-  )
+  versionCodeMatch &&
+  Number(
+    versionCodeMatch[1]
+  ) >=
+    844,
+  'Android versionCode不得低于844'
+);
+
+assert.ok(
+  versionNameMatch &&
+  versionNameMatch[1] ===
+    pkg.version,
+  'Android versionName必须与package.json一致'
 );
 
 assert.ok(

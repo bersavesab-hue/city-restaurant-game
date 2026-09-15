@@ -54,7 +54,7 @@ gameState.reset();
 gameState.addShop({
   id:'shop_v0844_ui',
   name:'日结接线测试店',
-  status:'open',
+  status:'trial_opening',
   districtId:'university',
   monthlyRent:9000,
   usableArea:90,
@@ -203,7 +203,14 @@ assert.ok(
   ) &&
   businessSource.includes(
     "id:'day'"
-  )
+  ) &&
+  businessSource.includes(
+    "'trial_opening'"
+  ) &&
+  businessSource.includes(
+    '.dashboard('
+  ),
+  '试营业必须能进入营业日，并读取真实运行时经营数据'
 );
 
 assert.ok(
