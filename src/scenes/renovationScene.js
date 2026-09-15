@@ -6666,5 +6666,20 @@ class RenovationScene {
 
 }
 
+// V0862_PRO_RENOVATION_EDITOR_INSTALL
+// Real placement editor: drag / rotate / duplicate / delete furniture while
+// preserving the existing renovation calculation, history and construction flow.
+require('../renovation/renovationEditorV0862.js').install({
+  RenovationScene,
+  renovationSystem,
+  renovationConfig,
+  floorGeometrySystem,
+  saveSystem,
+  runtime,
+  ui,
+  COLORS,
+  V45_HALL_STYLE_VISUAL
+});
+
 module.exports =
   new RenovationScene();

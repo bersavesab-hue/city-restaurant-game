@@ -245,6 +245,7 @@ for (
     'tests/renovationUiV0849.test.js',
     'tests/renovationHotfixV0849.test.js',
     'tests/renovationFinalFixV0850.test.js',
+    'tests/renovationEditorV0862.test.js',
     'tests/preparationCommandCenterV0861.test.js',
     'tests/updateInfrastructureV0849.test.js',
     'tests/v60CleanBase.test.js'
