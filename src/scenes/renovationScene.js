@@ -6,6 +6,7 @@
 // V47_RENOVATION_REFERENCE_REBUILD
 // V48_DYNAMIC_FLOOR_GEOMETRY_UI
 // V0849_AREA_TRUTH_RENOVATION_UI
+// V0849_HOTFIX_RENOVATION_INTERACTION_LAYOUT
 //
 // Main renovation page rebuilt around the user's final reference:
 // header -> template strip -> large coherent floor plan -> table/metrics -> CTA.
@@ -1274,7 +1275,7 @@ class RenovationScene {
   getMainGeometry() {
     const y =
       this.viewH < 700
-        ? 82
+        ? 94
         : 200;
 
     const footerH =
@@ -1321,11 +1322,14 @@ class RenovationScene {
       planH,
       lowerY,
       lowerH:
-        Math.min(
-          lowerH,
-          footerY -
-          lowerY -
-          8
+        Math.max(
+          86,
+          Math.min(
+            lowerH,
+            footerY -
+            lowerY -
+            8
+          )
         ),
       footerY,
       footerH
@@ -1377,7 +1381,7 @@ class RenovationScene {
     const margin =
       7;
 
-    const scale =
+    const fitScale =
       Math.min(
         (
           w -
@@ -1397,6 +1401,35 @@ class RenovationScene {
           )
       );
 
+    const areaM2 =
+      Math.max(
+        1,
+        Number(
+          geometry.areaM2
+        ) ||
+        (
+          Number(geometry.widthM) *
+          Number(geometry.depthM)
+        ) ||
+        1
+      );
+
+    // 不再让所有面积的房源都强制铺满画布。
+    const areaVisualScale =
+      clamp(
+        Math.pow(
+          areaM2 /
+          320,
+          0.26
+        ),
+        0.62,
+        1
+      );
+
+    const scale =
+      fitScale *
+      areaVisualScale;
+
     const drawW =
       geometry.widthM *
       scale;
@@ -1407,6 +1440,7 @@ class RenovationScene {
 
     return {
       scale,
+      areaVisualScale,
       x:
         x +
         (
@@ -1961,6 +1995,74 @@ class RenovationScene {
     );
     ctx.stroke();
     ctx.restore();
+
+    const dragHandles = [
+      {
+        type: 'back',
+        x: frame.x + frame.w * 0.5,
+        y: frame.y + frame.h * backRatio
+      },
+      {
+        type: 'kitchen-storage',
+        x: frame.x + frame.w * kitchenWidthRatio,
+        y: frame.y + frame.h * backRatio * 0.5
+      },
+      {
+        type: 'service',
+        x: frame.x + frame.w * serviceWidthRatio,
+        y:
+          frame.y +
+          frame.h *
+          (
+            backRatio +
+            (
+              1 -
+              backRatio
+            ) *
+            0.5
+          )
+      }
+    ];
+
+    for (
+      let i = 0;
+      i <
+      dragHandles.length;
+      i++
+    ) {
+      const handle =
+        dragHandles[i];
+
+      const active =
+        this.areaDrag &&
+        this.areaDrag.type ===
+          handle.type &&
+        this.areaDrag.floorIndex ===
+          floor.index;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(
+        handle.x,
+        handle.y,
+        active
+          ? 7
+          : 5.5,
+        0,
+        Math.PI * 2
+      );
+      ctx.fillStyle =
+        active
+          ? '#FFB300'
+          : '#FFD95A';
+      ctx.strokeStyle =
+        '#FFFFFF';
+      ctx.lineWidth =
+        1.5;
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
 
     this.floorCanvasInteraction = {
       frame,
@@ -2527,6 +2629,9 @@ class RenovationScene {
     h,
     active
   ) {
+    const compact =
+      w < 64;
+
     ui.card(
       ctx,
       x,
@@ -2554,9 +2659,16 @@ class RenovationScene {
     this.drawImageContain(
       ctx,
       imageKey,
-      x + 7,
+      x +
+        (
+          compact
+            ? 4
+            : 7
+        ),
       y + 6,
-      25,
+      compact
+        ? 19
+        : 25,
       h - 12,
       1
     );
@@ -2564,9 +2676,13 @@ class RenovationScene {
     this.text(
       ctx,
       label,
-      x + 42,
+      compact
+        ? x + w * 0.68
+        : x + 42,
       y + h / 2,
-      5.3,
+      compact
+        ? 4.6
+        : 5.3,
       COLORS.navy,
       '800',
       'center'
@@ -2633,14 +2749,14 @@ class RenovationScene {
 
     this.text(
       ctx,
-      '拖动虚线调面积 · ' +
+      '拖动黄点/虚线调面积 · ' +
         floorGeometry.shapeName +
         ' · ' +
         floorGeometry.areaM2.toFixed(0) +
         '㎡',
       64,
       y + 17,
-      5.0,
+      4.9,
       COLORS.muted,
       '600'
     );
@@ -2724,21 +2840,28 @@ class RenovationScene {
     const planY =
       y + 35;
 
-    const toolW =
-      70;
+    const planW =
+      362;
 
-    const gap =
+    const toolGap =
+      4;
+
+    const toolH =
+      40;
+
+    const toolY =
+      y +
+      h -
+      toolH -
       7;
 
-    const planW =
-      376 -
-      14 -
-      8 -
-      toolW -
-      gap;
-
     const planH =
-      h - 43;
+      Math.max(
+        120,
+        toolY -
+        planY -
+        6
+      );
 
     this.drawFloorCanvas(
       ctx,
@@ -2751,16 +2874,8 @@ class RenovationScene {
     );
 
     const tools = [
-      [
-        'page:zones',
-        'reno_prep',
-        '区域'
-      ],
-      [
-        'page:furniture',
-        'reno_table_4',
-        '家具'
-      ],
+      ['page:zones', 'reno_prep', '区域'],
+      ['page:furniture', 'reno_table_4', '家具'],
       [
         'page:style',
         V45_HALL_STYLE_VISUAL[
@@ -2770,42 +2885,30 @@ class RenovationScene {
           'reno_style_natural',
         '风格'
       ],
-      [
-        'page:rooms',
-        'reno_table_8',
-        '包厢'
-      ],
-      [
-        'aisle:cycle',
-        'reno_corridor',
-        '动线'
-      ],
+      ['page:rooms', 'reno_table_8', '包厢'],
+      ['aisle:cycle', 'reno_corridor', '动线'],
       [
         'floor:next',
         'reno_room_small',
-        (
-          '楼层 ' +
+        '楼层' +
           (
             metrics.plan
               .activeFloor +
             1
-          ) +
-          'F'
-        )
+          )
       ]
     ];
 
-    const tx =
-      planX +
-      planW +
-      gap;
-
-    const th =
+    const toolW =
       (
-        planH -
-        5 * 5
+        planW -
+        toolGap *
+        (
+          tools.length -
+          1
+        )
       ) /
-      6;
+      tools.length;
 
     for (
       let i = 0;
@@ -2818,14 +2921,15 @@ class RenovationScene {
         tools[i][0],
         tools[i][1],
         tools[i][2],
-        tx,
-        planY +
+        planX +
           i *
           (
-            th + 5
+            toolW +
+            toolGap
           ),
+        toolY,
         toolW,
-        th,
+        toolH,
         false
       );
     }
@@ -4080,7 +4184,7 @@ class RenovationScene {
       this.drawSecondaryShell(
         ctx,
         '家具与软装',
-        '餐桌决定餐位，软装影响舒适度、吸引力与预算'
+        '餐桌决定餐位；空间不足时会明确提示，不再出现“按钮没反应”'
       );
 
     const tableY =
@@ -4099,24 +4203,69 @@ class RenovationScene {
     const keys =
       ['2', '4', '6', '8'];
 
+    const cols =
+      2;
+
+    const cardGap =
+      8;
+
+    const cardW =
+      171;
+
+    const cardH =
+      78;
+
+    const tableStartY =
+      tableY + 21;
+
     for (
       let i = 0;
-      i < 4;
+      i <
+      keys.length;
       i++
     ) {
       const key =
         keys[i];
 
+      const col =
+        i %
+        cols;
+
+      const row =
+        Math.floor(
+          i /
+          cols
+        );
+
       const x =
         16 +
-        i * 89;
+        col *
+        (
+          cardW +
+          cardGap
+        );
+
+      const cardY =
+        tableStartY +
+        row *
+        (
+          cardH +
+          cardGap
+        );
+
+      const count =
+        Number(
+          floor.tables[
+            key
+          ]
+        ) || 0;
 
       ui.card(
         ctx,
         x,
-        tableY + 21,
-        82,
-        111,
+        cardY,
+        cardW,
+        cardH,
         {
           radius: 11,
           fill:
@@ -4131,10 +4280,10 @@ class RenovationScene {
         ctx,
         'reno_table_' +
           key,
-        x + 6,
-        tableY + 27,
-        70,
-        58,
+        x + 7,
+        cardY + 8,
+        69,
+        55,
         1
       );
 
@@ -4142,20 +4291,72 @@ class RenovationScene {
         ctx,
         key +
           '人桌',
-        x + 41,
-        tableY + 88,
-        5.6,
+        x + 88,
+        cardY + 17,
+        6.0,
         COLORS.text,
-        '800',
-        'center'
+        '800'
+      );
+
+      this.text(
+        ctx,
+        '已摆 ' +
+          count +
+          ' 张',
+        x + 88,
+        cardY + 35,
+        5.1,
+        COLORS.muted,
+        '700'
+      );
+
+      const minusX =
+        x + 91;
+
+      const plusX =
+        x + 132;
+
+      const buttonY =
+        cardY + 47;
+
+      ui.card(
+        ctx,
+        minusX,
+        buttonY,
+        32,
+        24,
+        {
+          radius: 9,
+          fill:
+            '#F2EEE7',
+          stroke:
+            '#D7CCBC',
+          shadow: false
+        }
+      );
+
+      ui.card(
+        ctx,
+        plusX,
+        buttonY,
+        32,
+        24,
+        {
+          radius: 9,
+          fill:
+            '#FFE49A',
+          stroke:
+            '#E1B43A',
+          shadow: false
+        }
       );
 
       this.text(
         ctx,
         '−',
-        x + 13,
-        tableY + 112,
-        7,
+        minusX + 16,
+        buttonY + 12,
+        8.5,
         COLORS.navy,
         '800',
         'center'
@@ -4163,25 +4364,10 @@ class RenovationScene {
 
       this.text(
         ctx,
-        Number(
-          floor.tables[
-            key
-          ]
-        ) || 0,
-        x + 41,
-        tableY + 112,
-        5.8,
-        COLORS.text,
-        '800',
-        'center'
-      );
-
-      this.text(
-        ctx,
         '+',
-        x + 69,
-        tableY + 112,
-        7,
+        plusX + 16,
+        buttonY + 12,
+        8.5,
         COLORS.navy,
         '800',
         'center'
@@ -4191,25 +4377,31 @@ class RenovationScene {
         'table:' +
           key +
           ':minus',
-        x + 2,
-        tableY + 98,
-        28,
-        28
+        minusX - 2,
+        buttonY - 4,
+        36,
+        32
       );
 
       this.addButton(
         'table:' +
           key +
           ':plus',
-        x + 54,
-        tableY + 98,
-        28,
-        28
+        plusX - 2,
+        buttonY - 4,
+        36,
+        32
       );
     }
 
     const decorY =
-      tableY + 148;
+      tableStartY +
+      2 *
+      (
+        cardH +
+        cardGap
+      ) +
+      7;
 
     this.text(
       ctx,
@@ -4255,7 +4447,7 @@ class RenovationScene {
         x,
         decorY + 13,
         82,
-        116,
+        90,
         {
           radius: 11,
           fill:
@@ -4283,10 +4475,10 @@ class RenovationScene {
           item.id
         ] ||
           'reno_plant_1',
-        x + 7,
+        x + 8,
         decorY + 19,
-        68,
-        56,
+        66,
+        39,
         1
       );
 
@@ -4294,23 +4486,10 @@ class RenovationScene {
         ctx,
         item.name,
         x + 41,
-        decorY + 82,
-        5.5,
+        decorY + 61,
+        5.2,
         COLORS.text,
         '800',
-        'center'
-      );
-
-      this.text(
-        ctx,
-        money(
-          item.cost
-        ),
-        x + 41,
-        decorY + 98,
-        4.5,
-        COLORS.orange,
-        '700',
         'center'
       );
 
@@ -4320,8 +4499,8 @@ class RenovationScene {
           count +
           ' +',
         x + 41,
-        decorY + 116,
-        5.7,
+        decorY + 88,
+        5.8,
         COLORS.navy,
         '800',
         'center'
@@ -4331,32 +4510,32 @@ class RenovationScene {
         'decor:' +
           item.id +
           ':minus',
-        x + 4,
-        decorY + 101,
-        28,
-        28
+        x + 3,
+        decorY + 73,
+        32,
+        30
       );
 
       this.addButton(
         'decor:' +
           item.id +
           ':plus',
-        x + 51,
-        decorY + 101,
-        28,
-        28
+        x + 48,
+        decorY + 73,
+        32,
+        30
       );
     }
 
     const impactY =
-      decorY + 143;
+      decorY + 117;
 
     ui.card(
       ctx,
       16,
       impactY,
       358,
-      60,
+      56,
       {
         radius: 12,
         fill:
@@ -4376,7 +4555,7 @@ class RenovationScene {
           metrics.decorCost
         ),
       28,
-      impactY + 18,
+      impactY + 17,
       7.0,
       COLORS.text,
       '800'
@@ -4400,7 +4579,7 @@ class RenovationScene {
           .serviceFactor
           .toFixed(2),
       28,
-      impactY + 41,
+      impactY + 38,
       5.2,
       COLORS.muted,
       '600'
@@ -6029,6 +6208,28 @@ class RenovationScene {
       const parts =
         id.split(':');
 
+      const tableKey =
+        String(
+          Number(
+            parts[1]
+          )
+        );
+
+      const delta =
+        parts[2] ===
+          'plus'
+          ? 1
+          : -1;
+
+      const beforeCount =
+        Number(
+          plan.floors[
+            floorIndex
+          ].tables[
+            tableKey
+          ]
+        ) || 0;
+
       renovationSystem
         .adjustTable(
           this.shopId,
@@ -6036,11 +6237,83 @@ class RenovationScene {
           Number(
             parts[1]
           ),
-          parts[2] ===
-            'plus'
-            ? 1
-            : -1
+          delta
         );
+
+      const currentPlan =
+        this.getPlan();
+
+      const afterCount =
+        Number(
+          currentPlan
+            .floors[
+              floorIndex
+            ]
+            .tables[
+              tableKey
+            ]
+        ) || 0;
+
+      if (
+        delta > 0 &&
+        afterCount <=
+          beforeCount
+      ) {
+        const currentMetrics =
+          this.getMetrics();
+
+        const floorMetrics =
+          currentMetrics &&
+          currentMetrics
+            .floors
+            .find(
+              value =>
+                value.index ===
+                floorIndex
+            );
+
+        const totalTables =
+          Object.values(
+            currentPlan
+              .floors[
+                floorIndex
+              ]
+              .tables
+          )
+          .reduce(
+            (
+              sum,
+              value
+            ) =>
+              sum +
+              Math.max(
+                0,
+                Number(value) ||
+                0
+              ),
+            0
+          );
+
+        const slots =
+          floorMetrics &&
+          floorMetrics
+            .usableDiningSlots
+            ? floorMetrics
+                .usableDiningSlots
+                .length
+            : 0;
+
+        this.showToast(
+          slots > 0 &&
+          totalTables >=
+            slots
+            ? '餐桌落位点已满，请拖动分区扩大堂食区'
+            : '堂食可用面积不足，请扩大堂食区或减少其他家具'
+        );
+      } else {
+        saveSystem
+          .autoSave(true);
+      }
 
       return true;
     }
@@ -6514,8 +6787,8 @@ class RenovationScene {
     if (
       !data ||
       this.page !==
-        'layout' &&
-      !this.previewMode
+        'layout' ||
+      this.previewMode
     ) {
       return false;
     }
@@ -6553,7 +6826,7 @@ class RenovationScene {
       Math.abs(
         y -
         horizontalY
-      ) <= 13
+      ) <= 18
     ) {
       type = 'back';
     } else if (
@@ -6561,15 +6834,16 @@ class RenovationScene {
       Math.abs(
         x -
         topSplitX
-      ) <= 13
+      ) <= 18
     ) {
-      type = 'kitchen-storage';
+      type =
+        'kitchen-storage';
     } else if (
       y > horizontalY &&
       Math.abs(
         x -
         serviceSplitX
-      ) <= 13
+      ) <= 18
     ) {
       type = 'service';
     }

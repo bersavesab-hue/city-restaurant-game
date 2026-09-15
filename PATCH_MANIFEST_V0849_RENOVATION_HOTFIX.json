@@ -1,0 +1,21 @@
+{
+  "id": "V0849_RENOVATION_INTERACTION_LAYOUT_HOTFIX",
+  "baseVersion": "0.8.49",
+  "targetVersion": "0.8.49",
+  "hotfixRevision": 1,
+  "category": "装修拖拽与手机布局修复",
+  "features": [
+    "Android补齐touchstart和touchmove事件桥",
+    "Canvas禁用浏览器默认触摸手势",
+    "主平面图扩大并将工具栏移到底部",
+    "门店装修图按真实面积产生视觉尺寸差异",
+    "分区虚线加入黄色抓取点并扩大触摸容差",
+    "家具餐桌改为双列大按钮布局",
+    "餐桌添加失败时展示容量原因",
+    "600至780高度手机继续做点击区回归测试"
+  ],
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false
+}\n

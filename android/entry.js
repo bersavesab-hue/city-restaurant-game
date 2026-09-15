@@ -12,6 +12,10 @@ if (!canvas) throw new Error('找不到 gameCanvas');
 const ctx = canvas.getContext('2d');
 if (!ctx) throw new Error('无法创建 Canvas 2D 环境');
 
+// V0849_HOTFIX_TOUCH_BRIDGE
+// 装修分区拖拽需要完整 touchstart -> touchmove -> touchend 生命周期。
+canvas.style.touchAction = 'none';
+
 let lastTouchAt = 0;
 let activeModal = null;
 
@@ -225,6 +229,54 @@ const androidApi = {
           callback();
         }
       }
+    );
+  },
+
+  onTouchStart(callback) {
+    if (typeof callback !== 'function') {
+      return;
+    }
+
+    canvas.addEventListener(
+      'touchstart',
+      function (event) {
+        if (event.cancelable) {
+          event.preventDefault();
+        }
+
+        if (!event.touches || !event.touches.length) {
+          return;
+        }
+
+        callback({
+          touches: event.touches
+        });
+      },
+      { passive: false }
+    );
+  },
+
+  onTouchMove(callback) {
+    if (typeof callback !== 'function') {
+      return;
+    }
+
+    canvas.addEventListener(
+      'touchmove',
+      function (event) {
+        if (event.cancelable) {
+          event.preventDefault();
+        }
+
+        if (!event.touches || !event.touches.length) {
+          return;
+        }
+
+        callback({
+          touches: event.touches
+        });
+      },
+      { passive: false }
     );
   },
 
