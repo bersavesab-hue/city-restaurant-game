@@ -15,6 +15,9 @@ const supplierEngine =
 const procurementEngine =
   require('../supplier/procurementEngineV10.js');
 
+const supplierProcurementDatabase =
+  require('../supplier/supplierProcurementDatabaseV0820.js');
+
 const inventoryEngine =
   require('../inventory/inventoryEngineV10.js');
 
@@ -149,6 +152,7 @@ function normalizeLegacyCalendar(
         of [
           'orderedDay',
           'expectedDay',
+          'paymentDueDay',
           'receivedDay'
         ]
       ) {
@@ -466,6 +470,12 @@ function buildRuntime(
   normalizeLegacyCalendar(
     runtime
   );
+
+  procurementEngine
+    .updatePurchaseOrderStatuses(
+      runtime.procurement,
+      runtime.day
+    );
 
   if (
     !runtime.simulation
@@ -1401,6 +1411,435 @@ function inventoryHealth(
   );
 }
 
+function supplierCatalog(
+  shopId,
+  filters
+) {
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  if (!runtime) {
+    return [];
+  }
+
+  return (
+    supplierEngine
+      .getSupplierCatalog(
+        runtime.supplierNetwork,
+        filters ||
+        {}
+      )
+  );
+}
+
+function compareSupplierQuotes(
+  shopId,
+  ingredientId,
+  qtyKg,
+  options
+) {
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  if (!runtime) {
+    return [];
+  }
+
+  const shop =
+    getShop(
+      shopId
+    );
+
+  const modifiers =
+    dynamicWorldSystem
+      .getModifiers({
+        shopId,
+        districtId:
+          shop &&
+          shop.districtId
+      });
+
+  return (
+    supplierEngine
+      .compareQuotes(
+        runtime.supplierNetwork,
+        ingredientId,
+        qtyKg,
+        {
+          day:
+            runtime.day,
+          marketIndex:
+            Number(
+              modifiers
+                .supplyCostMultiplier
+            ) || 1,
+          ...(
+            options ||
+            {}
+          )
+        }
+      )
+  );
+}
+
+function negotiateSupplierQuote(
+  shopId,
+  supplierId,
+  ingredientId,
+  qtyKg,
+  options
+) {
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  if (!runtime) {
+    return {
+      ok:false,
+      reason:'门店不存在'
+    };
+  }
+
+  const supplier =
+    runtime
+      .supplierNetwork
+      .find(
+        item =>
+          item.id ===
+          supplierId
+      );
+
+  if (!supplier) {
+    return {
+      ok:false,
+      reason:'供应商不存在'
+    };
+  }
+
+  const requestedKg =
+    Math.max(
+      0.1,
+      Number(
+        qtyKg
+      ) || 0
+    );
+
+  const orderKg =
+    Math.max(
+      requestedKg,
+      supplierProcurementDatabase
+        .minimumOrderKg(
+          supplier
+        )
+    );
+
+  return (
+    supplierEngine
+      .negotiateQuote(
+        supplier,
+        ingredientId,
+        orderKg,
+        {
+          day:
+            runtime.day,
+          ...(
+            options ||
+            {}
+          )
+        }
+      )
+  );
+}
+
+function createManualPurchaseOrder(
+  shopId,
+  supplierId,
+  ingredientId,
+  qtyKg,
+  options
+) {
+  const opts =
+    options ||
+    {};
+
+  return mutate(
+    shopId,
+    runtime => {
+      const supplier =
+        runtime
+          .supplierNetwork
+          .find(
+            item =>
+              item.id ===
+              supplierId
+          );
+
+      if (!supplier) {
+        return {
+          ok:false,
+          reason:'供应商不存在'
+        };
+      }
+
+      const requestedKg =
+        Math.max(
+          0.1,
+          Number(
+            qtyKg
+          ) || 0
+        );
+
+      const orderKg =
+        opts.adjustToMoq ===
+          false
+          ? requestedKg
+          : Math.max(
+              requestedKg,
+              supplierProcurementDatabase
+                .minimumOrderKg(
+                  supplier
+                )
+            );
+
+      const quote =
+        opts.negotiate
+          ? supplierEngine
+              .negotiateQuote(
+                supplier,
+                ingredientId,
+                orderKg,
+                {
+                  day:
+                    runtime.day,
+                  buyerPower:
+                    opts.buyerPower,
+                  rounds:
+                    opts.rounds
+                }
+              )
+          : supplierEngine
+              .quote(
+                supplier,
+                ingredientId,
+                orderKg,
+                {
+                  day:
+                    runtime.day
+                }
+              );
+
+      if (
+        !quote ||
+        !quote.ok
+      ) {
+        return quote || {
+          ok:false,
+          reason:'无法获得报价'
+        };
+      }
+
+      quote.requestedKg =
+        requestedKg;
+
+      quote.moqAdjusted =
+        orderKg >
+        requestedKg +
+          0.0001;
+
+      return (
+        procurementEngine
+          .createPurchaseOrder(
+            runtime.procurement,
+            quote,
+            {
+              day:
+                runtime.day,
+              network:
+                runtime.supplierNetwork,
+              source:'manual'
+            }
+          )
+      );
+    }
+  );
+}
+
+function receiveManualPurchaseOrder(
+  shopId,
+  poId,
+  options
+) {
+  const opts =
+    options ||
+    {};
+
+  return mutate(
+    shopId,
+    runtime => {
+      procurementEngine
+        .updatePurchaseOrderStatuses(
+          runtime.procurement,
+          runtime.day
+        );
+
+      const po =
+        procurementEngine
+          .getPurchaseOrder(
+            runtime.procurement,
+            poId
+          );
+
+      if (!po) {
+        return {
+          ok:false,
+          reason:'采购单不存在'
+        };
+      }
+
+      if (
+        runtime.day <
+          Number(
+            po.expectedDay
+          ) &&
+        opts.allowEarly !==
+          true
+      ) {
+        return {
+          ok:false,
+          reason:'货物尚未到达',
+          expectedDay:
+            po.expectedDay,
+          currentDay:
+            runtime.day
+        };
+      }
+
+      const cash =
+        Number(
+          gameState
+            .getPlayer()
+            .cash
+        ) || 0;
+
+      if (
+        cash <
+        Number(
+          po.total
+        )
+      ) {
+        return {
+          ok:false,
+          reason:'资金不足',
+          need:
+            Number(
+              po.total
+            ) || 0,
+          cash
+        };
+      }
+
+      const received =
+        procurementEngine
+          .receivePurchaseOrder(
+            runtime.procurement,
+            poId,
+            runtime.inventory,
+            {
+              day:
+                runtime.day,
+              network:
+                runtime.supplierNetwork,
+              enforceArrival:true,
+              allowEarly:
+                opts.allowEarly ===
+                true
+            }
+          );
+
+      if (!received.ok) {
+        return received;
+      }
+
+      if (
+        !gameState
+          .spendCash(
+            Number(
+              po.total
+            ) || 0
+          )
+      ) {
+        return {
+          ok:false,
+          reason:'付款失败'
+        };
+      }
+
+      po.paymentStatus =
+        'paid';
+
+      po.paidDay =
+        runtime.day;
+
+      return {
+        ok:true,
+        po,
+        lot:
+          received.lot
+      };
+    }
+  );
+}
+
+function cancelManualPurchaseOrder(
+  shopId,
+  poId,
+  reason
+) {
+  return mutate(
+    shopId,
+    runtime =>
+      procurementEngine
+        .cancelPurchaseOrder(
+          runtime.procurement,
+          poId,
+          {
+            day:
+              runtime.day,
+            reason:
+              reason ||
+              'manual'
+          }
+        )
+  );
+}
+
+function procurementOverview(
+  shopId
+) {
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  if (!runtime) {
+    return null;
+  }
+
+  return (
+    procurementEngine
+      .procurementOverview(
+        runtime.procurement,
+        runtime.supplierNetwork,
+        runtime.day
+      )
+  );
+}
+
 function autoRestock(
   shopId
 ) {
@@ -1519,7 +1958,11 @@ function autoRestock(
               quote,
               {
                 day:
-                  runtime.day
+                  runtime.day,
+                network:
+                  runtime.supplierNetwork,
+                source:
+                  'auto_restock'
               }
             );
 
@@ -1543,7 +1986,10 @@ function autoRestock(
                 .inventory,
               {
                 day:
-                  runtime.day
+                  runtime.day,
+                network:
+                  runtime.supplierNetwork,
+                instant:true
               }
             );
 
@@ -1741,6 +2187,13 @@ module.exports = {
   inventoryRows,
   inventoryLotRows,
   inventoryHealth,
+  supplierCatalog,
+  compareSupplierQuotes,
+  negotiateSupplierQuote,
+  createManualPurchaseOrder,
+  receiveManualPurchaseOrder,
+  cancelManualPurchaseOrder,
+  procurementOverview,
   autoRestock,
   dashboard
 };

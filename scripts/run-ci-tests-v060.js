@@ -173,6 +173,9 @@ for (
     'tests/ingredientInventoryDatabaseV0819.test.js',
     'tests/inventoryIntegrationV0819.test.js',
     'tests/updateInfrastructureV0819.test.js',
+    'tests/supplierProcurementDatabaseV0820.test.js',
+    'tests/procurementLogisticsIntegrationV0820.test.js',
+    'tests/updateInfrastructureV0820.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

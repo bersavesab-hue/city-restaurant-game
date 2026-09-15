@@ -33,7 +33,7 @@ function bootstrapInventory(runtime,days=2){
   const recipeIds=runtime.menu.map(x=>x.recipeId);const targets={};
   for(const rid of recipeIds){for(const line of recipeEngine.scaleRecipe(rid,Math.max(4,days*4),'single'))targets[line.ingredientId]=(targets[line.ingredientId]||0)+line.grams;}
   const orders=procurement.autoProcure(runtime.procurement,runtime.supplierNetwork,runtime.inventory,targets,{day:runtime.day});
-  for(const po of orders)procurement.receivePurchaseOrder(runtime.procurement,po.id,runtime.inventory,{day:runtime.day});
+  for(const po of orders)procurement.receivePurchaseOrder(runtime.procurement,po.id,runtime.inventory,{day:runtime.day,network:runtime.supplierNetwork,instant:true});
   return {targets,orders};
 }
 function customerProfile(runtime,options={}){
