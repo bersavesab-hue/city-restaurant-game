@@ -145,6 +145,9 @@ for (
     'tests/updateInfrastructureV089.test.js',
     'tests/featureRoutingV0810.test.js',
     'tests/updateInfrastructureV0810.test.js',
+    'tests/globalStateBusV0811.test.js',
+    'tests/stateBridgeV0811.test.js',
+    'tests/updateInfrastructureV0811.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

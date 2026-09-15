@@ -39,6 +39,12 @@ const sceneManager =
 const entryRouter =
   require('./core/entryRouterV0810.js');
 
+const globalStateBus =
+  require('./core/globalStateBusV0811.js');
+
+const stateBridge =
+  require('./core/stateBridgeV0811.js');
+
 const animationManager =
   require('./core/animationManager.js');
 
@@ -5350,6 +5356,11 @@ sceneManager.register(
 // V0810_ENTRY_ROUTER_BOOT
 entryRouter.install();
 
+// V0811_GLOBAL_STATE_BUS_BOOT
+stateBridge.install();
+runtime.stateBus =
+  globalStateBus;
+
 /* =========================
    总渲染
 ========================= */
@@ -5917,6 +5928,17 @@ function gameLoop(
           }
         }
       );
+
+  // V0811_STATE_BUS_RUNTIME_SYNC
+  stateBridge
+    .syncRuntime({
+      advancedMinutes,
+      simulationChanged,
+      timelineChanged,
+      restaurantChanged,
+      lifecycleChanged,
+      staffCareerChanged
+    });
 
   if (
     simulationChanged ||
@@ -7566,5 +7588,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V0.8.3 基础修复版启动成功'
+  '城市餐饮经营小游戏 V0.8.11 全局状态总线启动成功'
 );
