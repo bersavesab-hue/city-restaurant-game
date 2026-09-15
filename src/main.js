@@ -51,6 +51,9 @@ const timeScheduleCoordinator =
 const newGameFlow =
   require('./core/newGameFlowV0814.js');
 
+const foodResearchSystem =
+  require('./food/foodResearchSystemV0818.js');
+
 const animationManager =
   require('./core/animationManager.js');
 
@@ -7582,6 +7585,12 @@ console.log('V35_TOP_HUD_POLISH loaded');
 const restoredFromSave =
   saveSystem.load();
 
+foodResearchSystem
+  .install();
+
+runtime.foodResearch =
+  foodResearchSystem;
+
 newGameFlow
   .initialize({
     fresh:
@@ -7629,5 +7638,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V0.8.17 装修设备施工数据库版启动成功'
+  '城市餐饮经营小游戏 V0.8.18 菜品菜单研发数据库版启动成功'
 );

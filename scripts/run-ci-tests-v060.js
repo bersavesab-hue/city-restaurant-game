@@ -166,6 +166,10 @@ for (
     'tests/renovationEquipmentDatabaseV0817.test.js',
     'tests/renovationEquipmentIntegrationV0817.test.js',
     'tests/updateInfrastructureV0817.test.js',
+    'tests/foodResearchDatabaseV0818.test.js',
+    'tests/foodResearchSystemV0818.test.js',
+    'tests/foodMenuResearchIntegrationV0818.test.js',
+    'tests/updateInfrastructureV0818.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

@@ -1,0 +1,25 @@
+{
+  "id": "V0818_FOOD_MENU_RESEARCH_DATABASE",
+  "baseVersion": "0.8.17",
+  "targetVersion": "0.8.18",
+  "pass": "9/26",
+  "title": "菜品 / 菜单 / 研发数据库",
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false,
+  "androidRunnerCompatibility": true,
+  "database": {
+    "recipes": 96,
+    "starterRecipes": 12,
+    "researchableRecipes": 84,
+    "minimumVariants": 288,
+    "researchTracks": 8
+  },
+  "tests": [
+    "tests/foodResearchDatabaseV0818.test.js",
+    "tests/foodResearchSystemV0818.test.js",
+    "tests/foodMenuResearchIntegrationV0818.test.js",
+    "tests/updateInfrastructureV0818.test.js"
+  ]
+}

@@ -24,6 +24,15 @@ const recipeEngine =
 const foodPack =
   require('../food/foodPackV10.js');
 
+const menuEngine =
+  require('../food/menuEngineV10.js');
+
+const foodResearchDatabase =
+  require('../food/foodResearchDatabaseV0818.js');
+
+const foodResearchSystem =
+  require('../food/foodResearchSystemV0818.js');
+
 const settlementEngine =
   require('./settlementEngineV10.js');
 
@@ -241,16 +250,11 @@ function getCurrentShop() {
 }
 
 function defaultRecipeIds() {
-  return foodPack
-    .RECIPES
-    .slice(
-      0,
-      12
-    )
-    .map(
-      item =>
-        item.id
-    );
+  return (
+    foodResearchDatabase
+      .STARTER_RECIPE_IDS
+      .slice()
+  );
 }
 
 function snapshotRuntime(runtime) {
@@ -1030,6 +1034,221 @@ function adjustMenuPrice(
   );
 }
 
+function addMenuRecipe(
+  shopId,
+  recipeId,
+  options
+) {
+  if (
+    !foodResearchSystem
+      .isUnlocked(
+        recipeId
+      )
+  ) {
+    return {
+      ok:false,
+      reason:
+        '该菜品尚未研发完成'
+    };
+  }
+
+  const recipe =
+    foodResearchDatabase
+      .getRecipe(
+        recipeId
+      );
+
+  if (!recipe) {
+    return {
+      ok:false,
+      reason:
+        '配方不存在'
+    };
+  }
+
+  const opts =
+    options ||
+    {};
+
+  return mutate(
+    shopId,
+    runtime => {
+      const portionId =
+        opts.portionId ||
+        'single';
+
+      const duplicate =
+        runtime.menu
+          .find(
+            item =>
+              item.recipeId ===
+                recipeId &&
+              (
+                item.portionId ||
+                'single'
+              ) ===
+                portionId
+          );
+
+      if (duplicate) {
+        return {
+          ok:false,
+          reason:
+            '该菜品份量已经在菜单中',
+          item:
+            duplicate
+        };
+      }
+
+      const item =
+        menuEngine
+          .createMenuItem(
+            recipeId,
+            {
+              portionId,
+              listPrice:
+                opts.listPrice,
+              channel:
+                opts.channel ||
+                'all',
+              active:
+                opts.active !==
+                false,
+              featured:
+                !!opts.featured
+            }
+          );
+
+      runtime.menu.push(
+        item
+      );
+
+      return {
+        ok:true,
+        item
+      };
+    }
+  );
+}
+
+function removeMenuItem(
+  shopId,
+  menuItemId
+) {
+  return mutate(
+    shopId,
+    runtime => {
+      const index =
+        runtime.menu
+          .findIndex(
+            item =>
+              item.id ===
+              menuItemId
+          );
+
+      if (index < 0) {
+        return {
+          ok:false,
+          reason:
+            '菜单项不存在'
+        };
+      }
+
+      if (
+        runtime.menu.length <=
+        1
+      ) {
+        return {
+          ok:false,
+          reason:
+            '至少保留一道菜品'
+        };
+      }
+
+      const removed =
+        runtime.menu
+          .splice(
+            index,
+            1
+          )[0];
+
+      return {
+        ok:true,
+        item:
+          removed
+      };
+    }
+  );
+}
+
+function getAvailableRecipes(
+  shopId,
+  filters
+) {
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  if (!runtime) {
+    return [];
+  }
+
+  const existing =
+    new Set(
+      runtime.menu
+        .map(
+          item =>
+            item.recipeId
+        )
+    );
+
+  return (
+    foodResearchSystem
+      .getCatalog(
+        filters ||
+        {}
+      )
+      .filter(
+        item =>
+          item.unlocked &&
+          !existing.has(
+            item.id
+          )
+      )
+  );
+}
+
+function getFoodResearchCatalog(
+  filters
+) {
+  return (
+    foodResearchSystem
+      .getCatalog(
+        filters ||
+        {}
+      )
+  );
+}
+
+function startRecipeResearch(
+  recipeId
+) {
+  return (
+    foodResearchSystem
+      .startResearch(
+        recipeId
+      )
+  );
+}
+
+function getFoodResearchOverview() {
+  return (
+    foodResearchSystem
+      .getOverview()
+  );
+}
+
 function inventoryRows(
   shopId
 ) {
@@ -1473,6 +1692,12 @@ module.exports = {
   setMenuActive,
   setMenuFeatured,
   adjustMenuPrice,
+  addMenuRecipe,
+  removeMenuItem,
+  getAvailableRecipes,
+  getFoodResearchCatalog,
+  startRecipeResearch,
+  getFoodResearchOverview,
   inventoryRows,
   autoRestock,
   dashboard
