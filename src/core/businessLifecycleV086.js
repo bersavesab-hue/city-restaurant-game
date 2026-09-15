@@ -12,6 +12,9 @@ const renovationSystem =
 const timeScheduleCoordinator =
   require('./timeScheduleCoordinatorV0812.js');
 
+const shopLifecycle =
+  require('./shopLifecycleV0816.js');
+
 function clone(value) {
   return JSON.parse(
     JSON.stringify(value)
@@ -1313,46 +1316,46 @@ function processTrial(
   return true;
 }
 
-function deriveStage(
+function lifecycleEvidence(
   shop
 ) {
   if (!shop) {
-    return 'missing';
+    return {};
   }
 
-  if (
-    shop.status ===
-      'closed'
-  ) {
-    return 'closed';
-  }
+  const leaseFound =
+    findLease(
+      shop.id
+    );
+
+  const leaseStatus =
+    leaseFound
+      ? (
+          leaseFound
+            .lease
+            .lifecycle &&
+          leaseFound
+            .lease
+            .lifecycle
+            .status ||
+          'active'
+        )
+      : null;
 
   if (
-    shop.status ===
-      'paused'
-  ) {
-    return 'paused';
-  }
-
-  if (
-    shop.status ===
-      'open'
-  ) {
-    return 'formal_open';
-  }
-
-  if (
-    shop.status ===
-      'trial_opening'
-  ) {
-    return 'trial_opening';
-  }
-
-  if (
-    shop.status ===
+    [
+      'closed',
+      'paused',
+      'open',
+      'trial_opening',
       'trial_complete'
+    ].includes(
+      shop.status
+    )
   ) {
-    return 'trial_complete';
+    return {
+      leaseStatus
+    };
   }
 
   const plan =
@@ -1361,33 +1364,11 @@ function deriveStage(
         shop.id
       );
 
-  if (
-    !plan ||
-    plan.status !==
-      'completed'
-  ) {
-    return plan &&
-      plan.status ===
-        'constructing'
-      ? 'renovating'
-      : 'awaiting_renovation';
-  }
-
   const equipment =
     openingPrepSystem
       .ensureEquipment(
         shop.id
       );
-
-  if (
-    equipment.status !==
-      'installed'
-  ) {
-    return equipment.status ===
-      'ordered'
-      ? 'equipment_installing'
-      : 'awaiting_equipment';
-  }
 
   const permits =
     openingPrepSystem
@@ -1395,66 +1376,91 @@ function deriveStage(
         shop.id
       );
 
-  if (
-    permits.approved !==
-      permits.total
-  ) {
-    return (
-      permits.rows ||
-      []
-    ).some(
-      row =>
-        row.status ===
-          'applying'
-    )
-      ? 'permits_reviewing'
-      : 'awaiting_permits';
-  }
-
   const staffing =
     openingPrepSystem
       .getStaffOverview(
         shop.id
       );
 
-  if (
-    staffing.coverage <
-      0.9
-  ) {
-    return 'awaiting_staff';
-  }
+  return {
+    renovationStatus:
+      plan &&
+      plan.status ||
+      null,
+    equipmentStatus:
+      equipment &&
+      equipment.status ||
+      null,
+    permitTotal:
+      Number(
+        permits &&
+        permits.total
+      ) ||
+      0,
+    permitsApproved:
+      Number(
+        permits &&
+        permits.approved
+      ) ||
+      0,
+    permitsApplying:
+      !!(
+        permits &&
+        Array.isArray(
+          permits.rows
+        ) &&
+        permits.rows.some(
+          row =>
+            row.status ===
+              'applying'
+        )
+      ),
+    staffCoverage:
+      Number(
+        staffing &&
+        staffing.coverage
+      ) ||
+      0,
+    leaseStatus
+  };
+}
 
-  return 'ready_for_trial';
+function deriveStage(
+  shop
+) {
+  return (
+    shopLifecycle
+      .deriveStage(
+        shop,
+        lifecycleEvidence(
+          shop
+        )
+      )
+  );
 }
 
 function refreshStage(
   shop,
   day
 ) {
-  const state =
-    ensureShopState(
-      shop.id
-    );
+  const result =
+    shopLifecycle
+      .syncShop(
+        shop,
+        lifecycleEvidence(
+          shop
+        ),
+        {
+          day,
+          reason:
+            'business-lifecycle-refresh'
+        }
+      );
 
-  const stage =
-    deriveStage(
-      shop
-    );
-
-  const changed =
-    state.stage !==
-      stage;
-
-  state.stage =
-    stage;
-
-  state.updatedDay =
-    day;
-
-  shop.lifecycleStage =
-    stage;
-
-  return changed;
+  return !!(
+    result &&
+    result.changed
+  );
 }
 
 function processDay(
@@ -1597,6 +1603,32 @@ function startTrialOpening(
     };
   }
 
+  const lifecycleStage =
+    shopLifecycle
+      .deriveStage(
+        shop,
+        lifecycleEvidence(
+          shop
+        )
+      );
+
+  if (
+    lifecycleStage !==
+      'ready_for_trial'
+  ) {
+    return {
+      ok:false,
+      message:
+        lifecycleStage ===
+          'closed'
+          ? '门店已经关闭，不能重新开始试营业'
+          : lifecycleStage ===
+              'paused'
+            ? '门店处于暂停营业状态'
+            : '当前门店尚未进入待试营业状态'
+    };
+  }
+
   const day =
     currentDay();
 
@@ -1698,6 +1730,30 @@ function formalOpen(
         )
       )
   };
+}
+
+function pauseShop(
+  shopId,
+  reason
+) {
+  return (
+    shopLifecycle
+      .pauseShop(
+        shopId,
+        reason
+      )
+  );
+}
+
+function resumeShop(
+  shopId
+) {
+  return (
+    shopLifecycle
+      .resumeShop(
+        shopId
+      )
+  );
 }
 
 function getTrialReport(
@@ -2134,6 +2190,14 @@ function getShopOverview(
   return {
     stage:
       shop.lifecycleStage,
+    lifecycle:
+      shopLifecycle
+        .getOverview(
+          shop,
+          lifecycleEvidence(
+            shop
+          )
+        ),
     loan:
       getLoanSummary(
         shopId
@@ -2170,6 +2234,8 @@ module.exports = {
   update,
   startTrialOpening,
   formalOpen,
+  pauseShop,
+  resumeShop,
   getTrialReport,
   getLoanSummary,
   prepayLoan,

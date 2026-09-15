@@ -160,6 +160,9 @@ for (
     'tests/cityPropertyDatabaseV0815.test.js',
     'tests/propertyMarketDatabaseV0815.test.js',
     'tests/updateInfrastructureV0815.test.js',
+    'tests/shopLifecycleV0816.test.js',
+    'tests/shopLifecycleIntegrationV0816.test.js',
+    'tests/updateInfrastructureV0816.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

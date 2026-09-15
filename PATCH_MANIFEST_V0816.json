@@ -1,0 +1,32 @@
+{
+  "id": "V0816_SHOP_LIFECYCLE",
+  "baseVersion": "0.8.15",
+  "targetVersion": "0.8.16",
+  "pass": "7/26",
+  "title": "门店生命周期系统",
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false,
+  "androidRunnerCompatibility": true,
+  "stages": [
+    "awaiting_renovation",
+    "renovating",
+    "awaiting_equipment",
+    "equipment_installing",
+    "awaiting_permits",
+    "permits_reviewing",
+    "awaiting_staff",
+    "ready_for_trial",
+    "trial_opening",
+    "trial_complete",
+    "formal_open",
+    "paused",
+    "closed"
+  ],
+  "tests": [
+    "tests/shopLifecycleV0816.test.js",
+    "tests/shopLifecycleIntegrationV0816.test.js",
+    "tests/updateInfrastructureV0816.test.js"
+  ]
+}

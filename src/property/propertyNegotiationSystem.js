@@ -11,6 +11,9 @@ const timeSystem =
 const simulationSystem =
   require('../core/simulationSystem.js');
 
+const shopLifecycle =
+  require('../core/shopLifecycleV0816.js');
+
 const propertyMarketSystem =
   require('./propertyMarketSystem.js');
 
@@ -1581,6 +1584,20 @@ class PropertyNegotiationSystem {
     gameState
       .addShop(
         shop
+      );
+
+    shopLifecycle
+      .syncShop(
+        shop,
+        {
+          renovationStatus:
+            null
+        },
+        {
+          day,
+          reason:
+            'lease-signed'
+        }
       );
 
     session.status =

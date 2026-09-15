@@ -15,7 +15,10 @@ const globalStateBus =
 const openingPrepSystem =
   require('../opening/openingPrepSystem.js');
 
-const VERSION = '0.8.14';
+const shopLifecycleModule =
+  require('./shopLifecycleV0816.js');
+
+const VERSION = '0.8.16';
 
 const STAGES = Object.freeze([
   'city_setup',
@@ -61,6 +64,131 @@ function createFlow(options) {
       ? Number(opts.now()) || 0
       : Date.now();
   }
+
+  const lifecycle =
+    opts.shopLifecycle ||
+    shopLifecycleModule
+      .createLifecycle({
+        gameState:
+          deps.gameState,
+        bus:
+          deps.bus,
+        now,
+        inspect(shop) {
+          const renovations =
+            deps.gameState
+              .getRenovations();
+
+          const prep =
+            deps.gameState
+              .getOpeningPrep();
+
+          const renovation =
+            renovations &&
+            renovations[
+              shop.id
+            ];
+
+          const equipment =
+            prep &&
+            prep.equipment &&
+            prep.equipment[
+              shop.id
+            ];
+
+          const permits =
+            prep &&
+            prep.permits &&
+            prep.permits[
+              shop.id
+            ];
+
+          const permitItems =
+            permits &&
+            permits.items &&
+            typeof permits.items ===
+              'object'
+              ? Object.values(
+                  permits.items
+                )
+              : [];
+
+          const approved =
+            permitItems.filter(
+              item => {
+                const status =
+                  String(
+                    item &&
+                    item.status ||
+                    ''
+                  );
+
+                return (
+                  status ===
+                    'approved' ||
+                  status.indexOf(
+                    'approved_'
+                  ) ===
+                    0
+                );
+              }
+            ).length;
+
+          let coverage =
+            0;
+
+          try {
+            const overview =
+              deps.openingPrepSystem &&
+              typeof deps
+                .openingPrepSystem
+                .getStaffOverview ===
+                'function'
+                ? deps.openingPrepSystem
+                    .getStaffOverview(
+                      shop.id
+                    )
+                : null;
+
+            coverage =
+              Number(
+                overview &&
+                overview.coverage
+              ) ||
+              0;
+          } catch (error) {
+            coverage =
+              0;
+          }
+
+          return {
+            renovationStatus:
+              renovation &&
+              renovation.status ||
+              null,
+            equipmentStatus:
+              equipment &&
+              equipment.status ||
+              null,
+            permitTotal:
+              permitItems.length,
+            permitsApproved:
+              approved,
+            permitsApplying:
+              permitItems.some(
+                item =>
+                  String(
+                    item &&
+                    item.status ||
+                    ''
+                  ) ===
+                  'applying'
+              ),
+            staffCoverage:
+              coverage
+          };
+        }
+      });
 
   function ensureState() {
     const data =
@@ -138,15 +266,21 @@ function createFlow(options) {
         ? business.shops
         : [];
 
-    return (
+    const current =
       shops.find(
         shop =>
           shop.id ===
-          business.currentShopId
-      ) ||
+            business.currentShopId &&
+          shop.status !==
+            'closed'
+      );
+
+    return (
+      current ||
       shops.find(
         shop =>
-          shop.status !== 'closed'
+          shop.status !==
+            'closed'
       ) ||
       null
     );
@@ -234,9 +368,6 @@ function createFlow(options) {
     const state =
       ensureState();
 
-    const world =
-      deps.gameState.getWorld();
-
     const business =
       getBusiness();
 
@@ -257,73 +388,79 @@ function createFlow(options) {
       return 'property_search';
     }
 
-    if (
-      shop.status === 'open'
-    ) {
-      return 'complete';
-    }
+    const stage =
+      lifecycle
+        .deriveStage(
+          shop
+        );
 
     if (
-      shop.status === 'trial_complete'
-    ) {
-      return 'formal_open';
-    }
-
-    if (
-      shop.status === 'trial_opening' ||
-      shop.status === 'ready_for_trial'
-    ) {
-      return 'trial';
-    }
-
-    const renovations =
-      deps.gameState
-        .getRenovations();
-
-    const renovation =
-      renovations &&
-      renovations[shop.id];
-
-    if (
-      !renovation ||
-      renovation.status !== 'completed'
+      stage ===
+        'awaiting_renovation' ||
+      stage ===
+        'renovating'
     ) {
       return 'renovation';
     }
 
-    const prep =
-      deps.gameState
-        .getOpeningPrep();
-
-    const equipment =
-      prep &&
-      prep.equipment &&
-      prep.equipment[shop.id];
-
     if (
-      !equipment ||
-      equipment.status !== 'installed'
+      stage ===
+        'awaiting_equipment' ||
+      stage ===
+        'equipment_installing'
     ) {
       return 'equipment';
     }
 
     if (
-      !hasApprovedPermits(
-        shop.id
-      )
+      stage ===
+        'awaiting_permits' ||
+      stage ===
+        'permits_reviewing'
     ) {
       return 'license';
     }
 
     if (
-      !hasStaffCoverage(
-        shop.id
-      )
+      stage ===
+        'awaiting_staff'
     ) {
       return 'staff';
     }
 
-    return 'trial';
+    if (
+      stage ===
+        'ready_for_trial' ||
+      stage ===
+        'trial_opening'
+    ) {
+      return 'trial';
+    }
+
+    if (
+      stage ===
+        'trial_complete'
+    ) {
+      return 'formal_open';
+    }
+
+    if (
+      stage ===
+        'formal_open' ||
+      stage ===
+        'paused'
+    ) {
+      return 'complete';
+    }
+
+    if (
+      stage ===
+        'closed'
+    ) {
+      return 'property_search';
+    }
+
+    return 'property_search';
   }
 
   function routeForStage(stage) {

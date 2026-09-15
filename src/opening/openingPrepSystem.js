@@ -9,6 +9,9 @@ const simulationSystem =
 const renovationSystem =
   require('../renovation/renovationSystem.js');
 
+const shopLifecycle =
+  require('../core/shopLifecycleV0816.js');
+
 const config =
   require('./openingConfig.js');
 
@@ -2035,10 +2038,61 @@ class OpeningPrepSystem {
       shop.status !==
         'trial_opening' &&
       shop.status !==
-        'trial_complete'
+        'trial_complete' &&
+      shop.status !==
+        'closed' &&
+      shop.status !==
+        'paused'
     ) {
       shop.status =
         'ready_for_trial';
+    }
+
+    if (shop) {
+      shopLifecycle
+        .syncShop(
+          shop,
+          {
+            renovationStatus:
+              renovation &&
+              renovation.status ||
+              null,
+            equipmentStatus:
+              equipment &&
+              equipment.status ||
+              null,
+            permitTotal:
+              Number(
+                permits.total
+              ) ||
+              0,
+            permitsApproved:
+              Number(
+                permits.approved
+              ) ||
+              0,
+            permitsApplying:
+              !!(
+                Array.isArray(
+                  permits.rows
+                ) &&
+                permits.rows.some(
+                  row =>
+                    row.status ===
+                      'applying'
+                )
+              ),
+            staffCoverage:
+              Number(
+                staffing.coverage
+              ) ||
+              0
+          },
+          {
+            reason:
+              'opening-readiness'
+          }
+        );
     }
 
     return {
@@ -2085,6 +2139,68 @@ class OpeningPrepSystem {
       };
     }
 
+    const lifecycleStage =
+      shopLifecycle
+        .deriveStage(
+          shop,
+          {
+            renovationStatus:
+              readiness
+                .renovationReady
+                ? 'completed'
+                : null,
+            equipmentStatus:
+              readiness
+                .equipmentReady
+                ? 'installed'
+                : null,
+            permitTotal:
+              Number(
+                readiness
+                  .permits &&
+                readiness
+                  .permits
+                  .total
+              ) ||
+              0,
+            permitsApproved:
+              Number(
+                readiness
+                  .permits &&
+                readiness
+                  .permits
+                  .approved
+              ) ||
+              0,
+            staffCoverage:
+              Number(
+                readiness
+                  .staffing &&
+                readiness
+                  .staffing
+                  .coverage
+              ) ||
+              0
+          }
+        );
+
+    if (
+      lifecycleStage !==
+        'ready_for_trial'
+    ) {
+      return {
+        ok:false,
+        message:
+          lifecycleStage ===
+            'closed'
+            ? '门店已经关闭，不能开始试营业'
+            : lifecycleStage ===
+                'paused'
+              ? '门店处于暂停营业状态'
+              : '当前门店状态不能开始试营业'
+      };
+    }
+
     shop.status =
       'trial_opening';
 
@@ -2100,6 +2216,16 @@ class OpeningPrepSystem {
 
     shop.trialReport =
       null;
+
+    shopLifecycle
+      .syncShop(
+        shop,
+        null,
+        {
+          reason:
+            'opening-trial-started'
+        }
+      );
 
     return {
       ok:

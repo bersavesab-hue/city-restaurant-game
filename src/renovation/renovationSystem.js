@@ -9,6 +9,9 @@ const gameState =
 const simulationSystem =
   require('../core/simulationSystem.js');
 
+const shopLifecycle =
+  require('../core/shopLifecycleV0816.js');
+
 const config =
   require('./renovationConfig.js');
 
@@ -1792,6 +1795,29 @@ class RenovationSystem {
     const plan =
       this.getStore()[shopId];
 
+    if (
+      !shopLifecycle
+        .canAction(
+          shop,
+          'start_renovation',
+          {
+            renovationStatus:
+              plan &&
+              plan.status
+          }
+        )
+    ) {
+      return {
+        ok:false,
+        message:
+          shop &&
+          shop.status ===
+            'closed'
+            ? '门店已经关闭，不能开始装修'
+            : '当前门店状态不能重复开始装修'
+      };
+    }
+
     const quotes =
       this.getContractorQuotes(
         shopId
@@ -1878,6 +1904,19 @@ class RenovationSystem {
 
     shop.status =
       'renovating';
+
+    shopLifecycle
+      .syncShop(
+        shop,
+        {
+          renovationStatus:
+            'constructing'
+        },
+        {
+          reason:
+            'renovation-started'
+        }
+      );
 
     shop.renovationCost =
       quote.price;
@@ -2096,6 +2135,19 @@ class RenovationSystem {
 
     shop.status =
       'renovated_pending_license';
+
+    shopLifecycle
+      .syncShop(
+        shop,
+        {
+          renovationStatus:
+            'completed'
+        },
+        {
+          reason:
+            'renovation-completed'
+        }
+      );
 
     shop.layoutMetrics =
       clone(
