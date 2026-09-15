@@ -115,7 +115,14 @@ module.exports = {
     minStorageRatio: 0.04,
     maxStorageRatio: 0.18,
     minServiceRatio: 0.08,
-    maxServiceRatio: 0.20
+    maxServiceRatio: 0.20,
+
+    // A restaurant still needs a real dining area after all back-of-house
+    // zones are allocated. Keeping this rule here makes the editor, capacity
+    // checks and final construction validation use the same area contract.
+    minDiningRatio: 0.28,
+    minDiningAreaM2: 12,
+    entranceClearDepthM: 1.2
   },
 
   baseConstructionCostPerSqm: 520,

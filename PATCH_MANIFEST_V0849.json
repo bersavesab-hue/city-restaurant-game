@@ -1,0 +1,22 @@
+{
+  "id": "V0849_RENOVATION_AREA_TRUTH_FIX",
+  "baseVersion": "0.8.48",
+  "targetVersion": "0.8.49",
+  "category": "装修面积与交互修复",
+  "features": [
+    "房源可用面积成为装修唯一权威面积",
+    "多楼层面积自动闭合校正",
+    "装修分区按真实比例绘制并显示平方米数",
+    "柱体楼梯卫生间与门口净空计入面积核算",
+    "餐桌和包厢同时受面积与真实落位点限制",
+    "拖动分区虚线实时调整面积",
+    "真实全屏面积预览与施工前二次确认",
+    "完工后可重新进入升级装修并按差额计价",
+    "600至780高度手机界面无重叠点击区",
+    "安卓版本同步"
+  ],
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false
+}

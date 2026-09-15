@@ -106,6 +106,100 @@ class RenovationSystem {
     return 1;
   }
 
+  getAuthoritativeUsableArea(shop) {
+    return Math.max(
+      8,
+      Number(
+        shop &&
+        shop.usableArea
+      ) ||
+      Number(
+        shop &&
+        shop.grossArea
+      ) ||
+      60
+    );
+  }
+
+  normalizeFloorAreas(
+    plan,
+    shop
+  ) {
+    if (
+      !plan ||
+      !Array.isArray(
+        plan.floors
+      ) ||
+      !plan.floors.length
+    ) {
+      return;
+    }
+
+    const authoritative =
+      this.getAuthoritativeUsableArea(
+        shop
+      );
+
+    const rawTotal =
+      plan.floors.reduce(
+        (sum, floor) =>
+          sum +
+          Math.max(
+            0,
+            Number(
+              floor.area
+            ) || 0
+          ),
+        0
+      );
+
+    let allocated = 0;
+
+    for (
+      let i = 0;
+      i < plan.floors.length;
+      i++
+    ) {
+      const floor =
+        plan.floors[i];
+
+      const weight =
+        rawTotal > 0
+          ? Math.max(
+              0,
+              Number(
+                floor.area
+              ) || 0
+            ) /
+            rawTotal
+          : 1 /
+            plan.floors.length;
+
+      const area =
+        i ===
+        plan.floors.length - 1
+          ? authoritative -
+            allocated
+          : Number(
+              (
+                authoritative *
+                weight
+              ).toFixed(1)
+            );
+
+      floor.area =
+        Number(
+          Math.max(
+            0.1,
+            area
+          ).toFixed(1)
+        );
+
+      allocated +=
+        floor.area;
+    }
+  }
+
   createFloor(
     index,
     area
@@ -250,6 +344,13 @@ class RenovationSystem {
           sofa: 0
         };
     }
+
+    // Old saves could carry rounded or stale per-floor areas. The property
+    // usable area is authoritative; floor allocations must add up to it.
+    this.normalizeFloorAreas(
+      store[shopId],
+      shop
+    );
 
     return clone(
       store[shopId]
@@ -481,17 +582,641 @@ class RenovationSystem {
             )
           ];
 
+        const otherZoneRatio =
+          floor.kitchenRatio +
+          floor.storageRatio +
+          floor.serviceRatio -
+          floor[key];
+
+        const area =
+          this.calculateFloorArea(
+            this.getShop(shopId),
+            plan,
+            floor,
+            floor.index
+          );
+
+        const requiredDiningRatio =
+          Math.max(
+            config.zoneRules
+              .minDiningRatio,
+            config.zoneRules
+              .minDiningAreaM2 /
+              floor.area,
+            (
+              area.occupiedArea /
+              Math.max(
+                0.01,
+                Math.min(
+                  1,
+                  area.geometry
+                    .efficiency
+                    .dining
+                )
+              ) +
+              area
+                .structuralReservedArea
+            ) /
+            floor.area
+          );
+
+        const maxByDining =
+          1 -
+          requiredDiningRatio -
+          otherZoneRatio;
+
         floor[key] =
           Number(
             clamp(
               floor[key] +
               delta,
               range[0],
-              range[1]
+              Math.max(
+                range[0],
+                Math.min(
+                  range[1],
+                  maxByDining
+                )
+              )
             ).toFixed(2)
           );
       }
     );
+  }
+
+  setZoneRatios(
+    shopId,
+    floorIndex,
+    values,
+    options
+  ) {
+    const rules =
+      config.zoneRules;
+
+    const shop =
+      this.getShop(shopId);
+
+    return this.mutatePlan(
+      shopId,
+      plan => {
+        const floor =
+          plan.floors[
+            clamp(
+              floorIndex,
+              0,
+              plan.floors.length - 1
+            )
+          ];
+
+        const next = {
+          kitchenRatio:
+            clamp(
+              Number(
+                values.kitchenRatio
+              ),
+              rules.minKitchenRatio,
+              rules.maxKitchenRatio
+            ),
+          storageRatio:
+            clamp(
+              Number(
+                values.storageRatio
+              ),
+              rules.minStorageRatio,
+              rules.maxStorageRatio
+            ),
+          serviceRatio:
+            clamp(
+              Number(
+                values.serviceRatio
+              ),
+              rules.minServiceRatio,
+              rules.maxServiceRatio
+            )
+        };
+
+        const currentArea =
+          this.calculateFloorArea(
+            shop,
+            plan,
+            floor,
+            floor.index
+          );
+
+        const requiredDiningRatio =
+          Math.max(
+            rules.minDiningRatio,
+            rules.minDiningAreaM2 /
+              floor.area,
+            (
+              currentArea
+                .occupiedArea /
+              Math.max(
+                0.01,
+                Math.min(
+                  1,
+                  currentArea
+                    .geometry
+                    .efficiency
+                    .dining
+                )
+              ) +
+              currentArea
+                .structuralReservedArea
+            ) /
+            floor.area
+          );
+
+        const maxZones =
+          Math.max(
+            rules.minKitchenRatio +
+            rules.minStorageRatio +
+            rules.minServiceRatio,
+            1 -
+            requiredDiningRatio
+          );
+
+        const total =
+          next.kitchenRatio +
+          next.storageRatio +
+          next.serviceRatio;
+
+        if (total > maxZones) {
+          let overflow =
+            total -
+            maxZones;
+
+          const kitchenReduction =
+            Math.min(
+              overflow,
+              next.kitchenRatio -
+              rules.minKitchenRatio
+            );
+
+          next.kitchenRatio =
+            next.kitchenRatio -
+            kitchenReduction;
+
+          overflow -=
+            kitchenReduction;
+
+          const storageReduction =
+            Math.min(
+              overflow,
+              next.storageRatio -
+              rules.minStorageRatio
+            );
+
+          next.storageRatio -=
+            storageReduction;
+
+          overflow -=
+            storageReduction;
+
+          next.serviceRatio =
+            Math.max(
+              rules.minServiceRatio,
+              next.serviceRatio -
+              overflow
+            );
+        }
+
+        floor.kitchenRatio =
+          Number(
+            next.kitchenRatio
+              .toFixed(3)
+          );
+
+        floor.storageRatio =
+          Number(
+            next.storageRatio
+              .toFixed(3)
+          );
+
+        floor.serviceRatio =
+          Number(
+            next.serviceRatio
+              .toFixed(3)
+          );
+      },
+      options
+    );
+  }
+
+  getStructuralReservedArea(
+    geometry,
+    floor
+  ) {
+    let obstacleArea = 0;
+
+    const backRatio =
+      clamp(
+        floor.kitchenRatio +
+        floor.storageRatio,
+        0,
+        0.8
+      );
+
+    const serviceWidthRatio =
+      clamp(
+        floor.serviceRatio /
+        Math.max(
+          0.01,
+          1 -
+          backRatio
+        ),
+        0,
+        0.72
+      );
+
+    const obstacles =
+      geometry.obstacles ||
+      [];
+
+    for (
+      let i = 0;
+      i < obstacles.length;
+      i++
+    ) {
+      const item =
+        obstacles[i];
+
+      const centerX =
+        item.type ===
+          'column'
+          ? item.x
+          : item.x +
+            (
+              Number(item.w) ||
+              0
+            ) /
+            2;
+
+      const centerY =
+        item.type ===
+          'column'
+          ? item.y
+          : item.y +
+            (
+              Number(item.h) ||
+              0
+            ) /
+            2;
+
+      // Back-of-house and service-zone structures are already accounted for
+      // by their zone area and must not be deducted from dining a second time.
+      if (
+        centerY /
+          geometry.depthM <
+          backRatio ||
+        centerX /
+          geometry.widthM <
+          serviceWidthRatio
+      ) {
+        continue;
+      }
+
+      obstacleArea +=
+        item.type ===
+          'column'
+          ? Math.PI *
+            Math.pow(
+              Number(
+                item.radius
+              ) || 0.22,
+              2
+            )
+          : Math.max(
+              0,
+              Number(item.w) || 0
+            ) *
+            Math.max(
+              0,
+              Number(item.h) || 0
+            );
+    }
+
+    const entranceArea =
+      (
+        geometry.entrances ||
+        []
+      ).reduce(
+        (sum, entrance) =>
+          sum +
+          Math.max(
+            0.9,
+            Number(
+              entrance.width
+            ) || 0
+          ) *
+          config.zoneRules
+            .entranceClearDepthM,
+        0
+      );
+
+    return Number(
+      (
+        obstacleArea +
+        entranceArea
+      ).toFixed(1)
+    );
+  }
+
+  getUsableDiningSlots(
+    geometry,
+    floor
+  ) {
+    const backRatio =
+      clamp(
+        floor.kitchenRatio +
+        floor.storageRatio,
+        0,
+        0.8
+      );
+
+    const lowerRatio =
+      Math.max(
+        0.01,
+        1 -
+        backRatio
+      );
+
+    const serviceWidthRatio =
+      clamp(
+        floor.serviceRatio /
+        lowerRatio,
+        0,
+        0.72
+      );
+
+    return (
+      geometry.diningSlots ||
+      []
+    ).filter(point => {
+      const yRatio =
+        point.y /
+        Math.max(
+          0.1,
+          geometry.depthM
+        );
+
+      const xRatio =
+        point.x /
+        Math.max(
+          0.1,
+          geometry.widthM
+        );
+
+      if (
+        yRatio <
+          backRatio + 0.025 ||
+        xRatio <
+          serviceWidthRatio + 0.025
+      ) {
+        return false;
+      }
+
+      const entrances =
+        geometry.entrances ||
+        [];
+
+      for (
+        let i = 0;
+        i < entrances.length;
+        i++
+      ) {
+        const entrance =
+          entrances[i];
+
+        if (
+          entrance.side ===
+            'south' &&
+          point.y >
+            geometry.depthM -
+            config.zoneRules
+              .entranceClearDepthM &&
+          Math.abs(
+            point.x -
+            entrance.x
+          ) <
+            entrance.width /
+              2 +
+            0.45
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }
+
+  calculateFloorArea(
+    shop,
+    plan,
+    floor,
+    floorIndex
+  ) {
+    const aisle =
+      config.aisleModes[
+        floor.aisleMode
+      ] ||
+      config.aisleModes
+        .standard;
+
+    const geometry =
+      floorGeometrySystem
+        .getFloorGeometry(
+          shop,
+          floorIndex,
+          floor.area,
+          plan.floors.length
+        );
+
+    const kitchenArea =
+      floor.area *
+      floor.kitchenRatio;
+
+    const storageArea =
+      floor.area *
+      floor.storageRatio;
+
+    const serviceArea =
+      floor.area *
+      floor.serviceRatio;
+
+    const diningArea =
+      Math.max(
+        0,
+        floor.area -
+        kitchenArea -
+        storageArea -
+        serviceArea
+      );
+
+    const structuralReservedArea =
+      this.getStructuralReservedArea(
+        geometry,
+        floor
+      );
+
+    const usableDiningSlots =
+      this.getUsableDiningSlots(
+        geometry,
+        floor
+      );
+
+    // Shape efficiency may reduce capacity but must never manufacture area.
+    const effectiveDiningArea =
+      Math.max(
+        0,
+        diningArea -
+        structuralReservedArea
+      ) *
+      Math.min(
+        1,
+        geometry.efficiency
+          .dining
+      );
+
+    let tableArea = 0;
+    let tableSeats = 0;
+
+    Object.keys(
+      floor.tables
+    ).forEach(key => {
+      const count =
+        Math.max(
+          0,
+          Number(
+            floor.tables[key]
+          ) || 0
+        );
+
+      tableArea +=
+        count *
+        config.tableFootprint[
+          key
+        ] *
+        aisle.areaFactor;
+
+      tableSeats +=
+        count *
+        Number(key);
+    });
+
+    let privateRoomArea = 0;
+    let privateRoomSeats = 0;
+
+    for (
+      let i = 0;
+      i < floor.privateRooms.length;
+      i++
+    ) {
+      const room =
+        floor.privateRooms[i];
+
+      privateRoomArea +=
+        7 +
+        room.seats *
+        1.55;
+
+      privateRoomSeats +=
+        room.seats;
+    }
+
+    const occupiedArea =
+      tableArea +
+      privateRoomArea;
+
+    const remainingArea =
+      effectiveDiningArea -
+      occupiedArea;
+
+    const zoneTotal =
+      kitchenArea +
+      storageArea +
+      serviceArea +
+      diningArea;
+
+    const minimumDining =
+      Math.max(
+        config.zoneRules
+          .minDiningAreaM2,
+        floor.area *
+        config.zoneRules
+          .minDiningRatio
+      );
+
+    const warnings = [];
+
+    if (
+      diningArea + 0.01 <
+      minimumDining
+    ) {
+      warnings.push(
+        '堂食区低于最小面积'
+      );
+    }
+
+    if (remainingArea < -0.01) {
+      warnings.push(
+        '家具与包厢超出可摆面积'
+      );
+    }
+
+    if (
+      tableArea > 0 &&
+      (
+        usableDiningSlots
+      ).length <
+      Object.keys(
+        floor.tables
+      ).reduce(
+        (sum, key) =>
+          sum +
+          Number(
+            floor.tables[key]
+          ),
+        0
+      )
+    ) {
+      warnings.push(
+        '可落位餐桌点不足'
+      );
+    }
+
+    return {
+      aisle,
+      geometry,
+      usableDiningSlots,
+      kitchenArea,
+      storageArea,
+      serviceArea,
+      diningArea,
+      structuralReservedArea,
+      effectiveDiningArea,
+      tableArea,
+      tableSeats,
+      privateRoomArea,
+      privateRoomSeats,
+      occupiedArea,
+      remainingArea,
+      zoneTotal,
+      minimumDining,
+      areaUtilization:
+        effectiveDiningArea > 0
+          ? occupiedArea /
+            effectiveDiningArea
+          : 99,
+      warnings,
+      valid:
+        warnings.length === 0 &&
+        Math.abs(
+          zoneTotal -
+          floor.area
+        ) <= 0.11
+    };
   }
 
   cycleAisle(
@@ -571,96 +1296,56 @@ class RenovationSystem {
         if (
           delta > 0
         ) {
-          const aisle =
-            config
-              .aisleModes[
-                floor.aisleMode
-              ];
-
-          const geometry =
-            floorGeometrySystem
-              .getFloorGeometry(
-                shop,
-                floor.index,
-                floor.area,
-                plan.floors.length
-              );
-
-          const zoneRatio =
-            floor.kitchenRatio +
-            floor.storageRatio +
-            floor.serviceRatio;
-
-          const rawDining =
-            Math.max(
-              0,
-              floor.area *
-              (
-                1 -
-                zoneRatio
-              )
+          const area =
+            this.calculateFloorArea(
+              shop,
+              plan,
+              floor,
+              floor.index
             );
 
-          const effectiveDining =
-            rawDining *
-            geometry
-              .efficiency
-              .dining;
-
-          let used =
-            0;
-
-          Object.keys(
-            floor.tables
-          ).forEach(
-            tableKey => {
-              used +=
-                (
-                  Number(
-                    floor.tables[
-                      tableKey
-                    ]
-                  ) ||
-                  0
-                ) *
-                config
-                  .tableFootprint[
-                    tableKey
-                  ] *
-                aisle.areaFactor;
-            }
-          );
-
-          for (
-            let i = 0;
-            i <
-            floor
-              .privateRooms
-              .length;
-            i++
-          ) {
-            const room =
-              floor
-                .privateRooms[i];
-
-            used +=
-              7 +
-              room.seats *
-              1.55;
-          }
-
           const nextUsed =
-            used +
+            area.occupiedArea +
             config
               .tableFootprint[
                 key
               ] *
-            aisle.areaFactor;
+            area.aisle
+              .areaFactor *
+            Math.max(
+              1,
+              Math.floor(delta)
+            );
+
+          const currentTableCount =
+            Object.keys(
+              floor.tables
+            ).reduce(
+              (sum, tableKey) =>
+                sum +
+                Math.max(
+                  0,
+                  Number(
+                    floor.tables[
+                      tableKey
+                    ]
+                  ) || 0
+                ),
+              0
+            );
 
           if (
             nextUsed >
-            effectiveDining +
-              0.01
+              area.effectiveDiningArea +
+              0.01 ||
+            currentTableCount +
+              Math.max(
+                1,
+                Math.floor(delta)
+              ) >
+              area
+                .usableDiningSlots
+                .length
           ) {
             return;
           }
@@ -728,17 +1413,36 @@ class RenovationSystem {
     shopId,
     floorIndex
   ) {
+    const shop =
+      this.getShop(shopId);
+
     return this.mutatePlan(
       shopId,
       plan => {
         const floor =
           plan.floors[floorIndex];
 
+        const area =
+          this.calculateFloorArea(
+            shop,
+            plan,
+            floor,
+            floorIndex
+          );
+
         if (
           floor
             .privateRooms
             .length >=
-          8
+            Math.min(
+              8,
+              area.geometry
+                .recommendedMaxRooms
+            ) ||
+          area.remainingArea <
+            7 +
+            6 *
+            1.55
         ) {
           return;
         }
@@ -804,6 +1508,9 @@ class RenovationSystem {
     const options =
       config.privateRoomSeatOptions;
 
+    const shop =
+      this.getShop(shopId);
+
     return this.mutatePlan(
       shopId,
       plan => {
@@ -828,13 +1535,42 @@ class RenovationSystem {
             room.seats
           );
 
-        room.seats =
+        const nextSeats =
           options[
             (
               current + 1
             ) %
             options.length
           ];
+
+        const area =
+          this.calculateFloorArea(
+            shop,
+            plan,
+            plan.floors[
+              floorIndex
+            ],
+            floorIndex
+          );
+
+        const addedArea =
+          (
+            nextSeats -
+            room.seats
+          ) *
+          1.55;
+
+        if (
+          addedArea > 0 &&
+          area.remainingArea +
+            0.01 <
+          addedArea
+        ) {
+          return;
+        }
+
+        room.seats =
+          nextSeats;
       }
     );
   }
@@ -1005,8 +1741,16 @@ class RenovationSystem {
             shop,
             i,
             floor.area,
-            plan.floors.length
+              plan.floors.length
           );
+
+      const areaMetrics =
+        this.calculateFloorArea(
+          shop,
+          plan,
+          floor,
+          i
+        );
 
       const zoneRatio =
         floor.kitchenRatio +
@@ -1024,10 +1768,8 @@ class RenovationSystem {
         );
 
       const effectiveDiningArea =
-        diningArea *
-        geometry
-          .efficiency
-          .dining;
+        areaMetrics
+          .effectiveDiningArea;
 
       let tableArea = 0;
       let tableSeats = 0;
@@ -1114,10 +1856,7 @@ class RenovationSystem {
           : 99;
 
       const valid =
-        remaining >=
-          -0.01 &&
-        zoneRatio <
-          0.78;
+        areaMetrics.valid;
 
       if (!valid) {
         invalidFloorCount +=
@@ -1137,6 +1876,31 @@ class RenovationSystem {
               .toFixed(1)
           ),
 
+        kitchenArea:
+          Number(
+            areaMetrics
+              .kitchenArea
+              .toFixed(1)
+          ),
+
+        storageArea:
+          Number(
+            areaMetrics
+              .storageArea
+              .toFixed(1)
+          ),
+
+        serviceArea:
+          Number(
+            areaMetrics
+              .serviceArea
+              .toFixed(1)
+          ),
+
+        structuralReservedArea:
+          areaMetrics
+            .structuralReservedArea,
+
         geometry,
         tableArea:
           Number(
@@ -1150,6 +1914,30 @@ class RenovationSystem {
           Number(
             remaining.toFixed(1)
           ),
+
+        occupiedArea:
+          Number(
+            used.toFixed(1)
+          ),
+
+        minimumDiningArea:
+          Number(
+            areaMetrics
+              .minimumDining
+              .toFixed(1)
+          ),
+
+        areaUtilization:
+          areaMetrics
+            .areaUtilization,
+
+        areaWarnings:
+          areaMetrics
+            .warnings,
+
+        usableDiningSlots:
+          areaMetrics
+            .usableDiningSlots,
         seats:
           tableSeats +
           roomSeats,
@@ -1625,14 +2413,120 @@ class RenovationSystem {
         .seed ||
       1;
 
-    return (
+    const quotes =
       database
         .quoteContractors(
           metrics,
           shopId,
           seed
-        )
+        );
+
+    if (
+      !metrics.plan
+        .isUpgrade ||
+      !metrics.plan
+        .previousSnapshot
+    ) {
+      return quotes;
+    }
+
+    const oldCost =
+      Math.max(
+        0,
+        Number(
+          metrics.plan
+            .previousSnapshot
+            .totalCost
+        ) || 0
+      );
+
+    const baseDelta =
+      Math.max(
+        metrics.totalCost *
+          0.12,
+        Math.abs(
+          metrics.totalCost -
+          oldCost
+        ) +
+          metrics.totalCost *
+          0.08
+      );
+
+    return quotes.map(
+      quote => ({
+        ...quote,
+        price:
+          Math.round(
+            baseDelta *
+            (
+              quote.price /
+              Math.max(
+                1,
+                metrics.totalCost
+              )
+            ) /
+            100
+          ) *
+          100
+      })
     );
+  }
+
+  beginUpgrade(
+    shopId
+  ) {
+    const shop =
+      this.getShop(shopId);
+
+    const stored =
+      this.getStore()[shopId];
+
+    if (
+      !shop ||
+      !stored ||
+      stored.status !==
+        'completed'
+    ) {
+      return {
+        ok: false,
+        message:
+          '当前装修还不能升级'
+      };
+    }
+
+    stored.previousSnapshot =
+      clone(
+        stored.construction &&
+        stored.construction
+          .snapshot ||
+        shop.layoutMetrics ||
+        this.getMetrics(
+          shopId
+        )
+      );
+
+    stored.upgradeOriginalShopStatus =
+      shop.status;
+
+    stored.isUpgrade =
+      true;
+
+    stored.status =
+      'draft';
+
+    stored.construction =
+      null;
+
+    this.history[shopId] = {
+      undo: [],
+      redo: []
+    };
+
+    return {
+      ok: true,
+      message:
+        '已进入升级装修，费用按改造差额计算'
+    };
   }
 
   selectContractor(
@@ -1702,6 +2596,7 @@ class RenovationSystem {
       this.getStore()[shopId];
 
     if (
+      !plan.isUpgrade &&
       !shopLifecycle
         .canAction(
           shop,
@@ -1804,6 +2699,13 @@ class RenovationSystem {
           1440,
       paid:
         quote.price,
+      upgrade:
+        plan.isUpgrade ===
+        true,
+      originalShopStatus:
+        plan
+          .upgradeOriginalShopStatus ||
+        null,
       snapshot:
         clone(metrics)
     };
@@ -2039,8 +2941,20 @@ class RenovationSystem {
     stored.status =
       'completed';
 
+    const wasUpgrade =
+      stored.construction &&
+      stored.construction
+        .upgrade;
+
     shop.status =
-      'renovated_pending_license';
+      wasUpgrade
+        ? stored.construction
+            .originalShopStatus ||
+          'open'
+        : 'renovated_pending_license';
+
+    stored.isUpgrade =
+      false;
 
     shopLifecycle
       .syncShop(

@@ -5924,6 +5924,103 @@ function handleTap(
    触摸监听
 ========================= */
 
+let sceneTouchActive =
+  false;
+
+let sceneTouchMoved =
+  false;
+
+if (
+  api &&
+  typeof api.onTouchStart ===
+    'function'
+) {
+  api.onTouchStart(
+    function (event) {
+      const touch =
+        event.touches &&
+        event.touches[0];
+
+      if (!touch) {
+        return;
+      }
+
+      const point =
+        screenToDesign(
+          touch.clientX,
+          touch.clientY
+        );
+
+      const scene =
+        sceneManager
+          .getCurrentScene();
+
+      sceneTouchMoved =
+        false;
+
+      sceneTouchActive =
+        Boolean(
+          scene &&
+          typeof scene
+            .handleTouchStart ===
+            'function' &&
+          scene.handleTouchStart(
+            point.x,
+            point.y
+          )
+        );
+    }
+  );
+}
+
+if (
+  api &&
+  typeof api.onTouchMove ===
+    'function'
+) {
+  api.onTouchMove(
+    function (event) {
+      if (!sceneTouchActive) {
+        return;
+      }
+
+      const touch =
+        event.touches &&
+        event.touches[0];
+
+      if (!touch) {
+        return;
+      }
+
+      const point =
+        screenToDesign(
+          touch.clientX,
+          touch.clientY
+        );
+
+      const scene =
+        sceneManager
+          .getCurrentScene();
+
+      if (
+        scene &&
+        typeof scene
+          .handleTouchMove ===
+          'function' &&
+        scene.handleTouchMove(
+          point.x,
+          point.y
+        )
+      ) {
+        sceneTouchMoved =
+          true;
+
+        render();
+      }
+    }
+  );
+}
+
 if (
   api &&
   typeof api.onTouchEnd ===
@@ -5936,6 +6033,43 @@ if (
         event.changedTouches[0];
 
       if (!touch) {
+        return;
+      }
+
+      const point =
+        screenToDesign(
+          touch.clientX,
+          touch.clientY
+        );
+
+      const scene =
+        sceneManager
+          .getCurrentScene();
+
+      const consumed =
+        Boolean(
+          sceneTouchActive &&
+          scene &&
+          typeof scene
+            .handleTouchEnd ===
+            'function' &&
+          scene.handleTouchEnd(
+            point.x,
+            point.y
+          )
+        );
+
+      const wasMoved =
+        sceneTouchMoved;
+
+      sceneTouchActive =
+        false;
+
+      sceneTouchMoved =
+        false;
+
+      if (consumed || wasMoved) {
+        render();
         return;
       }
 
@@ -7775,5 +7909,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V0.8.48 连续经营正反馈版启动成功'
+  '城市餐饮经营小游戏 V0.8.49 装修面积修复版启动成功'
 );

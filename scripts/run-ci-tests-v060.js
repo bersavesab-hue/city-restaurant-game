@@ -241,6 +241,9 @@ for (
     'tests/businessDayUiV0844.test.js',
     'tests/dependencyAuditV0844.test.js',
     'tests/updateInfrastructureV0844.test.js',
+    'tests/renovationAreaV0849.test.js',
+    'tests/renovationUiV0849.test.js',
+    'tests/updateInfrastructureV0849.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {
