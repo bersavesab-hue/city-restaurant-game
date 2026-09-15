@@ -17,6 +17,9 @@ const saveSystem =
 const simulationSystem =
   require('../core/simulationSystem.js');
 
+const newGameFlow =
+  require('../core/newGameFlowV0814.js');
+
 const sceneManager =
   require('../core/sceneManager.js');
 
@@ -772,22 +775,16 @@ class SystemScene {
     ) {
       const run =
         () => {
-          saveSystem
-            .newGame();
-
-          simulationSystem
-            .initialize();
-
-          saveSystem
-            .save();
+          newGameFlow
+            .restart();
 
           sceneManager
             .switchTo(
-              'city'
+              'newGame'
             );
 
           this.toast(
-            '已重新开局'
+            '已建立全新存档'
           );
         };
 
@@ -799,7 +796,7 @@ class SystemScene {
         api.showModal({
           title:'重新开局',
           content:
-            '当前存档会被删除，此操作不可撤销。',
+            '当前主存档和备份都会被清除，然后进入完整开局流程。',
           confirmText:'重新开始',
           cancelText:'取消',
           success:result => {

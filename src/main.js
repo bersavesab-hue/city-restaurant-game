@@ -48,6 +48,9 @@ const stateBridge =
 const timeScheduleCoordinator =
   require('./core/timeScheduleCoordinatorV0812.js');
 
+const newGameFlow =
+  require('./core/newGameFlowV0814.js');
+
 const animationManager =
   require('./core/animationManager.js');
 
@@ -132,6 +135,9 @@ const systemScene =
 
 const featureHubScene =
   require('./scenes/featureHubSceneV0810.js');
+
+const newGameScene =
+  require('./scenes/newGameSceneV0814.js');
 
 const dynamicWorldSystem =
   require('./world/dynamicWorldSystemV0815.js');
@@ -5356,6 +5362,11 @@ sceneManager.register(
   featureHubScene
 );
 
+sceneManager.register(
+  'newGame',
+  newGameScene
+);
+
 // V0810_ENTRY_ROUTER_BOOT
 entryRouter.install();
 
@@ -5368,6 +5379,10 @@ runtime.stateBus =
 timeScheduleCoordinator.install();
 runtime.timeSchedule =
   timeScheduleCoordinator;
+
+// V0814_NEW_GAME_FLOW_BOOT
+runtime.newGameFlow =
+  newGameFlow;
 
 /* =========================
    总渲染
@@ -5393,7 +5408,13 @@ function render() {
       ctx
     );
 
-  drawBottomNav();
+  if (
+    sceneManager
+      .getCurrentId() !==
+    'newGame'
+  ) {
+    drawBottomNav();
+  }
 }
 
 runtime.requestRender =
@@ -7561,6 +7582,13 @@ console.log('V35_TOP_HUD_POLISH loaded');
 const restoredFromSave =
   saveSystem.load();
 
+newGameFlow
+  .initialize({
+    fresh:
+      !restoredFromSave,
+    restoredFromSave
+  });
+
 simulationSystem
   .initialize();
 
@@ -7582,9 +7610,14 @@ if (
   );
 }
 
+const startupRoute =
+  newGameFlow
+    .getStartupRoute();
+
 sceneManager
   .switchTo(
-    'city'
+    startupRoute.routeId,
+    startupRoute.params
   );
 
 render();
@@ -7596,5 +7629,5 @@ scheduleNextFrame(
 );
 
 console.log(
-  '城市餐饮经营小游戏 V0.8.12 时间与营业日程统一版启动成功'
+  '城市餐饮经营小游戏 V0.8.14 完整开局流程版启动成功'
 );

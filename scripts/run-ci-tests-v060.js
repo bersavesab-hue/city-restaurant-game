@@ -154,6 +154,9 @@ for (
     'tests/saveMigrationV0813.test.js',
     'tests/seedManagerV0813.test.js',
     'tests/updateInfrastructureV0813.test.js',
+    'tests/newGameFlowV0814.test.js',
+    'tests/newGameCompatibilityV0814.test.js',
+    'tests/updateInfrastructureV0814.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {
