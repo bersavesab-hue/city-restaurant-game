@@ -9,6 +9,9 @@ const simulationSystem =
 const runtimeEngine =
   require('./restaurantRuntimeV10.js');
 
+const customerRandomDatabase =
+  require('../customer/customerRandomDatabaseV0821.js');
+
 const supplierEngine =
   require('../supplier/supplierEngineV10.js');
 
@@ -466,6 +469,12 @@ function buildRuntime(
     runtime.rng =
       rng;
   }
+
+  runtime.customers =
+    customerRandomDatabase
+      .normalizeCustomerMap(
+        runtime.customers
+      );
 
   normalizeLegacyCalendar(
     runtime
@@ -1411,6 +1420,76 @@ function inventoryHealth(
   );
 }
 
+function generateCustomer(
+  shopId,
+  options
+) {
+  return mutate(
+    shopId,
+    runtime => {
+      const customer =
+        runtimeEngine
+          .customerProfile(
+            runtime,
+            options ||
+            {}
+          );
+
+      return {
+        ok:true,
+        customer:
+          customerRandomDatabase
+            .resolvedProfile(
+              customer
+            )
+      };
+    }
+  );
+}
+
+function customerRows(
+  shopId,
+  filters
+) {
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  if (!runtime) {
+    return [];
+  }
+
+  return (
+    customerRandomDatabase
+      .queryProfiles(
+        runtime.customers,
+        filters ||
+        {}
+      )
+  );
+}
+
+function customerInsights(
+  shopId
+) {
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  if (!runtime) {
+    return null;
+  }
+
+  return (
+    customerRandomDatabase
+      .aggregateProfiles(
+        runtime.customers
+      )
+  );
+}
+
 function supplierCatalog(
   shopId,
   filters
@@ -2187,6 +2266,9 @@ module.exports = {
   inventoryRows,
   inventoryLotRows,
   inventoryHealth,
+  generateCustomer,
+  customerRows,
+  customerInsights,
   supplierCatalog,
   compareSupplierQuotes,
   negotiateSupplierQuote,

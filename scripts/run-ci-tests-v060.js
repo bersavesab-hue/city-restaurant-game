@@ -176,6 +176,10 @@ for (
     'tests/supplierProcurementDatabaseV0820.test.js',
     'tests/procurementLogisticsIntegrationV0820.test.js',
     'tests/updateInfrastructureV0820.test.js',
+    'tests/customerRandomDatabaseV0821.test.js',
+    'tests/customerEngineIntegrationV0821.test.js',
+    'tests/customerOperationsIntegrationV0821.test.js',
+    'tests/updateInfrastructureV0821.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

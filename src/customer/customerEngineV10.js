@@ -1,6 +1,7 @@
 'use strict';
 const P=require('./customerPackV10.js');
 const R=require('./customerRulesV10.js');
+const database=require('./customerRandomDatabaseV0821.js');
 function pick(rng,list,weightFn){return R.weighted(rng,list,weightFn);}
 function id(rng,prefix){return `${prefix}_${Math.floor(R.rngNext(rng)*1e12).toString(36)}`;}
 
@@ -11,7 +12,7 @@ function createSegmentProfile(rng,opts={}){
   }
   const income=opts.incomeBandId?R.byId(P.INCOME_BANDS,opts.incomeBandId):pick(rng,P.INCOME_BANDS,x=>Math.max(1,10-Math.abs((x.budgetMultiplier||1)-(segment.budgetIndex||1))*7));
   const household=opts.householdTypeId?R.byId(P.HOUSEHOLD_TYPES,opts.householdTypeId):pick(rng,P.HOUSEHOLD_TYPES,()=>1);
-  return {
+  return database.normalizeProfile({
     id:opts.id||id(rng,'custseg'),segmentId:segment.id,name:segment.name,incomeBandId:income.id,householdTypeId:household.id,
     occupationId:pick(rng,P.OCCUPATIONS)?.id,motiveIds:[pick(rng,P.DINING_MOTIVES)?.id,pick(rng,P.DINING_MOTIVES)?.id].filter((x,i,a)=>x&&a.indexOf(x)===i),
     tasteIds:[pick(rng,P.TASTE_PROFILES)?.id,pick(rng,P.TASTE_PROFILES)?.id,pick(rng,P.TASTE_PROFILES)?.id].filter((x,i,a)=>x&&a.indexOf(x)===i),
@@ -19,7 +20,7 @@ function createSegmentProfile(rng,opts={}){
     reviewStyleId:pick(rng,P.REVIEW_STYLES)?.id,socialInfluenceId:pick(rng,P.SOCIAL_INFLUENCE_TYPES)?.id,dietaryPreferenceId:pick(rng,P.DIETARY_PREFERENCES)?.id,
     traits:{priceSensitivity:R.clamp((segment.priceSensitivity+income.priceSensitivity)/2),qualitySensitivity:segment.qualitySensitivity,distanceSensitivity:segment.distanceSensitivity,queueTolerance:segment.queueTolerance,noveltySeeking:segment.noveltySeeking,loyalty:segment.loyalty,socialInfluence:segment.socialInfluence,reviewPropensity:segment.reviewPropensity,deliveryAffinity:segment.deliveryAffinity},
     memory:{historicalPrice:null,lastPaidPrice:null,visitedStores:{},favoriteStoreIds:[],dislikedStoreIds:[]}
-  };
+  });
 }
 
 function generateVisit(profile,rng,ctx={}){
@@ -79,4 +80,19 @@ function postVisit(profile,visit,store,experience={},rng){const e=evaluateExperi
 function buildDistrictPopulation(rng,opts={}){const count=Math.max(100,Math.min(50000,Number(opts.count||2500))),districtId=opts.districtId||'university',profiles=[];for(let i=0;i<count;i++)profiles.push(createSegmentProfile(rng,{districtId}));const summary={};for(const p of profiles)summary[p.segmentId]=(summary[p.segmentId]||0)+1;return {districtId,count,profiles,summary};}
 function aggregateDemand(population,ctx={}){const out={totalPotentialVisits:0,deliveryShare:0,avgBudget:0,segments:{}};let bud=0,del=0;for(const p of population.profiles||[]){const s=R.byId(P.SEGMENTS,p.segmentId)||P.SEGMENTS[0],income=R.byId(P.INCOME_BANDS,p.incomeBandId)||P.INCOME_BANDS[3],period=ctx.period||'lunch';const b=R.budgetRange(s,income,period);const avg=(b[0]+b[1])/2;const frequency=.12+(s.loyalty||50)/100*.06+(ctx.weekend&&s.id.includes('family')?.05:0);out.totalPotentialVisits+=frequency;bud+=avg;del+=s.deliveryAffinity||0;out.segments[p.segmentId]=(out.segments[p.segmentId]||0)+frequency;}const n=Math.max(1,(population.profiles||[]).length);out.avgBudget=R.round(bud/n,1);out.deliveryShare=R.round(del/n/100,3);out.totalPotentialVisits=R.round(out.totalPotentialVisits,1);return out;}
 
-module.exports={createSegmentProfile,generateVisit,storeUtility,chooseStore,queueDecision,chooseDish,evaluateExperience,postVisit,buildDistrictPopulation,aggregateDemand};
+module.exports={
+  createSegmentProfile,
+  generateVisit,
+  storeUtility,
+  chooseStore,
+  queueDecision,
+  chooseDish,
+  evaluateExperience,
+  postVisit,
+  buildDistrictPopulation,
+  aggregateDemand,
+  normalizeProfile:
+    database.normalizeProfile,
+  customerInsights:
+    database.aggregateProfiles
+};

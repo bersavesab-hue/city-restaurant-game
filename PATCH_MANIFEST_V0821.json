@@ -1,0 +1,41 @@
+{
+  "id": "V0821_CUSTOMER_RANDOM_DATABASE",
+  "baseVersion": "0.8.20",
+  "targetVersion": "0.8.21",
+  "pass": "12/26",
+  "title": "顾客随机数据库",
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false,
+  "androidRunnerCompatibility": true,
+  "database": {
+    "segments": 64,
+    "incomeBands": 8,
+    "householdTypes": 12,
+    "occupations": 24,
+    "diningMotives": 24,
+    "tasteProfiles": 24,
+    "channelHabits": 18,
+    "timePatterns": 16,
+    "decisionBiases": 20,
+    "reviewStyles": 16,
+    "priceSensitivityProfiles": 12,
+    "queueProfiles": 12,
+    "loyaltyProfiles": 12,
+    "socialInfluenceTypes": 20,
+    "complaintTriggers": 32,
+    "delightTriggers": 32,
+    "partyPurposes": 16,
+    "dietaryPreferences": 18,
+    "districtMixes": 8,
+    "mealBudgetPeriods": 9,
+    "theoreticalSingleChoiceCombinations": "79779916318980125491200"
+  },
+  "tests": [
+    "tests/customerRandomDatabaseV0821.test.js",
+    "tests/customerEngineIntegrationV0821.test.js",
+    "tests/customerOperationsIntegrationV0821.test.js",
+    "tests/updateInfrastructureV0821.test.js"
+  ]
+}
