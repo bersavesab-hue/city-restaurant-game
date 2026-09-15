@@ -66,7 +66,16 @@ function defaultMetrics() {
     waitMinutesTotal:0,
     waitSamples:0,
     cookMinutesTotal:0,
-    cookSamples:0
+    cookSamples:0,
+    repeatGuestsToday:0,
+    newGuestsToday:0,
+    priceWalkawaysToday:0,
+    repeatIntentTotalToday:0,
+    repeatIntentSamplesToday:0,
+    repeatLikelyVisitsToday:0,
+    churnRiskVisitsToday:0,
+    dishOrdersToday:{},
+    dishRevenueToday:{}
   };
 }
 
@@ -332,9 +341,113 @@ function profileById(
   );
 }
 
+function customerReturnScore(
+  profile,
+  shopId
+) {
+  const memory =
+    profile &&
+    profile.memory &&
+    typeof profile.memory ===
+      'object'
+      ? profile.memory
+      : {};
+
+  const row =
+    memory.visitedStores &&
+    memory.visitedStores[
+      shopId
+    ];
+
+  const visits =
+    Math.max(
+      0,
+      Number(
+        row &&
+        row.visits
+      ) ||
+      0
+    );
+
+  if (
+    visits <=
+    0
+  ) {
+    return 0;
+  }
+
+  const satisfaction =
+    clamp(
+      Number(
+        row.avgSatisfaction
+      ) ||
+      50,
+      0,
+      100
+    ) /
+    100;
+
+  const loyalty =
+    clamp(
+      Number(
+        profile &&
+        profile.traits &&
+        profile.traits.loyalty
+      ) ||
+      50,
+      0,
+      100
+    ) /
+    100;
+
+  const favorite =
+    Array.isArray(
+      memory.favoriteStoreIds
+    ) &&
+    memory.favoriteStoreIds
+      .includes(
+        shopId
+      );
+
+  const disliked =
+    Array.isArray(
+      memory.dislikedStoreIds
+    ) &&
+    memory.dislikedStoreIds
+      .includes(
+        shopId
+      );
+
+  return clamp(
+    0.08 +
+    satisfaction *
+      0.50 +
+    loyalty *
+      0.22 +
+    Math.min(
+      5,
+      visits
+    ) *
+      0.04 +
+    (
+      favorite
+        ? 0.15
+        : 0
+    ) -
+    (
+      disliked
+        ? 0.45
+        : 0
+    ),
+    0,
+    1
+  );
+}
+
 function createCustomer(
   runtime,
-  districtId
+  districtId,
+  shop
 ) {
   const existing =
     Object.values(
@@ -342,18 +455,138 @@ function createCustomer(
       {}
     );
 
+  const shopId =
+    shop &&
+    shop.id;
+
+  const candidates =
+    shopId
+      ? existing
+          .map(
+            profile => ({
+              profile,
+              score:
+                customerReturnScore(
+                  profile,
+                  shopId
+                )
+            })
+          )
+          .filter(
+            item =>
+              item.score >
+              0.02
+          )
+          .sort(
+            (a,b) =>
+              b.score -
+              a.score
+          )
+      : [];
+
   if (
-    existing.length &&
-    runtime.rng.next() <
-      0.34
+    candidates.length
   ) {
-    return existing[
-      runtime.rng.int(
+    const sample =
+      candidates.slice(
         0,
-        existing.length -
-          1
-      )
-    ];
+        12
+      );
+
+    const avgStrength =
+      sample.reduce(
+        (
+          total,
+          item
+        ) =>
+          total +
+          item.score,
+        0
+      ) /
+      Math.max(
+        1,
+        sample.length
+      );
+
+    const ratingBoost =
+      Math.max(
+        0,
+        (
+          Number(
+            runtime.shop &&
+            runtime.shop.rating
+          ) ||
+          4
+        ) -
+        4
+      ) *
+      0.08;
+
+    const wordBoost =
+      Math.max(
+        0,
+        Number(
+          runtime.shop &&
+          runtime.shop.wordOfMouth
+        ) ||
+        0
+      ) *
+      0.12;
+
+    const repeatChance =
+      clamp(
+        0.06 +
+        avgStrength *
+          0.52 +
+        ratingBoost +
+        wordBoost,
+        0.05,
+        0.68
+      );
+
+    if (
+      runtime.rng.next() <
+      repeatChance
+    ) {
+      const totalWeight =
+        sample.reduce(
+          (
+            total,
+            item
+          ) =>
+            total +
+            Math.max(
+              0.01,
+              item.score
+            ),
+          0
+        );
+
+      let roll =
+        runtime.rng.next() *
+        totalWeight;
+
+      for (
+        const item
+        of sample
+      ) {
+        roll -=
+          Math.max(
+            0.01,
+            item.score
+          );
+
+        if (
+          roll <=
+          0
+        ) {
+          return item.profile;
+        }
+      }
+
+      return sample[0]
+        .profile;
+    }
   }
 
   const profile =
@@ -437,9 +670,22 @@ function menuChoices(
           64 +
           Math.min(
             20,
-            Number(
-              item.avgRating ||
-              0
+            (
+              item.stats &&
+              Number(
+                item.stats
+                  .ratingCount
+              ) >
+                0
+                ? Number(
+                    item.stats
+                      .ratingSum
+                  ) /
+                  Number(
+                    item.stats
+                      .ratingCount
+                  )
+                : 0
             ) *
               3
           ),
@@ -451,9 +697,10 @@ function menuChoices(
               Math.max(
                 1,
                 Number(
-                  item.salesQty ||
-                  1
-                )
+                  item.stats &&
+                  item.stats.orders
+                ) ||
+                1
               )
             ) *
               18
@@ -511,6 +758,79 @@ function queueEstimate(
   );
 }
 
+function priceRejectProbability(
+  profile,
+  visit,
+  menuItem
+) {
+  const budget =
+    Math.max(
+      1,
+      Number(
+        visit &&
+        visit.budget
+      ) ||
+      1
+    );
+
+  const price =
+    Math.max(
+      0,
+      Number(
+        menuItem &&
+        menuItem.listPrice
+      ) ||
+      0
+    );
+
+  const ratio =
+    price /
+    budget;
+
+  if (
+    ratio <=
+    1.02
+  ) {
+    return 0;
+  }
+
+  const sensitivity =
+    clamp(
+      Number(
+        profile &&
+        profile.traits &&
+        profile.traits
+          .priceSensitivity
+      ) ||
+      50,
+      0,
+      100
+    ) /
+    100;
+
+  const overBudget =
+    Math.max(
+      0,
+      ratio -
+      1
+    );
+
+  return clamp(
+    overBudget *
+      0.70 +
+    sensitivity *
+      0.18 +
+    Math.max(
+      0,
+      ratio -
+      1.35
+    ) *
+      0.60,
+    0,
+    0.85
+  );
+}
+
 function buildOrder(
   runtime,
   floor,
@@ -554,6 +874,64 @@ function buildOrder(
     return {
       ok:false,
       reason:'缺货'
+    };
+  }
+
+  const rejectProbability =
+    priceRejectProbability(
+      profile,
+      visit,
+      chosen.dish.menuItem
+    );
+
+  if (
+    rejectProbability >
+      0 &&
+    runtime.rng.next() <
+      rejectProbability
+  ) {
+    const lost =
+      Math.max(
+        1,
+        Number(
+          visit.partySize
+        ) ||
+        1
+      );
+
+    floor.metrics
+      .priceWalkawaysToday +=
+      lost;
+
+    floor.history.unshift({
+      minute,
+      type:'price_walkaway',
+      profileId:
+        profile.id,
+      visitId:
+        visit.id,
+      menuItemId:
+        chosen.dish
+          .menuItem
+          .id,
+      price:
+        Number(
+          chosen.dish
+            .menuItem
+            .listPrice
+        ) ||
+        0,
+      budget:
+        Number(
+          visit.budget
+        ) ||
+        0,
+      rejectProbability
+    });
+
+    return {
+      ok:false,
+      reason:'价格超预算'
     };
   }
 
@@ -671,7 +1049,8 @@ function enqueueArrival(
   const profile =
     createCustomer(
       runtime,
-      shop.districtId
+      shop.districtId,
+      shop
     );
 
   const hour =
@@ -683,6 +1062,26 @@ function enqueueArrival(
       ) %
       1440 /
       60
+    );
+
+  const previousVisits =
+    Math.max(
+      0,
+      Number(
+        profile &&
+        profile.memory &&
+        profile.memory
+          .visitedStores &&
+        profile.memory
+          .visitedStores[
+            shop.id
+          ] &&
+        profile.memory
+          .visitedStores[
+            shop.id
+          ].visits
+      ) ||
+      0
     );
 
   const visit =
@@ -701,6 +1100,28 @@ function enqueueArrival(
               'heavyRain'
         }
       );
+
+  const partyCount =
+    Math.max(
+      1,
+      Number(
+        visit.partySize
+      ) ||
+      1
+    );
+
+  if (
+    previousVisits >
+    0
+  ) {
+    floor.metrics
+      .repeatGuestsToday +=
+      partyCount;
+  } else {
+    floor.metrics
+      .newGuestsToday +=
+      partyCount;
+  }
 
   // V083_DYNAMIC_MODIFIERS
   const deliveryDemandMultiplier =
@@ -1979,6 +2400,41 @@ function settleEntry(
           runtime.rng
         );
 
+    const repeatProbability =
+      clamp(
+        Number(
+          retention &&
+          retention.repeatProbability
+        ) ||
+        0,
+        0,
+        1
+      );
+
+    floor.metrics
+      .repeatIntentTotalToday +=
+      repeatProbability;
+
+    floor.metrics
+      .repeatIntentSamplesToday +=
+      1;
+
+    if (
+      repeatProbability >=
+      0.52
+    ) {
+      floor.metrics
+        .repeatLikelyVisitsToday +=
+        1;
+    } else if (
+      repeatProbability <
+      0.30
+    ) {
+      floor.metrics
+        .churnRiskVisitsToday +=
+        1;
+    }
+
     const reputationMultiplier =
       clamp(
         Number(
@@ -2036,20 +2492,23 @@ function settleEntry(
     );
 
   if (menuItem) {
+    const soldQty =
+      order.items.reduce(
+        (
+          sum,
+          item
+        ) =>
+          sum +
+          item.qty,
+        0
+      );
+
     menuEngine
       .recordSale(
         menuItem,
         {
           qty:
-            order.items.reduce(
-              (
-                sum,
-                item
-              ) =>
-                sum +
-                item.qty,
-              0
-            ),
+            soldQty,
           paid:
             order.total,
           variableCost:
@@ -2060,6 +2519,44 @@ function settleEntry(
             retention.reviewStars
         }
       );
+
+    floor.metrics
+      .dishOrdersToday[
+        menuItem.id
+      ] =
+      (
+        Number(
+          floor.metrics
+            .dishOrdersToday[
+              menuItem.id
+            ]
+        ) ||
+        0
+      ) +
+      soldQty;
+
+    floor.metrics
+      .dishRevenueToday[
+        menuItem.id
+      ] =
+      Math.round(
+        (
+          (
+            Number(
+              floor.metrics
+                .dishRevenueToday[
+                  menuItem.id
+                ]
+            ) ||
+            0
+          ) +
+          Number(
+            settled.revenue
+          )
+        ) *
+        100
+      ) /
+      100;
   }
 
   const cashIn =
@@ -2825,6 +3322,63 @@ function getSnapshot(
     completedOrdersToday:
       floor.metrics
         .completedOrdersToday,
+    repeatGuestsToday:
+      floor.metrics
+        .repeatGuestsToday,
+    newGuestsToday:
+      floor.metrics
+        .newGuestsToday,
+    priceWalkawaysToday:
+      floor.metrics
+        .priceWalkawaysToday,
+    repeatRate:
+      (
+        floor.metrics
+          .repeatGuestsToday +
+        floor.metrics
+          .newGuestsToday
+      ) >
+        0
+        ? Math.round(
+            floor.metrics
+              .repeatGuestsToday /
+            (
+              floor.metrics
+                .repeatGuestsToday +
+              floor.metrics
+                .newGuestsToday
+            ) *
+            1000
+          ) /
+          1000
+        : 0,
+    avgRepeatIntent:
+      floor.metrics
+        .repeatIntentSamplesToday >
+        0
+        ? Math.round(
+            floor.metrics
+              .repeatIntentTotalToday /
+            floor.metrics
+              .repeatIntentSamplesToday *
+            1000
+          ) /
+          1000
+        : 0,
+    repeatLikelyVisitsToday:
+      floor.metrics
+        .repeatLikelyVisitsToday,
+    churnRiskVisitsToday:
+      floor.metrics
+        .churnRiskVisitsToday,
+    dishOrdersToday:{
+      ...floor.metrics
+        .dishOrdersToday
+    },
+    dishRevenueToday:{
+      ...floor.metrics
+        .dishRevenueToday
+    },
     peakQueueToday:
       floor.metrics
         .peakQueueToday,
@@ -2906,5 +3460,7 @@ module.exports = {
   advance,
   getSnapshot,
   closeDay,
-  kitchenQueueCount
+  kitchenQueueCount,
+  customerReturnScore,
+  priceRejectProbability
 };

@@ -832,6 +832,101 @@ function buildReasons(
     });
   }
 
+  const signals =
+    extra &&
+    extra.operatingSignals &&
+    typeof extra.operatingSignals ===
+      'object'
+      ? extra.operatingSignals
+      : {};
+
+  if (
+    Number(
+      signals.stockouts
+    ) >
+    0
+  ) {
+    reasons.push({
+      code:'STOCKOUT_LOSS',
+      severity:'warning',
+      message:
+        '缺货导致 ' +
+        Number(
+          signals.stockouts
+        ) +
+        ' 次订单流失'
+    });
+  }
+
+  if (
+    Number(
+      signals.priceWalkaways
+    ) >
+    0
+  ) {
+    reasons.push({
+      code:'PRICE_RESISTANCE',
+      severity:'warning',
+      message:
+        '有 ' +
+        Number(
+          signals.priceWalkaways
+        ) +
+        ' 位顾客因价格超预算离开'
+    });
+  }
+
+  if (
+    Number(
+      signals.expiredWasteValue
+    ) >
+    Math.max(
+      30,
+      Number(
+        financial.revenue
+      ) *
+      0.02
+    )
+  ) {
+    reasons.push({
+      code:'WASTE_HIGH',
+      severity:'warning',
+      message:
+        '过期食材损耗 ' +
+        Number(
+          signals.expiredWasteValue
+        ).toFixed(
+          2
+        )
+    });
+  }
+
+  if (
+    (
+      Number(
+        signals.repeatGuests
+      ) +
+      Number(
+        signals.newGuests
+      )
+    ) >=
+      12 &&
+    Number(
+      signals.avgRepeatIntent
+    ) >
+      0 &&
+    Number(
+      signals.avgRepeatIntent
+    ) <
+      0.35
+  ) {
+    reasons.push({
+      code:'REPEAT_WEAK',
+      severity:'warning',
+      message:'顾客复购意向偏弱'
+    });
+  }
+
   if (
     extra &&
     extra.regulatory &&
@@ -857,6 +952,50 @@ function buildNextActions(
   reasons
 ) {
   const actions = [];
+
+  if (
+    reasons.some(
+      item =>
+        item.code ===
+          'STOCKOUT_LOSS' ||
+        item.code ===
+          'WASTE_HIGH'
+    )
+  ) {
+    actions.push({
+      id:'fix_supply_balance',
+      routeId:'supply',
+      message:'调整补货量，兼顾缺货与过期损耗'
+    });
+  }
+
+  if (
+    reasons.some(
+      item =>
+        item.code ===
+        'PRICE_RESISTANCE'
+    )
+  ) {
+    actions.push({
+      id:'fix_price_resistance',
+      routeId:'research',
+      message:'检查高价菜和顾客预算匹配'
+    });
+  }
+
+  if (
+    reasons.some(
+      item =>
+        item.code ===
+        'REPEAT_WEAK'
+    )
+  ) {
+    actions.push({
+      id:'fix_repeat_intent',
+      routeId:'business',
+      message:'优先改善菜品、速度和服务体验'
+    });
+  }
 
   if (
     reasons.some(

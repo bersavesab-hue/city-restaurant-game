@@ -2256,6 +2256,206 @@ function profitStreakFromStatements(rows) {
   return streak;
 }
 
+function buildOperatingSignals(
+  runtime,
+  closed
+) {
+  const floor =
+    closed &&
+    closed.floor &&
+    typeof closed.floor ===
+      'object'
+      ? closed.floor
+      : {};
+
+  const repeatGuests =
+    Math.max(
+      0,
+      Number(
+        floor.repeatGuestsToday
+      ) ||
+      0
+    );
+
+  const newGuests =
+    Math.max(
+      0,
+      Number(
+        floor.newGuestsToday
+      ) ||
+      0
+    );
+
+  const knownGuests =
+    repeatGuests +
+    newGuests;
+
+  const dishOrders =
+    floor.dishOrdersToday &&
+    typeof floor.dishOrdersToday ===
+      'object'
+      ? floor.dishOrdersToday
+      : {};
+
+  let topDishId =
+    null;
+
+  let topDishQty =
+    0;
+
+  for (
+    const [
+      id,
+      qty
+    ]
+    of Object.entries(
+      dishOrders
+    )
+  ) {
+    if (
+      Number(qty) >
+      topDishQty
+    ) {
+      topDishId =
+        id;
+
+      topDishQty =
+        Number(qty) ||
+        0;
+    }
+  }
+
+  const topDish =
+    topDishId &&
+    runtime &&
+    Array.isArray(
+      runtime.menu
+    )
+      ? runtime.menu.find(
+          item =>
+            item.id ===
+            topDishId
+        )
+      : null;
+
+  return {
+    repeatGuests,
+    newGuests,
+    repeatRate:
+      knownGuests >
+        0
+        ? Math.round(
+            repeatGuests /
+            knownGuests *
+            1000
+          ) /
+          1000
+        : Number(
+            floor.repeatRate
+          ) ||
+          0,
+    avgRepeatIntent:
+      Number(
+        floor.avgRepeatIntent
+      ) ||
+      0,
+    repeatLikelyVisits:
+      Math.max(
+        0,
+        Number(
+          floor.repeatLikelyVisitsToday
+        ) ||
+        0
+      ),
+    churnRiskVisits:
+      Math.max(
+        0,
+        Number(
+          floor.churnRiskVisitsToday
+        ) ||
+        0
+      ),
+    priceWalkaways:
+      Math.max(
+        0,
+        Number(
+          floor.priceWalkawaysToday
+        ) ||
+        0
+      ),
+    stockouts:
+      Math.max(
+        0,
+        Number(
+          floor.stockoutsToday
+        ) ||
+        0
+      ),
+    queueWalkaways:
+      Math.max(
+        0,
+        Number(
+          floor.walkawaysToday
+        ) ||
+        0
+      ),
+    mistakes:
+      Math.max(
+        0,
+        Number(
+          floor.mistakesToday
+        ) ||
+        0
+      ),
+    avgWaitMinutes:
+      Number(
+        floor.avgWaitMinutes
+      ) ||
+      0,
+    expiredWasteValue:
+      Math.max(
+        0,
+        Number(
+          closed &&
+          closed.inventoryLoss &&
+          closed.inventoryLoss
+            .expiredValue
+        ) ||
+        0
+      ),
+    expiredWasteGrams:
+      Math.max(
+        0,
+        Number(
+          closed &&
+          closed.inventoryLoss &&
+          closed.inventoryLoss
+            .expiredGrams
+        ) ||
+        0
+      ),
+    topDish:
+      topDish
+        ? {
+            id:
+              topDish.id,
+            name:
+              topDish.name,
+            qty:
+              topDishQty,
+            revenue:
+              Number(
+                floor.dishRevenueToday &&
+                floor.dishRevenueToday[
+                  topDish.id
+                ]
+              ) ||
+              0
+          }
+        : null
+  };
+}
+
 function finalizeClosedOperatingDay(shopId,runtime,closeResult,options) {
   const normalized=normalizeClosedResult(closeResult);
   if (!normalized.ok || !normalized.closed) return normalized.envelope;
@@ -2328,6 +2528,12 @@ function finalizeClosedOperatingDay(shopId,runtime,closeResult,options) {
     cashflowScore:growthResult.achievementPoints
   });
 
+  const operatingSignals=
+    buildOperatingSignals(
+      runtime,
+      closed
+    );
+
   const endSnapshot=decisionContextSnapshot(shopId,runtime,closed.financial);
   const balanceV2=operatingBalanceTuner.assessDay(closed.financial,{tensionScore:endSnapshot.tensionScore});
   const decisions=decisionFeedback.resolveDay(shopId,closedDay,endSnapshot);
@@ -2335,6 +2541,7 @@ function finalizeClosedOperatingDay(shopId,runtime,closeResult,options) {
     balance:balanceV2,
     decisionFeedback:decisions,
     source:options&&options.source||'unified',
+    operatingSignals,
     regulatory:{openViolations:regulatoryView&&Array.isArray(regulatoryView.openViolations)?regulatoryView.openViolations.length:0}
   });
   const health=playtestHealth.record(shopId,playtestContextSnapshot(shopId,runtime));

@@ -18,6 +18,7 @@ const marketing=require('../src/operations/marketingEngineV10.js');
 const brand=require('../src/operations/brandGrowthEngineV10.js');
 const events=require('../src/operations/restaurantEventEngineV10.js');
 const runtimeEngine=require('../src/operations/restaurantRuntimeV10.js');
+const floorSimulation=require('../src/operations/floorSimulationV082.js');
 
 assert.equal(pack.SUPPLIER_CATEGORIES.length,18,'供应商一级类型必须18类');
 assert.ok(pack.SUPPLIER_ARCHETYPES.length>=120,'供应商原型必须120+');
@@ -68,6 +69,112 @@ assert.equal(marketing.CAMPAIGN_TYPES.length,24);
 assert.equal(brand.LEVELS.length,20);
 assert.equal(events.EVENT_TEMPLATES.length,60);
 
+const highReturnScore=
+  floorSimulation
+    .customerReturnScore(
+      {
+        traits:{loyalty:80},
+        memory:{
+          visitedStores:{
+            shop1:{
+              visits:3,
+              avgSatisfaction:90
+            }
+          },
+          favoriteStoreIds:['shop1'],
+          dislikedStoreIds:[]
+        }
+      },
+      'shop1'
+    );
+
+const lowReturnScore=
+  floorSimulation
+    .customerReturnScore(
+      {
+        traits:{loyalty:40},
+        memory:{
+          visitedStores:{
+            shop1:{
+              visits:1,
+              avgSatisfaction:30
+            }
+          },
+          favoriteStoreIds:[],
+          dislikedStoreIds:['shop1']
+        }
+      },
+      'shop1'
+    );
+
+assert.ok(
+  highReturnScore >
+  lowReturnScore,
+  '高满意老客必须比低满意顾客更容易回店'
+);
+
+const affordableReject=
+  floorSimulation
+    .priceRejectProbability(
+      {traits:{priceSensitivity:80}},
+      {budget:30},
+      {listPrice:25}
+    );
+
+const expensiveReject=
+  floorSimulation
+    .priceRejectProbability(
+      {traits:{priceSensitivity:80}},
+      {budget:30},
+      {listPrice:55}
+    );
+
+assert.equal(
+  affordableReject,
+  0,
+  '预算内菜价不应制造额外价格流失'
+);
+
+assert.ok(
+  expensiveReject >
+  0.5,
+  '明显超预算菜价必须产生真实流失风险'
+);
+
+const noReviewShop={
+  rating:4,
+  reviewCount:0,
+  wordOfMouth:0
+};
+
+retention.updateShopReputation(
+  noReviewShop,
+  {
+    reviewStars:null,
+    wordOfMouth:0.3
+  }
+);
+
+assert.equal(
+  noReviewShop.reviewCount,
+  0,
+  '未发表评价的顾客不能虚增公开评价数'
+);
+
+retention.updateShopReputation(
+  noReviewShop,
+  {
+    reviewStars:5,
+    wordOfMouth:0.3
+  }
+);
+
+assert.equal(
+  noReviewShop.reviewCount,
+  1,
+  '真实评价才允许进入公开评分'
+);
+
 const staffState=staff.createStaffState();
 staffState.employees.push({personId:'p1',name:'测试厨师',roleId:'chef',wage:6000,skill:70,energy:100,stress:20,satisfaction:70,active:true});
 staff.planShift(staffState,1,[{personId:'p1',hours:8}]);
@@ -82,7 +189,31 @@ const visit=runtimeEngine.simulateVisit(runtime,profile,{hour:12,staffCoverage:1
 assert.ok(visit.ok,'顾客→菜单→订单→厨房→库存→结算→评价必须完整跑通');
 assert.ok(visit.settlement.revenue>0);
 assert.ok(runtime.ledger.orders===1);
+runtime.inventory.lots.push({
+  id:'waste_probe',
+  batchNo:'waste_probe',
+  ingredientId:
+    ingredient.id,
+  grams:500,
+  receivedDay:0,
+  expiryDay:0,
+  unitCostPerKg:20,
+  quality:50,
+  storage:'ambient'
+});
+
 const close=runtimeEngine.closeDay(runtime);
 assert.ok(close.financial.revenue>0);
+assert.ok(
+  close.inventoryLoss &&
+  close.inventoryLoss.expiredValue >
+    0,
+  '过期库存必须形成真实损耗'
+);
+assert.ok(
+  close.financial.waste >
+    0,
+  '过期库存损耗必须进入当日利润表'
+);
 
 console.log('V0.7.0 restaurant operation core pack tests passed');

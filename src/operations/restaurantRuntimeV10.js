@@ -64,10 +64,42 @@ function simulateVisit(runtime,profile,ctx={}){
   runtime.history.push({day:runtime.day,type:'visit',customerId:profile.id,orderId:order.id,revenue:set.revenue,profit:set.contribution});return out;
 }
 function closeDay(runtime,ctx={}){
-  const daily=settlement.summary(runtime.ledger);brandGrowth.applyDailyResult(runtime.brand,{profit:daily.profit,rating:runtime.shop.rating,customers:daily.customers});
-  inventoryEngine.advanceDay(runtime.inventory,runtime.day+1,{shrinkRate:ctx.shrinkRate??.002});runtime.day++;
+  const inventoryLoss=
+    inventoryEngine.advanceDay(
+      runtime.inventory,
+      runtime.day+1,
+      {shrinkRate:ctx.shrinkRate??.002}
+    );
+
+  if(
+    inventoryLoss&&
+    Number(inventoryLoss.expiredValue)>0
+  ){
+    settlement.addFixedCosts(
+      runtime.ledger,
+      {waste:Number(inventoryLoss.expiredValue)||0}
+    );
+  }
+
+  const daily=settlement.summary(runtime.ledger);
+  brandGrowth.applyDailyResult(runtime.brand,{profit:daily.profit,rating:runtime.shop.rating,customers:daily.customers});
+  runtime.day++;
+
   for(const c of runtime.campaigns)marketing.tickCampaign(c);
-  const result={day:runtime.day-1,financial:daily,shopRating:runtime.shop.rating,brand:{level:runtime.brand.level,xp:runtime.brand.xp}};
-  runtime.history.push({type:'day_close',...result});runtime.ledger=settlement.createLedger();return result;
+
+  const result={
+    day:runtime.day-1,
+    financial:daily,
+    inventoryLoss:{
+      expiredGrams:Number(inventoryLoss&&inventoryLoss.expiredGrams)||0,
+      expiredValue:Number(inventoryLoss&&inventoryLoss.expiredValue)||0
+    },
+    shopRating:runtime.shop.rating,
+    brand:{level:runtime.brand.level,xp:runtime.brand.xp}
+  };
+
+  runtime.history.push({type:'day_close',...result});
+  runtime.ledger=settlement.createLedger();
+  return result;
 }
 module.exports={createRuntime,bootstrapInventory,customerProfile,simulateVisit,closeDay};

@@ -675,6 +675,15 @@ class BusinessScene {
           ? latest.extra.balance
           : liveBalance;
 
+    const latestSignals =
+      latest &&
+      latest.extra &&
+      latest.extra
+        .operatingSignals
+        ? latest.extra
+            .operatingSignals
+        : null;
+
     this.sectionCard(
       ctx,
       14,
@@ -903,6 +912,40 @@ class BusinessScene {
       466,
       7,
       '#3A5665',
+      '700'
+    );
+
+    ui.text(
+      ctx,
+      latestSignals
+        ? '上次经营：回头客' +
+          Math.round(
+            Number(
+              latestSignals
+                .repeatRate
+            ) *
+            100
+          ) +
+          '% · 价流' +
+          Number(
+            latestSignals
+              .priceWalkaways
+          ) +
+          ' · 缺货' +
+          Number(
+            latestSignals
+              .stockouts
+          ) +
+          ' · 损耗' +
+          opUi.money(
+            latestSignals
+              .expiredWasteValue
+          )
+        : '经营因果：等待首次完整日结',
+      28,
+      488,
+      5.7,
+      '#71858F',
       '700'
     );
 
@@ -1149,22 +1192,26 @@ class BusinessScene {
 
     ui.text(
       ctx,
-      '待评估决策 ' +
-      (
-        feedback &&
-        feedback.pending
-          ? feedback.pending.length
-          : 0
-      ) +
-      ' 项 · 已反馈 ' +
-      (
-        feedback &&
-        feedback.metrics
-          ? feedback.metrics.resolved ||
-            0
-          : 0
-      ) +
-      ' 项',
+      latestSignals &&
+      latestSignals.topDish
+        ? '热销菜：' +
+          latestSignals
+            .topDish
+            .name +
+          ' · ' +
+          latestSignals
+            .topDish
+            .qty +
+          '份 · 复购意向' +
+          Math.round(
+            Number(
+              latestSignals
+                .avgRepeatIntent
+            ) *
+            100
+          ) +
+          '%'
+        : '经营因果：价格、库存、复购数据将在日结后形成',
       28,
       680,
       6.1,

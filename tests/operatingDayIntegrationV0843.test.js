@@ -88,6 +88,12 @@ assert.equal(typeof operations.finalizeExternalOperatingDay,'function','自动�
 assert.ok(Array.isArray(closed.decisionFeedback));
 assert.ok(closed.balanceDiagnosis);
 assert.ok(closed.playtestHealth);
+assert.ok(
+  closed.dailyBrief.extra &&
+  closed.dailyBrief.extra
+    .operatingSignals,
+  '统一日结必须保存经营因果信号'
+);
 
 const after=operations.operatingDaySnapshot('shop_v0843_integration');
 assert.equal(after.status,'closed');

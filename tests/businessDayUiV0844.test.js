@@ -262,6 +262,15 @@ assert.ok(
     'stabilityLevel'
   ) &&
   businessSource.includes(
+    'operatingSignals'
+  ) &&
+  businessSource.includes(
+    '上次经营：回头客'
+  ) &&
+  businessSource.includes(
+    '热销菜：'
+  ) &&
+  businessSource.includes(
     'showingCurrent'
   ) &&
   businessSource.includes(

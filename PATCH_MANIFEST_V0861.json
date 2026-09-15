@@ -1,0 +1,32 @@
+{
+  "id": "V0861_OPERATING_CAUSALITY_LOOP",
+  "baseVersion": "0.8.60",
+  "targetVersion": "0.8.61",
+  "category": "核心玩法深化：顾客/价格/复购/库存/损耗因果闭环",
+  "features": [
+    "顾客回店不再固定随机，满意度、忠诚度、历史访问、收藏门店共同影响回店概率",
+    "门店评分和正向口碑提高老客回流概率",
+    "明显超出顾客预算的菜价会产生真实价格流失",
+    "预算内菜价不额外制造价格流失",
+    "菜品热门度改为读取真实item.stats.orders，不再读取无效salesQty",
+    "菜品质量感知改为读取真实item.stats评分统计，不再读取无效avgRating",
+    "每日记录新客、回头客、复购意向、流失风险、价格流失",
+    "每日记录菜品真实销量与营收，日结生成热销菜",
+    "只有真实公开评价才计入rating/reviewCount，未评价顾客只影响口碑",
+    "过期库存价值正式计入当日waste费用并降低利润",
+    "日结保存缺货、价格流失、排队流失、复购、过期损耗等经营因果信号",
+    "日结诊断增加价格阻力、缺货损失、过期损耗、复购偏弱",
+    "明日建议自动指向菜单定价、供应链或经营体验",
+    "经营页显示回头客率、价格流失、缺货、损耗、热销菜和复购意向",
+    "兼容V0.8.60统一日结与旧存档修复"
+  ],
+  "testsUpdated": [
+    "tests/operationCoreV070.test.js",
+    "tests/operatingDayIntegrationV0843.test.js",
+    "tests/businessDayUiV0844.test.js"
+  ],
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false
+}

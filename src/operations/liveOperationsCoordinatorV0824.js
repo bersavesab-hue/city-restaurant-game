@@ -3,6 +3,9 @@
 const runtimeEngine =
   require('./restaurantRuntimeV10.js');
 
+const floorSimulation =
+  require('./floorSimulationV082.js');
+
 const inventoryEngine =
   require('../inventory/inventoryEngineV10.js');
 
@@ -463,6 +466,12 @@ function closeDay(
         r,
         options ||
         {}
+      );
+
+  result.floor =
+    floorSimulation
+      .closeDay(
+        r
       );
 
   r.simulation
