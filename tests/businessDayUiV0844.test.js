@@ -239,6 +239,15 @@ assert.ok(
   ) &&
   businessSource.includes(
     'closedHistory'
+  ) &&
+  businessSource.includes(
+    '今日目标：'
+  ) &&
+  businessSource.includes(
+    'goalResult'
+  ) &&
+  businessSource.includes(
+    'goalStreak'
   ),
   '试营业必须能进入营业日、读取真实经营数据，并从日结直达第一次经营改善'
 );

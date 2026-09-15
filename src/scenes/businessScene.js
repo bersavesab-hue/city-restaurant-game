@@ -695,20 +695,70 @@ class BusinessScene {
       '800'
     );
 
+    const goalStreak =
+      cycle &&
+      cycle.metrics
+        ? Number(
+            cycle.metrics
+              .goalStreak
+          ) ||
+          0
+        : 0;
+
+    const goalLine =
+      active &&
+      active.goal
+        ? '今日目标：' +
+          active.goal.label +
+          (
+            goalStreak >
+              0
+              ? ' · 连续' +
+                goalStreak +
+                '天'
+              : ''
+          )
+        : latest &&
+          latest.goalResult
+          ? (
+              latest
+                .goalResult
+                .completed
+                ? '上次目标完成：'
+                : '上次目标未完成：'
+            ) +
+            latest
+              .goalResult
+              .label
+          : shop.status ===
+              'trial_opening'
+            ? '试营业中 · 顾客订单、营业额和成本会实时计入今日经营'
+            : shop.status ===
+                'open'
+              ? '营业数据、决策和诊断会在日结时统一结算'
+              : '完成开店筹备后即可进入试营业';
+
     ui.text(
       ctx,
-      shop.status ===
-        'trial_opening'
-        ? '试营业中 · 顾客订单、营业额和成本会实时计入今日经营'
-        : shop.status ===
-            'open'
-          ? '营业数据、决策和诊断会在日结时统一结算'
-          : '完成开店筹备后即可进入试营业',
+      goalLine,
       28,
       207,
       6.5,
-      '#71858F',
-      '600'
+      active &&
+      active.goal
+        ? '#C08824'
+        : latest &&
+          latest.goalResult
+          ? latest
+              .goalResult
+              .completed
+              ? '#248B63'
+              : '#C85242'
+          : '#71858F',
+      active &&
+      active.goal
+        ? '800'
+        : '600'
     );
 
     if (
@@ -2034,7 +2084,13 @@ class BusinessScene {
           result.ok
             ? result.existing
               ? '本营业日已经开始'
-              : '营业日已开始'
+              : result.day &&
+                result.day.goal
+                ? '营业日已开始 · ' +
+                  result.day
+                    .goal
+                    .label
+                : '营业日已开始'
             : result.reason ||
               '无法开始营业日'
         );
@@ -2136,7 +2192,15 @@ class BusinessScene {
 
           opUi.toast(
             result.ok
-              ? '日结完成，经营复盘已生成'
+              ? result.dailyBrief &&
+                result.dailyBrief
+                  .goalResult
+                ? result.dailyBrief
+                    .goalResult
+                    .completed
+                  ? '日结完成 · 今日目标达成'
+                  : '日结完成 · 今日目标未达成'
+                : '日结完成，经营复盘已生成'
               : result.reason ||
                 '无法完成日结'
           );

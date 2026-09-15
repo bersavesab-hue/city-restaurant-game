@@ -31,6 +31,15 @@ assert.ok(restock.orders>0,'营业日前必须能补货');
 
 const opened=operations.startOperatingDay('shop_v0843_integration');
 assert.ok(opened.ok);
+assert.ok(
+  opened.day &&
+  opened.day.goal,
+  '营业日开始时必须生成今日目标'
+);
+assert.equal(
+  opened.day.goal.id,
+  'first_order'
+);
 
 const menuItem=runtime.menu.find(x=>x.active!==false);
 assert.ok(menuItem);
@@ -52,6 +61,25 @@ assert.ok(beforeClose.active.visits.success>=1);
 const closed=operations.closeOperatingDaySafe('shop_v0843_integration',{});
 assert.ok(closed.ok,'安全日结必须成功');
 assert.ok(closed.dailyBrief,'日结必须返回统一复盘');
+assert.ok(
+  closed.dailyBrief.goalResult,
+  '日结必须结算今日目标'
+);
+assert.equal(
+  closed.dailyBrief.goalResult.completed,
+  true,
+  '完成首单后首日目标必须达成'
+);
+assert.ok(
+  operations
+    .operatingDaySnapshot(
+      'shop_v0843_integration'
+    )
+    .metrics
+    .goalStreak >=
+    1,
+  '完成目标后必须形成连续完成记录'
+);
 assert.ok(Array.isArray(closed.decisionFeedback));
 assert.ok(closed.balanceDiagnosis);
 assert.ok(closed.playtestHealth);
