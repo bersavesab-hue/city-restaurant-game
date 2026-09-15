@@ -11,8 +11,8 @@ const store = fs.readFileSync(
   'utf8'
 );
 
-const androidTest = fs.readFileSync(
-  path.join(ROOT, 'tests/v21AndroidBundle.test.js'),
+const androidBuilder = fs.readFileSync(
+  path.join(ROOT, 'scripts/build-android-js-v060.js'),
   'utf8'
 );
 
@@ -92,18 +92,11 @@ for (const token of [
   );
 }
 
-// Android dual-workflow robustness
+// Android clean-base builder robustness
 assert.ok(
-  androidTest.includes('!fs.existsSync(esbuild)'),
-  '轻量测试缺少esbuild时必须走语法回退'
-);
-
-assert.ok(
-  androidTest.includes('attempt <= 3') &&
-  androidTest.includes(
-    "typeof result.status === 'number'"
-  ),
-  '正式esbuild测试必须保留有限重试'
+  androidBuilder.includes('source errors are fatal') &&
+  androidBuilder.includes('A stale game.bundle.js is never silently reused'),
+  '安卓构建器必须阻止旧bundle掩盖真实失败'
 );
 
 console.log(

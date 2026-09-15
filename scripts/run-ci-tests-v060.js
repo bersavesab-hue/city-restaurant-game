@@ -112,6 +112,30 @@ for (
 for (
   const rel
   of [
+    'tests/assetPipeline.test.js',
+    'tests/atlasSplit.test.js',
+    'tests/foundationSrcV050.test.js',
+    'tests/layoutRepairV050.test.js',
+    'tests/renovationV17.test.js',
+    'tests/storeV16.test.js',
+    'tests/storeV36AllContracts.test.js',
+    'tests/storeV36Compat.test.js',
+    'tests/storeV36Phase1.test.js',
+    'tests/storeV37FinalMode.test.js',
+    'tests/storeV37FullCompat.test.js',
+    'tests/storeV37NoShopFidelity.test.js',
+    'tests/storeV38SingleStoreFidelity.test.js',
+    'tests/storeV39LibraryAssets.test.js',
+    'tests/v32ReferenceHome.test.js',
+    'tests/v33GlobalNav.test.js',
+    'tests/v34MoneyFormat.test.js',
+    'tests/v35RepoHygiene.test.js',
+    'tests/v35TopHudPolish.test.js',
+    'tests/v42StoreMasterReference.test.js',
+    'tests/v43ReferenceImageUi.test.js',
+    'tests/v44VisualRepair.test.js',
+    'tests/v45RenovationPhase1.test.js',
+    'tests/v46RenovationPlayability.test.js',
     'tests/core.test.js',
     'tests/propertyFoundation.test.js',
     'tests/propertyMarket.test.js',
@@ -214,6 +238,9 @@ for (
     'tests/operatingBalanceTunerV0843.test.js',
     'tests/operatingDayIntegrationV0843.test.js',
     'tests/updateInfrastructureV0843.test.js',
+    'tests/businessDayUiV0844.test.js',
+    'tests/dependencyAuditV0844.test.js',
+    'tests/updateInfrastructureV0844.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

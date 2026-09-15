@@ -1,0 +1,21 @@
+{
+  "id": "V0844_STABILITY_WIRING_FIX",
+  "baseVersion": "0.8.43",
+  "targetVersion": "0.8.44",
+  "category": "稳定接线修复",
+  "features": [
+    "营业日开始与安全日结前台入口",
+    "门店主页营业日直达",
+    "经营健康与数值平衡展示",
+    "决策反馈与明日建议展示",
+    "全部测试由主测试或质量门禁入口完整纳管",
+    "质量门禁恢复",
+    "依赖检测注释误报修复",
+    "手机点击热区修复",
+    "安卓版本同步"
+  ],
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false
+}

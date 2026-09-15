@@ -180,9 +180,9 @@ class SupplyScene {
         'tab:' +
           item[0],
         tabX,
-        96,
+        91,
         112,
-        30
+        40
       );
 
       tabX +=

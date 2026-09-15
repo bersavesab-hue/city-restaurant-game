@@ -9,6 +9,133 @@ const {
   resolveRelativeModule
 } = require('./utils.js');
 
+function stripJsComments(source) {
+  const text =
+    String(source || '');
+
+  let out = '';
+  let state = 'normal';
+  let escaped = false;
+
+  for (
+    let i = 0;
+    i < text.length;
+    i++
+  ) {
+    const ch = text[i];
+    const next = text[i + 1];
+
+    if (state === 'line') {
+      if (ch === '\n') {
+        out += ch;
+        state = 'normal';
+      } else {
+        out += ' ';
+      }
+      continue;
+    }
+
+    if (state === 'block') {
+      if (
+        ch === '*' &&
+        next === '/'
+      ) {
+        out += '  ';
+        i += 1;
+        state = 'normal';
+      } else {
+        out +=
+          ch === '\n'
+            ? '\n'
+            : ' ';
+      }
+      continue;
+    }
+
+    if (
+      state === 'single' ||
+      state === 'double' ||
+      state === 'template'
+    ) {
+      if (
+        !escaped &&
+        text.slice(
+          i,
+          i + 8
+        ) ===
+          'require('
+      ) {
+        out += '        ';
+        i += 7;
+        continue;
+      }
+
+      out += ch;
+
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+
+      if (ch === '\\') {
+        escaped = true;
+        continue;
+      }
+
+      if (
+        (
+          state === 'single' &&
+          ch === "'"
+        ) ||
+        (
+          state === 'double' &&
+          ch === '"'
+        ) ||
+        (
+          state === 'template' &&
+          ch === '`'
+        )
+      ) {
+        state = 'normal';
+      }
+
+      continue;
+    }
+
+    if (
+      ch === '/' &&
+      next === '/'
+    ) {
+      out += '  ';
+      i += 1;
+      state = 'line';
+      continue;
+    }
+
+    if (
+      ch === '/' &&
+      next === '*'
+    ) {
+      out += '  ';
+      i += 1;
+      state = 'block';
+      continue;
+    }
+
+    if (ch === "'") {
+      state = 'single';
+    } else if (ch === '"') {
+      state = 'double';
+    } else if (ch === '`') {
+      state = 'template';
+    }
+
+    out += ch;
+  }
+
+  return out;
+}
+
 function audit(root) {
   const errors = [];
   const warnings = [];
@@ -39,6 +166,11 @@ function audit(root) {
     }
 
     if (rel.endsWith('.js')) {
+      text =
+        stripJsComments(
+          text
+        );
+
       for (const m of text.matchAll(/require\(\s*['"]([^'"]+)['"]\s*\)/g)) {
         const req = m[1];
 
@@ -121,4 +253,7 @@ if (require.main === module) {
   runCli(path.resolve(__dirname, '../..'));
 }
 
-module.exports = { audit };
+module.exports = {
+  audit,
+  stripJsComments
+};

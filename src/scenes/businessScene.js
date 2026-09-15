@@ -12,6 +12,9 @@ if (!runtime) {
 const gameState =
   require('../core/gameState.js');
 
+const saveSystem =
+  require('../core/saveSystem.js');
+
 const operations =
   require('../operations/operationsStoreV080.js');
 
@@ -27,10 +30,17 @@ const ui =
 const opUi =
   require('../ui/operationsUiV080.js');
 
+const api =
+  runtime.api || {};
+
 const TABS = [
   {
     id:'overview',
     name:'经营'
+  },
+  {
+    id:'day',
+    name:'日结'
   },
   {
     id:'staff',
@@ -560,6 +570,330 @@ class BusinessScene {
     }
   }
 
+  renderOperatingDay(
+    ctx,
+    shop
+  ) {
+    const cycle =
+      operations
+        .operatingDaySnapshot(
+          shop.id
+        );
+
+    const active =
+      cycle.active;
+
+    const latest =
+      cycle.latestClosed;
+
+    const source =
+      active
+        ? active.visits
+        : latest &&
+          latest.financial ||
+          {};
+
+    const feedback =
+      operations
+        .decisionFeedbackSnapshot(
+          shop.id
+        );
+
+    const health =
+      operations
+        .playtestHealthOverview(
+          shop.id
+        );
+
+    const balance =
+      operations
+        .operatingBalanceSnapshot(
+          shop.id
+        );
+
+    this.sectionCard(
+      ctx,
+      14,
+      138,
+      362,
+      86,
+      '营业日控制'
+    );
+
+    const statusText =
+      active
+        ? '第' +
+          active.day +
+          '日 · 营业中'
+        : latest
+          ? '第' +
+            latest.day +
+            '日 · 已完成日结'
+          : '尚未开始营业日';
+
+    ui.text(
+      ctx,
+      statusText,
+      28,
+      184,
+      8.2,
+      active
+        ? '#248B63'
+        : '#71858F',
+      '800'
+    );
+
+    ui.text(
+      ctx,
+      shop.status ===
+        'open'
+        ? '营业数据、决策和诊断会在日结时统一结算'
+        : '门店正式营业后才能开启经营日',
+      28,
+      207,
+      6.5,
+      '#71858F',
+      '600'
+    );
+
+    if (
+      shop.status ===
+      'open'
+    ) {
+      opUi.button(
+        ctx,
+        active
+          ? '完成日结'
+          : '开始营业日',
+        244,
+        157,
+        118,
+        42,
+        active
+          ? 'danger'
+          : 'gold'
+      );
+
+      this.addButton(
+        active
+          ? 'day:close'
+          : 'day:start',
+        244,
+        157,
+        118,
+        42
+      );
+    }
+
+    this.metric(
+      ctx,
+      active
+        ? '今日有效订单'
+        : '最近日结订单',
+      String(
+        Number(
+          active
+            ? source.success
+            : source.orders
+        ) ||
+        0
+      ),
+      14,
+      236
+    );
+
+    this.metric(
+      ctx,
+      active
+        ? '今日顾客'
+        : '最近日结顾客',
+      String(
+        Number(
+          source.customers
+        ) ||
+        0
+      ),
+      206,
+      236
+    );
+
+    this.metric(
+      ctx,
+      active
+        ? '今日营业额'
+        : '最近日结营收',
+      opUi.money(
+        Number(
+          source.revenue
+        ) ||
+        0
+      ),
+      14,
+      314,
+      '#D29A18'
+    );
+
+    this.metric(
+      ctx,
+      active
+        ? '今日贡献毛利'
+        : '最近日结利润',
+      opUi.money(
+        Number(
+          active
+            ? source.contribution
+            : source.profit
+        ) ||
+        0
+      ),
+      206,
+      314,
+      Number(
+        active
+          ? source.contribution
+          : source.profit
+      ) >= 0
+        ? '#248B63'
+        : '#C85242'
+    );
+
+    this.sectionCard(
+      ctx,
+      14,
+      396,
+      362,
+      100,
+      '经营健康与平衡'
+    );
+
+    const latestHealth =
+      health &&
+      health.latest;
+
+    ui.text(
+      ctx,
+      latestHealth
+        ? '健康度 ' +
+          latestHealth.score +
+          ' · ' +
+          latestHealth.grade
+        : '尚未执行经营诊断',
+      28,
+      438,
+      7.3,
+      latestHealth &&
+      latestHealth.ok
+        ? '#248B63'
+        : '#C08824',
+      '800'
+    );
+
+    ui.text(
+      ctx,
+      balance
+        ? '数值平衡 ' +
+          balance.score +
+          ' · ' +
+          balance.grade
+        : '数值平衡：等待营业数据',
+      28,
+      466,
+      7,
+      '#3A5665',
+      '700'
+    );
+
+    opUi.button(
+      ctx,
+      '立即诊断',
+      244,
+      427,
+      118,
+      42,
+      null
+    );
+
+    this.addButton(
+      'day:diagnose',
+      244,
+      427,
+      118,
+      42
+    );
+
+    this.sectionCard(
+      ctx,
+      14,
+      510,
+      362,
+      112,
+      '日结复盘与决策反馈'
+    );
+
+    const recent =
+      feedback &&
+      feedback.recent &&
+      feedback.recent[0];
+
+    const nextAction =
+      latest &&
+      latest.nextActions &&
+      latest.nextActions[0];
+
+    ui.text(
+      ctx,
+      recent &&
+      recent.impact
+        ? recent.impact.explanation
+        : '完成菜单、招聘、采购或营销决策后，日结会生成效果反馈。',
+      28,
+      550,
+      6.7,
+      '#3A5665',
+      '700'
+    );
+
+    ui.text(
+      ctx,
+      nextAction
+        ? '明日建议：' +
+          nextAction.message
+        : '明日建议：等待首次完整日结',
+      28,
+      582,
+      6.7,
+      nextAction
+        ? '#C08824'
+        : '#71858F',
+      '700'
+    );
+
+    ui.text(
+      ctx,
+      '待评估决策 ' +
+      (
+        feedback &&
+        feedback.pending
+          ? feedback.pending.length
+          : 0
+      ) +
+      ' 项 · 已反馈 ' +
+      (
+        feedback &&
+        feedback.metrics
+          ? feedback.metrics.resolved ||
+            0
+          : 0
+      ) +
+      ' 项',
+      28,
+      608,
+      6.3,
+      '#71858F',
+      '600'
+    );
+  }
+
   renderStaff(
     ctx,
     shop
@@ -933,18 +1267,18 @@ class BusinessScene {
         'staffprev',
         14,
         actionY +
-        44,
+        38,
         82,
-        28
+        40
       );
 
       this.addButton(
         'staffnext',
         294,
         actionY +
-        44,
+        38,
         82,
-        28
+        40
       );
     }
   }
@@ -1182,17 +1516,19 @@ class BusinessScene {
       this.addButton(
         'compprev',
         14,
-        py,
+        py -
+        5,
         82,
-        30
+        40
       );
 
       this.addButton(
         'compnext',
         294,
-        py,
+        py -
+        5,
         82,
-        30
+        40
       );
     }
   }
@@ -1373,6 +1709,14 @@ class BusinessScene {
 
     if (
       this.tab ===
+      'day'
+    ) {
+      this.renderOperatingDay(
+        ctx,
+        shop
+      );
+    } else if (
+      this.tab ===
       'staff'
     ) {
       this.renderStaff(
@@ -1431,6 +1775,122 @@ class BusinessScene {
         );
 
       return true;
+    }
+
+    if (
+      target.id.indexOf(
+        'day:'
+      ) ===
+      0
+    ) {
+      const shop =
+        operations
+          .getCurrentShop();
+
+      if (!shop) {
+        return true;
+      }
+
+      if (
+        target.id ===
+        'day:start'
+      ) {
+        const result =
+          operations
+            .startOperatingDay(
+              shop.id
+            );
+
+        if (result.ok) {
+          saveSystem
+            .autoSave(true);
+        }
+
+        opUi.toast(
+          result.ok
+            ? result.existing
+              ? '本营业日已经开始'
+              : '营业日已开始'
+            : result.reason ||
+              '无法开始营业日'
+        );
+
+        return true;
+      }
+
+      if (
+        target.id ===
+        'day:diagnose'
+      ) {
+        const result =
+          operations
+            .playtestHealthSnapshot(
+              shop.id
+            );
+
+        saveSystem
+          .autoSave(true);
+
+        opUi.toast(
+          '经营健康度 ' +
+          result.score +
+          ' · ' +
+          result.grade
+        );
+
+        return true;
+      }
+
+      if (
+        target.id ===
+        'day:close'
+      ) {
+        const close = () => {
+          const result =
+            operations
+              .closeOperatingDaySafe(
+                shop.id,
+                {}
+              );
+
+          if (result.ok) {
+            saveSystem
+              .autoSave(true);
+          }
+
+          opUi.toast(
+            result.ok
+              ? '日结完成，经营复盘已生成'
+              : result.reason ||
+                '无法完成日结'
+          );
+        };
+
+        if (
+          api &&
+          typeof api.showModal ===
+          'function'
+        ) {
+          api.showModal({
+            title:'完成今日营业',
+            content:'日结后将结算当日成本、利润、决策反馈并推进经营日。',
+            confirmText:'确认日结',
+            cancelText:'继续营业',
+            success:result => {
+              if (
+                result &&
+                result.confirm
+              ) {
+                close();
+              }
+            }
+          });
+        } else {
+          close();
+        }
+
+        return true;
+      }
     }
 
     if (

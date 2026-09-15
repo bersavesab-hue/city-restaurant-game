@@ -3799,7 +3799,7 @@ class StoreScene {
 
     this.drawActionButton(
       ctx,
-      'module:business',
+      'module:day',
       '进入经营',
       18,
       226,
@@ -5113,6 +5113,8 @@ class StoreScene {
           'research',
       supply:
           'supply',
+      day:
+          'business',
       business:
           'business'
     };
@@ -5127,7 +5129,12 @@ class StoreScene {
           ],
           {
             shopId:
-              shop.id
+              shop.id,
+            tab:
+              moduleId ===
+                'day'
+                ? 'day'
+                : undefined
           }
         );
 

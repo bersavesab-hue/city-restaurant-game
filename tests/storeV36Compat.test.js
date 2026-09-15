@@ -11,8 +11,8 @@ const store = fs.readFileSync(
   'utf8'
 );
 
-const androidTest = fs.readFileSync(
-  path.join(ROOT, 'tests/v21AndroidBundle.test.js'),
+const androidBuilder = fs.readFileSync(
+  path.join(ROOT, 'scripts/build-android-js-v060.js'),
   'utf8'
 );
 
@@ -51,13 +51,11 @@ assert.ok(
   'V36三状态门店页不能丢'
 );
 
-// status=null only gets bounded retry; real nonzero still fails
+// Current clean-base builder must fail on source or dependency errors.
 assert.ok(
-  androidTest.includes('attempt <= 3') &&
-  androidTest.includes(
-    "typeof result.status === 'number'"
-  ),
-  'V21 Android bundle测试必须只对status=null做有限重试'
+  androidBuilder.includes('source errors are fatal') &&
+  androidBuilder.includes('找不到模块'),
+  '安卓构建器必须拒绝失效源码和缺失依赖'
 );
 
 console.log(

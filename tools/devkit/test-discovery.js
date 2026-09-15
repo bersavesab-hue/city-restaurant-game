@@ -13,12 +13,17 @@ function audit(root) {
     .filter(rel => rel.endsWith('.js'));
 
   const runnerPath = path.join(root, 'scripts', 'run-ci-tests-v060.js');
+  const qualityGatePath = path.join(root, 'scripts', 'quality-gate-v089.js');
   const packagePath = path.join(root, 'package.json');
 
   const haystacks = [];
 
   if (fs.existsSync(runnerPath)) {
     haystacks.push(fs.readFileSync(runnerPath, 'utf8'));
+  }
+
+  if (fs.existsSync(qualityGatePath)) {
+    haystacks.push(fs.readFileSync(qualityGatePath, 'utf8'));
   }
 
   if (fs.existsSync(packagePath)) {

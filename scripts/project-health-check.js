@@ -81,7 +81,7 @@ function buildMarkdown(report) {
   lines.push('- 健康分：' + report.score + '/100');
   lines.push('- P0：' + report.counts.P0 + '；P1：' + report.counts.P1 + '；P2：' + report.counts.P2 + '；P3：' + report.counts.P3);
   lines.push('- src/main.js：' + report.metrics.mainLines + ' 行；drawBottomNav 实现 ' + report.metrics.bottomNavDefinitions + ' 套；loadResources 实现 ' + report.metrics.loadResourceDefinitions + ' 套');
-  lines.push('- 测试文件：' + report.metrics.testFiles + '；npm test 已纳入：' + report.metrics.testsInScript + '；未纳入：' + report.metrics.testsOutsideScript.length);
+  lines.push('- 测试文件：' + report.metrics.testFiles + '；测试入口已纳入：' + report.metrics.testsInScript + '；未纳入：' + report.metrics.testsOutsideScript.length);
   lines.push('- 被 Git 跟踪的生成垃圾：' + report.metrics.trackedGeneratedCount + ' 个');
   lines.push('');
 
@@ -108,7 +108,7 @@ function buildMarkdown(report) {
 
   if (report.metrics.testsOutsideScript.length) {
     lines.push('');
-    lines.push('## 未纳入 npm test 的测试');
+    lines.push('## 未纳入测试入口的测试');
     lines.push('');
     for (const file of report.metrics.testsOutsideScript) lines.push('- ' + file);
   }
@@ -120,6 +120,13 @@ function main() {
   const mainJs = exists('src/main.js') ? read('src/main.js') : '';
   const packageJson = exists('package.json') ? JSON.parse(read('package.json')) : { scripts: {} };
   const testScript = String((packageJson.scripts && packageJson.scripts.test) || '');
+  const pretestScript = String((packageJson.scripts && packageJson.scripts.pretest) || '');
+  const testEntrypoints = [
+    testScript,
+    pretestScript,
+    exists('scripts/run-ci-tests-v060.js') ? read('scripts/run-ci-tests-v060.js') : '',
+    exists('scripts/quality-gate-v089.js') ? read('scripts/quality-gate-v089.js') : ''
+  ].join('\n');
 
   const testDir = path.join(ROOT, 'tests');
   const testFiles = fs.existsSync(testDir)
@@ -127,9 +134,9 @@ function main() {
     : [];
 
   const testsInScript = Array.from(
-    testScript.matchAll(/tests\/([^\s&]+\.test\.js)/g),
+    testEntrypoints.matchAll(/tests\/([^\s&'\"]+\.test\.js)/g),
     match => match[1]
-  );
+  ).filter((name, index, names) => names.indexOf(name) === index);
   const testsOutsideScript = testFiles.filter(name => !testsInScript.includes(name));
 
   const sourceFiles = listJsFiles('src').map(full => {
@@ -221,7 +228,7 @@ function main() {
       issues,
       'P2',
       'TESTS_OUTSIDE_NPM_TEST',
-      '存在未纳入 npm test 的测试文件',
+      '存在未纳入测试入口的测试文件',
       testsOutsideScript.join('、'),
       '逐个判定是过期回归测试还是仍应执行；不要机械加入导致新版本被旧版断言卡住。'
     );

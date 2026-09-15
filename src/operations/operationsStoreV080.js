@@ -3715,6 +3715,17 @@ function playtestHealthSnapshot(
   );
 }
 
+function playtestHealthOverview(
+  shopId
+) {
+  return (
+    playtestHealth
+      .overview(
+        shopId
+      )
+  );
+}
+
 function operatingBalanceSnapshot(
   shopId
 ) {
@@ -4637,6 +4648,7 @@ module.exports = {
   recordPlayerDecision,
   decisionFeedbackSnapshot,
   playtestHealthSnapshot,
+  playtestHealthOverview,
   operatingBalanceSnapshot,
   runOperatingBalanceCalibration,
   generateCustomer,
