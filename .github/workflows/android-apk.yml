@@ -49,13 +49,18 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: 配置 Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: 安装 Android 34
         run: |
-          sdkmanager "platforms;android-34"
-          sdkmanager "build-tools;34.0.0"
+          set -euo pipefail
+
+          sdkmanager_path="${ANDROID_SDK_ROOT:-$ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$sdkmanager_path" ]; then
+            sdkmanager_path="$(command -v sdkmanager)"
+          fi
+
+          "$sdkmanager_path" --version
+          "$sdkmanager_path" "platforms;android-34"
+          "$sdkmanager_path" "build-tools;34.0.0"
 
       - name: 配置 Gradle
         uses: gradle/actions/setup-gradle@v4
