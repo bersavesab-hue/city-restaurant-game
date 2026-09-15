@@ -3,12 +3,14 @@
 // V46_RENOVATION_DECOR_CONFIG
 
 module.exports = {
-  // Furniture footprint includes basic chair pull-out + service clearance.
+  // V0864_REAL_FURNITURE_FOOTPRINT
+  // Real operating envelope: tabletop + chairs + basic service clearance.
+  // Detailed collision geometry lives in renovationSpatialV0864.js.
   tableFootprint: {
-    2: 4.8,
-    4: 7.6,
-    6: 10.4,
-    8: 13.2
+    2: 2.4,
+    4: 3.6,
+    6: 4.8,
+    8: 6.0
   },
 
   aisleModes: {

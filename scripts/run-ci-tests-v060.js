@@ -246,6 +246,7 @@ for (
     'tests/renovationHotfixV0849.test.js',
     'tests/renovationFinalFixV0850.test.js',
     'tests/renovationEditorV0862.test.js',
+    'tests/renovationSpatialV0864.test.js',
     'tests/preparationCommandCenterV0861.test.js',
     'tests/advancedManagementV0862.test.js',
     'tests/updateInfrastructureV0849.test.js',

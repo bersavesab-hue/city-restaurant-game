@@ -6681,5 +6681,17 @@ require('../renovation/renovationEditorV0862.js').install({
   V45_HALL_STYLE_VISUAL
 });
 
+// V0864_RENOVATION_PLAYER_EXPERIENCE_INSTALL
+require('../renovation/renovationEditorV0864.js').install({
+  RenovationScene,
+  renovationSystem,
+  renovationConfig,
+  floorGeometrySystem,
+  saveSystem,
+  gameState,
+  ui,
+  COLORS
+});
+
 module.exports =
   new RenovationScene();

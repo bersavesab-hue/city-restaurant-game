@@ -21,6 +21,10 @@ const config =
 const floorGeometrySystem =
   require('./floorGeometrySystem.js');
 
+// V0864_SPATIAL_VALIDATION_INTEGRATION
+const renovationSpatial =
+  require('./renovationSpatialV0864.js');
+
 function clone(value) {
   return JSON.parse(
     JSON.stringify(value)
@@ -204,18 +208,10 @@ class RenovationSystem {
     index,
     area
   ) {
-    const diningArea =
-      area * 0.56;
-
-    const table4 =
-      Math.max(
-        1,
-        Math.floor(
-          diningArea /
-          16
-        )
-      );
-
+    // V0864_LEGAL_EMPTY_START
+    // Never create an illegal restaurant and ask the player to repair it.
+    // New floors start as a valid empty shell; the one-tap auto-layout or the
+    // furniture editor adds only placements that pass the spatial validator.
     return {
       index,
       name:
@@ -243,12 +239,13 @@ class RenovationSystem {
         'standard',
 
       tables: {
-        2: 2,
-        4: table4,
+        2: 0,
+        4: 0,
         6: 0,
         8: 0
       },
 
+      editorPlacements: [],
       privateRooms: []
     };
   }
@@ -1276,92 +1273,310 @@ class RenovationSystem {
     return this.mutatePlan(
       shopId,
       plan => {
+        const index =
+          clamp(
+            floorIndex,
+            0,
+            plan.floors.length -
+              1
+          );
+
         const floor =
-          plan.floors[
-            clamp(
-              floorIndex,
-              0,
-              plan.floors.length -
-                1
-            )
-          ];
+          plan.floors[index];
 
-        const current =
-          Number(
-            floor.tables[
-              key
-            ]
-          ) || 0;
+        if (!Array.isArray(floor.editorPlacements)) {
+          floor.editorPlacements = [];
+        }
 
-        if (
-          delta > 0
-        ) {
-          const area =
-            this.calculateFloorArea(
-              shop,
-              plan,
+        // Materialize old count-only tables into legal real-space objects
+        // before applying the requested delta.
+        const baseArea =
+          this.calculateFloorArea(
+            shop,
+            plan,
+            floor,
+            index
+          );
+
+        const materialized =
+          renovationSpatial
+            .materializeLegacyPlacements(
               floor,
-              floor.index
+              baseArea.geometry,
+              baseArea.usableDiningSlots,
+              floorGeometrySystem,
+              config.zoneRules
+                .entranceClearDepthM
             );
 
-          const nextUsed =
-            area.occupiedArea +
-            config
-              .tableFootprint[
-                key
-              ] *
-            area.aisle
-              .areaFactor *
-            Math.max(
-              1,
-              Math.floor(delta)
-            );
-
-          const currentTableCount =
-            Object.keys(
-              floor.tables
-            ).reduce(
+        const expectedCount =
+          Object.keys(floor.tables)
+            .reduce(
               (sum, tableKey) =>
                 sum +
                 Math.max(
                   0,
-                  Number(
-                    floor.tables[
-                      tableKey
-                    ]
-                  ) || 0
+                  Number(floor.tables[tableKey]) || 0
                 ),
               0
             );
 
-          if (
-            nextUsed >
-              area.effectiveDiningArea +
-              0.01 ||
-            currentTableCount +
+        const actualCount =
+          floor.editorPlacements
+            .filter(
+              item =>
+                renovationSpatial
+                  .isTable(item.kind)
+            )
+            .length;
+
+        if (actualCount < expectedCount) {
+          plan.editorPlacementSeq =
+            Math.max(0, Number(plan.editorPlacementSeq) || 0);
+
+          floor.editorPlacements =
+            materialized.map(
+              item => {
+                if (!item.synthetic) {
+                  return item;
+                }
+
+                plan.editorPlacementSeq += 1;
+
+                return {
+                  ...item,
+                  id:
+                    'reno_compat_' +
+                    index +
+                    '_' +
+                    item.kind +
+                    '_' +
+                    plan.editorPlacementSeq,
+                  synthetic: false
+                };
+              }
+            );
+        }
+
+        const amount =
+          Math.max(
+            1,
+            Math.floor(
+              Math.abs(
+                Number(delta) || 0
+              )
+            )
+          );
+
+        if (Number(delta) > 0) {
+          for (let step = 0; step < amount; step++) {
+            const area =
+              this.calculateFloorArea(
+                shop,
+                plan,
+                floor,
+                index
+              );
+
+            const currentTableCount =
+              Object.keys(floor.tables)
+                .reduce(
+                  (sum, tableKey) =>
+                    sum +
+                    Math.max(
+                      0,
+                      Number(floor.tables[tableKey]) || 0
+                    ),
+                  0
+                );
+
+            const extraArea =
+              config.tableFootprint[key] *
+              area.aisle.areaFactor;
+
+            if (
+              area.occupiedArea +
+                extraArea >
+                area.effectiveDiningArea +
+                0.01 ||
+              currentTableCount >=
+                area.usableDiningSlots.length
+            ) {
+              break;
+            }
+
+            const rotations =
+              Number(key) >= 6
+                ? [90, 0]
+                : [0, 90];
+
+            let committed =
+              false;
+
+            for (
+              let rotationIndex = 0;
+              rotationIndex < rotations.length;
+              rotationIndex++
+            ) {
+              const rotation =
+                rotations[rotationIndex];
+
+              const found =
+                renovationSpatial
+                  .findFirstValidPosition({
+                    kind:
+                      'table' +
+                      key,
+                    floor,
+                    geometry:
+                      area.geometry,
+                    placements:
+                      floor.editorPlacements,
+                    floorGeometrySystem,
+                    clearDepthM:
+                      config.zoneRules
+                        .entranceClearDepthM,
+                    rotation
+                  });
+
+              if (!found) {
+                continue;
+              }
+
+              plan.editorPlacementSeq =
+                Math.max(0, Number(plan.editorPlacementSeq) || 0) +
+                1;
+
+              const placement = {
+                id:
+                  'reno_compat_' +
+                  index +
+                  '_table' +
+                  key +
+                  '_' +
+                  plan.editorPlacementSeq,
+                kind:
+                  'table' +
+                  key,
+                mx:
+                  Number(found.x),
+                my:
+                  Number(found.y),
+                rotation:
+                  Number(found.rotation) ||
+                  rotation
+              };
+
+              floor.editorPlacements
+                .push(placement);
+
+              floor.tables[key] =
+                Math.min(
+                  40,
+                  Math.max(
+                    0,
+                    Number(floor.tables[key]) || 0
+                  ) +
+                    1
+                );
+
+              const afterArea =
+                this.calculateFloorArea(
+                  shop,
+                  plan,
+                  floor,
+                  index
+                );
+
+              const spatialCheck =
+                renovationSpatial
+                  .analyzeFloor({
+                    floor,
+                    geometry:
+                      afterArea.geometry,
+                    areaMetrics:
+                      afterArea,
+                    floorGeometrySystem,
+                    clearDepthM:
+                      config.zoneRules
+                        .entranceClearDepthM
+                  });
+
+              if (spatialCheck.valid) {
+                committed =
+                  true;
+                break;
+              }
+
+              floor.editorPlacements
+                .pop();
+
+              floor.tables[key] =
+                Math.max(
+                  0,
+                  Number(floor.tables[key]) -
+                    1
+                );
+            }
+
+            if (!committed) {
+              break;
+            }
+          }
+        } else if (Number(delta) < 0) {
+          for (let step = 0; step < amount; step++) {
+            if (
+              Math.max(0, Number(floor.tables[key]) || 0) <= 0
+            ) {
+              break;
+            }
+
+            let removeIndex =
+              -1;
+
+            for (
+              let i = floor.editorPlacements.length - 1;
+              i >= 0;
+              i--
+            ) {
+              if (
+                floor.editorPlacements[i].kind ===
+                  'table' +
+                  key
+              ) {
+                removeIndex =
+                  i;
+                break;
+              }
+            }
+
+            if (removeIndex >= 0) {
+              floor.editorPlacements
+                .splice(
+                  removeIndex,
+                  1
+                );
+            }
+
+            floor.tables[key] =
               Math.max(
-                1,
-                Math.floor(delta)
-              ) >
-              area
-                .usableDiningSlots
-                .length
-          ) {
-            return;
+                0,
+                Number(floor.tables[key]) -
+                  1
+              );
           }
         }
 
-        floor.tables[
-          key
-        ] =
+        plan.editorPlacementVersion =
           Math.max(
-            0,
-            Math.min(
-              40,
-              current +
-              delta
-            )
+            4,
+            Number(plan.editorPlacementVersion) || 0
           );
+
+        // V0.8.62 signature code will refresh this lazily if the old editor is
+        // ever opened through a compatibility route.
+        plan.editorPlacementSignature =
+          null;
       }
     );
   }
@@ -1752,6 +1967,19 @@ class RenovationSystem {
           i
         );
 
+      const spatialAnalysis =
+        renovationSpatial
+          .analyzeFloor({
+            floor,
+            geometry,
+            areaMetrics,
+            floorGeometrySystem,
+            clearDepthM:
+              config
+                .zoneRules
+                .entranceClearDepthM
+          });
+
       const zoneRatio =
         floor.kitchenRatio +
         floor.storageRatio +
@@ -1856,7 +2084,8 @@ class RenovationSystem {
           : 99;
 
       const valid =
-        areaMetrics.valid;
+        areaMetrics.valid &&
+        spatialAnalysis.valid;
 
       if (!valid) {
         invalidFloorCount +=
@@ -1932,8 +2161,23 @@ class RenovationSystem {
             .areaUtilization,
 
         areaWarnings:
-          areaMetrics
-            .warnings,
+          [
+            ...areaMetrics
+              .warnings,
+            ...spatialAnalysis
+              .issues
+              .map(
+                issue =>
+                  issue.message
+              )
+          ],
+
+        spatial:
+          spatialAnalysis,
+
+        spatialRemainingArea:
+          spatialAnalysis
+            .remainingFrontArea,
 
         usableDiningSlots:
           areaMetrics
@@ -1989,7 +2233,9 @@ class RenovationSystem {
           .serviceEfficiency *
         geometry
           .efficiency
-          .service;
+          .service *
+        spatialAnalysis
+          .serviceFactor;
     }
 
     const totalArea =
@@ -2584,11 +2830,26 @@ class RenovationSystem {
     }
 
     if (!metrics.valid) {
+      const spatialIssue =
+        metrics
+          .floors
+          .map(
+            floor =>
+              floor &&
+              floor.spatial &&
+              floor.spatial
+                .primaryIssue
+          )
+          .find(Boolean);
+
       return {
         ok:
           false,
         message:
-          '当前布局存在面积或后厨承载问题'
+          spatialIssue
+            ? '当前布局不能施工：' +
+              spatialIssue.message
+            : '当前布局存在面积或后厨承载问题'
       };
     }
 
