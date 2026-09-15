@@ -15,6 +15,9 @@ const gameState =
 const saveSystem =
   require('../core/saveSystem.js');
 
+const entryRouter =
+  require('../core/entryRouterV0810.js');
+
 const operations =
   require('../operations/operationsStoreV080.js');
 
@@ -842,8 +845,8 @@ class BusinessScene {
       14,
       510,
       362,
-      112,
-      '日结复盘与决策反馈'
+      150,
+      '日结复盘与第一次改善'
     );
 
     const recent =
@@ -856,15 +859,40 @@ class BusinessScene {
       latest.nextActions &&
       latest.nextActions[0];
 
+    const primaryReason =
+      latest &&
+      latest.reasons &&
+      latest.reasons[0];
+
+    ui.text(
+      ctx,
+      primaryReason
+        ? '首要问题：' +
+          primaryReason.message
+        : '首要问题：暂未发现明显经营短板',
+      28,
+      548,
+      6.7,
+      primaryReason &&
+      primaryReason.severity ===
+        'critical'
+        ? '#C85242'
+        : primaryReason
+          ? '#C08824'
+          : '#248B63',
+      '800'
+    );
+
     ui.text(
       ctx,
       recent &&
       recent.impact
-        ? recent.impact.explanation
-        : '完成菜单、招聘、采购或营销决策后，日结会生成效果反馈。',
+        ? '上次调整：' +
+          recent.impact.explanation
+        : '上次调整：尚无已完成的经营决策反馈',
       28,
-      550,
-      6.7,
+      572,
+      6.3,
       '#3A5665',
       '700'
     );
@@ -876,13 +904,40 @@ class BusinessScene {
           nextAction.message
         : '明日建议：等待首次完整日结',
       28,
-      582,
-      6.7,
+      596,
+      6.5,
       nextAction
         ? '#C08824'
         : '#71858F',
       '700'
     );
+
+    if (
+      nextAction &&
+      nextAction.routeId
+    ) {
+      opUi.button(
+        ctx,
+        nextAction.routeId ===
+          'shop'
+          ? '回门店'
+          : '去处理',
+        272,
+        608,
+        90,
+        32,
+        'gold'
+      );
+
+      this.addButton(
+        'day:improve:' +
+          nextAction.routeId,
+        264,
+        602,
+        106,
+        44
+      );
+    }
 
     ui.text(
       ctx,
@@ -903,8 +958,8 @@ class BusinessScene {
       ) +
       ' 项',
       28,
-      608,
-      6.3,
+      638,
+      6.1,
       '#71858F',
       '600'
     );
@@ -1853,6 +1908,58 @@ class BusinessScene {
           ' · ' +
           result.grade
         );
+
+        return true;
+      }
+
+      if (
+        target.id.indexOf(
+          'day:improve:'
+        ) ===
+        0
+      ) {
+        const routeId =
+          target.id.slice(
+            'day:improve:'.length
+          );
+
+        if (
+          routeId ===
+          'business'
+        ) {
+          this.tab =
+            'overview';
+
+          opUi.toast(
+            '已打开经营结构，请先检查成本与现金流'
+          );
+
+          return true;
+        }
+
+        const ok =
+          entryRouter
+            .open(
+              routeId,
+              {
+                shopId:
+                  shop.id,
+                source:
+                  'daily_review'
+              }
+            );
+
+        if (!ok) {
+          const error =
+            entryRouter
+              .getLastError();
+
+          opUi.toast(
+            error &&
+            error.reason ||
+            '改善入口暂不可用'
+          );
+        }
 
         return true;
       }

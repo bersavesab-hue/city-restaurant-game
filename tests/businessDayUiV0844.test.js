@@ -209,8 +209,17 @@ assert.ok(
   ) &&
   businessSource.includes(
     '.dashboard('
+  ) &&
+  businessSource.includes(
+    "'day:improve:'"
+  ) &&
+  businessSource.includes(
+    'entryRouter'
+  ) &&
+  businessSource.includes(
+    '首要问题：'
   ),
-  '试营业必须能进入营业日，并读取真实运行时经营数据'
+  '试营业必须能进入营业日、读取真实经营数据，并从日结直达第一次经营改善'
 );
 
 assert.ok(
