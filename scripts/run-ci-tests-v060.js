@@ -157,6 +157,9 @@ for (
     'tests/newGameFlowV0814.test.js',
     'tests/newGameCompatibilityV0814.test.js',
     'tests/updateInfrastructureV0814.test.js',
+    'tests/cityPropertyDatabaseV0815.test.js',
+    'tests/propertyMarketDatabaseV0815.test.js',
+    'tests/updateInfrastructureV0815.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

@@ -4,6 +4,9 @@ const propertyData = require("./propertyData.js");
 
 const propertySystem = require("./propertySystem.js");
 
+const cityPropertyDatabase =
+  require("./cityPropertyDatabaseV0815.js");
+
 const marketData = require("./propertyMarketData.js");
 
 function clone(value) {
@@ -999,34 +1002,63 @@ class PropertyMarketSystem {
         continue;
       }
 
-      const merged = {
-        ...base,
+      const merged =
+        cityPropertyDatabase
+          .enrichDynamicListing(
+            {
+              ...base,
 
-        marketKey: item.key,
+              marketKey: item.key,
 
-        askingMonthlyRent: item.askingMonthlyRent,
+              askingMonthlyRent:
+                item.askingMonthlyRent,
 
-        askingTransferFee: item.askingTransferFee,
+              askingTransferFee:
+                item.askingTransferFee,
 
-        daysOnMarket: item.daysOnMarket,
+              daysOnMarket:
+                item.daysOnMarket,
 
-        watchers: item.watchers,
+              watchers:
+                item.watchers,
 
-        competingTenants: clone(item.competingTenants),
+              competingTenants:
+                clone(
+                  item.competingTenants
+                ),
 
-        marketStatus: item.status,
+              marketStatus:
+                item.status,
 
-        listedDay: item.listedDay,
+              listedDay:
+                item.listedDay,
 
-        priceChangeCount: item.priceChangeCount,
+              priceChangeCount:
+                item.priceChangeCount,
 
-        priceChangeRate: Number(
-          (
-            (item.askingMonthlyRent - item.initialAskingMonthlyRent) /
-            Math.max(1, item.initialAskingMonthlyRent)
-          ).toFixed(4)
-        ),
-      };
+              priceChangeRate:
+                Number(
+                  (
+                    (
+                      item.askingMonthlyRent -
+                      item.initialAskingMonthlyRent
+                    ) /
+                    Math.max(
+                      1,
+                      item.initialAskingMonthlyRent
+                    )
+                  ).toFixed(
+                    4
+                  )
+                )
+            },
+            {
+              currentDay:
+                this.state.currentDay,
+              districtId:
+                item.districtId
+            }
+          );
 
       if (f.minArea != null && merged.grossArea < Number(f.minArea)) {
         continue;
@@ -1048,6 +1080,14 @@ class PropertyMarketSystem {
       }
 
       if (f.propertyTypeId && merged.propertyTypeId !== f.propertyTypeId) {
+        continue;
+      }
+
+      if (
+        f.propertySubtypeId &&
+        merged.propertySubtypeId !==
+          f.propertySubtypeId
+      ) {
         continue;
       }
 
