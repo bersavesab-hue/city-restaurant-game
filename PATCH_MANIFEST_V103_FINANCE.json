@@ -1,0 +1,13 @@
+{
+  "version": "1.0.3",
+  "name": "restaurant-financial-system",
+  "files": [
+    "src/finance/financialSystemV103.js",
+    "src/scenes/financeCenterSceneV103.js",
+    "tests/financialSystemV103.test.js",
+    "scripts/apply-update-patch.js",
+    "docs/FINANCIAL_SYSTEM_V103.md"
+  ],
+  "packageJsonIncluded": false,
+  "workflowIncluded": false
+}

@@ -5294,7 +5294,7 @@ class StoreScene {
       supply:
           'supply',
       finance:
-          'business',
+          'financeCenter',
       day:
           'business',
       business:
@@ -5743,3 +5743,6 @@ module.exports =
   new StoreScene();
 
 // V102_V42_LEGACY_BRAND_LABEL：品牌升级（历史回归兼容，不作为当前入口文案）
+
+
+// FINANCE_CENTER_V103_ROUTE

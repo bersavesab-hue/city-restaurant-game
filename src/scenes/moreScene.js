@@ -67,7 +67,7 @@ class MoreScene extends DataSceneBase {
 
     ui.sectionTitle(ctx, '系统与管理', 342, '', 390);
     this.drawEntry(ctx, 'go:system', 10, 358, 180, '系统设置', '存档 · 新游戏 · 模拟设置', 'neutral');
-    this.drawEntry(ctx, 'go:shop', 200, 358, 180, '返回门店', '回到门店经营总控中心', 'gold');
+    this.drawEntry(ctx, 'go:financeCenter', 200, 358, 180, '金融中心', '授信 · 贷款 · 还款 · 信用', 'gold');
 
     ui.rect(ctx, 10, 470, 370, 112, { fill: ui.COLORS.panel, stroke: ui.COLORS.line });
     ui.text(ctx, '分流规则', 24, 491, 8.5, ui.COLORS.text, '700');

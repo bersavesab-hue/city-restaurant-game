@@ -167,6 +167,8 @@ const districtDetailScene = require('./scenes/districtDetailScene.js');
 const storeDetailScene = require('./scenes/storeDetailScene.js');
 const businessDataScene = require('./scenes/businessDataScene.js');
 const moreScene = require('./scenes/moreScene.js');
+const financeCenterScene = require('./scenes/financeCenterSceneV103.js');
+const financialSystem = require('./finance/financialSystemV103.js');
 /* =========================
    手机自适应基础
 ========================= */
@@ -5518,6 +5520,9 @@ runtime.interactionSafety =
 runtime.economyBalance =
   economyBalanceGuard;
 
+runtime.financialSystem =
+  financialSystem;
+
 /* =========================
    总渲染
 ========================= */
@@ -5543,6 +5548,11 @@ sceneManager.register(
 sceneManager.register(
   'more',
   moreScene
+);
+
+sceneManager.register(
+  'financeCenter',
+  financeCenterScene
 );
 
 function render() {
@@ -6265,6 +6275,9 @@ function gameLoop(
   let staffCareerChanged =
     false;
 
+  let financialChanged =
+    false;
+
   const advancedMinutes =
     timeSystem
       .update(
@@ -6317,6 +6330,14 @@ function gameLoop(
             staffCareerChanged =
               true;
           }
+
+          if (
+            financialSystem
+              .update()
+          ) {
+            financialChanged =
+              true;
+          }
         }
       );
 
@@ -6328,7 +6349,8 @@ function gameLoop(
       timelineChanged,
       restaurantChanged,
       lifecycleChanged,
-      staffCareerChanged
+      staffCareerChanged,
+      financialChanged
     });
 
   if (
@@ -6336,7 +6358,8 @@ function gameLoop(
     timelineChanged ||
     restaurantChanged ||
     lifecycleChanged ||
-    staffCareerChanged
+    staffCareerChanged ||
+    financialChanged
   ) {
     saveSystem
       .autoSave();
@@ -6350,6 +6373,7 @@ function gameLoop(
     restaurantChanged ||
     lifecycleChanged ||
     staffCareerChanged ||
+    financialChanged ||
     animationChanged ||
     needsResize
   ) {
@@ -8097,3 +8121,6 @@ console.log(
 );
 
 /* V104_TRAFFIC_SCENE */
+
+
+/* FINANCIAL_SYSTEM_V103_WIRING */

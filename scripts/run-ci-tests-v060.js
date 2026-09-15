@@ -250,6 +250,7 @@ for (
     'tests/preparationCommandCenterV0861.test.js',
     'tests/advancedManagementV0862.test.js',
     'tests/updateInfrastructureV0849.test.js',
+    'tests/financialSystemV103.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {
@@ -259,6 +260,7 @@ for (
 for (
   const rel
   of [
+    'tests/customerTrafficSystemV103.test.js',
     'tests/propertyDeal.test.js',
     'tests/openingFinance.test.js',
     'tests/openingPrep.test.js',
