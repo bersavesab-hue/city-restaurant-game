@@ -176,7 +176,7 @@ class DistrictDetailScene extends DataSceneBase {
     if (hit.id === 'action:city') return sceneManager.switchTo('city');
     if (hit.id === 'action:property') return sceneManager.switchTo('property', { districtId: this.districtId });
     if (hit.id === 'action:store') {
-      if (analytics.hasStore(this.context())) return sceneManager.switchTo('storeDetail', { districtId: this.districtId });
+      if (analytics.hasStore(this.context())) return sceneManager.switchTo('shop', { districtId: this.districtId });
       this.showToast('你还没有门店，先去找铺');
       return sceneManager.switchTo('property', { districtId: this.districtId });
     }

@@ -17,29 +17,38 @@ class BusinessDataScene extends DataSceneBase {
 
   drawOverview(ctx, d) {
     const c7 = d.compare7 || {};
+    const p = d.pnl || {};
+    const f = d.funnel || {};
+    const today = d.today || {};
+    const avgTicket = Math.max(0, Number(today.avgTicket) || 0);
+    const grossMargin = Math.max(0, Number(p.grossMargin) || 0);
+    const potentialLoss = Math.round((Number(f.lost) || 0) * avgTicket * grossMargin);
+    const variableRate = Number(p.revenue) > 0 ? Math.max(0, Math.min(0.95, Number(p.cogs) / Number(p.revenue))) : 0.35;
+    const contributionRate = Math.max(0.05, 1 - variableRate);
+    const fixedCost = Math.max(0, (Number(p.wages)||0) + (Number(p.utilities)||0) + (Number(p.rent)||0) + (Number(p.marketing)||0) + (Number(p.maintenance)||0) + (Number(p.other)||0));
+    const breakEvenRevenue = Math.round(fixedCost / contributionRate);
+    const breakEvenOrders = avgTicket > 0 ? Math.ceil(breakEvenRevenue / avgTicket) : 0;
+
     ui.metricCompareCard(ctx, 10, 116, 116, 76, '近7日营业额', ui.money(d.last7.revenue), c7.revenue && c7.revenue.delta, '对比前7日');
-    ui.metricCompareCard(ctx, 137, 116, 116, 76, '近7日订单', ui.number(d.last7.orders), c7.orders && c7.orders.delta, '对比前7日');
-    ui.metricCompareCard(ctx, 264, 116, 116, 76, '近7日利润', ui.money(d.last7.profit), c7.profit && c7.profit.delta, '对比前7日', { valueColor: d.last7.profit < 0 ? ui.COLORS.red : ui.COLORS.text });
+    ui.metricCompareCard(ctx, 137, 116, 116, 76, '近7日利润', ui.money(d.last7.profit), c7.profit && c7.profit.delta, '对比前7日', { valueColor: d.last7.profit < 0 ? ui.COLORS.red : ui.COLORS.green });
+    ui.metricCard(ctx, 264, 116, 116, 76, '今日流失', ui.number(f.lost) + '单', '潜在毛利 -' + ui.money(potentialLoss), { valueColor: f.lost > 0 ? ui.COLORS.red : ui.COLORS.green });
 
-    ui.metricCompareCard(ctx, 10, 200, 116, 76, '7日客单', ui.money(d.last7.avgTicket), c7.avgTicket && c7.avgTicket.delta, '收入 / 订单');
-    ui.metricCompareCard(ctx, 137, 200, 116, 76, '毛利率', ui.percent(d.last7.grossMargin), c7.grossMargin && c7.grossMargin.delta, '菜品盈利底盘');
-    ui.metricCompareCard(ctx, 264, 200, 116, 76, '净利率', ui.percent(d.last7.profitMargin), c7.profitMargin && c7.profitMargin.delta, '最终经营效率');
+    ui.sectionTitle(ctx, '今天真正要看什么', 220, '只保留能指导决策的数据', 390);
+    ui.rect(ctx, 10, 234, 370, 150, { fill: ui.COLORS.panel, stroke: ui.COLORS.line });
+    ui.row(ctx, 24, 260, 334, '今日营业额', ui.money(today.revenue));
+    ui.divider(ctx, 24, 276, 334);
+    ui.row(ctx, 24, 300, 334, '保本营业额', ui.money(breakEvenRevenue), today.revenue >= breakEvenRevenue ? ui.COLORS.green : ui.COLORS.red);
+    ui.divider(ctx, 24, 316, 334);
+    ui.row(ctx, 24, 340, 334, '保本订单', ui.number(breakEvenOrders) + '单');
+    ui.divider(ctx, 24, 356, 334);
+    ui.row(ctx, 24, 376, 334, '潜在毛利损失', ui.money(potentialLoss), potentialLoss > 0 ? ui.COLORS.red : ui.COLORS.green);
 
-    ui.sectionTitle(ctx, '经营趋势', 302, '最近14个经营日', 390);
-    ui.rect(ctx, 10, 316, 370, 118, { fill: ui.COLORS.panel, stroke: ui.COLORS.line });
-    ui.sparkline(ctx, 22, 338, 220, 62, d.trend || [], 'revenue', ui.COLORS.blue);
-    ui.text(ctx, '营业额', 22, 417, 6.5, ui.COLORS.muted, '600');
-    ui.text(ctx, '今日 ' + ui.money(d.today.revenue), 365, 344, 7.3, ui.COLORS.text, '700', 'right');
-    ui.text(ctx, '今日利润 ' + ui.money(d.today.profit), 365, 371, 7.3, d.today.profit >= 0 ? ui.COLORS.green : ui.COLORS.red, '700', 'right');
-    ui.text(ctx, '转化 ' + ui.percent(d.funnel.conversionRate), 365, 398, 7.3, ui.COLORS.text, '700', 'right');
-    ui.text(ctx, '流失 ' + ui.number(d.funnel.lost) + '单', 365, 420, 6.8, d.funnel.lost > 0 ? ui.COLORS.red : ui.COLORS.muted, '700', 'right');
-
-    ui.sectionTitle(ctx, '最值得处理的问题', 461, '', 390);
+    ui.sectionTitle(ctx, '最值得处理的问题', 414, '', 390);
     const alerts = d.alerts || [];
     if (!alerts.length) {
-      ui.alertBox(ctx, 10, 475, 370, { level:'info', title:'经营暂时稳定', detail:'没有高优先级异常；继续看趋势与同周期对比。' });
+      ui.alertBox(ctx, 10, 428, 370, { level:'info', title:'经营暂时稳定', detail:'没有高优先级异常；继续观察趋势，不需要为了数据而调整。' });
     } else {
-      alerts.slice(0, 2).forEach((a, i) => ui.alertBox(ctx, 10, 475 + i * 62, 370, a));
+      alerts.slice(0, 2).forEach((a, i) => ui.alertBox(ctx, 10, 428 + i * 62, 370, a));
     }
   }
 
@@ -173,6 +182,61 @@ class BusinessDataScene extends DataSceneBase {
     ui.text(ctx, '装修、设备、押金、贷款等大额现金动作应记录到现金流，而不是混进单日经营利润。', 24, 593, 6.2, ui.COLORS.muted, '500');
   }
 
+  drawTrafficReport(ctx, d) {
+    const f = d.funnel || {};
+    const today = d.today || {};
+    const p = d.pnl || {};
+    const potentialLoss = Math.round((Number(f.lost)||0) * (Number(today.avgTicket)||0) * Math.max(0, Number(p.grossMargin)||0));
+
+    ui.sectionTitle(ctx, '客流转化', 116, '只看客人在哪一步真正流失', 390);
+    ui.metricCard(ctx, 10, 130, 116, 73, '潜在订单', ui.number(f.potential) + '单', '被门店吸引');
+    ui.metricCard(ctx, 137, 130, 116, 73, '实际订单', ui.number(f.actual) + '单', ui.percent(f.conversionRate) + '转化');
+    ui.metricCard(ctx, 264, 130, 116, 73, '流失订单', ui.number(f.lost) + '单', '约损失' + ui.money(potentialLoss), { valueColor: f.lost > 0 ? ui.COLORS.red : ui.COLORS.green });
+
+    ui.sectionTitle(ctx, '流失原因', 230, '先处理最大的那一项', 390);
+    ui.rect(ctx, 10, 244, 370, 214, { fill: ui.COLORS.panel, stroke: ui.COLORS.line });
+    const reasons = f.reasons || {};
+    const rows = [
+      ['缺货', Number(reasons.stock)||0],
+      ['厨房产能', Number(reasons.kitchen)||0],
+      ['餐位不足', Number(reasons.seats)||0],
+      ['等待过久', Number(reasons.wait)||0],
+      ['价格不匹配', Number(reasons.price)||0],
+      ['品质/口碑', Number(reasons.quality)||0]
+    ].sort((a,b)=>b[1]-a[1]);
+    const max = Math.max(1, ...rows.map(x=>x[1]));
+    rows.forEach((r, i) => {
+      const y = 273 + i * 30;
+      ui.text(ctx, r[0], 24, y, 7.1, ui.COLORS.text, '600');
+      ui.progress(ctx, 126, y - 4, 170, r[1] / max, { fill: r[1] > 0 ? ui.COLORS.red : '#D8D2CA', height: 8 });
+      ui.text(ctx, ui.number(r[1]) + '单', 354, y, 7, r[1] > 0 ? ui.COLORS.red : ui.COLORS.muted, '700', 'right');
+    });
+
+    ui.rect(ctx, 10, 482, 370, 94, { fill: ui.COLORS.paleBlue, stroke: '#BCD3DE' });
+    ui.text(ctx, '阅读方式', 24, 502, 8, ui.COLORS.text, '700');
+    ui.text(ctx, '商圈总需求只作背景；玩家真正要处理的是潜在订单到实际订单之间的流失。', 24, 529, 6.4, ui.COLORS.text, '600');
+    ui.text(ctx, '菜品、库存、员工和装修的详细原因回各自页面处理。', 24, 554, 6.4, ui.COLORS.muted, '500');
+  }
+
+  drawTrendReport(ctx, d) {
+    const c7 = d.compare7 || {};
+    ui.sectionTitle(ctx, '经营趋势', 116, '跨期变化放在报表，门店首页只看今天', 390);
+    ui.metricCompareCard(ctx, 10, 130, 116, 76, '7日营业额', ui.money(d.last7.revenue), c7.revenue && c7.revenue.delta, '对比前7日');
+    ui.metricCompareCard(ctx, 137, 130, 116, 76, '7日订单', ui.number(d.last7.orders), c7.orders && c7.orders.delta, '对比前7日');
+    ui.metricCompareCard(ctx, 264, 130, 116, 76, '7日利润', ui.money(d.last7.profit), c7.profit && c7.profit.delta, '对比前7日', { valueColor: d.last7.profit >= 0 ? ui.COLORS.green : ui.COLORS.red });
+
+    ui.rect(ctx, 10, 230, 370, 180, { fill: ui.COLORS.panel, stroke: ui.COLORS.line });
+    ui.text(ctx, '营业额趋势', 24, 252, 7, ui.COLORS.muted, '600');
+    ui.sparkline(ctx, 24, 272, 342, 48, d.trend || [], 'revenue', ui.COLORS.blue);
+    ui.text(ctx, '利润趋势', 24, 344, 7, ui.COLORS.muted, '600');
+    ui.sparkline(ctx, 24, 364, 342, 34, d.trend || [], 'profit', ui.COLORS.green);
+
+    ui.rect(ctx, 10, 436, 370, 116, { fill: ui.COLORS.paleGold, stroke: '#E5C98D' });
+    ui.text(ctx, '为什么趋势单独放二级报表', 24, 458, 8, ui.COLORS.text, '700');
+    ui.text(ctx, '单日波动适合门店现场决策；7日与更长周期适合判断经营方向。', 24, 486, 6.5, ui.COLORS.text, '600');
+    ui.text(ctx, '以后30日、同星期对比、门店间对标都继续扩在这里，不再占一级页面。', 24, 516, 6.2, ui.COLORS.muted, '500');
+  }
+
   drawActions(ctx) {
     const y = this.contentBottom - 48;
     ui.rect(ctx, 10, y, 92, 38, { radius:10, fill:'#EDE6DC', stroke:'#D1C5B7' });
@@ -192,17 +256,16 @@ class BusinessDataScene extends DataSceneBase {
     analytics.syncFromGame(this.context());
     const d = analytics.getDashboard(this.context());
     const player = typeof gameState.getPlayer === 'function' ? gameState.getPlayer() : {};
-    ui.header(ctx, '经营数据中枢', d.store ? d.store.name + ' · 所有页面共用同一套数据口径' : '尚未开店 · 市场数据仍可查看', 390, ui.money(player && player.cash));
-    ui.tabBar(ctx, [{label:'总览'}, {label:'损益'}, {label:'菜品'}, {label:'库存人效'}, {label:'产能现金'}], this.tab, 75, this.addButton.bind(this), 390);
+    ui.header(ctx, '经营报表', d.store ? d.store.name + ' · 深度复盘，不占门店首页' : '尚未开店 · 报表将在营业后形成', 390, ui.money(player && player.cash));
+    ui.tabBar(ctx, [{label:'总览'}, {label:'财务'}, {label:'客流'}, {label:'趋势'}], this.tab, 75, this.addButton.bind(this), 390);
     if (!d.store) {
       ui.rect(ctx, 12, 130, 366, 170, { fill:ui.COLORS.panel, stroke:ui.COLORS.line });
-      ui.text(ctx, '开店后这里会自动形成日 / 7日 / 30日经营账。', 195, 185, 9, ui.COLORS.text, '700', 'center');
-      ui.text(ctx, '当前可先从城市与商圈详情查看人口、需求、客群、租金和竞争。', 195, 221, 7, ui.COLORS.muted, '500', 'center');
+      ui.text(ctx, '开店后这里形成跨期经营报表。', 195, 185, 9, ui.COLORS.text, '700', 'center');
+      ui.text(ctx, '菜品、库存、员工、装修等详细数据回各自模块查看。', 195, 221, 7, ui.COLORS.muted, '500', 'center');
     } else if (this.tab === 0) this.drawOverview(ctx, d);
     else if (this.tab === 1) this.drawPnl(ctx, d);
-    else if (this.tab === 2) this.drawDishes(ctx, d);
-    else if (this.tab === 3) this.drawSupplyStaff(ctx, d);
-    else this.drawCapacityCash(ctx, d);
+    else if (this.tab === 2) this.drawTrafficReport(ctx, d);
+    else this.drawTrendReport(ctx, d);
     this.drawActions(ctx);
     this.end(ctx);
   }
@@ -213,7 +276,7 @@ class BusinessDataScene extends DataSceneBase {
     if (!hit || !hit.id) return false;
     const d = analytics.getDashboard(this.context());
     const districtId = d.store && d.store.districtId || d.district && d.district.id;
-    if (hit.id === 'action:store') return sceneManager.switchTo('storeDetail', { districtId });
+    if (hit.id === 'action:store') return sceneManager.switchTo('shop', { districtId });
     if (hit.id === 'action:district') return sceneManager.switchTo('districtDetail', { districtId });
     if (hit.id === 'action:city') return sceneManager.switchTo('city');
     return false;

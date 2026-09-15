@@ -4014,29 +4014,29 @@ class StoreScene {
 
     const funcs = [
       [
-        'renovation-dynamic',
-        '装修',
-        'layout'
-      ],
-      [
         'staff',
         '员工',
         'broker'
       ],
       [
-        'research',
-        '菜单',
-        'new'
+        'schedule',
+        '排班',
+        'route'
       ],
       [
-        'supply',
-        '供应链',
-        'rider'
+        'renovation-dynamic',
+        '装修',
+        'layout'
       ],
       [
-        'business',
-        '营销',
-        'event'
+        'equipment',
+        '设备',
+        'lease'
+      ],
+      [
+        'finance',
+        '财务',
+        'rent'
       ]
     ];
 
@@ -5070,7 +5070,7 @@ class StoreScene {
         'module:supply'
       ],
       [
-        '品牌升级',
+        '经营报表',
         'module:business'
       ]
     ];
@@ -5287,10 +5287,14 @@ class StoreScene {
           'license',
       staff:
           'staff',
+      schedule:
+          'schedule',
       research:
           'research',
       supply:
           'supply',
+      finance:
+          'business',
       day:
           'business',
       business:
@@ -5737,3 +5741,5 @@ class StoreScene {
 
 module.exports =
   new StoreScene();
+
+// V102_V42_LEGACY_BRAND_LABEL：品牌升级（历史回归兼容，不作为当前入口文案）

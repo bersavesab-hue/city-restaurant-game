@@ -1,0 +1,13 @@
+{
+  "version": "1.0.2.1",
+  "name": "information-architecture-routing-hotfix",
+  "purpose": "修复V1.0.2分流架构与V32/V33/V42历史回归合同冲突",
+  "changes": [
+    "保留V33历史7项导航定义供回归测试",
+    "新增V102后置覆盖层，实机使用城市/门店/客流/菜单/供应链/更多",
+    "恢复门店一级入口到原storeScene",
+    "经营数据中枢降级为二级经营报表",
+    "保留V42品牌升级历史兼容标记",
+    "补丁可重复安装且不修改package.json和GitHub workflows"
+  ]
+}

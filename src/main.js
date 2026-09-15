@@ -166,6 +166,7 @@ const businessDataHub = require('./analytics/businessDataHub.js');
 const districtDetailScene = require('./scenes/districtDetailScene.js');
 const storeDetailScene = require('./scenes/storeDetailScene.js');
 const businessDataScene = require('./scenes/businessDataScene.js');
+const moreScene = require('./scenes/moreScene.js');
 /* =========================
    手机自适应基础
 ========================= */
@@ -5539,6 +5540,11 @@ sceneManager.register(
   storeDetailScene
 );
 
+sceneManager.register(
+  'more',
+  moreScene
+);
+
 function render() {
   // V095_RENDER_THROTTLE_BEGIN
   // 只节流昂贵的整屏 Canvas 重绘；时间、经营模拟、场景更新仍逐帧执行。
@@ -5879,11 +5885,8 @@ function handleTap(
       target.id
         .split(':')[1];
 
-    // DATA_HUB_NAV_ROUTE_V1
-    const routedSceneId =
-      sceneId === 'shop'
-        ? (businessDataHub.hasStore({ gameState, citySystem, demandSystem }) ? 'storeDetail' : 'property')
-        : sceneId;
+    // IA_ROUTING_V102：一级“门店”永远回到原门店总控，不再被数据页劫持。
+    const routedSceneId = sceneId;
 
     if (
       sceneId ===
@@ -7739,6 +7742,87 @@ drawBottomNav = function () {
 };
 
 console.log('V33_GLOBAL_NAV_UNIFICATION loaded');
+
+/* V102_INFORMATION_ARCHITECTURE_NAV */
+
+const V102_PRIMARY_NAV = [
+  { id: "city", label: "城市", scene: "city", normal: "v33_nav_city", active: "v33_nav_city_active" },
+  { id: "shop", label: "门店", scene: "shop", normal: "v33_nav_store", active: "v33_nav_store_active" },
+  { id: "traffic", label: "客流", scene: "traffic", normal: "v33_nav_data", active: "v33_nav_data_active" },
+  { id: "research", label: "菜单", scene: "research", normal: "v33_nav_menu", active: "v33_nav_menu_active" },
+  { id: "supply", label: "供应链", scene: "supply", normal: "v33_nav_supply", active: "v33_nav_supply_active" },
+  { id: "more", label: "更多", scene: "more", normal: "v33_nav_system", active: "v33_nav_system_active" }
+];
+
+v33ActiveNavId = function () {
+  const current = sceneManager.getCurrentId();
+  if (current === "city") return trafficMode ? "traffic" : "city";
+  if (["shop","propertyMarket","storeDetail","renovation","equipment","license","staff","schedule","business"].includes(current)) return "shop";
+  if (current === "research") return "research";
+  if (current === "supply") return "supply";
+  if (["more","advancedManagement","dynamicWorld","system","businessLegacy"].includes(current)) return "more";
+  if (["district","districtDetail"].includes(current)) return "city";
+  return "more";
+};
+
+drawBottomNav = function () {
+  const activeId = v33ActiveNavId();
+  const navVisualH = NAV_H - SAFE_BOTTOM;
+  const cellW = VIEW_W / V102_PRIMARY_NAV.length;
+  const bg = ctx.createLinearGradient(0, NAV_Y, 0, NAV_Y + navVisualH);
+  bg.addColorStop(0, "#075889");
+  bg.addColorStop(0.18, "#07517E");
+  bg.addColorStop(0.62, "#04466E");
+  bg.addColorStop(1, "#033B5D");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, NAV_Y, VIEW_W, NAV_H);
+  ctx.fillStyle = "rgba(70,207,255,0.72)";
+  ctx.fillRect(0, NAV_Y, VIEW_W, 1.2);
+  const topGlow = ctx.createLinearGradient(0, NAV_Y, 0, NAV_Y + 9);
+  topGlow.addColorStop(0, "rgba(25,191,255,0.36)");
+  topGlow.addColorStop(1, "rgba(25,191,255,0)");
+  ctx.fillStyle = topGlow;
+  ctx.fillRect(0, NAV_Y + 1, VIEW_W, 9);
+  const bottomGlow = ctx.createLinearGradient(0, NAV_Y + navVisualH - 10, 0, NAV_Y + navVisualH);
+  bottomGlow.addColorStop(0, "rgba(0,137,221,0)");
+  bottomGlow.addColorStop(1, "rgba(0,166,255,0.28)");
+  ctx.fillStyle = bottomGlow;
+  ctx.fillRect(0, NAV_Y + navVisualH - 10, VIEW_W, 10);
+  for (let i = 0; i < V102_PRIMARY_NAV.length; i++) {
+    const item = V102_PRIMARY_NAV[i];
+    const cellX = i * cellW;
+    const cx = cellX + cellW / 2;
+    const active = item.id === activeId;
+    if (i > 0) {
+      const sep = ctx.createLinearGradient(0, NAV_Y + 9, 0, NAV_Y + navVisualH - 7);
+      sep.addColorStop(0, "rgba(85,184,232,0)");
+      sep.addColorStop(0.3, "rgba(85,184,232,0.24)");
+      sep.addColorStop(0.72, "rgba(85,184,232,0.20)");
+      sep.addColorStop(1, "rgba(85,184,232,0)");
+      ctx.fillStyle = sep;
+      ctx.fillRect(cellX, NAV_Y + 7, 1, navVisualH - 13);
+    }
+    if (active) {
+      const selection = ctx.createLinearGradient(0, NAV_Y + 4, 0, NAV_Y + navVisualH - 4);
+      selection.addColorStop(0, "#FFF267");
+      selection.addColorStop(0.45, "#FFD83A");
+      selection.addColorStop(1, "#FFC31F");
+      ctx.save();
+      ctx.shadowColor = "rgba(255,210,44,0.50)";
+      ctx.shadowBlur = 9;
+      roundedRect(cellX + 4, NAV_Y + 4, cellW - 8, navVisualH - 8, 12, selection, "#FFF09A", 1.15);
+      ctx.restore();
+    }
+    const iconY = NAV_Y + navVisualH * 0.36;
+    const iconSize = active ? 27 : 25;
+    const iconDrawn = v33DrawNavIconImage(active ? item.active : item.normal, cx, iconY, iconSize);
+    if (!iconDrawn) drawNavIcon(item.id, cx, iconY, active);
+    drawText(item.label, cx, NAV_Y + navVisualH * 0.75, active ? 8.1 : 7.7, active ? "#0D3B56" : "#F1F8FC", "800", "center");
+    addButton("nav:" + item.scene, cellX, NAV_Y, cellW, NAV_H);
+  }
+};
+
+console.log("V102_INFORMATION_ARCHITECTURE_NAV loaded");
 
 /* V34_MONEY_FORMAT_FIX */
 
