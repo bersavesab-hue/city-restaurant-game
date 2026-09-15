@@ -218,6 +218,15 @@ assert.ok(
   ) &&
   businessSource.includes(
     '首要问题：'
+  ) &&
+  businessSource.includes(
+    '经营趋势：'
+  ) &&
+  businessSource.includes(
+    '调整效果：'
+  ) &&
+  businessSource.includes(
+    '.operatingDayHistory('
   ),
   '试营业必须能进入营业日、读取真实经营数据，并从日结直达第一次经营改善'
 );

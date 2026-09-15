@@ -1,0 +1,20 @@
+{
+  "id": "V0848_DAY_OVER_DAY_FEEDBACK",
+  "baseVersion": "0.8.47",
+  "targetVersion": "0.8.48",
+  "category": "爆款优化第一轮：连续经营正反馈",
+  "features": [
+    "日结页面读取最近两个营业日记录",
+    "新增昨日对比：营业额变化与净利润变化",
+    "新增最近一次经营调整的量化效果",
+    "经营调整按有效、需修正、待观察显示",
+    "显示决策影响评分及利润变化",
+    "保留首要问题、明日建议、去处理入口",
+    "不修改经营公式、不新增大型数据库",
+    "安卓与项目版本同步到0.8.48"
+  ],
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false
+}

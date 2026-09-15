@@ -589,6 +589,20 @@ class BusinessScene {
     const latest =
       cycle.latestClosed;
 
+    const dayHistory =
+      operations
+        .operatingDayHistory(
+          shop.id,
+          2
+        );
+
+    const previous =
+      dayHistory &&
+      dayHistory.length >
+        1
+        ? dayHistory[1]
+        : null;
+
     const dashboard =
       operations
         .dashboard(
@@ -845,8 +859,8 @@ class BusinessScene {
       14,
       510,
       362,
-      150,
-      '日结复盘与第一次改善'
+      194,
+      '日结复盘与连续改善'
     );
 
     const recent =
@@ -863,6 +877,55 @@ class BusinessScene {
       latest &&
       latest.reasons &&
       latest.reasons[0];
+
+    const trendRevenue =
+      latest &&
+      previous
+        ? Number(
+            latest
+              .financial
+              .revenue
+          ) -
+          Number(
+            previous
+              .financial
+              .revenue
+          )
+        : null;
+
+    const trendProfit =
+      latest &&
+      previous
+        ? Number(
+            latest
+              .financial
+              .profit
+          ) -
+          Number(
+            previous
+              .financial
+              .profit
+          )
+        : null;
+
+    const impact =
+      recent &&
+      recent.impact
+        ? recent.impact
+        : null;
+
+    const impactLabel =
+      impact
+        ? (
+            impact.outcome ===
+              'positive'
+              ? '有效'
+              : impact.outcome ===
+                  'negative'
+                ? '需修正'
+                : '待观察'
+          )
+        : '暂无';
 
     ui.text(
       ctx,
@@ -885,16 +948,91 @@ class BusinessScene {
 
     ui.text(
       ctx,
-      recent &&
-      recent.impact
-        ? '上次调整：' +
-          recent.impact.explanation
-        : '上次调整：尚无已完成的经营决策反馈',
+      latest &&
+      previous
+        ? '经营趋势：营收 ' +
+          (
+            trendRevenue >=
+              0
+              ? '+'
+              : ''
+          ) +
+          opUi.money(
+            trendRevenue
+          ) +
+          ' · 利润 ' +
+          (
+            trendProfit >=
+              0
+              ? '+'
+              : ''
+          ) +
+          opUi.money(
+            trendProfit
+          )
+        : '经营趋势：完成第二个营业日后显示昨日对比',
       28,
       572,
       6.3,
-      '#3A5665',
+      latest &&
+      previous &&
+      Number(
+        trendProfit
+      ) >=
+        0
+        ? '#248B63'
+        : latest &&
+          previous
+          ? '#C85242'
+          : '#71858F',
       '700'
+    );
+
+    ui.text(
+      ctx,
+      impact
+        ? '调整效果：' +
+          impactLabel +
+          ' · 评分 ' +
+          (
+            Number(
+              impact.score
+            ) >=
+              0
+              ? '+'
+              : ''
+          ) +
+          Number(
+            impact.score
+          ) +
+          ' · 利润 ' +
+          (
+            Number(
+              impact.deltas &&
+              impact.deltas.profit
+            ) >=
+              0
+              ? '+'
+              : ''
+          ) +
+          opUi.money(
+            impact.deltas &&
+            impact.deltas.profit
+          )
+        : '调整效果：完成一次菜单、采购、招聘或营销调整后显示',
+      28,
+      596,
+      6.3,
+      impact &&
+      impact.outcome ===
+        'positive'
+        ? '#248B63'
+        : impact &&
+          impact.outcome ===
+            'negative'
+          ? '#C85242'
+          : '#71858F',
+      '800'
     );
 
     ui.text(
@@ -904,7 +1042,7 @@ class BusinessScene {
           nextAction.message
         : '明日建议：等待首次完整日结',
       28,
-      596,
+      620,
       6.5,
       nextAction
         ? '#C08824'
@@ -923,7 +1061,7 @@ class BusinessScene {
           ? '回门店'
           : '去处理',
         272,
-        608,
+        632,
         90,
         32,
         'gold'
@@ -933,7 +1071,7 @@ class BusinessScene {
         'day:improve:' +
           nextAction.routeId,
         264,
-        602,
+        626,
         106,
         44
       );
@@ -958,7 +1096,7 @@ class BusinessScene {
       ) +
       ' 项',
       28,
-      638,
+      680,
       6.1,
       '#71858F',
       '600'
