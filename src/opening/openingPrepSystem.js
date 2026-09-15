@@ -27,6 +27,7 @@ const personPack =
 const { SeededRng } =
   require('../foundation/rng.js');
 // V084_PERSON_CANDIDATES
+// V0861_PREPARATION_COMMAND_CENTER_SYSTEM
 
 
 function clone(value) {
@@ -2132,6 +2133,657 @@ class OpeningPrepSystem {
       equipment,
       permits,
       staffing
+    };
+  }
+
+
+  getPreparationBoard(
+    shopId,
+    readinessInput
+  ) {
+    const readiness =
+      readinessInput ||
+      this.getReadiness(
+        shopId
+      );
+
+    const day =
+      this.getCurrentDay();
+
+    const cash =
+      Number(
+        gameState
+          .getPlayer()
+          .cash
+      ) || 0;
+
+    const renovation =
+      renovationSystem
+        .ensurePlan(
+          shopId
+        );
+
+    const equipment =
+      readiness.equipment ||
+      this.ensureEquipment(
+        shopId
+      );
+
+    const permits =
+      readiness.permits ||
+      this.getPermitOverview(
+        shopId
+      );
+
+    const staffing =
+      readiness.staffing ||
+      this.getStaffOverview(
+        shopId
+      );
+
+    const permitRows =
+      Array.isArray(
+        permits &&
+        permits.rows
+      )
+        ? permits.rows
+        : [];
+
+    const applyingRows =
+      permitRows.filter(
+        row =>
+          row.status ===
+          'applying'
+      );
+
+    const actionableRows =
+      permitRows.filter(
+        row =>
+          row.status ===
+            'not_applied' &&
+          row.ready
+      );
+
+    const fixableRows =
+      permitRows.filter(
+        row =>
+          row.remediable &&
+          (
+            row.status ===
+              'needs_fix' ||
+            !row.ready
+          )
+      );
+
+    const blockedPermitRows =
+      permitRows.filter(
+        row =>
+          row.status ===
+            'not_applied' &&
+          !row.ready &&
+          !row.remediable
+      );
+
+    const requiredTotal =
+      staffing &&
+      staffing.required
+        ? Object.values(
+            staffing.required
+          ).reduce(
+            (sum, value) =>
+              sum +
+              Math.max(
+                0,
+                Number(value) || 0
+              ),
+            0
+          )
+        : 0;
+
+    const hiredCount =
+      staffing &&
+      Array.isArray(
+        staffing.hired
+      )
+        ? staffing.hired.length
+        : 0;
+
+    const candidates =
+      staffing &&
+      Array.isArray(
+        staffing.candidates
+      )
+        ? staffing.candidates
+        : [];
+
+    const bestCandidate =
+      candidates
+        .slice()
+        .sort(
+          (a, b) =>
+            Number(b.score || 0) -
+            Number(a.score || 0)
+        )[0] ||
+      null;
+
+    const equipmentQuote =
+      equipment.status ===
+        'planning'
+        ? this.getEquipmentQuote(
+            shopId
+          )
+        : equipment.quote ||
+          null;
+
+    const equipmentEta =
+      equipment.status ===
+        'ordered'
+        ? Math.max(
+            0,
+            Number(
+              equipment.deliveryDay
+            ) -
+            day
+          )
+        : 0;
+
+    const permitEta =
+      applyingRows.length
+        ? Math.max(
+            0,
+            Math.min(
+              ...applyingRows.map(
+                row =>
+                  Number(
+                    row.finishDay
+                  ) ||
+                  day
+              )
+            ) -
+            day
+          )
+        : 0;
+
+    const staffingCoverage =
+      clamp(
+        Number(
+          staffing &&
+          staffing.coverage
+        ) || 0,
+        0,
+        1
+      );
+
+    const permitProgress =
+      permits &&
+      Number(permits.total) > 0
+        ? clamp(
+            (
+              Number(
+                permits.approved
+              ) || 0
+            ) /
+            Number(
+              permits.total
+            ),
+            0,
+            1
+          )
+        : 0;
+
+    let renovationProgress =
+      readiness.renovationReady
+        ? 1
+        : 0;
+
+    if (
+      !readiness.renovationReady &&
+      typeof renovationSystem
+        .getConstructionProgress ===
+        'function'
+    ) {
+      try {
+        const construction =
+          renovationSystem
+            .getConstructionProgress(
+              shopId
+            );
+
+        renovationProgress =
+          clamp(
+            Number(
+              construction &&
+              construction.progress
+            ) || 0,
+            0,
+            1
+          );
+      } catch (error) {
+        renovationProgress = 0;
+      }
+    }
+
+    const equipmentProgress =
+      readiness.equipmentReady
+        ? 1
+        : equipment.status ===
+            'ordered'
+          ? 0.62
+          : 0;
+
+    const equipmentState =
+      readiness.equipmentReady
+        ? 'done'
+        : equipment.status ===
+            'ordered'
+          ? 'waiting'
+          : 'available';
+
+    const permitState =
+      readiness.permitsReady
+        ? 'done'
+        : actionableRows.length ||
+          fixableRows.length
+          ? 'available'
+          : applyingRows.length
+            ? 'waiting'
+            : 'blocked';
+
+    const workstreams = [
+      {
+        id:'renovation',
+        title:'装修',
+        state:
+          readiness.renovationReady
+            ? 'done'
+            : 'available',
+        progress:
+          renovationProgress,
+        statusText:
+          readiness.renovationReady
+            ? '已完成'
+            : '可立即推进',
+        detail:
+          readiness.renovationReady
+            ? '空间方案已具备开业条件'
+            : '餐位、动线和许可条件仍需推进',
+        action:'进入装修',
+        priority:95,
+        estimatedCost:0,
+        blockingOpening:
+          !readiness.renovationReady
+      },
+      {
+        id:'equipment',
+        title:'设备',
+        state:
+          equipmentState,
+        progress:
+          equipmentProgress,
+        statusText:
+          readiness.equipmentReady
+            ? '已安装'
+            : equipment.status ===
+                'ordered'
+              ? '等待到货 · ' +
+                equipmentEta +
+                '天'
+              : '可提前采购',
+        detail:
+          readiness.equipmentReady
+            ? '后厨与前厅设备已经到位'
+            : equipment.status ===
+                'ordered'
+              ? '订单已锁定，等待到货安装'
+              : '现在下单可与装修同步等待交期',
+        action:
+          equipment.status ===
+            'planning'
+            ? '配置设备'
+            : '查看设备',
+        priority:
+          equipment.status ===
+            'planning' &&
+          equipmentQuote &&
+          Number(
+            equipmentQuote.installDays
+          ) >= 3
+            ? 98
+            : 90,
+        estimatedCost:
+          equipment.status ===
+            'planning' &&
+          equipmentQuote
+            ? Number(
+                equipmentQuote.total
+              ) || 0
+            : 0,
+        etaDays:
+          equipmentEta,
+        blockingOpening:
+          !readiness.equipmentReady
+      },
+      {
+        id:'license',
+        title:'证照',
+        state:
+          permitState,
+        progress:
+          permitProgress,
+        statusText:
+          readiness.permitsReady
+            ? '已齐全'
+            : applyingRows.length
+              ? '审核中 ' +
+                applyingRows.length +
+                '项'
+              : actionableRows.length
+                ? '可提交 ' +
+                  actionableRows.length +
+                  '项'
+                : fixableRows.length
+                  ? '可整改 ' +
+                    fixableRows.length +
+                    '项'
+                  : '等待前置条件',
+        detail:
+          readiness.permitsReady
+            ? '全部开业证照已完成'
+            : actionableRows.length
+              ? '已有证照可先办理，不必等全部筹备完成'
+              : fixableRows.length
+                ? '先完成整改即可继续办理'
+                : applyingRows.length
+                  ? '审批进行中，可同时处理其他事项'
+                  : blockedPermitRows[0] &&
+                    blockedPermitRows[0]
+                      .reasons &&
+                    blockedPermitRows[0]
+                      .reasons[0] ||
+                    '等待装修或设备条件',
+        action:'办理证照',
+        priority:88,
+        estimatedCost:
+          actionableRows.reduce(
+            (sum, row) =>
+              sum +
+              Math.max(
+                0,
+                Number(row.fee) || 0
+              ),
+            0
+          ) +
+          (
+            fixableRows[0]
+              ? Math.max(
+                  0,
+                  Number(
+                    fixableRows[0]
+                      .remediationCost
+                  ) || 0
+                )
+              : 0
+          ),
+        etaDays:
+          permitEta,
+        blockingOpening:
+          !readiness.permitsReady
+      },
+      {
+        id:'staff',
+        title:'招聘',
+        state:
+          readiness.staffingReady
+            ? 'done'
+            : 'available',
+        progress:
+          staffingCoverage,
+        statusText:
+          readiness.staffingReady
+            ? '班组齐备'
+            : '到岗 ' +
+              hiredCount +
+              '/' +
+              requiredTotal,
+        detail:
+          readiness.staffingReady
+            ? '基础班组覆盖已达标'
+            : candidates.length
+              ? '今日有' +
+                candidates.length +
+                '名候选，可提前锁定核心岗位'
+              : '等待人才市场刷新',
+        action:'去招聘',
+        priority:82,
+        estimatedCost:
+          bestCandidate
+            ? Math.round(
+                Number(
+                  bestCandidate.wage
+                ) *
+                0.18
+              )
+            : 0,
+        blockingOpening:
+          !readiness.staffingReady
+      }
+    ];
+
+    const available =
+      workstreams
+        .filter(
+          row =>
+            row.state ===
+            'available'
+        )
+        .sort(
+          (a, b) =>
+            b.priority -
+            a.priority
+        );
+
+    const waiting = [];
+
+    if (
+      equipment.status ===
+      'ordered'
+    ) {
+      waiting.push({
+        id:'equipment',
+        moduleId:'equipment',
+        title:'设备到货',
+        days:equipmentEta,
+        detail:
+          equipmentEta > 0
+            ? '设备还有' +
+              equipmentEta +
+              '天到货，可同时推进装修/招聘/证照'
+            : '设备今天到货，进入设备页查看安装状态'
+      });
+    }
+
+    if (applyingRows.length) {
+      waiting.push({
+        id:'license',
+        moduleId:'license',
+        title:'证照审核',
+        days:permitEta,
+        detail:
+          applyingRows.length +
+          '项证照审核中' +
+          (
+            permitEta > 0
+              ? '，最快' +
+                permitEta +
+                '天出结果'
+              : '，今天可能出结果'
+          )
+      });
+    }
+
+    const blockers =
+      workstreams
+        .filter(
+          row =>
+            row.blockingOpening
+        )
+        .map(
+          row => ({
+            id:row.id,
+            title:row.title,
+            detail:
+              row.title +
+              '未完成：' +
+              row.statusText
+          })
+        );
+
+    const immediateCost =
+      available.reduce(
+        (sum, row) =>
+          sum +
+          Math.max(
+            0,
+            Number(
+              row.estimatedCost
+            ) || 0
+          ),
+        0
+      );
+
+    const affordable =
+      available.filter(
+        row =>
+          Number(
+            row.estimatedCost
+          ) <= cash
+      );
+
+    const selected =
+      (
+        affordable.length
+          ? affordable
+          : available
+      )[0] ||
+      null;
+
+    let focus = null;
+
+    if (readiness.ready) {
+      focus = {
+        id:'trial',
+        title:'可以开始试营业',
+        detail:'四项基础条件已经齐全，用3天真实经营验证方案',
+        action:'开始试营业',
+        state:'ready'
+      };
+    } else if (selected) {
+      const focusTitle = {
+        equipment:'先锁设备交期',
+        renovation:'推进装修方案',
+        license:'先办可提交证照',
+        staff:'提前锁定班组'
+      }[selected.id] ||
+      '继续筹备';
+
+      focus = {
+        id:selected.id,
+        title:focusTitle,
+        detail:selected.detail,
+        action:selected.action,
+        state:selected.state,
+        estimatedCost:
+          selected.estimatedCost
+      };
+    } else if (waiting.length) {
+      const first =
+        waiting[0];
+
+      focus = {
+        id:first.moduleId,
+        title:'等待期间别空转',
+        detail:first.detail,
+        action:'查看进度',
+        state:'waiting'
+      };
+    } else {
+      focus = {
+        id:'renovation',
+        title:'继续完善开店条件',
+        detail:'仍有开业条件未完成',
+        action:'进入装修',
+        state:'blocked'
+      };
+    }
+
+    const signals = [];
+
+    if (
+      equipment.status ===
+      'planning'
+    ) {
+      signals.push(
+        '设备现在即可提前下单，与装修并行等待交期'
+      );
+    }
+
+    if (
+      actionableRows.length
+    ) {
+      signals.push(
+        '已有' +
+        actionableRows.length +
+        '项证照可以提前提交'
+      );
+    }
+
+    if (
+      bestCandidate &&
+      !readiness.staffingReady
+    ) {
+      signals.push(
+        '今日优质候选：' +
+        bestCandidate.name +
+        ' · ' +
+        bestCandidate.roleName +
+        ' · 综合' +
+        bestCandidate.score
+      );
+    }
+
+    return {
+      version:'0.8.61',
+      day,
+      cash,
+      readinessPercent:
+        Math.round(
+          (
+            renovationProgress +
+            equipmentProgress +
+            permitProgress +
+            staffingCoverage
+          ) /
+          4 *
+          100
+        ),
+      ready:
+        !!readiness.ready,
+      workstreams,
+      focus,
+      waiting,
+      blockers,
+      signals,
+      actionableCount:
+        available.length,
+      parallelCount:
+        available.length,
+      immediateCost,
+      immediateCashGap:
+        Math.max(
+          0,
+          immediateCost -
+          cash
+        )
     };
   }
 

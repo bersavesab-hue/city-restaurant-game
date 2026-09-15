@@ -9,6 +9,7 @@
 // V42_STORE_MASTER_REFERENCE_REBUILD
 // V43_REFERENCE_IMAGE_UI
 // V44_STORE_VISUAL_REPAIR
+// V0861_PREPARATION_COMMAND_CENTER_UI
 // 用户定稿门店模式：无门店 / 单店营业 / 多门店总览 / 筹备中。
 
 const runtime = globalThis.GameRuntime;
@@ -1221,6 +1222,45 @@ class StoreScene {
         shop.id
       );
 
+    const preparationBoard =
+      openingPrepSystem
+        .getPreparationBoard(
+          shop.id,
+          readiness
+        );
+
+    const renovationLine =
+      preparationBoard &&
+      Array.isArray(
+        preparationBoard.workstreams
+      )
+        ? preparationBoard
+            .workstreams
+            .find(
+              row =>
+                row.id ===
+                'renovation'
+            )
+        : null;
+
+    if (
+      renovationLine &&
+      !readiness.renovationReady
+    ) {
+      renovationLine.progress =
+        renovationProgress;
+
+      renovationLine.statusText =
+        renovationProgress > 0
+          ? '推进中 ' +
+            Math.round(
+              renovationProgress *
+              100
+            ) +
+            '%'
+          : '可立即推进';
+    }
+
     const permits =
       readiness.permits || {};
 
@@ -1338,12 +1378,35 @@ class StoreScene {
       }
     }
 
+    if (
+      shop.status !==
+        'trial_complete' &&
+      preparationBoard &&
+      preparationBoard.focus
+    ) {
+      recommendation = {
+        id:
+          preparationBoard
+            .focus.id,
+        title:
+          preparationBoard
+            .focus.title,
+        detail:
+          preparationBoard
+            .focus.detail,
+        action:
+          preparationBoard
+            .focus.action
+      };
+    }
+
     return {
       readiness,
       metrics,
       finance,
       plan,
       renovationProgress,
+      preparationBoard,
       permitApproved,
       permitTotal,
       hiredCount,
@@ -2810,30 +2873,47 @@ class StoreScene {
         shop
       );
 
+    const board =
+      state.preparationBoard ||
+      openingPrepSystem
+        .getPreparationBoard(
+          shop.id,
+          state.readiness
+        );
+
     const district =
       citySystem.getDistrict(
         shop.districtId
       );
 
+    const compact =
+      this.contentBottom <
+      650;
+
     this.drawHeader(
       ctx,
       {
         subtitle:
-          '门店筹备中心'
+          '门店筹备中心 · 四线并行'
       }
     );
 
-    // 主门店卡
+    const heroY = 91;
+    const heroH =
+      compact
+        ? 112
+        : 132;
+
     ui.card(
       ctx,
       10,
-      91,
+      heroY,
       370,
-      154,
+      heroH,
       {
-        radius: 15,
-        fill: '#FFFCF7',
-        stroke: '#DED5C8'
+        radius:15,
+        fill:'#FFFCF7',
+        stroke:'#DED5C8'
       }
     );
 
@@ -2846,9 +2926,11 @@ class StoreScene {
         'premium_store_hero'
       ),
       18,
-      99,
+      heroY + 8,
       354,
-      78,
+      compact
+        ? 55
+        : 73,
       11,
       'rgba(2,28,42,0.30)'
     );
@@ -2861,29 +2943,11 @@ class StoreScene {
         13
       ),
       28,
-      120,
-      13,
+      heroY + 29,
+      12.5,
       COLORS.white,
       '800'
     );
-
-    const badge =
-      resourceManager.getImage(
-        shop.status ===
-          'renovating'
-          ? 'lib_status_renovating'
-          : 'lib_status_signed'
-      );
-
-    if (badge) {
-      ctx.drawImage(
-        badge,
-        28,
-        138,
-        65,
-        20
-      );
-    }
 
     storeText(
       ctx,
@@ -2898,11 +2962,16 @@ class StoreScene {
         '已签约门店',
         16
       ),
-      102,
-      149,
-      5.2,
+      28,
+      heroY +
+        (
+          compact
+            ? 50
+            : 56
+        ),
+      5.0,
       '#EEF6F8',
-      '600'
+      '700'
     );
 
     const heroMetrics = [
@@ -2933,12 +3002,19 @@ class StoreScene {
         )
       ],
       [
-        '包厢',
-        this.getRooms(
-          shop.id
-        ).length + '间'
+        '准备度',
+        Math.round(
+          Number(
+            board.readinessPercent
+          ) || 0
+        ) + '%'
       ]
     ];
+
+    const metricY =
+      heroY +
+      heroH -
+      30;
 
     for (
       let i = 0;
@@ -2953,314 +3029,369 @@ class StoreScene {
         ctx,
         heroMetrics[i][0],
         x,
-        196,
-        4.6,
-        COLORS.muted,
-        '600'
-      );
-
-      storeText(
-        ctx,
-        heroMetrics[i][1],
-        x,
-        214,
-        6.4,
-        COLORS.text,
-        '800'
-      );
-    }
-
-    // 装修/证照/招聘/设备
-    ui.card(
-      ctx,
-      10,
-      253,
-      370,
-      68,
-      {
-        radius: 14,
-        fill: '#FFFCF7',
-        stroke: '#DED5C8',
-        shadow: false
-      }
-    );
-
-    const equipText = {
-      planning: '规划中',
-      ordered: '已下单',
-      delivered: '待安装',
-      installed: '已安装'
-    }[
-      state.equipmentStatus
-    ] || state.equipmentStatus;
-
-    const statuses = [
-      [
-        '装修',
-        percent01(
-          state.renovationProgress
-        ),
-        'layout',
-        COLORS.orange
-      ],
-      [
-        '证照',
-        state.permitApproved +
-        '/' +
-        state.permitTotal,
-        'lease',
-        COLORS.blue
-      ],
-      [
-        '招聘',
-        state.hiredCount +
-        '/' +
-        state.requiredCount,
-        'broker',
-        COLORS.green
-      ],
-      [
-        '设备',
-        equipText,
-        'rider',
-        COLORS.purple
-      ]
-    ];
-
-    for (
-      let i = 0;
-      i < 4;
-      i++
-    ) {
-      const x =
-        18 +
-        i * 91;
-
-      ui.card(
-        ctx,
-        x,
-        266,
-        84,
-        43,
-        {
-          radius: 9,
-          fill: '#FAF7F1',
-          stroke: '#E5DCD2',
-          shadow: false
-        }
-      );
-
-      this.drawPropertyIcon(
-        ctx,
-        statuses[i][2],
-        x + 6,
-        277,
-        19,
-        '',
-        '#EEF4F6'
-      );
-
-      storeText(
-        ctx,
-        statuses[i][0],
-        x + 30,
-        275,
-        4.6,
+        metricY,
+        4.4,
         COLORS.muted,
         '700'
       );
 
       storeText(
         ctx,
-        statuses[i][1],
-        x + 30,
-        294,
-        5.9,
+        heroMetrics[i][1],
+        x,
+        metricY + 17,
+        6.0,
         COLORS.text,
         '800'
       );
     }
 
-    // 开店进度
-    ui.card(
-      ctx,
-      10,
-      329,
-      370,
-      67,
-      {
-        radius: 14,
-        fill: '#FFFCF7',
-        stroke: '#DED5C8',
-        shadow: false
-      }
-    );
+    const workY =
+      heroY +
+      heroH +
+      8;
 
-    storeText(
-      ctx,
-      '开店进度',
-      22,
-      347,
-      7.6,
-      COLORS.text,
-      '800'
-    );
+    const rowH =
+      compact
+        ? 52
+        : 60;
 
-    const steps = [
-      [
-        '签约',
-        true,
-        'lease'
-      ],
-      [
-        '装修',
-        state.readiness
-          .renovationReady,
-        'layout'
-      ],
-      [
-        '证照',
-        state.readiness
-          .permitsReady,
-        'contract'
-      ],
-      [
-        '招聘',
-        state.readiness
-          .staffingReady,
-        'broker'
-      ],
-      [
-        '设备',
-        state.readiness
-          .equipmentReady,
-        'rider'
-      ],
-      [
-        '试营业',
-        false,
-        'new'
-      ]
-    ];
+    const rowGap = 6;
+    const cardW = 182;
 
-    let current =
-      steps.findIndex(
-        item => !item[1]
-      );
+    const iconMap = {
+      renovation:'layout',
+      equipment:'rider',
+      license:'lease',
+      staff:'broker'
+    };
 
-    if (current < 0) {
-      current =
-        steps.length - 1;
-    }
+    const stateTone = {
+      done:COLORS.green,
+      waiting:COLORS.blue,
+      available:COLORS.goldDeep,
+      blocked:COLORS.red
+    };
+
+    const stateFill = {
+      done:'#E9F7EF',
+      waiting:'#EAF4F8',
+      available:'#FFF7DE',
+      blocked:'#FFF0EA'
+    };
 
     for (
       let i = 0;
-      i < 6;
+      i < board.workstreams.length;
       i++
     ) {
-      const x =
-        58 +
-        i * 55;
+      const line =
+        board.workstreams[i];
 
-      if (i < 5) {
-        storeDivider(
-          ctx,
-          x + 10,
-          370,
-          x + 44,
-          370,
-          i < current
-            ? COLORS.green
-            : '#D5DADC',
-          1.4
+      const col =
+        i % 2;
+
+      const row =
+        Math.floor(
+          i / 2
         );
-      }
+
+      const x =
+        10 +
+        col * 188;
+
+      const y =
+        workY +
+        row *
+        (
+          rowH +
+          rowGap
+        );
+
+      ui.card(
+        ctx,
+        x,
+        y,
+        cardW,
+        rowH,
+        {
+          radius:12,
+          fill:
+            stateFill[
+              line.state
+            ] ||
+            '#FFFCF7',
+          stroke:'#DED5C8',
+          shadow:false
+        }
+      );
 
       this.drawPropertyIcon(
         ctx,
-        steps[i][2],
-        x - 9,
-        360,
-        19,
-        steps[i][1]
+        iconMap[
+          line.id
+        ] ||
+        'layout',
+        x + 8,
+        y + 10,
+        20,
+        line.state ===
+          'done'
           ? '✓'
           : '',
-        steps[i][1]
-          ? '#E4F5EB'
-          : i === current
-            ? '#FFF0B4'
-            : '#E7EDF0'
+        '#EEF4F6'
       );
 
       storeText(
         ctx,
-        steps[i][0],
-        x,
-        388,
-        4.8,
+        line.title,
+        x + 36,
+        y + 15,
+        5.9,
         COLORS.text,
-        '700',
-        'center'
+        '800'
+      );
+
+      storeText(
+        ctx,
+        shortText(
+          line.statusText,
+          12
+        ),
+        x + cardW - 9,
+        y + 15,
+        4.5,
+        stateTone[
+          line.state
+        ] ||
+        COLORS.muted,
+        '800',
+        'right'
+      );
+
+      storeText(
+        ctx,
+        shortText(
+          line.detail,
+          compact
+            ? 18
+            : 22
+        ),
+        x + 36,
+        y + 32,
+        4.3,
+        COLORS.muted,
+        '600'
+      );
+
+      ui.card(
+        ctx,
+        x + 10,
+        y + rowH - 9,
+        cardW - 20,
+        4,
+        {
+          radius:2,
+          fill:'#E4E0D9',
+          stroke:false,
+          shadow:false
+        }
+      );
+
+      ui.card(
+        ctx,
+        x + 10,
+        y + rowH - 9,
+        Math.max(
+          3,
+          (
+            cardW - 20
+          ) *
+          clamp(
+            Number(
+              line.progress
+            ) || 0,
+            0,
+            1
+          )
+        ),
+        4,
+        {
+          radius:2,
+          fill:
+            stateTone[
+              line.state
+            ] ||
+            COLORS.blue,
+          stroke:false,
+          shadow:false
+        }
+      );
+
+      this.addButton(
+        'module:' +
+          line.id,
+        x,
+        y,
+        cardW,
+        rowH
       );
     }
 
-    // 建议 + 资金
+    const readyY =
+      workY +
+      rowH * 2 +
+      rowGap +
+      8;
+
+    const readyH =
+      compact
+        ? 44
+        : 50;
+
     ui.card(
       ctx,
       10,
-      404,
-      232,
-      118,
+      readyY,
+      370,
+      readyH,
       {
-        radius: 14,
-        fill: '#FFFCF7',
-        stroke: '#DED5C8',
-        shadow: false
+        radius:13,
+        fill:'#FFFCF7',
+        stroke:'#DED5C8',
+        shadow:false
       }
     );
 
     storeText(
       ctx,
-      '下一步建议',
+      '开店进度 · 开业准备度',
       22,
-      423,
-      7.6,
+      readyY + 15,
+      6.6,
       COLORS.text,
       '800'
+    );
+
+    storeText(
+      ctx,
+      Math.round(
+        Number(
+          board.readinessPercent
+        ) || 0
+      ) + '%',
+      367,
+      readyY + 15,
+      7.3,
+      board.ready
+        ? COLORS.green
+        : COLORS.orange,
+      '800',
+      'right'
+    );
+
+    ui.card(
+      ctx,
+      22,
+      readyY + 24,
+      346,
+      6,
+      {
+        radius:3,
+        fill:'#E6E1DA',
+        stroke:false,
+        shadow:false
+      }
+    );
+
+    ui.card(
+      ctx,
+      22,
+      readyY + 24,
+      346 *
+        clamp(
+          Number(
+            board.readinessPercent
+          ) / 100,
+          0,
+          1
+        ),
+      6,
+      {
+        radius:3,
+        fill:
+          board.ready
+            ? COLORS.green
+            : COLORS.gold,
+        stroke:false,
+        shadow:false
+      }
+    );
+
+    storeText(
+      ctx,
+      board.parallelCount > 0
+        ? '可并行推进 ' +
+          board.parallelCount +
+          ' 项 · 不必逐项等待'
+        : board.waiting.length
+          ? '当前有 ' +
+            board.waiting.length +
+            ' 项等待中，可检查其他筹备线'
+          : '基础筹备条件正在收口',
+      22,
+      readyY +
+        readyH -
+        7,
+      4.4,
+      COLORS.muted,
+      '700'
+    );
+
+    const focusY =
+      readyY +
+      readyH +
+      8;
+
+    const focusH =
+      compact
+        ? 78
+        : 96;
+
+    ui.card(
+      ctx,
+      10,
+      focusY,
+      232,
+      focusH,
+      {
+        radius:13,
+        fill:'#FFF9E9',
+        stroke:'#E3D2A4',
+        shadow:false
+      }
     );
 
     const rec =
       state.recommendation;
 
-    const adviceImage =
-      resourceManager.getImage(
-        rec.id === 'renovation'
-          ? 'lib_advice_renovation'
-          : rec.id === 'staff'
-            ? 'lib_advice_staff'
-            : 'lib_advice_license'
-      );
-
-    if (adviceImage) {
-      ui.coverImage(
-        ctx,
-        adviceImage,
-        20,
-        437,
-        67,
-        56,
-        8,
-        null
-      );
-    }
+    storeText(
+      ctx,
+      '今日重点 · 下一步建议',
+      22,
+      focusY + 17,
+      6.7,
+      COLORS.text,
+      '800'
+    );
 
     storeText(
       ctx,
       rec.title,
-      97,
-      449,
-      6.5,
-      COLORS.text,
+      22,
+      focusY + 37,
+      6.2,
+      COLORS.orange,
       '800'
     );
 
@@ -3268,11 +3399,13 @@ class StoreScene {
       ctx,
       shortText(
         rec.detail,
-        18
+        compact
+          ? 24
+          : 29
       ),
-      97,
-      467,
-      4.7,
+      22,
+      focusY + 54,
+      4.5,
       COLORS.muted,
       '600'
     );
@@ -3281,36 +3414,28 @@ class StoreScene {
       ctx,
       'module:' +
         rec.id,
-      rec.action,
-      96,
-      483,
-      130,
-      27,
+      '继续筹备',
+      22,
+      focusY +
+        focusH -
+        29,
+      202,
+      23,
       'gold'
     );
 
     ui.card(
       ctx,
       250,
-      404,
+      focusY,
       130,
-      118,
+      focusH,
       {
-        radius: 14,
-        fill: '#FFFCF7',
-        stroke: '#DED5C8',
-        shadow: false
+        radius:13,
+        fill:'#FFFCF7',
+        stroke:'#DED5C8',
+        shadow:false
       }
-    );
-
-    storeText(
-      ctx,
-      '筹备资金',
-      262,
-      423,
-      7.4,
-      COLORS.text,
-      '800'
     );
 
     const gap =
@@ -3328,10 +3453,20 @@ class StoreScene {
 
     storeText(
       ctx,
-      '预计总投入',
+      '筹备资金',
       262,
-      451,
-      4.7,
+      focusY + 17,
+      6.4,
+      COLORS.text,
+      '800'
+    );
+
+    storeText(
+      ctx,
+      '预计投入',
+      262,
+      focusY + 38,
+      4.3,
       COLORS.muted,
       '600'
     );
@@ -3342,14 +3477,14 @@ class StoreScene {
         need
           ? need.totalNeed
           : (
-            state.metrics
-              ? state.metrics.totalCost
-              : 0
-          )
+              state.metrics
+                ? state.metrics.totalCost
+                : 0
+            )
       ),
-      368,
-      451,
-      6.1,
+      369,
+      focusY + 38,
+      5.3,
       COLORS.text,
       '800',
       'right'
@@ -3358,32 +3493,21 @@ class StoreScene {
     storeText(
       ctx,
       gap > 0
-        ? '资金缺口'
-        : '可用资金',
-      262,
-      475,
-      4.7,
-      COLORS.muted,
-      '600'
-    );
-
-    storeText(
-      ctx,
-      compactMoney(
-        gap > 0
-          ? gap
-          : gameState
+        ? '缺口 ' +
+          compactMoney(gap)
+        : '现金 ' +
+          compactMoney(
+            gameState
               .getPlayer()
               .cash
-      ),
-      368,
-      475,
-      6.1,
+          ),
+      262,
+      focusY + 58,
+      4.8,
       gap > 0
         ? COLORS.red
         : COLORS.green,
-      '800',
-      'right'
+      '800'
     );
 
     if (gap > 0) {
@@ -3392,46 +3516,43 @@ class StoreScene {
         'module:finance',
         '申请周转',
         261,
-        492,
+        focusY +
+          focusH -
+          29,
         107,
-        22,
+        23,
         'blue'
+      );
+    } else {
+      storeText(
+        ctx,
+        board.immediateCashGap > 0
+          ? '可执行项仍差 ' +
+            compactMoney(
+              board.immediateCashGap
+            )
+          : '当前可执行项资金可覆盖',
+        262,
+        focusY +
+          focusH -
+          14,
+        4.1,
+        COLORS.muted,
+        '600'
       );
     }
 
-    this.drawActionButton(
-      ctx,
-      'module:' +
-        rec.id,
-      '继续筹备',
-      21,
-      532,
-      170,
-      35,
-      'gold'
-    );
-
-    this.drawActionButton(
-      ctx,
-      'go-property',
-      '继续看商圈',
-      199,
-      532,
-      170,
-      35,
-      'blue'
-    );
-
-    // 筹备提醒 + 扩张机会，填到导航栏上方。
     const bottomY =
-      577;
+      focusY +
+      focusH +
+      8;
 
-    const h =
+    const bottomH =
       Math.max(
-        85,
+        44,
         this.contentBottom -
         bottomY -
-        9
+        8
       );
 
     ui.card(
@@ -3439,81 +3560,138 @@ class StoreScene {
       10,
       bottomY,
       370,
-      h,
+      bottomH,
       {
-        radius: 14,
-        fill: '#FFF9EA',
-        stroke: '#E5D5AB',
-        shadow: false
+        radius:13,
+        fill:'#F6F8F7',
+        stroke:'#D8DFDD',
+        shadow:false
       }
     );
 
+    const waitingText =
+      board.waiting.length
+        ? board.waiting[0]
+            .detail
+        : '暂无必须等待的项目，可以继续主动推进';
+
+    const blockerText =
+      board.blockers.length
+        ? board.blockers
+            .slice(0, 2)
+            .map(
+              row =>
+                row.title
+            )
+            .join('、') +
+          '仍会阻塞试营业'
+        : '基础条件已齐，可进入试营业';
+
     storeText(
       ctx,
-      '筹备提醒',
+      '等待中',
       22,
-      bottomY + 18,
-      7.2,
-      COLORS.text,
+      bottomY + 16,
+      5.7,
+      COLORS.blue,
       '800'
     );
 
-    const doneCount =
-      Number(
-        state.readiness
-          .renovationReady
-      ) +
-      Number(
-        state.readiness
-          .permitsReady
-      ) +
-      Number(
-        state.readiness
-          .staffingReady
-      ) +
-      Number(
-        state.readiness
-          .equipmentReady
+    storeText(
+      ctx,
+      shortText(
+        waitingText,
+        compact
+          ? 20
+          : 30
+      ),
+      70,
+      bottomY + 16,
+      4.3,
+      COLORS.muted,
+      '600'
+    );
+
+    storeText(
+      ctx,
+      '阻塞开业',
+      208,
+      bottomY + 16,
+      5.7,
+      board.blockers.length
+        ? COLORS.red
+        : COLORS.green,
+      '800'
+    );
+
+    storeText(
+      ctx,
+      shortText(
+        blockerText,
+        20
+      ),
+      366,
+      bottomY + 16,
+      4.2,
+      COLORS.muted,
+      '600',
+      'right'
+    );
+
+    if (
+      !compact &&
+      bottomH >= 68
+    ) {
+      const signal =
+        board.signals[0] ||
+        (
+          district
+            ? district.name +
+              '仍有可考察铺面'
+            : '筹备状态正常推进'
+        );
+
+      storeText(
+        ctx,
+        '筹备动态 · ' +
+          shortText(
+            signal,
+            42
+          ),
+        22,
+        bottomY + 41,
+        4.7,
+        COLORS.text,
+        '700'
       );
 
-    storeText(
-      ctx,
-      '已完成 ' +
-        doneCount +
-        '/4 项开业基础条件',
-      22,
-      bottomY + 41,
-      5.2,
-      COLORS.muted,
-      '600'
-    );
+      storeText(
+        ctx,
+        '当前可并行 ' +
+          board.parallelCount +
+          ' 项 · 等待 ' +
+          board.waiting.length +
+          ' 项',
+        22,
+        bottomY + 60,
+        4.4,
+        COLORS.muted,
+        '600'
+      );
 
-    storeText(
-      ctx,
-      district
-        ? (
-          district.name +
-          '仍有可考察铺面，可提前为下一家店储备'
-        )
-        : '仍可提前储备下一家门店的优质铺面',
-      22,
-      bottomY + 64,
-      4.8,
-      COLORS.muted,
-      '600'
-    );
-
-    this.drawActionButton(
-      ctx,
-      'go-property',
-      '查看机会',
-      298,
-      bottomY + 25,
-      70,
-      27,
-      'gold'
-    );
+      this.drawActionButton(
+        ctx,
+        'go-property',
+        '继续看商圈',
+        292,
+        bottomY + 34,
+        76,
+        25,
+        'blue'
+      );
+    }
   }
+
 
   showShopDetail(
     shop,
