@@ -1361,6 +1361,46 @@ function inventoryRows(
   return rows;
 }
 
+function inventoryLotRows(
+  shopId
+) {
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  if (!runtime) {
+    return [];
+  }
+
+  return (
+    inventoryEngine
+      .lotRows(
+        runtime.inventory
+      )
+  );
+}
+
+function inventoryHealth(
+  shopId
+) {
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  if (!runtime) {
+    return null;
+  }
+
+  return (
+    inventoryEngine
+      .inventoryHealth(
+        runtime.inventory
+      )
+  );
+}
+
 function autoRestock(
   shopId
 ) {
@@ -1699,6 +1739,8 @@ module.exports = {
   startRecipeResearch,
   getFoodResearchOverview,
   inventoryRows,
+  inventoryLotRows,
+  inventoryHealth,
   autoRestock,
   dashboard
 };

@@ -170,6 +170,9 @@ for (
     'tests/foodResearchSystemV0818.test.js',
     'tests/foodMenuResearchIntegrationV0818.test.js',
     'tests/updateInfrastructureV0818.test.js',
+    'tests/ingredientInventoryDatabaseV0819.test.js',
+    'tests/inventoryIntegrationV0819.test.js',
+    'tests/updateInfrastructureV0819.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {
