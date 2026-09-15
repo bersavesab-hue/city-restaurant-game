@@ -40,5 +40,13 @@ module.exports = {
   growth:
     require('../progress/growthAchievementSystemV0833.js'),
   multiStoreBrand:
-    require('../brand/multiStoreBrandRankingV0834.js')
+    require('../brand/multiStoreBrandRankingV0834.js'),
+  dailyCycle:
+    require('./dailyOperatingCycleV0840.js'),
+  decisionFeedback:
+    require('./decisionFeedbackV0841.js'),
+  playtestHealth:
+    require('../diagnostics/playtestHealthV0842.js'),
+  balanceTuner:
+    require('../balance/operatingBalanceTunerV0843.js')
 };

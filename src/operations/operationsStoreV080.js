@@ -48,6 +48,21 @@ const multiStoreBrandRanking =
 const economyBalanceGuard =
   require('../core/economyBalanceGuardV0839.js');
 
+const gameplayFlowCoordinator =
+  require('../core/gameplayFlowCoordinatorV0836.js');
+
+const dailyOperatingCycle =
+  require('./dailyOperatingCycleV0840.js');
+
+const decisionFeedback =
+  require('./decisionFeedbackV0841.js');
+
+const playtestHealth =
+  require('../diagnostics/playtestHealthV0842.js');
+
+const operatingBalanceTuner =
+  require('../balance/operatingBalanceTunerV0843.js');
+
 const customerRandomDatabase =
   require('../customer/customerRandomDatabaseV0821.js');
 
@@ -981,6 +996,324 @@ function menuItemAvailability(
     );
 }
 
+function decisionContextSnapshot(
+  shopId,
+  runtimeValue,
+  dailyFinancial
+) {
+  const runtime =
+    runtimeValue ||
+    getRuntime(
+      shopId
+    );
+
+  if (!runtime) {
+    return {
+      day:currentDay(),
+      cash:
+        Number(
+          gameState
+            .getPlayer()
+            .cash
+        ) || 0
+    };
+  }
+
+  const live =
+    liveOperations
+      .snapshot(
+        runtime,
+        {
+          staff:
+            staffManagement
+              .teamSnapshot(
+                shopId,
+                gameState
+                  .getTime()
+              )
+        }
+      );
+
+  const finance =
+    dailyFinancial ||
+    settlementEngine
+      .summary(
+        runtime.ledger
+      );
+
+  const marketing =
+    marketingPlatformMembership
+      .overview(
+        shopId,
+        runtime
+      );
+
+  const balance =
+    economyBalanceGuard
+      .snapshot(
+        shopId
+      );
+
+  return {
+    day:
+      Number(
+        runtime.day
+      ) || currentDay(),
+    cash:
+      Number(
+        gameState
+          .getPlayer()
+          .cash
+      ) || 0,
+    revenue:
+      Number(
+        finance &&
+        finance.revenue
+      ) || 0,
+    profit:
+      Number(
+        finance &&
+        finance.profit
+      ) || 0,
+    orders:
+      Number(
+        finance &&
+        finance.orders
+      ) ||
+      Number(
+        live &&
+        live.today &&
+        live.today.orders
+      ) || 0,
+    customers:
+      Number(
+        finance &&
+        finance.customers
+      ) ||
+      Number(
+        live &&
+        live.today &&
+        live.today.customers
+      ) || 0,
+    rating:
+      Number(
+        runtime.shop &&
+        runtime.shop.rating
+      ) || 0,
+    memberCount:
+      Number(
+        marketing &&
+        marketing.memberCount
+      ) || 0,
+    inventoryAlerts:
+      live &&
+      live.inventory &&
+      Array.isArray(
+        live.inventory.alerts
+      )
+        ? live.inventory.alerts.length
+        : 0,
+    staffCount:
+      live &&
+      live.staff
+        ? Number(
+            live.staff.headcount
+          ) || 0
+        : 0,
+    tensionScore:
+      Number(
+        balance &&
+        balance.tensionScore
+      ) || 0
+  };
+}
+
+function recordTrackedDecision(
+  shopId,
+  type,
+  payload,
+  baseline
+) {
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  const day =
+    runtime
+      ? Number(
+          runtime.day
+        ) || currentDay()
+      : currentDay();
+
+  const row =
+    decisionFeedback
+      .record(
+        shopId,
+        day,
+        type,
+        payload || {},
+        baseline ||
+        decisionContextSnapshot(
+          shopId,
+          runtime
+        )
+      );
+
+  dailyOperatingCycle
+    .recordDecisionRef(
+      shopId,
+      day,
+      row.id,
+      type
+    );
+
+  return row;
+}
+
+function playtestContextSnapshot(
+  shopId,
+  runtimeValue
+) {
+  const runtime =
+    runtimeValue ||
+    getRuntime(
+      shopId
+    );
+
+  const live =
+    runtime
+      ? liveOperations
+          .snapshot(
+            runtime,
+            {
+              staff:
+                staffManagement
+                  .teamSnapshot(
+                    shopId,
+                    gameState
+                      .getTime()
+                  )
+            }
+          )
+      : null;
+
+  const balance =
+    economyBalanceGuard
+      .snapshot(
+        shopId
+      );
+
+  const credit =
+    completeFinanceSystem
+      .openingCreditStatus(
+        shopId
+      );
+
+  const regulatory =
+    regulatoryFoodSafetySystem
+      .overview(
+        shopId
+      );
+
+  const shop =
+    getShop(
+      shopId
+    );
+
+  return {
+    runtimeExists:
+      !!runtime,
+    activeMenuCount:
+      live &&
+      live.menu
+        ? Number(
+            live.menu.active
+          ) || 0
+        : 0,
+    featuredMissing:
+      !!(
+        live &&
+        live.menu &&
+        !live.menu.featured
+      ),
+    staffCount:
+      live &&
+      live.staff
+        ? Number(
+            live.staff.headcount
+          ) || 0
+        : 0,
+    inventoryAlerts:
+      live &&
+      live.inventory &&
+      Array.isArray(
+        live.inventory.alerts
+      )
+        ? live.inventory.alerts.length
+        : 0,
+    cash:
+      Number(
+        gameState
+          .getPlayer()
+          .cash
+      ) || 0,
+    creditAvailable:
+      !!(
+        credit &&
+        credit.offer &&
+        credit.offer.available !== false &&
+        Number(
+          credit.offer.creditLimit
+        ) > 0
+      ),
+    tensionScore:
+      Number(
+        balance &&
+        balance.tensionScore
+      ) || 0,
+    openViolations:
+      regulatory &&
+      Array.isArray(
+        regulatory.openViolations
+      )
+        ? regulatory.openViolations.length
+        : 0,
+    flowDiagnosis:
+      gameplayFlowCoordinator
+        .diagnose(),
+    dayCycleDiagnosis:
+      dailyOperatingCycle
+        .diagnose(
+          shopId
+        ),
+    todayOrders:
+      live &&
+      live.today
+        ? Number(
+            live.today.orders
+          ) || 0
+        : 0,
+    runtimeDay:
+      runtime
+        ? Number(
+            runtime.day
+          ) || 1
+        : 1,
+    shopOpen:
+      !!(
+        shop &&
+        [
+          'open',
+          'formal_open',
+          'trial_opening'
+        ].includes(
+          shop.status
+        )
+      )
+  };
+}
+
 function setMenuActive(
   shopId,
   menuItemId,
@@ -1019,36 +1352,62 @@ function setMenuFeatured(
   shopId,
   menuItemId
 ) {
-  return mutate(
-    shopId,
-    runtime => {
-      let selected =
-        null;
+  const baseline =
+    decisionContextSnapshot(
+      shopId
+    );
 
-      for (
-        const item
-        of runtime.menu
-      ) {
-        item.featured =
-          item.id ===
-          menuItemId;
+  const result =
+    mutate(
+      shopId,
+      runtime => {
+        let selected =
+          null;
 
-        if (
-          item.featured
+        for (
+          const item
+          of runtime.menu
         ) {
-          selected =
-            item;
-        }
-      }
+          item.featured =
+            item.id ===
+            menuItemId;
 
-      return {
-        ok:
-          !!selected,
-        item:
-          selected
-      };
-    }
-  );
+          if (
+            item.featured
+          ) {
+            selected =
+              item;
+          }
+        }
+
+        return {
+          ok:
+            !!selected,
+          item:
+            selected
+        };
+      }
+    );
+
+  if (
+    result &&
+    result.ok
+  ) {
+    recordTrackedDecision(
+      shopId,
+      'menu_featured',
+      {
+        menuItemId,
+        name:
+          result.item &&
+          result.item.name ||
+          null
+      },
+      baseline
+    );
+  }
+
+  return result;
 }
 
 function adjustMenuPrice(
@@ -1056,51 +1415,80 @@ function adjustMenuPrice(
   menuItemId,
   delta
 ) {
-  return mutate(
-    shopId,
-    runtime => {
-      const item =
-        runtime.menu.find(
-          row =>
-            row.id ===
-            menuItemId
-        );
+  const baseline =
+    decisionContextSnapshot(
+      shopId
+    );
 
-      if (!item) {
+  const result =
+    mutate(
+      shopId,
+      runtime => {
+        const item =
+          runtime.menu.find(
+            row =>
+              row.id ===
+              menuItemId
+          );
+
+        if (!item) {
+          return {
+            ok:false,
+            reason:'菜品不存在'
+          };
+        }
+
+        const previousPrice =
+          Number(
+            item.listPrice
+          ) || 0;
+
+        item.listPrice =
+          Math.round(
+            Math.max(
+              3,
+              Math.min(
+                999,
+                previousPrice +
+                Number(
+                  delta
+                )
+              )
+            ) *
+            10
+          ) /
+          10;
+
         return {
-          ok: false,
-          reason:
-            '菜品不存在'
+          ok:true,
+          item,
+          previousPrice
         };
       }
+    );
 
-      item.listPrice =
-        Math.round(
-          Math.max(
-            3,
-            Math.min(
-              999,
-              (
-                Number(
-                  item.listPrice
-                ) ||
-                0
-              ) +
-              Number(
-                delta
-              )
-            )
-          ) *
-          10
-        ) /
-        10;
+  if (
+    result &&
+    result.ok
+  ) {
+    recordTrackedDecision(
+      shopId,
+      'menu_price',
+      {
+        menuItemId,
+        delta:
+          Number(delta) || 0,
+        previousPrice:
+          result.previousPrice,
+        newPrice:
+          result.item &&
+          result.item.listPrice
+      },
+      baseline
+    );
+  }
 
-      return {
-        ok: true,
-        item
-      };
-    }
-  );
+  return result;
 }
 
 function addMenuRecipe(
@@ -1555,6 +1943,11 @@ function hireStaffCandidate(
   shopId,
   candidateId
 ) {
+  const baseline =
+    decisionContextSnapshot(
+      shopId
+    );
+
   const result =
     staffManagement
       .hireCandidate(
@@ -1621,6 +2014,23 @@ function hireStaffCandidate(
 
     persist(
       shopId
+    );
+
+    recordTrackedDecision(
+      shopId,
+      'staff_hire',
+      {
+        candidateId,
+        staffId:
+          result.staff &&
+          result.staff.id ||
+          null,
+        signOnCost:
+          Number(
+            result.signOnCost
+          ) || 0
+      },
+      baseline
     );
   }
 
@@ -1825,6 +2235,16 @@ function simulateCustomerVisit(
                 {}
               );
 
+      dailyOperatingCycle
+        .beginDay(
+          shopId,
+          runtime.day,
+          decisionContextSnapshot(
+            shopId,
+            runtime
+          )
+        );
+
       const result =
         liveOperations
           .simulateVisit(
@@ -1833,6 +2253,13 @@ function simulateCustomerVisit(
             options ||
             {}
           );
+
+      dailyOperatingCycle
+        .recordVisit(
+          shopId,
+          runtime.day,
+          result
+        );
 
       if (
         result &&
@@ -1899,6 +2326,16 @@ function closeOperatingDay(
   return mutate(
     shopId,
     runtime => {
+      dailyOperatingCycle
+        .beginDay(
+          shopId,
+          runtime.day,
+          decisionContextSnapshot(
+            shopId,
+            runtime
+          )
+        );
+
       const result =
         liveOperations
           .closeDay(
@@ -2182,6 +2619,108 @@ function closeOperatingDay(
           );
       }
 
+      if (
+        result &&
+        result.ok &&
+        result.result &&
+        result.result.financial
+      ) {
+        const closedDay =
+          Number(
+            result.result.day
+          ) ||
+          Math.max(
+            1,
+            Number(
+              runtime.day
+            ) -
+            1
+          );
+
+        const endSnapshot =
+          decisionContextSnapshot(
+            shopId,
+            runtime,
+            result.result.financial
+          );
+
+        const balanceV2 =
+          operatingBalanceTuner
+            .assessDay(
+              result.result.financial,
+              {
+                tensionScore:
+                  endSnapshot
+                    .tensionScore
+              }
+            );
+
+        const regulatoryView =
+          regulatoryFoodSafetySystem
+            .overview(
+              shopId
+            );
+
+        const decisions =
+          decisionFeedback
+            .resolveDay(
+              shopId,
+              closedDay,
+              endSnapshot
+            );
+
+        const daily =
+          dailyOperatingCycle
+            .finalizeDay(
+              shopId,
+              closedDay,
+              result.result,
+              endSnapshot,
+              {
+                balance:
+                  balanceV2,
+                decisionFeedback:
+                  decisions,
+                regulatory:{
+                  openViolations:
+                    regulatoryView &&
+                    Array.isArray(
+                      regulatoryView
+                        .openViolations
+                    )
+                      ? regulatoryView
+                          .openViolations
+                          .length
+                      : 0
+                }
+              }
+            );
+
+        const health =
+          playtestHealth
+            .record(
+              shopId,
+              playtestContextSnapshot(
+                shopId,
+                runtime
+              )
+            );
+
+        result.dailyBrief =
+          daily &&
+          daily.brief ||
+          null;
+
+        result.decisionFeedback =
+          decisions;
+
+        result.balanceDiagnosis =
+          balanceV2;
+
+        result.playtestHealth =
+          health;
+      }
+
       return result;
     }
   );
@@ -2285,26 +2824,52 @@ function startMarketingCampaign(
   days,
   options
 ) {
-  return mutate(
-    shopId,
-    runtime =>
-      marketingPlatformMembership
-        .startCampaign(
-          shopId,
-          runtime,
-          typeId,
-          budget,
-          days,
-          {
-            ...(options || {}),
-            day:
-              options &&
-              options.day != null
-                ? options.day
-                : runtime.day
-          }
-        )
-  );
+  const baseline =
+    decisionContextSnapshot(
+      shopId
+    );
+
+  const result =
+    mutate(
+      shopId,
+      runtime =>
+        marketingPlatformMembership
+          .startCampaign(
+            shopId,
+            runtime,
+            typeId,
+            budget,
+            days,
+            {
+              ...(options || {}),
+              day:
+                options &&
+                options.day != null
+                  ? options.day
+                  : runtime.day
+            }
+          )
+    );
+
+  if (
+    result &&
+    result.ok
+  ) {
+    recordTrackedDecision(
+      shopId,
+      'marketing',
+      {
+        typeId,
+        budget:
+          Number(budget) || 0,
+        days:
+          Number(days) || 0
+      },
+      baseline
+    );
+  }
+
+  return result;
 }
 
 function enrollMember(
@@ -2983,6 +3548,219 @@ function economyRecoveryOptions(
     economyBalanceGuard
       .recoveryOptions(
         shopId
+      )
+  );
+}
+
+function startOperatingDay(
+  shopId
+) {
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  if (!runtime) {
+    return {
+      ok:false,
+      reason:'门店运行时不存在'
+    };
+  }
+
+  return (
+    dailyOperatingCycle
+      .beginDay(
+        shopId,
+        runtime.day,
+        decisionContextSnapshot(
+          shopId,
+          runtime
+        )
+      )
+  );
+}
+
+function operatingDaySnapshot(
+  shopId
+) {
+  return (
+    dailyOperatingCycle
+      .brief(
+        shopId
+      )
+  );
+}
+
+function operatingDayHistory(
+  shopId,
+  limit
+) {
+  return (
+    dailyOperatingCycle
+      .history(
+        shopId,
+        limit
+      )
+  );
+}
+
+function closeOperatingDaySafe(
+  shopId,
+  options
+) {
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  if (!runtime) {
+    return {
+      ok:false,
+      reason:'门店运行时不存在'
+    };
+  }
+
+  const live =
+    liveOperations
+      .snapshot(
+        runtime,
+        {
+          staff:
+            staffManagement
+              .teamSnapshot(
+                shopId,
+                gameState
+                  .getTime()
+              )
+        }
+      );
+
+  const check =
+    dailyOperatingCycle
+      .safeCloseCheck(
+        shopId,
+        runtime.day,
+        {
+          orders:
+            live &&
+            live.today &&
+            live.today.orders,
+          customers:
+            live &&
+            live.today &&
+            live.today.customers
+        }
+      );
+
+  if (!check.allowed) {
+    return {
+      ok:false,
+      reason:
+        check.message,
+      code:
+        check.code
+    };
+  }
+
+  return closeOperatingDay(
+    shopId,
+    options ||
+    {}
+  );
+}
+
+function recordPlayerDecision(
+  shopId,
+  type,
+  payload
+) {
+  return recordTrackedDecision(
+    shopId,
+    type,
+    payload || {},
+    decisionContextSnapshot(
+      shopId
+    )
+  );
+}
+
+function decisionFeedbackSnapshot(
+  shopId
+) {
+  return (
+    decisionFeedback
+      .overview(
+        shopId
+      )
+  );
+}
+
+function playtestHealthSnapshot(
+  shopId
+) {
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  return (
+    playtestHealth
+      .record(
+        shopId,
+        playtestContextSnapshot(
+          shopId,
+          runtime
+        )
+      )
+  );
+}
+
+function operatingBalanceSnapshot(
+  shopId
+) {
+  const runtime =
+    getRuntime(
+      shopId
+    );
+
+  if (!runtime) {
+    return null;
+  }
+
+  const financial =
+    settlementEngine
+      .summary(
+        runtime.ledger
+      );
+
+  const balance =
+    economyBalanceGuard
+      .snapshot(
+        shopId
+      );
+
+  return (
+    operatingBalanceTuner
+      .assessDay(
+        financial,
+        {
+          tensionScore:
+            balance
+              .tensionScore
+        }
+      )
+  );
+}
+
+function runOperatingBalanceCalibration(
+  count,
+  options
+) {
+  return (
+    operatingBalanceTuner
+      .calibrate(
+        count,
+        options || {}
       )
   );
 }
@@ -3852,6 +4630,15 @@ module.exports = {
   economyBalanceSnapshot,
   assessPlannedSpend,
   economyRecoveryOptions,
+  startOperatingDay,
+  operatingDaySnapshot,
+  operatingDayHistory,
+  closeOperatingDaySafe,
+  recordPlayerDecision,
+  decisionFeedbackSnapshot,
+  playtestHealthSnapshot,
+  operatingBalanceSnapshot,
+  runOperatingBalanceCalibration,
   generateCustomer,
   customerRows,
   customerInsights,

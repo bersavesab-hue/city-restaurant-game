@@ -1,0 +1,33 @@
+{
+  "id": "V0840_V0843_OPERATING_DAY_LOOP",
+  "baseVersion": "0.8.39",
+  "targetVersion": "0.8.43",
+  "phase": "第二阶段",
+  "bundle": [
+    {
+      "version": "0.8.40",
+      "title": "统一营业日循环",
+      "file": "src/operations/dailyOperatingCycleV0840.js"
+    },
+    {
+      "version": "0.8.41",
+      "title": "经营决策反馈",
+      "file": "src/operations/decisionFeedbackV0841.js"
+    },
+    {
+      "version": "0.8.42",
+      "title": "试玩卡死诊断",
+      "file": "src/diagnostics/playtestHealthV0842.js"
+    },
+    {
+      "version": "0.8.43",
+      "title": "第二轮数值平衡",
+      "file": "src/balance/operatingBalanceTunerV0843.js"
+    }
+  ],
+  "calibrationScenarios": 100,
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false
+}

@@ -208,6 +208,12 @@ for (
     'tests/economyBalanceGuardV0839.test.js',
     'tests/gameplayExperienceIntegrationV0839.test.js',
     'tests/updateInfrastructureV0839.test.js',
+    'tests/dailyOperatingCycleV0840.test.js',
+    'tests/decisionFeedbackV0841.test.js',
+    'tests/playtestHealthV0842.test.js',
+    'tests/operatingBalanceTunerV0843.test.js',
+    'tests/operatingDayIntegrationV0843.test.js',
+    'tests/updateInfrastructureV0843.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {
