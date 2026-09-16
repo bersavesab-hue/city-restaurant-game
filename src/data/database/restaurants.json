@@ -1,0 +1,10 @@
+[
+  {
+    "id":"restaurant_001",
+    "name":"初始小餐馆",
+    "level":1,
+    "rent":3000,
+    "capacity":20,
+    "rating":50
+  }
+]
