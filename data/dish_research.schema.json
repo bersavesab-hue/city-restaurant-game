@@ -1,0 +1,10 @@
+{
+  "system": "dish_research",
+  "fields": {
+    "ingredients": [],
+    "technique": "",
+    "chef_skill": 0,
+    "quality": 0,
+    "rarity": "common"
+  }
+}
