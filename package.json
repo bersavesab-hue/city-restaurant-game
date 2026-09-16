@@ -6,6 +6,7 @@
     "pretest": "node scripts/quality-gate-v089.js && node scripts/resource-lifecycle.js audit && node tools/devkit/devkit.js self-check",
     "test": "node scripts/run-ci-tests-v060.js",
     "test:legacy": "node tests/updateInfrastructureV089.test.js && node tests/staffWorkloadV089.test.js && node tests/updateInfrastructureV088.test.js && node tests/staffCareerV088.test.js && node tests/operationsScheduleV087.test.js && node tests/businessLifecycleV086.test.js && node tests/managementCenterV085.test.js && node tests/liveWorldV084.test.js && node tests/foundationFixesV083.test.js",
+    "test:all": "npm run test && npm run test:legacy",
     "health": "node scripts/v60-audit.js",
     "repo:cleanup": "node scripts/repo-cleanup.js --untrack",
     "repo:cleanup:dry": "node scripts/repo-cleanup.js --dry-run",
