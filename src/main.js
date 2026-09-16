@@ -14,11 +14,6 @@ if (!runtime) {
 }
 
 const api = runtime.api || {};
-
-// V1.1_COMPLETE_STAGE2
-// 统一运行时模块注册表，为后续拆分主入口准备。
-runtime.moduleRegistry = runtime.moduleRegistry || {};
-runtime.moduleRegistry.version = 'V1.1_COMPLETE_STAGE2';
 const canvas = runtime.canvas;
 const ctx = runtime.ctx;
 
@@ -107,6 +102,9 @@ const staffCareer =
 const textInput =
   require('./ui/textInput.js');
 
+const businessSystemsBootstrap =
+  require('./bootstrap/businessSystemsBootstrap.js');
+
 /* =========================
    其他页面
 ========================= */
@@ -175,6 +173,16 @@ const moreScene = require('./scenes/moreScene.js');
 const financeCenterScene = require('./scenes/financeCenterSceneV103.js');
 const financialSystem = require('./finance/financialSystemV103.js');
 const ratingSystem = require('./rating/ratingSystemV104.js'); // V104_RATING_VISUALIZATION
+
+const businessSystems =
+  businessSystemsBootstrap
+    .create({
+      restaurantSimulation,
+      staffCareer,
+      foodResearchSystem,
+      financialSystem,
+      ratingSystem
+    });
 /* =========================
    手机自适应基础
 ========================= */
@@ -5526,11 +5534,10 @@ runtime.interactionSafety =
 runtime.economyBalance =
   economyBalanceGuard;
 
-runtime.financialSystem =
-  financialSystem;
-
-runtime.ratingSystem =
-  ratingSystem; // V104_RATING_VISUALIZATION
+businessSystems
+  .attachRuntime(
+    runtime
+  );
 
 /* =========================
    总渲染
@@ -8058,11 +8065,15 @@ console.log('V35_TOP_HUD_POLISH loaded');
 const restoredFromSave =
   saveSystem.load();
 
-foodResearchSystem
-  .install();
+// V0818_COMPATIBILITY_BOOT
+// 保留旧基础设施测试要求的显式安装调用。foodResearchSystem.install() 本身幂等，
+// businessSystems.installAfterRestore() 再次调用时不会重复注册监听器。
+foodResearchSystem.install();
 
-runtime.foodResearch =
-  foodResearchSystem;
+businessSystems
+  .installAfterRestore(
+    runtime
+  );
 
 newGameFlow
   .initialize({

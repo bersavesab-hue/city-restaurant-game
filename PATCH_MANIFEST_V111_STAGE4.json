@@ -1,0 +1,30 @@
+{
+  "version": "V1.1_STAGE4_BUSINESS_BOOTSTRAP",
+  "type": "real_source_patch",
+  "modified": [
+    "src/main.js",
+    "src/food/index.js",
+    "src/finance/index.js",
+    "scripts/run-ci-tests-v060.js"
+  ],
+  "added": [
+    "src/bootstrap/businessSystemsBootstrap.js",
+    "src/rating/index.js",
+    "tests/businessSystemsBootstrapV111.test.js"
+  ],
+  "bundled_dependencies": [
+    "src/operations/restaurantSimulationV081.js",
+    "src/operations/staffCareerV088.js",
+    "src/food/foodResearchSystemV0818.js",
+    "src/finance/financialSystemV103.js",
+    "src/rating/ratingSystemV104.js"
+  ],
+  "verification": {
+    "node_syntax_check": "PASS",
+    "businessSystemsBootstrapV111.test.js": "PASS",
+    "pretest_pipeline_until_main_ci": "PASS",
+    "androidStartupSmoke": "PASS during pretest",
+    "legacy_v0818_compat": "PASS after repair",
+    "test_discovery_coverage": "PASS after runner registration"
+  }
+}
