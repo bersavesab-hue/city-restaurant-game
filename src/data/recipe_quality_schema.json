@@ -1,0 +1,17 @@
+{
+  "version":"1.0",
+  "description":"菜谱品质计算预留字段",
+  "qualityFactors":{
+    "ingredientQuality":0.35,
+    "freshness":0.15,
+    "chefSkill":0.25,
+    "cookingDifficulty":0.15,
+    "equipmentBonus":0.10
+  },
+  "qualityRange":{
+    "ordinary":{"min":40,"max":59},
+    "good":{"min":60,"max":74},
+    "excellent":{"min":75,"max":89},
+    "master":{"min":90,"max":100}
+  }
+}
