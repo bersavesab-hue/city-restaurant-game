@@ -1,0 +1,10 @@
+{
+  "name": "Golden Restaurant System",
+  "fields": {
+    "restaurantId": "string",
+    "qualityScore": "number",
+    "customerReputation": "number",
+    "awards": "array",
+    "season": "string"
+  }
+}
