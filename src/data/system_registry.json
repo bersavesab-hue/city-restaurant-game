@@ -1,0 +1,11 @@
+{
+  "version": "V1.1_COMPLETE",
+  "modules": [
+    "restaurant",
+    "food",
+    "staff",
+    "finance",
+    "rating",
+    "customer"
+  ]
+}
