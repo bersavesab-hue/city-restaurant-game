@@ -48,6 +48,9 @@ const stateBridge =
 const timeScheduleCoordinator =
   require('./core/timeScheduleCoordinatorV0812.js');
 
+const timeFlowControllerModule =
+  require('./core/timeFlowControllerV121.js');
+
 const newGameFlow =
   require('./core/newGameFlowV0814.js');
 
@@ -182,6 +185,16 @@ const businessSystems =
       foodResearchSystem,
       financialSystem,
       ratingSystem
+    });
+
+const timeFlowController =
+  timeFlowControllerModule
+    .create({
+      gameState,
+      timeSystem,
+      timeScheduleCoordinator,
+      bus:globalStateBus,
+      foodResearchSystem
     });
 /* =========================
    手机自适应基础
@@ -3656,16 +3669,16 @@ function drawTopHud() {
       '1×'
     ],
     [
-      'time:speed:5',
-      '5×'
+      'time:speed:3',
+      '3×'
     ],
     [
-      'time:speed:20',
-      '20×'
+      'time:speed:8',
+      '8×'
     ],
     [
-      'time:speed:100',
-      '100×'
+      'time:smart',
+      '智能'
     ]
   ];
 
@@ -3690,17 +3703,28 @@ function drawTopHud() {
       timeSystem
         .isPaused();
 
+    const smart =
+      timeFlowController
+        .isSmartAdvance();
+
     const active =
       id ===
         'time:pause'
-        ? paused
-        : (
-            !paused &&
-            Number(
-              id.split(':')[2]
-            ) ===
-              speed
-          );
+        ? (
+            paused &&
+            !smart
+          )
+        : id ===
+            'time:smart'
+          ? smart
+          : (
+              !paused &&
+              !smart &&
+              Number(
+                id.split(':')[2]
+              ) ===
+                speed
+            );
 
     const x =
       12 +
@@ -5728,11 +5752,40 @@ function handleTimeButton(
     id ===
     'time:pause'
   ) {
+    if (
+      timeFlowController
+        .isSmartAdvance()
+    ) {
+      timeFlowController
+        .stopSmartAdvance(
+          'manual-pause',
+          false
+        );
+    }
+
     timeSystem
       .togglePause();
 
     timeSystem
       .resetAccumulator();
+
+    return true;
+  }
+
+  if (
+    id ===
+    'time:smart'
+  ) {
+    const result =
+      timeFlowController
+        .startSmartAdvance();
+
+    if (!result.ok) {
+      showToast(
+        result.message ||
+        '暂无可推进节点'
+      );
+    }
 
     return true;
   }
@@ -5750,19 +5803,11 @@ function handleTimeButton(
       );
 
     if (
-      timeSystem
-        .setSpeed(
+      timeFlowController
+        .selectManualSpeed(
           value
         )
     ) {
-      if (
-        timeSystem
-          .isPaused()
-      ) {
-        timeSystem
-          .resume();
-      }
-
       timeSystem
         .resetAccumulator();
 
@@ -6294,6 +6339,12 @@ function gameLoop(
   let financialChanged =
     false;
 
+  let smartTimeStop =
+    null;
+
+  timeFlowController
+    .beforeFrame();
+
   const advancedMinutes =
     timeSystem
       .update(
@@ -6354,6 +6405,18 @@ function gameLoop(
             financialChanged =
               true;
           }
+
+          const flowResult =
+            timeFlowController
+              .afterSimulationStep();
+
+          if (
+            flowResult &&
+            flowResult.stopped
+          ) {
+            smartTimeStop =
+              flowResult;
+          }
         }
       );
 
@@ -6368,6 +6431,18 @@ function gameLoop(
       staffCareerChanged,
       financialChanged
     });
+
+  if (
+    smartTimeStop &&
+    smartTimeStop.target
+  ) {
+    showToast(
+      '已到达：' +
+      smartTimeStop
+        .target
+        .label
+    );
+  }
 
   if (
     simulationChanged ||
@@ -6897,11 +6972,11 @@ drawTopHud = function () {
   addButton('brand:status', levelX - 3, 5 + SAFE_TOP, levelW + 6, 55);
 
   const speedItems = [
-    ['time:pause', 'Ⅱ'],
+    ['time:pause', timeSystem.isPaused() ? '▶' : 'Ⅱ'],
     ['time:speed:1', '1x'],
-    ['time:speed:5', '5x'],
-    ['time:speed:20', '20x'],
-    ['time:speed:100', '100x']
+    ['time:speed:3', '3x'],
+    ['time:speed:8', '8x'],
+    ['time:smart', '智能']
   ];
 
   const y = TOP_H - 30;
@@ -6911,10 +6986,13 @@ drawTopHud = function () {
     const speed = timeSystem.getSpeed();
     const paused = timeSystem.isPaused();
 
+    const smart = timeFlowController.isSmartAdvance();
     const active =
       id === 'time:pause'
-        ? paused
-        : (!paused && Number(id.split(':')[2]) === speed);
+        ? (paused && !smart)
+        : id === 'time:smart'
+          ? smart
+          : (!paused && !smart && Number(id.split(':')[2]) === speed);
 
     const x = 10 + i * 47;
 
@@ -8065,10 +8143,26 @@ console.log('V35_TOP_HUD_POLISH loaded');
 const restoredFromSave =
   saveSystem.load();
 
+// V121_TIME_SPEED_MIGRATION
+// 旧存档仍可在底层按原倍速契约运行；真正加载进玩家会话时再迁移到 1×/3×/8×。
+if (
+  restoredFromSave &&
+  typeof gameState.normalizePlayerTimeSpeed ===
+    'function'
+) {
+  gameState.normalizePlayerTimeSpeed();
+}
+
 // V0818_COMPATIBILITY_BOOT
 // 保留旧基础设施测试要求的显式安装调用。foodResearchSystem.install() 本身幂等，
 // businessSystems.installAfterRestore() 再次调用时不会重复注册监听器。
 foodResearchSystem.install();
+
+timeFlowController
+  .install();
+
+runtime.timeFlowController =
+  timeFlowController;
 
 businessSystems
   .installAfterRestore(

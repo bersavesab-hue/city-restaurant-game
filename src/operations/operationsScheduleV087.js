@@ -20,6 +20,7 @@ const PRESETS = [
   'early',
   'mid',
   'late',
+  'night',
   'off'
 ];
 
@@ -135,6 +136,52 @@ function getStore() {
     .operationsSchedule;
 }
 
+function isTwentyFourHours(
+  source,
+  shop
+) {
+  const raw =
+    source &&
+    typeof source ===
+      'object'
+      ? source
+      : {};
+
+  if (
+    raw.twentyFourHours ===
+      true ||
+    (
+      shop &&
+      shop.twentyFourHours ===
+        true
+    )
+  ) {
+    return true;
+  }
+
+  const open =
+    Number(
+      raw.openHour
+    );
+
+  const close =
+    Number(
+      raw.closeHour
+    );
+
+  return (
+    Number.isFinite(open) &&
+    Number.isFinite(close) &&
+    (
+      (
+        open === 0 &&
+        close === 24
+      ) ||
+      open === close
+    )
+  );
+}
+
 function normalizeHours(
   shop
 ) {
@@ -145,6 +192,19 @@ function normalizeHours(
       'object'
       ? shop.businessHours
       : {};
+
+  if (
+    isTwentyFourHours(
+      raw,
+      shop
+    )
+  ) {
+    return {
+      openHour:0,
+      closeHour:24,
+      twentyFourHours:true
+    };
+  }
 
   let openHour =
     Number.isFinite(
@@ -257,6 +317,19 @@ function getBusinessHours(
         'object'
         ? shop.businessHours
         : {};
+
+    if (
+      isTwentyFourHours(
+        raw,
+        shop
+      )
+    ) {
+      return {
+        openHour:0,
+        closeHour:24,
+        twentyFourHours:true
+      };
+    }
 
     const openHour =
       Number.isFinite(
@@ -511,34 +584,47 @@ function ensureShop(
       shop
     );
 
-  state.businessHours.openHour =
-    clamp(
-      Math.round(
-        state.businessHours
-          .openHour
-      ),
-      5,
-      12
+  if (
+    isTwentyFourHours(
+      state.businessHours,
+      shop
+    )
+  ) {
+    state.businessHours = {
+      openHour:0,
+      closeHour:24,
+      twentyFourHours:true
+    };
+  } else {
+    state.businessHours.openHour =
+      clamp(
+        Math.round(
+          state.businessHours
+            .openHour
+        ),
+        5,
+        12
+      );
+
+    state.businessHours.closeHour =
+      clamp(
+        Math.round(
+          state.businessHours
+            .closeHour
+        ),
+        18,
+        24
+      );
+  }
+
+  shop.businessHours =
+    clone(
+      state.businessHours
     );
 
-  state.businessHours.closeHour =
-    clamp(
-      Math.round(
-        state.businessHours
-          .closeHour
-      ),
-      18,
-      24
-    );
-
-  shop.businessHours = {
-    openHour:
-      state.businessHours
-        .openHour,
-    closeHour:
-      state.businessHours
-        .closeHour
-  };
+  shop.twentyFourHours =
+    !!state.businessHours
+      .twentyFourHours;
 
   syncEmployees(
     shopId,
@@ -570,6 +656,44 @@ function setBusinessHours(
     return {
       ok:false,
       message:'门店不存在'
+    };
+  }
+
+  if (
+    Number(openHour) === 0 &&
+    Number(closeHour) === 24
+  ) {
+    state.businessHours = {
+      openHour:0,
+      closeHour:24,
+      twentyFourHours:true
+    };
+
+    shop.businessHours =
+      clone(
+        state.businessHours
+      );
+
+    shop.twentyFourHours =
+      true;
+
+    state.updatedDay =
+      dayOrdinal(
+        gameState.getTime()
+      );
+
+    timeScheduleCoordinator
+      .notifyScheduleChange(
+        shopId,
+        'business-hours-24h'
+      );
+
+    return {
+      ok:true,
+      businessHours:
+        clone(
+          state.businessHours
+        )
     };
   }
 
@@ -612,6 +736,9 @@ function setBusinessHours(
     closeHour:close
   };
 
+  shop.twentyFourHours =
+    false;
+
   state.updatedDay =
     dayOrdinal(
       gameState.getTime()
@@ -630,6 +757,25 @@ function setBusinessHours(
         state.businessHours
       )
   };
+}
+
+function setTwentyFourHours(
+  shopId,
+  enabled
+) {
+  if (enabled) {
+    return setBusinessHours(
+      shopId,
+      0,
+      24
+    );
+  }
+
+  return setBusinessHours(
+    shopId,
+    6,
+    23
+  );
 }
 
 function adjustOpenHour(
@@ -717,6 +863,51 @@ function shiftWindow(
     'off'
   ) {
     return null;
+  }
+
+  const twentyFourHours =
+    !!state.businessHours
+      .twentyFourHours ||
+    (
+      open === 0 &&
+      close === 24
+    );
+
+  if (twentyFourHours) {
+    if (preset === 'early') {
+      return { start:6, end:14 };
+    }
+
+    if (preset === 'mid') {
+      return { start:14, end:22 };
+    }
+
+    if (preset === 'night') {
+      return {
+        start:22,
+        end:6,
+        wrapsMidnight:true
+      };
+    }
+
+    if (preset === 'late') {
+      return { start:16, end:24 };
+    }
+  }
+
+  if (
+    preset ===
+    'night'
+  ) {
+    return {
+      start:
+        Math.max(
+          open,
+          close - 8
+        ),
+      end:
+        close
+    };
   }
 
   if (
@@ -1064,6 +1255,19 @@ function isWorking(
     ) /
     60;
 
+  if (
+    window.wrapsMidnight ||
+    window.end <
+      window.start
+  ) {
+    return (
+      hour >=
+        window.start ||
+      hour <
+        window.end
+    );
+  }
+
   return (
     hour >=
       window.start &&
@@ -1353,6 +1557,7 @@ function presetName(
     early:'早班',
     mid:'中班',
     late:'晚班',
+    night:'夜班',
     off:'停排'
   }[
     preset
@@ -1369,6 +1574,7 @@ module.exports = {
   isOpenAt,
   ensureShop,
   setBusinessHours,
+  setTwentyFourHours,
   adjustOpenHour,
   adjustCloseHour,
   shiftWindow,

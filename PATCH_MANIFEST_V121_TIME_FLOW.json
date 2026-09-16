@@ -1,0 +1,57 @@
+{
+  "version": "V1.2.1_TIME_FLOW_HOTFIX_1",
+  "includes": "V1.2 dish research + V1.2.1 time flow",
+  "speed": {
+    "1x": "12 game minutes/real second",
+    "3x": "36",
+    "8x": "96",
+    "smart": true
+  },
+  "businessDayCutoff": "04:00",
+  "twentyFourHourOperations": true,
+  "files": [
+    "src/core/simulationConfig.js",
+    "src/core/gameState.js",
+    "src/core/timeSystem.js",
+    "src/core/timeScheduleCoordinatorV0812.js",
+    "src/core/timeFlowControllerV121.js",
+    "src/operations/operationsScheduleV087.js",
+    "src/operations/operationsStoreV080.js",
+    "src/operations/restaurantSimulationV081.js",
+    "src/main.js",
+    "tests/timeScheduleV0821.test.js",
+    "tests/timeFlowControllerV121.test.js",
+    "tests/twentyFourHourOperationsV121.test.js",
+    "scripts/run-ci-tests-v060.js"
+  ],
+  "compatibility": {
+    "legacy_internal_speeds": [
+      1,
+      2,
+      5,
+      10,
+      20,
+      100
+    ],
+    "player_ui_speeds": [
+      1,
+      3,
+      8
+    ],
+    "legacy_base_game_minutes_per_second": 6,
+    "player_base_game_minutes_per_second": 12,
+    "legacy_max_chunk_minutes": 30,
+    "player_max_chunk_minutes": 10,
+    "startup_migrates_legacy_save_speed": true
+  },
+  "verification": {
+    "github_failure_root_cause": "tests/simulation.test.js expected legacy 10x = 60 game minutes/real second",
+    "simulation_test": "PASS after hotfix",
+    "timeScheduleV0821": "PASS",
+    "timeFlowControllerV121": "PASS",
+    "twentyFourHourOperationsV121": "PASS",
+    "customDishSystemV120": "PASS",
+    "android_js_build": "PASS",
+    "syntax_checks": "PASS for modified core files"
+  }
+}

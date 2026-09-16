@@ -461,9 +461,12 @@ class GameState {
     const config =
       require('./simulationConfig.js');
 
-    const allowed =
-      config.time
-        .allowedSpeeds;
+    const accepted =
+      Array.isArray(
+        config.time.acceptedSpeeds
+      )
+        ? config.time.acceptedSpeeds
+        : config.time.allowedSpeeds;
 
     const raw =
       Number(
@@ -472,19 +475,27 @@ class GameState {
       1;
 
     if (
-      allowed.indexOf(
+      accepted.indexOf(
         raw
       ) >= 0
     ) {
       return raw;
     }
 
+    const ui =
+      Array.isArray(
+        config.time.uiSpeeds
+      ) &&
+      config.time.uiSpeeds.length
+        ? config.time.uiSpeeds
+        : [1];
+
     let migrated =
-      allowed[0];
+      ui[0];
 
     for (
       const value
-      of allowed
+      of ui
     ) {
       if (
         Math.abs(
@@ -507,6 +518,89 @@ class GameState {
     return migrated;
   }
 
+  normalizePlayerTimeSpeed() {
+    const config =
+      require('./simulationConfig.js');
+
+    const ui =
+      Array.isArray(
+        config.time.uiSpeeds
+      ) &&
+      config.time.uiSpeeds.length
+        ? config.time.uiSpeeds
+        : [1, 3, 8];
+
+    const raw =
+      Number(
+        this.data.time.speed
+      ) ||
+      1;
+
+    if (
+      ui.indexOf(
+        raw
+      ) >= 0
+    ) {
+      return raw;
+    }
+
+    const legacyMap =
+      config.time.legacySpeedMap ||
+      {};
+
+    if (
+      Object.prototype
+        .hasOwnProperty
+        .call(
+          legacyMap,
+          raw
+        )
+    ) {
+      const mapped =
+        Number(
+          legacyMap[raw]
+        );
+
+      if (
+        ui.indexOf(
+          mapped
+        ) >= 0
+      ) {
+        this.data.time.speed =
+          mapped;
+
+        return mapped;
+      }
+    }
+
+    let nearest =
+      ui[0];
+
+    for (
+      const value
+      of ui
+    ) {
+      if (
+        Math.abs(
+          value -
+          raw
+        ) <
+        Math.abs(
+          nearest -
+          raw
+        )
+      ) {
+        nearest =
+          value;
+      }
+    }
+
+    this.data.time.speed =
+      nearest;
+
+    return nearest;
+  }
+
   setTimeSpeed(speed) {
     const config =
       require('./simulationConfig.js');
@@ -514,12 +608,17 @@ class GameState {
     const value =
       Number(speed);
 
+    const accepted =
+      Array.isArray(
+        config.time.acceptedSpeeds
+      )
+        ? config.time.acceptedSpeeds
+        : config.time.allowedSpeeds;
+
     if (
-      config.time
-        .allowedSpeeds
-        .indexOf(
-          value
-        ) === -1
+      accepted.indexOf(
+        value
+      ) === -1
     ) {
       return false;
     }

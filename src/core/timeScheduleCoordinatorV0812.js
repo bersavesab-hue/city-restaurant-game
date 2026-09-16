@@ -365,6 +365,82 @@ function absoluteMinute(time) {
   );
 }
 
+function businessDayOrdinal(
+  time,
+  cutoffHour
+) {
+  const cutoff =
+    clamp(
+      cutoffHour == null
+        ? 4
+        : cutoffHour,
+      0,
+      23
+    ) *
+    60;
+
+  const ordinal =
+    dayOrdinal(
+      time
+    );
+
+  return Math.max(
+    1,
+    ordinal -
+      (
+        minuteOfDay(
+          time
+        ) <
+          cutoff
+          ? 1
+          : 0
+      )
+  );
+}
+
+function nextBusinessDayBoundary(
+  time,
+  cutoffHour
+) {
+  const cutoff =
+    Math.round(
+      clamp(
+        cutoffHour == null
+          ? 4
+          : cutoffHour,
+        0,
+        23
+      ) *
+      60
+    );
+
+  const now =
+    absoluteMinute(
+      time
+    );
+
+  const dayStart =
+    Math.floor(
+      now /
+      DAY_MINUTES
+    ) *
+    DAY_MINUTES;
+
+  let target =
+    dayStart +
+    cutoff;
+
+  if (
+    target <=
+    now
+  ) {
+    target +=
+      DAY_MINUTES;
+  }
+
+  return target;
+}
+
 function weekDay(time) {
   return (
     (
@@ -1810,6 +1886,8 @@ module.exports = {
   dayOrdinal,
   minuteOfDay,
   absoluteMinute,
+  businessDayOrdinal,
+  nextBusinessDayBoundary,
   weekDay,
   mealPeriod,
   getBusinessHours,

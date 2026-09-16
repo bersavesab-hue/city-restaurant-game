@@ -48,7 +48,35 @@ assert.deepEqual(
     20,
     100
   ],
-  '底层必须兼容旧2×/10×，并新增20×/100×'
+  '旧底层倍速契约必须继续保留'
+);
+
+assert.deepEqual(
+  simulationConfig
+    .time
+    .uiSpeeds,
+  [
+    1,
+    3,
+    8
+  ],
+  'V1.2.1 玩家主界面只展示1×/3×/8×'
+);
+
+assert.equal(
+  simulationConfig
+    .time
+    .baseGameMinutesPerSecond,
+  6,
+  '旧底层倍速基准保持现实1秒=6游戏分钟'
+);
+
+assert.equal(
+  simulationConfig
+    .time
+    .playerBaseGameMinutesPerSecond,
+  12,
+  'V1.2.1 玩家1×必须达到现实1秒=12游戏分钟'
 );
 
 assert.equal(
@@ -56,7 +84,15 @@ assert.equal(
     .time
     .maxSimulationChunkMinutes,
   30,
-  '高倍速必须最多按30游戏分钟分段模拟'
+  '旧内部高速档仍允许最多30分钟分段'
+);
+
+assert.equal(
+  simulationConfig
+    .time
+    .playerMaxSimulationChunkMinutes,
+  10,
+  '玩家1×/3×/8×必须最多按10分钟分段模拟'
 );
 
 gameState.reset();
@@ -70,7 +106,7 @@ assert.equal(
   gameState
     .getTimeSpeed(),
   10,
-  '旧存档10倍速必须保持兼容，不能被静默改成5倍'
+  '旧底层10倍速读取必须保持兼容'
 );
 
 assert.equal(
@@ -79,12 +115,25 @@ assert.equal(
       100
     ),
   true,
-  '100倍速必须可以启用'
+  '旧内部100倍速调用必须继续兼容'
+);
+
+
+gameState
+  .getTime()
+  .speed =
+  10;
+
+assert.equal(
+  gameState
+    .normalizePlayerTimeSpeed(),
+  3,
+  '真正恢复玩家旧存档时10×应迁移到3×'
 );
 
 gameState
   .setTimeSpeed(
-    10
+    3
   );
 
 timeSystem
@@ -116,13 +165,13 @@ const legacyAfter =
 assert.equal(
   legacyAfter -
     legacyBefore,
-  60,
-  '兼容测试：10×仍必须保持现实1秒=游戏60分钟'
+  36,
+  '3×必须保持现实1秒=游戏36分钟'
 );
 
 gameState
   .setTimeSpeed(
-    100
+    8
   );
 
 timeSystem
@@ -158,23 +207,23 @@ const advanced =
 
 assert.equal(
   advanced,
-  150,
-  '100倍速下250ms应推进150游戏分钟'
+  24,
+  '8倍速下250ms应推进24游戏分钟'
 );
 
 assert.ok(
   steps.length >=
-    5,
-  '150分钟必须被分成多个模拟步'
+    3,
+  '24分钟必须被分成多个细粒度模拟步'
 );
 
 assert.ok(
   steps.every(
     step =>
       step <=
-      30
+      10
   ),
-  '每个模拟步不得超过30分钟'
+  '每个模拟步不得超过10分钟'
 );
 
 assert.equal(
@@ -208,7 +257,7 @@ const afterMinute =
 assert.equal(
   afterMinute -
     beforeMinute,
-  150,
+  24,
   '分段模拟不能漏掉游戏时间'
 );
 
@@ -457,9 +506,15 @@ assert.ok(
 
 assert.ok(
   mainSource.includes(
-    "'time:speed:100'"
+    "'time:smart'"
+  ) &&
+  mainSource.includes(
+    "'time:speed:3'"
+  ) &&
+  mainSource.includes(
+    "'time:speed:8'"
   ),
-  'UI必须提供100倍速'
+  'UI必须提供1×/3×/8×与智能推进'
 );
 
 assert.ok(

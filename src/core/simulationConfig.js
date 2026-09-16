@@ -10,11 +10,14 @@
  */
 module.exports = {
   time: {
-    // 1× 时，每现实 1 秒推进多少游戏分钟。
+    // 兼容层：旧底层倍速仍按 6 游戏分钟/现实秒计算，
+    // 以保证旧存档、旧测试和内部工具不会因 V1.2.1 改速而失真。
     baseGameMinutesPerSecond: 6,
 
-    // 2×/10×保留为旧存档与底层兼容档位；
-    // 主界面只展示 1×/5×/20×/100×。
+    // V1.2.1 玩家可见节奏：1× = 12 游戏分钟/现实秒。
+    playerBaseGameMinutesPerSecond: 12,
+
+    // 旧底层公开契约保留，不作为主界面按钮。
     allowedSpeeds: [
       1,
       2,
@@ -24,14 +27,53 @@ module.exports = {
       100
     ],
 
-    // 延续原有“单帧最多吸收1秒”的兼容行为。
-    // 100×下1秒=600游戏分钟，但会再切成30分钟小段执行，
-    // 因而不会跳过餐期、装修、审批和日结。
+    // 玩家主界面只展示这三档。
+    uiSpeeds: [
+      1,
+      3,
+      8
+    ],
+
+    // setTimeSpeed 同时接受新 UI 档和旧内部档。
+    acceptedSpeeds: [
+      1,
+      2,
+      3,
+      5,
+      8,
+      10,
+      20,
+      100
+    ],
+
+    // 旧存档在游戏启动恢复完成后迁移到新玩家档位。
+    legacySpeedMap: {
+      2:1,
+      5:3,
+      10:3,
+      20:8,
+      100:8
+    },
+
+    // 24 小时门店以凌晨 04:00 作为营业日切换节点，但不会停业。
+    businessDayCutoffHour: 4,
+
+    // 单帧最多吸收 1 秒真实时间，避免切后台回来瞬间跳过大量经营。
     maxRealDeltaMs: 1000,
 
-    // 高倍速按最多30游戏分钟一段推进，
-    // 让客流、餐期、日结和长期日程看到正确的中间时间。
-    maxSimulationChunkMinutes: 30
+    // 旧内部高速档继续允许 30 分钟分段，维持既有契约。
+    maxSimulationChunkMinutes: 30,
+
+    // 玩家 1×/3×/8× 使用更细的 10 分钟模拟步。
+    playerMaxSimulationChunkMinutes: 10,
+
+    smartAdvance: {
+      fineThresholdMinutes: 15,
+      mediumThresholdMinutes: 60,
+      fineSpeed: 1,
+      mediumSpeed: 3,
+      fastSpeed: 8
+    }
   },
 
   city: {

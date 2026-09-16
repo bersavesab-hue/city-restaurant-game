@@ -6,6 +6,12 @@ const gameState =
 const simulationSystem =
   require('../core/simulationSystem.js');
 
+const timeScheduleCoordinator =
+  require('../core/timeScheduleCoordinatorV0812.js');
+
+const simulationConfig =
+  require('../core/simulationConfig.js');
+
 const runtimeEngine =
   require('./restaurantRuntimeV10.js');
 
@@ -115,9 +121,12 @@ function clone(value) {
 }
 
 function currentDay() {
-  return simulationSystem
-    .getDayOrdinal(
-      gameState.getTime()
+  return timeScheduleCoordinator
+    .businessDayOrdinal(
+      gameState.getTime(),
+      simulationConfig
+        .time
+        .businessDayCutoffHour
     );
 }
 

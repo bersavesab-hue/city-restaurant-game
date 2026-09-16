@@ -28,6 +28,9 @@ class TimeSystem {
   constructor() {
     this.minuteAccumulator =
       0;
+
+    this.maxStepProvider =
+      null;
   }
 
   getTime() {
@@ -74,10 +77,9 @@ class TimeSystem {
 
     const gameMinutes =
       seconds *
-      simulationConfig
-        .time
-        .baseGameMinutesPerSecond *
-      speed;
+      this.getMinutesPerSecondForSpeed(
+        speed
+      );
 
     this.minuteAccumulator +=
       gameMinutes;
@@ -110,26 +112,78 @@ class TimeSystem {
       return wholeMinutes;
     }
 
-    const maxChunk =
+    const uiSpeeds =
+      Array.isArray(
+        simulationConfig.time.uiSpeeds
+      )
+        ? simulationConfig.time.uiSpeeds
+        : [1, 3, 8];
+
+    const chunkConfig =
+      uiSpeeds.indexOf(
+        speed
+      ) >= 0
+        ? simulationConfig.time.playerMaxSimulationChunkMinutes
+        : simulationConfig.time.maxSimulationChunkMinutes;
+
+    const baseMaxChunk =
       Math.max(
         1,
         Math.floor(
           Number(
-            simulationConfig
-              .time
-              .maxSimulationChunkMinutes
+            chunkConfig
           ) ||
-          30
+          10
         )
       );
 
     let remaining =
       wholeMinutes;
 
+    let advanced =
+      0;
+
     while (
       remaining >
       0
     ) {
+      let maxChunk =
+        baseMaxChunk;
+
+      if (
+        typeof this.maxStepProvider ===
+          'function'
+      ) {
+        const provided =
+          Number(
+            this.maxStepProvider({
+              remaining,
+              speed,
+              time:
+                gameState.getTime()
+            })
+          );
+
+        if (
+          Number.isFinite(
+            provided
+          ) &&
+          provided >
+            0
+        ) {
+          maxChunk =
+            Math.max(
+              1,
+              Math.min(
+                baseMaxChunk,
+                Math.floor(
+                  provided
+                )
+              )
+            );
+        }
+      }
+
       const step =
         Math.min(
           maxChunk,
@@ -140,15 +194,28 @@ class TimeSystem {
         step
       );
 
+      advanced +=
+        step;
+
       callback(
         step
       );
 
       remaining -=
         step;
+
+      // 智能推进或关键事件可在回调中暂停。
+      // 一旦暂停，当前帧不再继续吞掉剩余游戏时间。
+      if (
+        gameState.isTimePaused()
+      ) {
+        this.minuteAccumulator =
+          0;
+        break;
+      }
     }
 
-    return wholeMinutes;
+    return advanced;
   }
 
   setSpeed(speed) {
@@ -172,11 +239,41 @@ class TimeSystem {
     );
   }
 
-  getEffectiveMinutesPerSecond() {
+  getMinutesPerSecondForSpeed(speed) {
+    const value =
+      Number(speed) ||
+      1;
+
+    const uiSpeeds =
+      Array.isArray(
+        simulationConfig.time.uiSpeeds
+      )
+        ? simulationConfig.time.uiSpeeds
+        : [1, 3, 8];
+
+    const playerBase =
+      Number(
+        simulationConfig.time.playerBaseGameMinutesPerSecond
+      ) ||
+      12;
+
+    const legacyBase =
+      Number(
+        simulationConfig.time.baseGameMinutesPerSecond
+      ) ||
+      6;
+
     return (
-      simulationConfig
-        .time
-        .baseGameMinutesPerSecond *
+      uiSpeeds.indexOf(
+        value
+      ) >= 0
+        ? playerBase * value
+        : legacyBase * value
+    );
+  }
+
+  getEffectiveMinutesPerSecond() {
+    return this.getMinutesPerSecondForSpeed(
       this.getSpeed()
     );
   }
@@ -208,6 +305,21 @@ class TimeSystem {
   resetAccumulator() {
     this.minuteAccumulator =
       0;
+  }
+
+  setMaxStepProvider(
+    provider
+  ) {
+    this.maxStepProvider =
+      typeof provider ===
+        'function'
+        ? provider
+        : null;
+  }
+
+  clearMaxStepProvider() {
+    this.maxStepProvider =
+      null;
   }
 
   isLeapYear(year) {

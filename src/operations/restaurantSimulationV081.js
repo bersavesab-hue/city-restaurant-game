@@ -6,6 +6,12 @@ const gameState =
 const simulationSystem =
   require('../core/simulationSystem.js');
 
+const timeScheduleCoordinator =
+  require('../core/timeScheduleCoordinatorV0812.js');
+
+const simulationConfig =
+  require('../core/simulationConfig.js');
+
 const citySystem =
   require('../city/citySystem.js');
 
@@ -627,9 +633,12 @@ function spendOperatingCash(
       null
     ) {
       sim.oldestPayableDay =
-        simulationSystem
-          .getDayOrdinal(
-            gameState.getTime()
+        timeScheduleCoordinator
+          .businessDayOrdinal(
+            gameState.getTime(),
+            simulationConfig
+              .time
+              .businessDayCutoffHour
           );
     }
   }
@@ -657,9 +666,12 @@ function serviceOperatingPayables(
     );
 
   const day =
-    simulationSystem
-      .getDayOrdinal(
-        gameState.getTime()
+    timeScheduleCoordinator
+      .businessDayOrdinal(
+        gameState.getTime(),
+        simulationConfig
+          .time
+          .businessDayCutoffHour
       );
 
   if (
@@ -1151,9 +1163,12 @@ function simulateShop(
   }
 
   const currentDay =
-    simulationSystem
-      .getDayOrdinal(
-        gameState.getTime()
+    timeScheduleCoordinator
+      .businessDayOrdinal(
+        gameState.getTime(),
+        simulationConfig
+          .time
+          .businessDayCutoffHour
       );
 
   let changed =
