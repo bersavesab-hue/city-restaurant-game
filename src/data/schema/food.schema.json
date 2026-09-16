@@ -1,0 +1,11 @@
+{
+  "type":"object",
+  "properties":{
+    "id":{"type":"string"},
+    "name":{"type":"string"},
+    "quality":{"type":"number"},
+    "price":{"type":"number"},
+    "cost":{"type":"number"},
+    "category":{"type":"string"}
+  }
+}
