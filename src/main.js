@@ -14,6 +14,14 @@ if (!runtime) {
 }
 
 const api = runtime.api || {};
+
+
+// V1.1_REAL_PATCH_02
+// Runtime registry: 为后续系统迁移提供统一状态观察入口。
+// 不替换原有模块，避免影响旧存档。
+runtime.systemRegistry = runtime.systemRegistry || {};
+runtime.systemRegistry.version = 'V1.1_REAL_PATCH_02';
+runtime.systemRegistry.modules = runtime.systemRegistry.modules || {};
 const canvas = runtime.canvas;
 const ctx = runtime.ctx;
 
