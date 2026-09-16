@@ -1,0 +1,50 @@
+{
+  "id": "V0830_V0833_MEGA_CORE_LOOP",
+  "baseVersion": "0.8.29",
+  "targetVersion": "0.8.33",
+  "passes": [
+    "21/26",
+    "22/26",
+    "23/26",
+    "24/26"
+  ],
+  "modules": [
+    {
+      "version": "0.8.30",
+      "title": "监管 / 检查 / 食品安全",
+      "file": "src/regulatory/regulatoryFoodSafetySystemV0830.js"
+    },
+    {
+      "version": "0.8.31",
+      "title": "对话 / 弹幕 / 社交关系",
+      "file": "src/social/socialInteractionSystemV0831.js"
+    },
+    {
+      "version": "0.8.32",
+      "title": "全局随机引擎",
+      "file": "src/core/globalRandomEngineV0832.js"
+    },
+    {
+      "version": "0.8.33",
+      "title": "成长 / 解锁 / 成就 / 隐藏内容",
+      "file": "src/progress/growthAchievementSystemV0833.js"
+    }
+  ],
+  "newDataScale": {
+    "inspectionTypes": 8,
+    "achievements": 32,
+    "featureUnlocks": 18
+  },
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false,
+  "tests": [
+    "tests/regulatoryFoodSafetySystemV0830.test.js",
+    "tests/socialInteractionSystemV0831.test.js",
+    "tests/globalRandomEngineV0832.test.js",
+    "tests/growthAchievementSystemV0833.test.js",
+    "tests/megaRegulatorySocialGrowthV0833.test.js",
+    "tests/updateInfrastructureV0833.test.js"
+  ]
+}

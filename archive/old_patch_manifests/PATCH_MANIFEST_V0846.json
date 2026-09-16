@@ -1,0 +1,23 @@
+{
+  "id": "V0846_FIRST_REVENUE_LOOP_FIX",
+  "baseVersion": "0.8.44",
+  "targetVersion": "0.8.46",
+  "category": "爆款优化第一轮：开局体验/首次真实营业",
+  "features": [
+    "合并原V0.8.45首店聚焦优化，避免开局入口过载",
+    "筹备期仅突出门店、装修、设备、证照、员工等必要功能",
+    "菜单、供应链、排班、经营数据在试营业阶段开放",
+    "团队成长在首店正式开业后开放",
+    "试营业状态允许直接开启和完成营业日",
+    "营业日页面改为读取真实运行时账本，和门店首页统一订单、顾客、营业额、净利润",
+    "试营业页面明确提示真实订单和成本正在计入",
+    "修复V0.8.44基础设施测试硬编码版本号导致后续升级必失败的问题",
+    "旧版本测试改为验证版本不得回退以及Android版本与package.json一致",
+    "试营业UI回归测试改为trial_opening场景",
+    "安卓与项目版本同步到0.8.46"
+  ],
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false
+}

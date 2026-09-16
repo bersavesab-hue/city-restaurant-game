@@ -1,0 +1,51 @@
+{
+  "id": "V0826_V0829_MEGA_MARKETING_WORLD",
+  "baseVersion": "0.8.25",
+  "targetVersion": "0.8.29",
+  "passes": [
+    "17/26",
+    "18/26",
+    "19/26",
+    "20/26"
+  ],
+  "modules": [
+    {
+      "version": "0.8.26",
+      "title": "营销 / 平台 / 会员",
+      "file": "src/operations/marketingPlatformMembershipV0826.js"
+    },
+    {
+      "version": "0.8.27",
+      "title": "口碑 / 评价 / 谣言 / 媒体",
+      "file": "src/reputation/reputationMediaSystemV0827.js"
+    },
+    {
+      "version": "0.8.28",
+      "title": "竞争对手 / 城市商业生态",
+      "file": "src/world/commercialEcologySystemV0828.js"
+    },
+    {
+      "version": "0.8.29",
+      "title": "事件 / 政策 / 天气 / 季节",
+      "file": "src/world/environmentWorldCoordinatorV0829.js"
+    }
+  ],
+  "existingDataScale": {
+    "marketingCampaignTypes": 24,
+    "competitorArchetypes": 64,
+    "eventTemplates": 360,
+    "policyTemplates": 160
+  },
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false,
+  "tests": [
+    "tests/marketingPlatformMembershipV0826.test.js",
+    "tests/reputationMediaSystemV0827.test.js",
+    "tests/commercialEcologySystemV0828.test.js",
+    "tests/environmentWorldCoordinatorV0829.test.js",
+    "tests/megaMarketingWorldV0829.test.js",
+    "tests/updateInfrastructureV0829.test.js"
+  ]
+}

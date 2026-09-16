@@ -1,0 +1,46 @@
+{
+  "id": "V0822_V0825_MEGA_FUNCTION_PACK",
+  "baseVersion": "0.8.21",
+  "targetVersion": "0.8.25",
+  "passes": [
+    "13/26",
+    "14/26",
+    "15/26",
+    "16/26"
+  ],
+  "modules": [
+    {
+      "version": "0.8.22",
+      "title": "人物 / 员工数据库",
+      "file": "src/person/personEmployeeDatabaseV0822.js"
+    },
+    {
+      "version": "0.8.23",
+      "title": "员工管理整合",
+      "file": "src/operations/staffManagementCoordinatorV0823.js"
+    },
+    {
+      "version": "0.8.24",
+      "title": "实时门店经营整合",
+      "file": "src/operations/liveOperationsCoordinatorV0824.js"
+    },
+    {
+      "version": "0.8.25",
+      "title": "完整财务系统",
+      "file": "src/finance/completeFinanceSystemV0825.js"
+    }
+  ],
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false,
+  "androidRunnerCompatibility": true,
+  "tests": [
+    "tests/personEmployeeDatabaseV0822.test.js",
+    "tests/staffManagementCoordinatorV0823.test.js",
+    "tests/liveOperationsCoordinatorV0824.test.js",
+    "tests/completeFinanceSystemV0825.test.js",
+    "tests/megaOperationsFinanceV0825.test.js",
+    "tests/updateInfrastructureV0825.test.js"
+  ]
+}
