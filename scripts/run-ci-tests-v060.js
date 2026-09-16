@@ -256,6 +256,7 @@ for (
     'tests/customDishSystemV120.test.js',
     'tests/timeFlowControllerV121.test.js',
     'tests/twentyFourHourOperationsV121.test.js',
+    'tests/operatingReportSystemV122.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

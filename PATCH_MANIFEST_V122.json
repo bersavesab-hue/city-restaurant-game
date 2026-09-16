@@ -1,0 +1,23 @@
+{
+  "version": "V1.22_OPERATING_REPORT_FEEDBACK_LOOP",
+  "type": "real_source_patch",
+  "added": [
+    "src/analytics/operatingReportSystemV122.js",
+    "tests/operatingReportSystemV122.test.js"
+  ],
+  "modified": [
+    "src/operations/dailyOperatingCycleV0840.js",
+    "src/operations/operationsStoreV080.js",
+    "src/scenes/businessDataScene.js",
+    "scripts/run-ci-tests-v060.js"
+  ],
+  "features": [
+    "automatic daily operating reports",
+    "24h business-day report compatibility",
+    "day-over-day and 7/30 day averages",
+    "dish contribution diagnostics",
+    "staff coverage summary",
+    "next-day action queue",
+    "legacy latest-day report backfill"
+  ]
+}

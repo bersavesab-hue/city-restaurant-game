@@ -6,6 +6,8 @@ const gameState = require('../core/gameState.js');
 const citySystem = require('../city/citySystem.js');
 const demandSystem = require('../city/demandSystem.js');
 const analytics = require('../analytics/businessDataHub.js');
+const operatingReports = require('../analytics/operatingReportSystemV122.js');
+const dailyCycle = require('../operations/dailyOperatingCycleV0840.js');
 const ui = require('../ui/dataWidgets.js');
 
 class BusinessDataScene extends DataSceneBase {
@@ -50,6 +52,78 @@ class BusinessDataScene extends DataSceneBase {
     } else {
       alerts.slice(0, 2).forEach((a, i) => ui.alertBox(ctx, 10, 428 + i * 62, 370, a));
     }
+  }
+
+  drawDailyReport(ctx, d) {
+    const shopId = gameState.getBusiness().currentShopId || d.store && d.store.id;
+    let report = shopId ? operatingReports.latest(shopId) : null;
+
+    if (!report && shopId) {
+      const cycleState = dailyCycle.brief(shopId);
+      if (cycleState && cycleState.latestClosed) {
+        const backfill = operatingReports.capture(shopId, cycleState.latestClosed);
+        report = backfill && backfill.ok ? backfill.report : null;
+      }
+    }
+
+    ui.sectionTitle(ctx, '营业日报', 116, '普通门店按营业日结束生成；24小时门店按04:00切换营业日', 390);
+
+    if (!report) {
+      ui.rect(ctx, 10, 132, 370, 170, { fill:ui.COLORS.panel, stroke:ui.COLORS.line });
+      ui.text(ctx, '还没有完整营业日报', 195, 181, 10, ui.COLORS.text, '700', 'center');
+      ui.text(ctx, '完成第一个营业日后，这里会自动生成收入、利润、菜品、员工与异常复盘。', 195, 218, 6.4, ui.COLORS.muted, '500', 'center');
+      ui.text(ctx, '24小时门店不会停业，只在04:00完成上一营业日结算。', 195, 247, 6.4, ui.COLORS.muted, '500', 'center');
+      return;
+    }
+
+    const s = report.summary || {};
+    const c = report.comparison || {};
+    const dish = report.dish || {};
+    const staff = report.staff || {};
+
+    ui.metricCard(ctx, 10, 132, 116, 73, '营业额', ui.money(s.revenue), c.revenue && c.revenue.delta != null ? '较前日 ' + (c.revenue.delta >= 0 ? '+' : '') + ui.money(c.revenue.delta) : '首日暂无对比');
+    ui.metricCard(ctx, 137, 132, 116, 73, '经营利润', ui.money(s.profit), report.costs && report.costs.profitRate ? ui.percent(report.costs.profitRate) + '利润率' : '营业日结果', { valueColor:s.profit >= 0 ? ui.COLORS.green : ui.COLORS.red });
+    ui.metricCard(ctx, 264, 132, 116, 73, '订单/顾客', ui.number(s.orders) + '单', ui.number(s.customers) + '人 · 客单' + ui.money(s.avgTicket));
+
+    ui.sectionTitle(ctx, '对比', 224, '昨日变化 + 近7日平均', 390);
+    ui.rect(ctx, 10, 238, 370, 92, { fill:ui.COLORS.panel, stroke:ui.COLORS.line });
+    ui.row(ctx, 24, 260, 334, '近7日日均营业额', ui.money(report.avg7 && report.avg7.revenue));
+    ui.divider(ctx, 24, 276, 334);
+    ui.row(ctx, 24, 298, 334, '近7日日均利润', ui.money(report.avg7 && report.avg7.profit), Number(report.avg7 && report.avg7.profit) >= 0 ? ui.COLORS.green : ui.COLORS.red);
+    ui.divider(ctx, 24, 314, 334);
+    ui.row(ctx, 24, 326, 334, '评分变化', (Number(s.ratingDelta) >= 0 ? '+' : '') + ui.number(s.ratingDelta, 2), Number(s.ratingDelta) >= 0 ? ui.COLORS.green : ui.COLORS.red);
+
+    ui.sectionTitle(ctx, '菜品与员工', 350, '销量、利润贡献和人员覆盖一起看', 390);
+    ui.rect(ctx, 10, 364, 370, 74, { fill:ui.COLORS.paleGold, stroke:'#E5C98D' });
+    const hot = dish.hotDish;
+    const profit = dish.profitChampion;
+    ui.text(ctx, '热销', 24, 384, 6.3, ui.COLORS.muted, '700');
+    ui.text(ctx, hot ? String(hot.name).slice(0, 14) + ' · ' + ui.number(hot.qty) + '份' : '暂无有效销量', 80, 384, 7.2, ui.COLORS.text, '700');
+    ui.text(ctx, '利润贡献', 24, 414, 6.3, ui.COLORS.muted, '700');
+    ui.text(ctx, profit ? String(profit.name).slice(0, 12) + ' · ' + ui.money(profit.grossProfit) : '暂无有效数据', 80, 414, 7.2, ui.COLORS.text, '700');
+    ui.text(ctx, '员工 ' + ui.number(staff.headcount) + '人' + (staff.coverageFactor > 0 ? ' · 覆盖' + ui.percent(staff.coverageFactor) : ''), 360, 414, 6.2, ui.COLORS.muted, '600', 'right');
+
+    ui.sectionTitle(ctx, '重点问题', 461, '', 390);
+    const issues = report.issues || [];
+    ui.rect(ctx, 10, 475, 370, 66, { fill: issues.length ? '#FFF6EA' : ui.COLORS.paleBlue, stroke: issues.length ? '#E8C797' : '#BCD3DE' });
+    if (!issues.length) {
+      ui.text(ctx, '今天没有高优先级异常', 24, 496, 7.2, ui.COLORS.text, '700');
+      ui.text(ctx, '保持当前策略，并观察下一营业日是否仍然稳定。', 24, 521, 6.2, ui.COLORS.muted, '500');
+    } else {
+      issues.slice(0, 2).forEach((item, i) => {
+        ui.text(ctx, '• ' + String(item.title || item.detail || '经营异常').slice(0, 24), 24, 495 + i * 27, 6.6, item.level === 'danger' ? ui.COLORS.red : ui.COLORS.text, '700');
+      });
+    }
+
+    const actionY = 554;
+    ui.sectionTitle(ctx, '明日待办', actionY, '系统只保留最值得先处理的3项', 390);
+    (report.actions || []).slice(0, 3).forEach((action, i) => {
+      const y = actionY + 16 + i * 29;
+      ui.rect(ctx, 10, y, 370, 25, { radius:8, fill: action.priority === 'high' ? '#FFF0E4' : '#F6F1E9', stroke: action.priority === 'high' ? '#E8B183' : '#DDD2C4' });
+      ui.text(ctx, (i + 1) + '. ' + String(action.title || action.detail || '经营任务').slice(0, 18), 22, y + 12.5, 6.7, ui.COLORS.text, '700');
+      ui.text(ctx, '去处理 ›', 364, y + 12.5, 6.4, ui.COLORS.navy, '700', 'right');
+      this.addButton('report:action:' + i, 10, y, 370, 25);
+    });
   }
 
   drawPnl(ctx, d) {
@@ -257,14 +331,15 @@ class BusinessDataScene extends DataSceneBase {
     const d = analytics.getDashboard(this.context());
     const player = typeof gameState.getPlayer === 'function' ? gameState.getPlayer() : {};
     ui.header(ctx, '经营报表', d.store ? d.store.name + ' · 深度复盘，不占门店首页' : '尚未开店 · 报表将在营业后形成', 390, ui.money(player && player.cash));
-    ui.tabBar(ctx, [{label:'总览'}, {label:'财务'}, {label:'客流'}, {label:'趋势'}], this.tab, 75, this.addButton.bind(this), 390);
+    ui.tabBar(ctx, [{label:'总览'}, {label:'日报'}, {label:'财务'}, {label:'客流'}, {label:'趋势'}], this.tab, 75, this.addButton.bind(this), 390);
     if (!d.store) {
       ui.rect(ctx, 12, 130, 366, 170, { fill:ui.COLORS.panel, stroke:ui.COLORS.line });
       ui.text(ctx, '开店后这里形成跨期经营报表。', 195, 185, 9, ui.COLORS.text, '700', 'center');
       ui.text(ctx, '菜品、库存、员工、装修等详细数据回各自模块查看。', 195, 221, 7, ui.COLORS.muted, '500', 'center');
     } else if (this.tab === 0) this.drawOverview(ctx, d);
-    else if (this.tab === 1) this.drawPnl(ctx, d);
-    else if (this.tab === 2) this.drawTrafficReport(ctx, d);
+    else if (this.tab === 1) this.drawDailyReport(ctx, d);
+    else if (this.tab === 2) this.drawPnl(ctx, d);
+    else if (this.tab === 3) this.drawTrafficReport(ctx, d);
     else this.drawTrendReport(ctx, d);
     this.drawActions(ctx);
     this.end(ctx);
@@ -276,6 +351,16 @@ class BusinessDataScene extends DataSceneBase {
     if (!hit || !hit.id) return false;
     const d = analytics.getDashboard(this.context());
     const districtId = d.store && d.store.districtId || d.district && d.district.id;
+    const shopId = gameState.getBusiness().currentShopId || d.store && d.store.id;
+    if (hit.id.indexOf('report:action:') === 0 && shopId) {
+      const report = operatingReports.latest(shopId);
+      const index = Number(hit.id.split(':')[2]) || 0;
+      const action = report && report.actions && report.actions[index];
+      if (action) {
+        operatingReports.markActionViewed(shopId, action.id);
+        return sceneManager.switchTo(action.routeId || 'shop', { shopId, districtId, source:'operating-report' });
+      }
+    }
     if (hit.id === 'action:store') return sceneManager.switchTo('shop', { districtId });
     if (hit.id === 'action:district') return sceneManager.switchTo('districtDetail', { districtId });
     if (hit.id === 'action:city') return sceneManager.switchTo('city');

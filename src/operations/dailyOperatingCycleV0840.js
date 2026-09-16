@@ -3,6 +3,9 @@
 const gameState =
   require('../core/gameState.js');
 
+const operatingReportSystem =
+  require('../analytics/operatingReportSystemV122.js');
+
 const VERSION =
   '0.8.40';
 
@@ -1229,6 +1232,32 @@ function finalizeDay(
         {}
       )
   };
+
+  try {
+    const reportResult =
+      operatingReportSystem
+        .capture(
+          shopId,
+          brief
+        );
+
+    if (
+      reportResult &&
+      reportResult.ok &&
+      reportResult.report
+    ) {
+      brief.reportId =
+        reportResult.report.id;
+    }
+  } catch (error) {
+    brief.reportError =
+      error &&
+      error.message
+        ? String(
+            error.message
+          )
+        : '日报生成失败';
+  }
 
   active.status =
     'closed';

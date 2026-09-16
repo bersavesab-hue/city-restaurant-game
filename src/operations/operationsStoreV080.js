@@ -2408,6 +2408,7 @@ function profitStreakFromStatements(rows) {
 }
 
 function buildOperatingSignals(
+  shopId,
   runtime,
   closed
 ) {
@@ -2488,6 +2489,158 @@ function buildOperatingSignals(
             topDishId
         )
       : null;
+
+  const dishRevenue =
+    floor.dishRevenueToday &&
+    typeof floor.dishRevenueToday ===
+      'object'
+      ? floor.dishRevenueToday
+      : {};
+
+  const dishPerformance =
+    runtime &&
+    Array.isArray(
+      runtime.menu
+    )
+      ? runtime.menu
+          .filter(
+            item =>
+              item &&
+              item.active !==
+                false
+          )
+          .map(
+            item => {
+              const qty =
+                Math.max(
+                  0,
+                  Number(
+                    dishOrders[
+                      item.id
+                    ]
+                  ) ||
+                  0
+                );
+
+              const revenue =
+                Math.max(
+                  0,
+                  Number(
+                    dishRevenue[
+                      item.id
+                    ]
+                  ) ||
+                  0
+                );
+
+              const unitCost =
+                Math.max(
+                  0,
+                  Number(
+                    estimateMenuItemCost(
+                      shopId,
+                      item
+                    )
+                  ) ||
+                  0
+                );
+
+              const grossProfit =
+                Math.max(
+                  0,
+                  revenue -
+                  unitCost *
+                  qty
+                );
+
+              const grossMargin =
+                revenue >
+                  0
+                  ? grossProfit /
+                    revenue
+                  : 0;
+
+              const rawRating =
+                Number(
+                  item.customDish &&
+                  item.customDish
+                    .score
+                ) ||
+                Number(
+                  item.rating
+                ) ||
+                0;
+
+              const ratingScore =
+                rawRating >
+                  0 &&
+                rawRating <=
+                  5.2
+                  ? rawRating *
+                    20
+                  : rawRating;
+
+              return {
+                id:
+                  item.id,
+                name:
+                  item.name ||
+                  item.id,
+                qty,
+                revenue:
+                  Math.round(
+                    revenue *
+                    100
+                  ) /
+                  100,
+                unitCost:
+                  Math.round(
+                    unitCost *
+                    100
+                  ) /
+                  100,
+                grossProfit:
+                  Math.round(
+                    grossProfit *
+                    100
+                  ) /
+                  100,
+                grossMargin:
+                  Math.round(
+                    grossMargin *
+                    10000
+                  ) /
+                  10000,
+                ratingScore:
+                  Math.round(
+                    Math.max(
+                      0,
+                      Math.min(
+                        100,
+                        ratingScore
+                      )
+                    ) *
+                    10
+                  ) /
+                  10,
+                custom:
+                  !!item.customDish
+              };
+            }
+          )
+          .sort(
+            (
+              a,
+              b
+            ) =>
+              b.qty -
+              a.qty
+          )
+          .slice(
+            0,
+            12
+          )
+      : [];
 
   return {
     repeatGuests,
@@ -2603,7 +2756,8 @@ function buildOperatingSignals(
               ) ||
               0
           }
-        : null
+        : null,
+    dishPerformance
   };
 }
 
@@ -2681,6 +2835,7 @@ function finalizeClosedOperatingDay(shopId,runtime,closeResult,options) {
 
   const operatingSignals=
     buildOperatingSignals(
+      shopId,
       runtime,
       closed
     );
@@ -2693,6 +2848,35 @@ function finalizeClosedOperatingDay(shopId,runtime,closeResult,options) {
     decisionFeedback:decisions,
     source:options&&options.source||'unified',
     operatingSignals,
+    staff:{
+      headcount:
+        Number(
+          staffView &&
+          staffView.headcount
+        ) ||
+        0,
+      monthlyPayroll:
+        Number(
+          staffView &&
+          staffView.monthlyPayroll
+        ) ||
+        0,
+      roleCounts:
+        staffView &&
+        staffView.roleCounts ||
+        {},
+      coverageFactor:
+        Number(
+          staffView &&
+          staffView.coverage &&
+          staffView.coverage.factor
+        ) ||
+        0,
+      peopleSummary:
+        staffView &&
+        staffView.peopleSummary ||
+        {}
+    },
     regulatory:{openViolations:regulatoryView&&Array.isArray(regulatoryView.openViolations)?regulatoryView.openViolations.length:0}
   });
   const health=playtestHealth.record(shopId,playtestContextSnapshot(shopId,runtime));
