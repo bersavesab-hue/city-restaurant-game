@@ -1,0 +1,9 @@
+V1.1_REAL_PATCH
+Modified:
+src/food/index.js
+
+Added:
+food module unified extension bridge
+
+Compatibility:
+old food modules retained
