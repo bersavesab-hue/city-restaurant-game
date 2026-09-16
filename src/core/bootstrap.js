@@ -1,4 +1,8 @@
+'use strict';
+
+const gameState = require('./gameState');
 const SystemManager = require('./systemManager');
+
 const RestaurantSystem = require('../systems/restaurantSystem');
 const FoodSystem = require('../systems/foodSystem');
 const StaffSystem = require('../systems/staffSystem');
@@ -17,8 +21,8 @@ class Bootstrap {
     this.manager.register('finance', new FinanceSystem());
     this.manager.register('event', new EventSystem());
 
-    Object.values(this.manager.systems).forEach(system=>{
-      if(system.init) system.init();
+    this.manager.initAll({
+      state: gameState
     });
 
     return this.manager;
