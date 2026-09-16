@@ -5,24 +5,65 @@ const rules=require('./foodRulesV10');
 const recipes=pack.RECIPE_BY_ID;
 
 function round(v,n){const p=Math.pow(10,n||0);return Math.round(v*p)/p;}
+function clone(value){return JSON.parse(JSON.stringify(value));}
+
+function scaleLines(lines, portions, portionId){
+  const p=pack.PORTION_SPECS.find(x=>x.id===(portionId||'single'))||pack.PORTION_SPECS[1];
+  const factor=Math.max(0,Number(portions||1))*p.portionFactor;
+  return (lines||[]).map(x=>({ingredientId:x.ingredientId,name:x.name,grams:round(Number(x.grams||0)*factor,1),optional:!!x.optional}));
+}
 
 function scaleRecipe(recipeId, portions, portionId){
   const r=recipes[recipeId];
   if(!r)throw new Error('未知配方 '+recipeId);
-  const p=pack.PORTION_SPECS.find(x=>x.id===(portionId||'single'))||pack.PORTION_SPECS[1];
-  const factor=Math.max(0,Number(portions||1))*p.portionFactor;
-  return r.ingredients.map(x=>({ingredientId:x.ingredientId,name:x.name,grams:round(x.grams*factor,1),optional:x.optional}));
+  return scaleLines(r.ingredients,portions,portionId);
 }
 
-function maxCraftable(recipeId, inventory, portionId){
-  const need=scaleRecipe(recipeId,1,portionId);
+function menuRecipe(menuItem){
+  if(!menuItem)return null;
+  const base=recipes[menuItem.recipeId];
+  if(!base)return null;
+  const custom=menuItem.customDish;
+  if(!custom||!custom.variant)return base;
+  const variant=custom.variant;
+  return {
+    ...base,
+    ingredients:Array.isArray(variant.ingredients)&&variant.ingredients.length?clone(variant.ingredients):clone(base.ingredients),
+    method:variant.method||custom.methodId||base.method,
+    flavor:variant.flavor||custom.flavorName||base.flavor,
+    prepMinutes:variant.prepMinutes==null?base.prepMinutes:Number(variant.prepMinutes),
+    cookMinutes:variant.cookMinutes==null?base.cookMinutes:Number(variant.cookMinutes),
+    skill:variant.skill==null?base.skill:Number(variant.skill)
+  };
+}
+
+function scaleMenuItem(menuItem, portions){
+  const r=menuRecipe(menuItem);
+  if(!r)throw new Error('未知菜单配方 '+(menuItem&&menuItem.recipeId));
+  return scaleLines(r.ingredients,portions,menuItem.portionId);
+}
+
+function maxFromRequirements(need,inventory){
   let max=Infinity;
   for(const line of need){
     if(line.optional)continue;
-    const have=Number((inventory&&inventory[line.ingredientId])||0); // grams
+    const have=Number((inventory&&inventory[line.ingredientId])||0);
     max=Math.min(max,Math.floor(have/Math.max(0.01,line.grams)));
   }
   return Number.isFinite(max)?Math.max(0,max):0;
+}
+
+function maxCraftable(recipeId, inventory, portionId){
+  return maxFromRequirements(scaleRecipe(recipeId,1,portionId),inventory);
+}
+
+function maxCraftableMenuItem(menuItem,inventory){
+  return maxFromRequirements(scaleMenuItem(menuItem,1),inventory);
+}
+
+function missingFromRequirements(need,inventory){
+  return need.filter(line=>!line.optional&&Number((inventory&&inventory[line.ingredientId])||0)<line.grams)
+    .map(line=>({ingredientId:line.ingredientId,name:line.name,need:line.grams,have:Number((inventory&&inventory[line.ingredientId])||0),shortage:round(line.grams-Number((inventory&&inventory[line.ingredientId])||0),1)}));
 }
 
 function consumeForOrder(recipeId, inventory, qty, portionId){
@@ -34,12 +75,15 @@ function consumeForOrder(recipeId, inventory, qty, portionId){
 }
 
 function missingIngredients(recipeId, inventory, qty, portionId){
-  const need=scaleRecipe(recipeId,qty||1,portionId);
-  return need.filter(line=>!line.optional&&Number((inventory&&inventory[line.ingredientId])||0)<line.grams).map(line=>({ingredientId:line.ingredientId,name:line.name,need:line.grams,have:Number((inventory&&inventory[line.ingredientId])||0),shortage:round(line.grams-Number((inventory&&inventory[line.ingredientId])||0),1)}));
+  return missingFromRequirements(scaleRecipe(recipeId,qty||1,portionId),inventory);
 }
 
-function qualityScore(recipeId, ctx){
-  const r=recipes[recipeId];if(!r)return 0;ctx=ctx||{};
+function missingIngredientsForMenuItem(menuItem,inventory,qty){
+  return missingFromRequirements(scaleMenuItem(menuItem,qty||1),inventory);
+}
+
+function scoreRecipe(r,ctx){
+  if(!r)return 0;ctx=ctx||{};
   const freshness=Number(ctx.freshness==null?80:ctx.freshness);
   const staff=Number(ctx.staffSkill==null?50:ctx.staffSkill);
   const equipment=Number(ctx.equipmentScore==null?70:ctx.equipmentScore);
@@ -47,6 +91,17 @@ function qualityScore(recipeId, ctx){
   const difficulty=Math.max(1,r.skill||35);
   const skillFit=Math.min(100,staff/difficulty*70);
   return round(Math.max(0,Math.min(100,freshness*0.30+skillFit*0.32+equipment*0.16+execution*0.22)),1);
+}
+
+function qualityScore(recipeId, ctx){return scoreRecipe(recipes[recipeId],ctx);}
+
+function qualityScoreForMenuItem(menuItem,ctx){
+  const operational=scoreRecipe(menuRecipe(menuItem),ctx);
+  const custom=menuItem&&menuItem.customDish;
+  if(!custom)return operational;
+  const researchScore=Math.max(0,Math.min(100,Number(custom.score)||65));
+  const consistency=Math.max(0,Math.min(100,Number(custom.consistency)||68));
+  return round(Math.max(0,Math.min(100,operational*0.60+researchScore*0.30+consistency*0.10)),1);
 }
 
 function substitutionAllowed(recipeId, originalIngredientId, substituteIngredientId){
@@ -58,4 +113,17 @@ function substitutionAllowed(recipeId, originalIngredientId, substituteIngredien
   return (compatible[a.category]||[]).includes(b.category);
 }
 
-module.exports={scaleRecipe,maxCraftable,consumeForOrder,missingIngredients,qualityScore,substitutionAllowed,recipeVariableCost:rules.recipeVariableCost};
+module.exports={
+  scaleRecipe,
+  scaleMenuItem,
+  menuRecipe,
+  maxCraftable,
+  maxCraftableMenuItem,
+  consumeForOrder,
+  missingIngredients,
+  missingIngredientsForMenuItem,
+  qualityScore,
+  qualityScoreForMenuItem,
+  substitutionAllowed,
+  recipeVariableCost:rules.recipeVariableCost
+};

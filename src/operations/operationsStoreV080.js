@@ -93,6 +93,9 @@ const foodResearchDatabase =
 const foodResearchSystem =
   require('../food/foodResearchSystemV0818.js');
 
+const customDishSystem =
+  require('../food/customDishSystemV120.js');
+
 const settlementEngine =
   require('./settlementEngineV10.js');
 
@@ -696,10 +699,9 @@ function menuTargets(
   ) {
     const rows =
       recipeEngine
-        .scaleRecipe(
-          item.recipeId,
-          amount,
-          item.portionId
+        .scaleMenuItem(
+          item,
+          amount
         );
 
     for (
@@ -834,10 +836,9 @@ function estimateMenuItemCost(
 
   const rows =
     recipeEngine
-      .scaleRecipe(
-        menuItem.recipeId,
-        1,
-        menuItem.portionId
+      .scaleMenuItem(
+        menuItem,
+        1
       );
 
   let cost =
@@ -870,10 +871,25 @@ function estimateMenuItemCost(
     }
   }
 
+  const methodFactor =
+    menuItem.customDish
+      ? Math.max(
+          0.82,
+          Math.min(
+            1.35,
+            Number(
+              menuItem.customDish
+                .costFactor
+            ) || 1
+          )
+        )
+      : 1;
+
   return (
     Math.round(
       (
-        cost +
+        cost *
+        methodFactor +
         0.35
       ) *
       100
@@ -906,10 +922,9 @@ function menuItemAvailability(
       .byIngredient;
 
   return recipeEngine
-    .maxCraftable(
-      menuItem.recipeId,
-      stock,
-      menuItem.portionId
+    .maxCraftableMenuItem(
+      menuItem,
+      stock
     );
 }
 
@@ -1620,6 +1635,133 @@ function getFoodResearchOverview() {
   return (
     foodResearchSystem
       .getOverview()
+  );
+}
+
+
+function getCustomDishLabOverview(
+  shopId
+) {
+  return customDishSystem
+    .getOverview(
+      shopId
+    );
+}
+
+function refreshCustomDishCandidates(
+  shopId
+) {
+  return customDishSystem
+    .refreshCandidates(
+      shopId
+    );
+}
+
+function startCustomDishResearch(
+  shopId,
+  candidateId
+) {
+  return customDishSystem
+    .startResearch(
+      shopId,
+      candidateId
+    );
+}
+
+function improveCustomDish(
+  shopId,
+  dishId,
+  focus
+) {
+  return customDishSystem
+    .improveDish(
+      shopId,
+      dishId,
+      focus
+    );
+}
+
+function addCustomDishToMenu(
+  shopId,
+  dishId,
+  options
+) {
+  const dish =
+    customDishSystem
+      .getDish(
+        shopId,
+        dishId
+      );
+
+  if (!dish) {
+    return {
+      ok:false,
+      reason:'自研菜品不存在'
+    };
+  }
+
+  const opts =
+    options ||
+    {};
+
+  return mutate(
+    shopId,
+    runtime => {
+      const duplicate =
+        runtime.menu
+          .find(
+            item =>
+              item.customDish &&
+              item.customDish.id ===
+                dishId
+          );
+
+      if (duplicate) {
+        return {
+          ok:false,
+          reason:'该自研菜品已经在菜单中',
+          item:duplicate
+        };
+      }
+
+      const item =
+        menuEngine
+          .createMenuItem(
+            dish.baseRecipeId,
+            {
+              name:dish.name,
+              portionId:
+                opts.portionId ||
+                'single',
+              listPrice:
+                opts.listPrice == null
+                  ? dish.recommendedPrice
+                  : opts.listPrice,
+              channel:
+                opts.channel ||
+                'all',
+              active:
+                opts.active !== false,
+              featured:
+                !!opts.featured,
+              customDish:
+                dish
+            }
+          );
+
+      item.id =
+        'menu_' +
+        dish.id;
+
+      runtime.menu.push(
+        item
+      );
+
+      return {
+        ok:true,
+        item
+      };
+    }
   );
 }
 
@@ -5087,6 +5229,11 @@ module.exports = {
   getFoodResearchCatalog,
   startRecipeResearch,
   getFoodResearchOverview,
+  getCustomDishLabOverview,
+  refreshCustomDishCandidates,
+  startCustomDishResearch,
+  improveCustomDish,
+  addCustomDishToMenu,
   inventoryRows,
   inventoryLotRows,
   inventoryHealth,

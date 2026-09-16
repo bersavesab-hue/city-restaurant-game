@@ -253,6 +253,7 @@ for (
     'tests/ratingSystemV104.test.js',
     'tests/financialSystemV103.test.js',
     'tests/businessSystemsBootstrapV111.test.js',
+    'tests/customDishSystemV120.test.js',
     'tests/v60CleanBase.test.js'
   ]
 ) {

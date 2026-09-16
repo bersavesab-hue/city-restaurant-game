@@ -646,10 +646,9 @@ function menuChoices(
           false
           ? 0
           : recipeEngine
-              .maxCraftable(
-                item.recipeId,
-                stock,
-                item.portionId
+              .maxCraftableMenuItem(
+                item,
+                stock
               );
 
       return {
@@ -665,30 +664,55 @@ function menuChoices(
             false &&
           craftable >
             0,
-        tasteFit:66,
+        tasteFit:
+          item.customDish
+            ? clamp(
+                62 +
+                (
+                  Number(
+                    item.customDish
+                      .acceptance
+                  ) ||
+                  65
+                ) *
+                  0.22,
+                45,
+                92
+              )
+            : 66,
         qualityScore:
-          64 +
-          Math.min(
-            20,
-            (
-              item.stats &&
-              Number(
-                item.stats
-                  .ratingCount
-              ) >
-                0
-                ? Number(
-                    item.stats
-                      .ratingSum
-                  ) /
+          item.customDish
+            ? clamp(
+                Number(
+                  item.customDish
+                    .score
+                ) ||
+                65,
+                0,
+                100
+              )
+            : 64 +
+              Math.min(
+                20,
+                (
+                  item.stats &&
                   Number(
                     item.stats
                       .ratingCount
-                  )
-                : 0
-            ) *
-              3
-          ),
+                  ) >
+                    0
+                    ? Number(
+                        item.stats
+                          .ratingSum
+                      ) /
+                      Number(
+                        item.stats
+                          .ratingCount
+                      )
+                    : 0
+                ) *
+                  3
+              ),
         popularity:
           Math.min(
             100,
@@ -703,7 +727,23 @@ function menuChoices(
                 1
               )
             ) *
-              18
+              18 +
+            (
+              item.customDish
+                ? Math.max(
+                    0,
+                    (
+                      Number(
+                        item.customDish
+                          .innovation
+                      ) ||
+                      50
+                    ) -
+                    50
+                  ) *
+                    0.18
+                : 0
+            )
           ),
         signature:
           !!item.featured,

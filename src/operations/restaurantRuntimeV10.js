@@ -30,8 +30,8 @@ function createRuntime(options={}){
   };
 }
 function bootstrapInventory(runtime,days=2){
-  const recipeIds=runtime.menu.map(x=>x.recipeId);const targets={};
-  for(const rid of recipeIds){for(const line of recipeEngine.scaleRecipe(rid,Math.max(4,days*4),'single'))targets[line.ingredientId]=(targets[line.ingredientId]||0)+line.grams;}
+  const targets={};
+  for(const item of runtime.menu){for(const line of recipeEngine.scaleMenuItem(item,Math.max(4,days*4)))targets[line.ingredientId]=(targets[line.ingredientId]||0)+line.grams;}
   const orders=procurement.autoProcure(runtime.procurement,runtime.supplierNetwork,runtime.inventory,targets,{day:runtime.day});
   for(const po of orders)procurement.receivePurchaseOrder(runtime.procurement,po.id,runtime.inventory,{day:runtime.day,network:runtime.supplierNetwork,instant:true});
   return {targets,orders};
@@ -42,8 +42,8 @@ function customerProfile(runtime,options={}){
 }
 function simulateVisit(runtime,profile,ctx={}){
   const visit=customerEngine.generateVisit(profile,runtime.rng,{hour:ctx.hour??12,day:runtime.day,channel:ctx.channel,period:ctx.period,rain:ctx.rain});
-  const dishes=runtime.menu.map(m=>{const r=food.RECIPE_BY_ID[m.recipeId];return {id:m.id,menuItem:m,price:m.listPrice,available:recipeEngine.maxCraftable(m.recipeId,
-    inventoryEngine.stockSummary(runtime.inventory).byIngredient,m.portionId)>0,tasteFit:65,qualityScore:72,popularity:50,signature:m.featured};});
+  const dishes=runtime.menu.map(m=>{const r=recipeEngine.menuRecipe(m)||food.RECIPE_BY_ID[m.recipeId];const custom=m.customDish;return {id:m.id,menuItem:m,price:m.listPrice,available:recipeEngine.maxCraftableMenuItem(m,
+    inventoryEngine.stockSummary(runtime.inventory).byIngredient)>0,tasteFit:custom?Math.min(95,60+(Number(custom.acceptance)||65)*.25):65,qualityScore:custom?Number(custom.score)||72:72,popularity:custom?Math.min(100,50+Math.max(0,(Number(custom.innovation)||50)-50)*.2):50,signature:m.featured};});
   const chosen=customerEngine.chooseDish(profile,visit,dishes,runtime.rng,{});
   if(!chosen)return {ok:false,reason:'没有可选菜品',visit};
   const order=orderEngine.createOrder({shopId:runtime.shop.id,customerId:profile.id,channel:visit.channel,partySize:visit.partySize});

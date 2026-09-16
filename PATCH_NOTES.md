@@ -1,17 +1,25 @@
-# V1.1 Stage 4 — Business Systems Bootstrap
+# V1.2 自主研发菜品完整玩法包
 
-真实源码修改：
-- src/main.js：保留旧 require 兼容，同时把经营系统的运行时挂载与恢复后安装统一交给 bootstrap。
-- src/bootstrap/businessSystemsBootstrap.js：统一 restaurant / staff / food / finance / rating 初始化。
-- src/food/index.js：补齐 quality / generator / researchUpgrade 统一出口。
-- src/finance/index.js：补齐 V103 当前财务系统统一出口。
-- src/rating/index.js：新增评级系统统一出口。
-- tests/businessSystemsBootstrapV111.test.js：新增回归测试。
+本补丁不是示例架构包，已接入真实经营链。
 
-兼容策略：
-- 不删除旧模块。
-- 保留 main.js 对 staffCareerV088.js 等原路径 require，避免既有回归测试和旧调用失效。
+## 玩家可见改动
+- 菜单页新增：当前菜单 / 菜品研发 / 配方库 / 招牌菜。
+- 每日自动生成 3 个研发方案，可付费刷新。
+- 研发方案由基础菜、烹饪方式、风味、换料方案、主厨能力共同决定。
+- 研发真实扣除现金并消耗游戏时间。
+- 完成品进入配方库，可继续优化并加入当前门店菜单。
+- 品质分为：普通、优秀、精品、名菜、大师、传奇。
 
+## 经营链接入
+自研菜不是孤立数据：
+- 真实采购目标
+- 真实库存食材消耗
+- 厨房工位与制作时长
+- 菜品出品质量
+- 成本与毛利
+- 顾客选菜吸引力
+- 复购/创新/受欢迎度
+- 菜品评级与招牌菜
 
-修复：恢复 src/main.js 中 foodResearchSystem.install() 显式兼容调用，满足 V0.8.18 基础设施回归测试。
-- 修复：将 tests/businessSystemsBootstrapV111.test.js 注册到 scripts/run-ci-tests-v060.js，满足测试发现覆盖率门禁。
+## 验证
+已通过新增研发测试、核心经营测试、V0.8.18兼容测试、Stage4 bootstrap测试与 Android JS 构建。

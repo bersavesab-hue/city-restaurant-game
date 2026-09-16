@@ -3,6 +3,7 @@
 const pack = require('./foodPackV10');
 const rules = require('./foodRulesV10');
 const recipes = pack.RECIPE_BY_ID;
+const recipeEngine = require('./recipeEngineV10');
 
 function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
 function round(v,n){const p=Math.pow(10,n||0);return Math.round(v*p)/p;}
@@ -20,13 +21,14 @@ function createMenuItem(recipeId, options) {
     listPrice: options.listPrice == null ? round(r.basePriceIndex*20,1) : Number(options.listPrice),
     active: options.active !== false,
     featured: !!options.featured,
+    customDish: options.customDish ? JSON.parse(JSON.stringify(options.customDish)) : null,
     prepLimitPerHour: options.prepLimitPerHour || null,
     stats: {orders:0,revenue:0,variableCost:0,discount:0,refunds:0,ratingSum:0,ratingCount:0}
   };
 }
 
 function customerFit(menuItem, customer, context) {
-  const r = recipes[menuItem.recipeId];
+  const r = recipeEngine.menuRecipe(menuItem) || recipes[menuItem.recipeId];
   if (!r) return 0;
   context = context || {};
   customer = customer || {};
@@ -52,6 +54,12 @@ function customerFit(menuItem, customer, context) {
     if (mins > (customer.maxWaitMinutes || 15)) score -= Math.min(35,(mins-(customer.maxWaitMinutes||15))*2.2);
   }
 
+  if (menuItem.customDish) {
+    const custom = menuItem.customDish;
+    score += (Number(custom.acceptance || 65) - 65) * 0.20;
+    score += (Number(custom.score || 65) - 65) * 0.10;
+    score += Math.max(0, Number(custom.innovation || 50) - 50) * 0.04;
+  }
   if (context.seasonFactor != null) score *= context.seasonFactor;
   if (menuItem.featured) score += 4;
   return round(clamp(score,0,100),1);

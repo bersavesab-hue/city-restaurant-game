@@ -9,5 +9,6 @@ module.exports = {
   research: require('./foodResearchSystemV0818.js'),
   quality: require('./foodQuality.js'),
   generator: require('./foodGenerator.js'),
-  researchUpgrade: require('./foodResearchUpgrade.js')
+  researchUpgrade: require('./foodResearchUpgrade.js'),
+  customDish: require('./customDishSystemV120.js')
 };

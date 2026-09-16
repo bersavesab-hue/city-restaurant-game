@@ -252,17 +252,18 @@ function evaluateDish(dish, options) {
   const price = num(firstDefined(row.listPrice, row.price, row.salePrice, row.sellingPrice));
   const cost = num(firstDefined(opts.cost, row.cost, row.unitCost, row.foodCost));
   const margin = price > 0 ? (price - cost) / price : firstDefined(row.grossMargin, row.marginRate);
-  const taste = dishRatingScore(firstDefined(row.taste, row.tasteScore, row.quality, row.qualityScore, row.rating, row.score));
-  const appearance = scoreValue(firstDefined(row.appearance, row.presentation, row.plating, row.visualScore), 64);
+  const custom = row.customDish && typeof row.customDish === 'object' ? row.customDish : null;
+  const taste = dishRatingScore(firstDefined(row.taste, row.tasteScore, row.quality, row.qualityScore, row.rating, row.score, custom && custom.score));
+  const appearance = scoreValue(firstDefined(row.appearance, row.presentation, row.plating, row.visualScore, custom && custom.appearance), 64);
   const costControl = rangeScore(margin, 0.18, 0.72, 62);
-  const cookMinutes = firstDefined(row.cookMinutes, row.cookTime, row.prepMinutes, row.preparationMinutes);
+  const cookMinutes = firstDefined(row.cookMinutes, row.cookTime, row.prepMinutes, row.preparationMinutes, custom && custom.variant && custom.variant.cookMinutes);
   const speed = cookMinutes != null ? inverseMinutes(cookMinutes, 5, 24, 62) : scoreValue(firstDefined(row.speed, row.speedScore), 62);
-  const repeat = firstDefined(row.repeatRate, row.repurchaseRate);
+  const repeat = firstDefined(row.repeatRate, row.repurchaseRate, custom && custom.repeatRate);
   const repeatAppeal = repeat != null
     ? ratioScore(repeat, 65)
-    : scoreValue(firstDefined(row.viral, row.popularity, row.heat, row.appeal), 65);
+    : scoreValue(firstDefined(row.viral, row.popularity, row.heat, row.appeal, custom && custom.popularity), 65);
   const availability = firstDefined(opts.craftable, row.craftable, row.availableServings);
-  const consistency = scoreValue(firstDefined(row.consistency, row.standardization, row.reliability), availability != null ? (num(availability) > 0 ? 72 : 45) : 68);
+  const consistency = scoreValue(firstDefined(row.consistency, row.standardization, row.reliability, custom && custom.consistency), availability != null ? (num(availability) > 0 ? 72 : 45) : 68);
   const dimensions = { taste, appearance, costControl, speed, repeatAppeal, consistency };
   const labels = { taste: '口味', appearance: '卖相', costControl: '成本', speed: '出餐', repeatAppeal: '复购', consistency: '稳定' };
   let score = weightedScore(dimensions, {

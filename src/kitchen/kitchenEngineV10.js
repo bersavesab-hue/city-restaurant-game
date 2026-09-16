@@ -16,18 +16,20 @@ function createKitchen(options={}){
     rice:1,beverage:1,bakery:1},queue:[],completed:[],sequence:0,staffSkill:Number(options.staffSkill)||55,equipmentScore:Number(options.equipmentScore)||70};
 }
 function estimateItemMinutes(item,kitchen){
-  const recipe=food.RECIPE_BY_ID[item.recipeId];if(!recipe)return 999;
-  return Math.max(1,Math.round(Number(recipe.prepMinutes||0)+Number(recipe.cookMinutes||recipe.timeMinutes||8)));
+  const recipe=recipeEngine.menuRecipe(item)||food.RECIPE_BY_ID[item.recipeId];if(!recipe)return 999;
+  const base=Math.max(1,Number(recipe.prepMinutes||0)+Number(recipe.cookMinutes||recipe.timeMinutes||8));
+  const speedFactor=item&&item.customDish?Math.max(.65,Math.min(1.6,Number(item.customDish.speedFactor)||1)):1;
+  return Math.max(1,Math.round(base*speedFactor));
 }
 function createTicket(kitchen,order,minute=0){
   if(order.status==='submitted')orderEngine.transition(order,'accepted');
   if(order.status==='accepted')orderEngine.transition(order,'cooking');
-  const lines=order.items.map((item,i)=>{const recipe=food.RECIPE_BY_ID[item.recipeId];return {id:`${order.id}_${i}`,item,
+  const lines=order.items.map((item,i)=>{const recipe=recipeEngine.menuRecipe(item)||food.RECIPE_BY_ID[item.recipeId];return {id:`${order.id}_${i}`,item,
     station:STATION_BY_METHOD[recipe?.methodId||recipe?.method||'assemble']||'assembly',estimatedMinutes:estimateItemMinutes(item,kitchen),status:'queued'};});
   const ticket={id:`ticket_${++kitchen.sequence}`,orderId:order.id,createdMinute:minute,lines,status:'queued'};kitchen.queue.push(ticket);return ticket;
 }
 function canProduceLine(line,inventory){
-  const req=recipeEngine.scaleRecipe(line.item.recipeId,line.item.qty,line.item.portionId);
+  const req=recipeEngine.scaleMenuItem(line.item,line.item.qty);
   const missing=req.filter(x=>!x.optional&&inventoryEngine.availableGrams(inventory,x.ingredientId)<x.grams);
   return {ok:missing.length===0,missing,requirements:req};
 }
@@ -37,10 +39,10 @@ function produceTicket(kitchen,ticket,order,inventory,ctx={}){
     const check=canProduceLine(line,inventory);if(!check.ok){ticket.status='blocked';return {ok:false,reason:'缺少食材',missing:check.missing,ticket};}
   }
   for(const line of ticket.lines){
-    const req=recipeEngine.scaleRecipe(line.item.recipeId,line.item.qty,line.item.portionId);
+    const req=recipeEngine.scaleMenuItem(line.item,line.item.qty);
     const used=inventoryEngine.consumeRequirements(inventory,req,{reason:`order:${order.id}`});
     foodCost+=used.cost;
-    const q=recipeEngine.qualityScore(line.item.recipeId,{freshness:used.avgQuality,staffSkill:kitchen.staffSkill,equipmentScore:kitchen.equipmentScore,executionConsistency:72});
+    const q=recipeEngine.qualityScoreForMenuItem(line.item,{freshness:used.avgQuality,staffSkill:kitchen.staffSkill,equipmentScore:kitchen.equipmentScore,executionConsistency:72});
     qualityWeighted+=q*line.item.qty;qtyWeight+=line.item.qty;maxMinutes=Math.max(maxMinutes,line.estimatedMinutes);
     line.status='ready';line.quality=q;
   }

@@ -1,0 +1,44 @@
+{
+  "version": "V1.2_CUSTOM_DISH_RESEARCH",
+  "type": "real_gameplay_patch",
+  "feature": "自主研发菜品与菜品成长体系",
+  "modified": [
+    "src/food/foodQuality.js",
+    "src/food/foodGenerator.js",
+    "src/food/foodResearchUpgrade.js",
+    "src/food/recipeEngineV10.js",
+    "src/food/menuEngineV10.js",
+    "src/food/index.js",
+    "src/operations/operationsStoreV080.js",
+    "src/operations/floorSimulationV082.js",
+    "src/operations/restaurantRuntimeV10.js",
+    "src/order/orderEngineV10.js",
+    "src/kitchen/kitchenEngineV10.js",
+    "src/rating/ratingSystemV104.js",
+    "src/scenes/researchScene.js",
+    "scripts/run-ci-tests-v060.js"
+  ],
+  "added": [
+    "src/food/customDishSystemV120.js",
+    "tests/customDishSystemV120.test.js"
+  ],
+  "gameplay": [
+    "每日3个随机菜品研发方案",
+    "研发资金与研发天数真实消耗",
+    "主厨研发能力影响研发结果",
+    "普通/优秀/精品/名菜/大师/传奇六档品质",
+    "自研菜配方库与二次优化",
+    "自研菜可加入真实菜单",
+    "自研配方进入采购、库存消耗、厨房制作、成本、顾客选择、评级链路",
+    "菜单页拆分为当前菜单/菜品研发/配方库/招牌菜"
+  ],
+  "verification": {
+    "syntax_checks": "PASS",
+    "customDishSystemV120.test.js": "PASS",
+    "wiringStageV080.test.js": "PASS",
+    "operationCoreV070.test.js": "PASS",
+    "updateInfrastructureV0818.test.js": "PASS",
+    "businessSystemsBootstrapV111.test.js": "PASS",
+    "android_js_build": "PASS"
+  }
+}

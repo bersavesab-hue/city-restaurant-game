@@ -22,7 +22,8 @@ function addItem(order,menuItem,qty=1){
   if(menuItem.active===false)return {ok:false,reason:'菜品未上架'};
   const q=Math.max(1,Math.floor(Number(qty)||1));
   order.items.push({menuItemId:menuItem.id,recipeId:menuItem.recipeId,name:menuItem.name||recipe.name,portionId:menuItem.portionId||'single',
-    qty:q,unitPrice:Number(menuItem.listPrice)||0,notes:[]});
+    qty:q,unitPrice:Number(menuItem.listPrice)||0,notes:[],
+    customDish:menuItem.customDish?JSON.parse(JSON.stringify(menuItem.customDish)):null});
   recalc(order);return {ok:true,order};
 }
 function transition(order,next){
