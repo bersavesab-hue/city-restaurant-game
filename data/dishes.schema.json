@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "fields": {
+    "id": "string",
+    "name": "string",
+    "quality": "number",
+    "rarity": "string",
+    "category": "string",
+    "recipe": "array"
+  }
+}
