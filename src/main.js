@@ -14,6 +14,11 @@ if (!runtime) {
 }
 
 const api = runtime.api || {};
+
+// V1.1_COMPLETE_STAGE2
+// 统一运行时模块注册表，为后续拆分主入口准备。
+runtime.moduleRegistry = runtime.moduleRegistry || {};
+runtime.moduleRegistry.version = 'V1.1_COMPLETE_STAGE2';
 const canvas = runtime.canvas;
 const ctx = runtime.ctx;
 
