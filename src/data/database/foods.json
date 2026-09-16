@@ -1,0 +1,10 @@
+[
+  {
+    "id":"food_001",
+    "name":"招牌炒饭",
+    "quality":1,
+    "price":18,
+    "cost":6,
+    "category":"主食"
+  }
+]
