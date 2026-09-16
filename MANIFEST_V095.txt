@@ -1,6 +1,0 @@
-V0.9.5 single-pretest adaptive speed performance patch
-scripts/apply-update-patch.js
-scripts/v095-adaptive-test-runner.js
-scripts/v095-perf-lib.js
-docs/V095_SPEED_FIX.md
-PATCH_NOTES.md
