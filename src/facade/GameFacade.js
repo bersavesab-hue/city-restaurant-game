@@ -1,4 +1,4 @@
-// V1.1 Core Migration
+// V2 Restaurant Systems Integration
 class GameFacade {
   constructor(modules = {}) {
     this.restaurant = modules.restaurant;
@@ -6,6 +6,7 @@ class GameFacade {
     this.finance = modules.finance;
     this.rating = modules.rating;
     this.staff = modules.staff;
+    this.ranking = modules.ranking;
   }
 
   getState() {
@@ -14,7 +15,8 @@ class GameFacade {
       food: this.food?.getState?.() || {},
       finance: this.finance?.getState?.() || {},
       rating: this.rating?.getState?.() || {},
-      staff: this.staff?.getState?.() || {}
+      staff: this.staff?.getState?.() || {},
+      ranking: this.ranking?.getState?.() || {}
     };
   }
 }
