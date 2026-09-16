@@ -1,0 +1,9 @@
+{
+  "fields": [
+    "skill",
+    "specialty",
+    "research",
+    "speed",
+    "error_rate"
+  ]
+}

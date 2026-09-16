@@ -1,0 +1,10 @@
+{
+  "fields": [
+    "name",
+    "cost",
+    "price",
+    "quality",
+    "innovation",
+    "popularity"
+  ]
+}

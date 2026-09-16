@@ -1,0 +1,11 @@
+{
+  "steps": [
+    "open",
+    "customer",
+    "order",
+    "cook",
+    "settle",
+    "rating"
+  ],
+  "version": "1.1"
+}

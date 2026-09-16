@@ -1,0 +1,9 @@
+{
+  "dimensions": [
+    "taste",
+    "service",
+    "environment",
+    "price",
+    "waiting_time"
+  ]
+}
