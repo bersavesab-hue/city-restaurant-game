@@ -1,0 +1,10 @@
+{
+  "system": "recipe_combination",
+  "fields": {
+    "ingredients": "array",
+    "technique": "string",
+    "chef_skill": "number",
+    "quality_result": "number",
+    "rarity": "string"
+  }
+}
