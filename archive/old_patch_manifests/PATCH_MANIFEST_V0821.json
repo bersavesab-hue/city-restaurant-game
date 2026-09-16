@@ -1,0 +1,12 @@
+{
+  "id": "V0821_CUSTOMER_RANDOM_DATABASE",
+  "baseVersion": "0.8.20",
+  "targetVersion": "0.8.21",
+  "pass": "12/26",
+  "title": "顾客随机数据库",
+  "workflowSafe": true,
+  "containsPackageJson": false,
+  "containsPackageLock": false,
+  "containsWorkflowFiles": false,
+  "androidRunnerCompatibility": true
+}
