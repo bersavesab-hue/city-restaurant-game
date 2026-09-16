@@ -1,0 +1,10 @@
+{
+  "system": "restaurant_upgrade",
+  "fields": {
+    "level": "number",
+    "facilities": "array",
+    "capacity": "number",
+    "decoration": "number",
+    "unlock_conditions": "array"
+  }
+}
