@@ -1,0 +1,10 @@
+[
+  {
+    "id":"staff_001",
+    "name":"普通厨师",
+    "position":"厨师",
+    "level":1,
+    "skill":50,
+    "salary":3000
+  }
+]
