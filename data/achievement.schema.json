@@ -1,0 +1,9 @@
+{
+  "achievement": {
+    "id": "string",
+    "name": "string",
+    "condition": "string",
+    "reward": "object",
+    "progressive": true
+  }
+}
