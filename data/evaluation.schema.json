@@ -1,0 +1,12 @@
+{
+  "rating": {
+    "taste": 0,
+    "service": 0,
+    "environment": 0,
+    "reputation": 0
+  },
+  "ranking": {
+    "enabled": true,
+    "seasonal": true
+  }
+}
