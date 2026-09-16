@@ -1,0 +1,11 @@
+{
+  "version": "V105_RATING_FEEDBACK",
+  "base": "V104",
+  "description": "评级真实接入与经营反馈闭环补丁",
+  "files": [
+    "src/rating/ratingEngineV105.js",
+    "src/rating/ratingHistoryV105.js",
+    "src/rating/ratingReasonV105.js",
+    "src/ui/ratingWidgetsV105.js"
+  ]
+}
