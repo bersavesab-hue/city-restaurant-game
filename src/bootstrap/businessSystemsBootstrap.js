@@ -2,7 +2,7 @@
 
 /**
  * 统一经营系统启动层。
- * 通过依赖注入接收旧模块，保留现有 require 路径与回归测试兼容。
+ * 通过依赖注入接收模块，统一注册业务系统。
  */
 function create(deps) {
   const systems = Object.assign({
@@ -10,7 +10,9 @@ function create(deps) {
     staffCareer: null,
     foodResearchSystem: null,
     financialSystem: null,
-    ratingSystem: null
+    ratingSystem: null,
+    rankingSystem: null,
+    awardSystem: null
   }, deps || {});
 
   function attachRuntime(runtime) {
@@ -22,6 +24,8 @@ function create(deps) {
     runtime.foodResearch = systems.foodResearchSystem;
     runtime.financialSystem = systems.financialSystem;
     runtime.ratingSystem = systems.ratingSystem;
+    runtime.rankingSystem = systems.rankingSystem;
+    runtime.awardSystem = systems.awardSystem;
 
     runtime.moduleRegistry =
       runtime.moduleRegistry && typeof runtime.moduleRegistry === 'object'
@@ -33,7 +37,9 @@ function create(deps) {
       staff: systems.staffCareer,
       food: systems.foodResearchSystem,
       finance: systems.financialSystem,
-      rating: systems.ratingSystem
+      rating: systems.ratingSystem,
+      ranking: systems.rankingSystem,
+      awards: systems.awardSystem
     });
 
     return systems;
@@ -52,13 +58,7 @@ function create(deps) {
 
   function snapshot() {
     return {
-      names: Object.keys(systems).filter(name => !!systems[name]),
-      financeVersion:
-        systems.financialSystem &&
-        systems.financialSystem.VERSION || null,
-      ratingVersion:
-        systems.ratingSystem &&
-        systems.ratingSystem.VERSION || null
+      names: Object.keys(systems).filter(name => !!systems[name])
     };
   }
 
