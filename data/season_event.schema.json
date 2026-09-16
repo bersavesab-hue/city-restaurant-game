@@ -1,0 +1,10 @@
+{
+  "name": "Season Event System",
+  "fields": {
+    "eventId": "string",
+    "startTime": "number",
+    "endTime": "number",
+    "conditions": "array",
+    "rewards": "array"
+  }
+}
