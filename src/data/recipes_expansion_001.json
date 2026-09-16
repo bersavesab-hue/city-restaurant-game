@@ -1,0 +1,12 @@
+[
+{"id":"recipe_011","dishName":"水煮鱼","category":"川菜","baseCost":28,"cooking":{"method":"煮","time":25,"difficulty":55}},
+{"id":"recipe_012","dishName":"回锅肉","category":"川菜","baseCost":16,"cooking":{"method":"炒","time":15,"difficulty":40}},
+{"id":"recipe_013","dishName":"辣子鸡","category":"川菜","baseCost":22,"cooking":{"method":"炒","time":20,"difficulty":50}},
+{"id":"recipe_014","dishName":"夫妻肺片","category":"川菜","baseCost":20,"cooking":{"method":"拌","time":15,"difficulty":45}},
+{"id":"recipe_015","dishName":"东坡肘子","category":"川菜","baseCost":35,"cooking":{"method":"炖","time":90,"difficulty":70}},
+{"id":"recipe_016","dishName":"西湖醋鱼","category":"浙菜","baseCost":30,"cooking":{"method":"烧","time":35,"difficulty":60}},
+{"id":"recipe_017","dishName":"龙井虾仁","category":"浙菜","baseCost":38,"cooking":{"method":"炒","time":15,"difficulty":55}},
+{"id":"recipe_018","dishName":"叫花鸡","category":"苏菜","baseCost":40,"cooking":{"method":"烤","time":100,"difficulty":75}},
+{"id":"recipe_019","dishName":"松鼠鳜鱼","category":"苏菜","baseCost":45,"cooking":{"method":"炸","time":30,"difficulty":80}},
+{"id":"recipe_020","dishName":"佛跳墙","category":"闽菜","baseCost":80,"cooking":{"method":"炖","time":180,"difficulty":95}}
+]
