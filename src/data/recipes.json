@@ -1,44 +1,12 @@
 [
-  {
-    "id":"recipe_001",
-    "dishId":"food_002",
-    "dishName":"宫保鸡丁",
-    "ingredients":[
-      {"id":"ing_003","name":"鸡肉","amount":200},
-      {"id":"ing_044","name":"青椒","amount":100},
-      {"id":"ing_063","name":"酱油","amount":10},
-      {"id":"ing_070","name":"花椒","amount":5}
-    ],
-    "baseCost":12,
-    "cooking":{"method":"炒","time":8,"difficulty":35},
-    "qualityModifier":{"taste":15,"freshness":5,"skillRequired":30}
-  },
-  {
-    "id":"recipe_002",
-    "dishId":"food_004",
-    "dishName":"麻婆豆腐",
-    "ingredients":[
-      {"id":"ing_009","name":"猪里脊","amount":50},
-      {"id":"ing_074","name":"豆瓣酱","amount":20},
-      {"id":"ing_070","name":"花椒","amount":8},
-      {"id":"ing_063","name":"酱油","amount":10}
-    ],
-    "baseCost":8,
-    "cooking":{"method":"烧","time":10,"difficulty":30},
-    "qualityModifier":{"taste":20,"spicy":15,"skillRequired":25}
-  },
-  {
-    "id":"recipe_003",
-    "dishId":"food_003",
-    "dishName":"鱼香肉丝",
-    "ingredients":[
-      {"id":"ing_009","name":"猪里脊","amount":200},
-      {"id":"ing_043","name":"西红柿","amount":50},
-      {"id":"ing_063","name":"酱油","amount":15},
-      {"id":"ing_065","name":"陈醋","amount":10}
-    ],
-    "baseCost":11,
-    "cooking":{"method":"炒","time":9,"difficulty":30},
-    "qualityModifier":{"taste":18,"skillRequired":25}
-  }
+{"id":"recipe_001","dishId":"food_002","dishName":"宫保鸡丁","category":"川菜","ingredients":[{"id":"ing_003","name":"鸡肉","amount":200},{"id":"ing_044","name":"青椒","amount":100},{"id":"ing_063","name":"酱油","amount":10}],"baseCost":12,"cooking":{"method":"炒","time":8,"difficulty":35},"qualityModifier":{"taste":15,"freshness":5,"skillRequired":30}},
+{"id":"recipe_002","dishId":"food_004","dishName":"麻婆豆腐","category":"川菜","ingredients":[{"id":"ing_009","name":"猪肉","amount":50},{"id":"ing_074","name":"豆瓣酱","amount":20},{"id":"ing_070","name":"花椒","amount":8}],"baseCost":8,"cooking":{"method":"烧","time":10,"difficulty":30},"qualityModifier":{"taste":20,"spicy":15,"skillRequired":25}},
+{"id":"recipe_003","dishId":"food_003","dishName":"鱼香肉丝","category":"川菜","ingredients":[{"id":"ing_009","name":"猪肉","amount":200},{"id":"ing_043","name":"蔬菜","amount":80}],"baseCost":11,"cooking":{"method":"炒","time":9,"difficulty":30},"qualityModifier":{"taste":18,"skillRequired":25}},
+{"id":"recipe_004","dishName":"扬州炒饭","category":"淮扬菜","ingredients":[{"id":"rice","name":"米饭","amount":250},{"id":"egg","name":"鸡蛋","amount":2},{"id":"shrimp","name":"虾仁","amount":50}],"baseCost":9,"cooking":{"method":"炒","time":7,"difficulty":25},"qualityModifier":{"taste":16,"skillRequired":20}},
+{"id":"recipe_005","dishName":"红烧肉","category":"家常菜","ingredients":[{"id":"pork","name":"五花肉","amount":300},{"id":"sugar","name":"糖","amount":20}],"baseCost":18,"cooking":{"method":"炖","time":40,"difficulty":40},"qualityModifier":{"taste":22,"skillRequired":35}},
+{"id":"recipe_006","dishName":"西红柿炒鸡蛋","category":"家常菜","ingredients":[{"id":"egg","name":"鸡蛋","amount":3},{"id":"tomato","name":"西红柿","amount":200}],"baseCost":6,"cooking":{"method":"炒","time":6,"difficulty":15},"qualityModifier":{"taste":12,"skillRequired":10}},
+{"id":"recipe_007","dishName":"北京烤鸭","category":"京菜","ingredients":[{"id":"duck","name":"鸭肉","amount":1}],"baseCost":45,"cooking":{"method":"烤","time":90,"difficulty":70},"qualityModifier":{"taste":35,"skillRequired":60}},
+{"id":"recipe_008","dishName":"清蒸鱼","category":"粤菜","ingredients":[{"id":"fish","name":"鱼","amount":1},{"id":"ginger","name":"姜","amount":20}],"baseCost":25,"cooking":{"method":"蒸","time":20,"difficulty":45},"qualityModifier":{"freshness":30,"skillRequired":40}},
+{"id":"recipe_009","dishName":"兰州牛肉面","category":"面食","ingredients":[{"id":"noodle","name":"面条","amount":200},{"id":"beef","name":"牛肉","amount":100}],"baseCost":10,"cooking":{"method":"煮","time":15,"difficulty":25},"qualityModifier":{"taste":15,"skillRequired":20}},
+{"id":"recipe_010","dishName":"小笼包","category":"小吃","ingredients":[{"id":"flour","name":"面粉","amount":200},{"id":"pork","name":"猪肉馅","amount":150}],"baseCost":8,"cooking":{"method":"蒸","time":18,"difficulty":35},"qualityModifier":{"taste":18,"skillRequired":30}}
 ]
