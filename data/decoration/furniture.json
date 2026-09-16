@@ -1,0 +1,24 @@
+[
+  {
+    "id": "wood_table_basic",
+    "name": "基础木桌",
+    "category": "table",
+    "cost": 100,
+    "size": [2,2],
+    "effects": {
+      "seat": 4,
+      "comfort": 1
+    }
+  },
+  {
+    "id": "luxury_light",
+    "name": "高级吊灯",
+    "category": "decoration",
+    "cost": 5000,
+    "size": [2,2],
+    "effects": {
+      "beauty": 8,
+      "luxury": 5
+    }
+  }
+]
