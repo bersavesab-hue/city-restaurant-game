@@ -1,8 +1,0 @@
-V1.1_MAIN_ENTRY_REFACTOR
-
-新增：
-- AppBootstrap
-- main入口迁移模板
-
-目的：
-降低入口耦合。
