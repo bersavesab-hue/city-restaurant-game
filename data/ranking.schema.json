@@ -1,0 +1,10 @@
+{
+  "system": "ranking",
+  "dimensions": [
+    "restaurant_rating",
+    "customer_reputation",
+    "service_quality",
+    "business_scale"
+  ],
+  "season_support": true
+}
