@@ -64,7 +64,11 @@ assert.ok(
   nameMatch[1] === pkg.version,
   'Android versionName必须与package.json一致'
 );
-assert.ok(fs.existsSync(path.join(ROOT, 'PATCH_MANIFEST_V0849.json')));
+
+assert.ok(
+  !fs.existsSync(path.join(ROOT, 'PATCH_MANIFEST_V0849.json')),
+  '旧版补丁清单不得重新污染当前干净仓库根目录'
+);
 
 const discovery = require('../tools/devkit/test-discovery.js').audit(ROOT);
 assert.strictEqual(
