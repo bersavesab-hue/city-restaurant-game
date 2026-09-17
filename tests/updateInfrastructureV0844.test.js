@@ -138,12 +138,13 @@ assert.ok(
 );
 
 assert.ok(
-  fs.existsSync(
+  !fs.existsSync(
     path.join(
       ROOT,
       'PATCH_MANIFEST_V0844.json'
     )
-  )
+  ),
+  '旧版补丁清单不得重新污染当前干净仓库根目录'
 );
 
 console.log(
