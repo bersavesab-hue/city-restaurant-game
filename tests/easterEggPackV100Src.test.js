@@ -1,0 +1,17 @@
+'use strict';
+const assert=require('assert');
+const {SeededRng}=require('../src/foundation/rng.js');
+const E=require('../src/easteregg/index.js');
+assert.equal(E.pack.HIDDEN_CHARACTERS.length,12);
+assert.equal(E.pack.EASTER_EVENTS.length,16);
+const rng=new SeededRng('easter-test');
+const made=E.engine.createHiddenPerson(rng,'shen_zhiwei');
+assert.equal(made.person.name,'沈知味');
+assert.equal(made.person.hidden,true);
+assert.ok(made.person.traits.length>=5);
+assert.ok(made.person.personality.conscientiousness>=70);
+const state=E.engine.createState();
+E.engine.addClue(state,'shen_zhiwei','测试线索');
+assert.ok(E.engine.clueProgress(state,'shen_zhiwei')>0);
+assert.equal(E.engine.triggerOk(E.pack.HIDDEN_CHARACTERS[0],{daysPlayed:30,quality:75,reviewCount:30,recentAdSpend:0}),true);
+console.log('easterEggPackV100Src.test.js PASS');
