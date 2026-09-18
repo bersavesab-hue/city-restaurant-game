@@ -1,7 +1,7 @@
 'use strict';
 
 const sceneManager =
-  require('./sceneManager.js');
+  require('../ui/managers/sceneManager.js');
 
 const VERSION = '0.8.10';
 const HISTORY_LIMIT = 32;

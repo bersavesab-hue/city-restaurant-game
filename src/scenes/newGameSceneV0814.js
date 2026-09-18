@@ -13,7 +13,7 @@ const newGameFlow =
   require('../core/newGameFlowV0814.js');
 
 const sceneManager =
-  require('../core/sceneManager.js');
+  require('../ui/managers/sceneManager.js');
 
 const textInput =
   require('../ui/textInput.js');

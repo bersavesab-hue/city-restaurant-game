@@ -7,7 +7,7 @@ const api =
   runtime && runtime.api || {};
 
 const sceneManager =
-  require('../core/sceneManager.js');
+  require('../ui/managers/sceneManager.js');
 
 const entryRouter =
   require('../core/entryRouterV0810.js');

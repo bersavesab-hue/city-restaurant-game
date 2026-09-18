@@ -25,7 +25,7 @@ const districtInsightSystem =
   require('../city/districtInsightSystem.js');
 
 const sceneManager =
-  require('../core/sceneManager.js');
+  require('../ui/managers/sceneManager.js');
 
 const visualAssetSystem =
   require('../ui/visualAssetSystem.js');

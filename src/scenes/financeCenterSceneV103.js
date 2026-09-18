@@ -3,7 +3,7 @@
 const runtime = globalThis.GameRuntime || {};
 const api = runtime.api || {};
 const DataSceneBase = require('./dataSceneBase.js');
-const sceneManager = require('../core/sceneManager.js');
+const sceneManager = require('../ui/managers/sceneManager.js');
 const gameState = require('../core/gameState.js');
 const financeSystem = require('../finance/financialSystemV103.js');
 const ui = require('../ui/dataWidgets.js');

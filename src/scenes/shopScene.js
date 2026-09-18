@@ -20,7 +20,7 @@ const gameState =
   require('../core/gameState.js');
 
 const sceneManager =
-  require('../core/sceneManager.js');
+  require('../ui/managers/sceneManager.js');
 
 const citySystem =
   require('../city/citySystem.js');

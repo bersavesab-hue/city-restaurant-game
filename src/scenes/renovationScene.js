@@ -45,7 +45,7 @@ const saveSystem =
   require('../core/saveSystem.js');
 
 const sceneManager =
-  require('../core/sceneManager.js');
+  require('../ui/managers/sceneManager.js');
 
 const renovationSystem =
   require('../renovation/renovationSystem.js');

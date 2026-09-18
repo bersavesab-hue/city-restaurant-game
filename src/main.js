@@ -34,7 +34,7 @@ const restaurantSimulation =
   require('./operations/restaurantSimulationV081.js');
 
 const sceneManager =
-  require('./core/sceneManager.js');
+  require('./ui/managers/sceneManager.js');
 
 const entryRouter =
   require('./core/entryRouterV0810.js');
@@ -70,7 +70,7 @@ const foodResearchSystem =
   require('./food/foodResearchSystemV0818.js');
 
 const animationManager =
-  require('./core/animationManager.js');
+  require('./ui/managers/animationManager.js');
 
 const resourceManager =
   require('./core/resourceManager.js');

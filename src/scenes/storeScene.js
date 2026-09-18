@@ -30,7 +30,7 @@ const simulationSystem =
   require('../core/simulationSystem.js');
 
 const sceneManager =
-  require('../core/sceneManager.js');
+  require('../ui/managers/sceneManager.js');
 
 const resourceManager =
   require('../core/resourceManager.js');

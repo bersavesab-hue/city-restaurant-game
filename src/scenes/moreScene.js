@@ -1,7 +1,7 @@
 'use strict';
 
 const DataSceneBase = require('./dataSceneBase.js');
-const sceneManager = require('../core/sceneManager.js');
+const sceneManager = require('../ui/managers/sceneManager.js');
 const gameState = require('../core/gameState.js');
 const ui = require('../ui/dataWidgets.js');
 

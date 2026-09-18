@@ -15,7 +15,7 @@ const saveSystem =
   require('../core/saveSystem.js');
 
 const sceneManager =
-  require('../core/sceneManager.js');
+  require('../ui/managers/sceneManager.js');
 
 const staffCareer =
   require('../operations/staffCareerV088.js');
