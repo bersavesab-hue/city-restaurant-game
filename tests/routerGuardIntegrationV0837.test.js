@@ -4,7 +4,7 @@ const assert =
   require('assert');
 
 const sceneManager =
-  require('../src/core/sceneManager.js');
+  require('../src/ui/managers/sceneManager.js');
 
 const router =
   require('../src/core/entryRouterV0810.js');
