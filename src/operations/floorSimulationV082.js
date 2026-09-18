@@ -25,7 +25,7 @@ const kitchenEngine =
   require('../kitchen/kitchenEngineV10.js');
 
 const serviceEngine =
-  require('../service/serviceEngineV10.js');
+  require('./diningServiceEngineV10.js');
 
 const settlementEngine =
   require('./settlementEngineV10.js');
