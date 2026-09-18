@@ -79,7 +79,7 @@ function createBridge(customDependencies) {
         require('./timeSystem.js'),
       sceneManager:
         provided.sceneManager ||
-        require('./sceneManager.js'),
+        require('../ui/managers/sceneManager.js'),
       entryRouter:
         provided.entryRouter ||
         require('./entryRouterV0810.js')
