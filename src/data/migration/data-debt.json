@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "status": "open",
+  "purpose": "Tracks legacy data problems that must be migrated before mass content production.",
+  "items": [
+    {
+      "id": "debt_foods_multiple_roots",
+      "severity": "blocker",
+      "domain": "dishes",
+      "source": "src/data/database/foods.json",
+      "problem": "Legacy file contains multiple top-level arrays and repeats food_001.",
+      "action": "Parse and migrate into canonical dishes data; do not expand this legacy file."
+    },
+    {
+      "id": "debt_ingredients_multiple_roots",
+      "severity": "blocker",
+      "domain": "ingredients",
+      "source": "src/data/ingredients.json",
+      "problem": "Legacy file closes the initial array and continues with additional ingredient objects.",
+      "action": "Normalize into one canonical ingredient array before adding production-scale content."
+    },
+    {
+      "id": "debt_recipe_ingredient_reference_drift",
+      "severity": "blocker",
+      "domain": "recipes",
+      "source": "src/data/recipes.json",
+      "problem": "At least one recipe uses an ingredient id whose embedded name does not match the ingredient registry, e.g. recipe_001 uses ing_003 as chicken while legacy ingredients identify ing_003 as beef.",
+      "action": "Resolve by canonical ingredient id, then validate all recipe foreign keys automatically."
+    },
+    {
+      "id": "debt_mixed_legacy_ids",
+      "severity": "high",
+      "domain": "recipes",
+      "source": "src/data/recipes.json",
+      "problem": "Legacy recipes mix ids such as ing_009 with free-form ids such as rice, egg, pork and sugar.",
+      "action": "Create migration aliases only after each legacy token is mapped to one canonical ingredient id."
+    },
+    {
+      "id": "debt_parallel_data_sources",
+      "severity": "high",
+      "domain": "all",
+      "source": "repository",
+      "problem": "Content is currently spread across src/data, data, food, staff, competitor, customer and Android-specific sources.",
+      "action": "Treat src/data/content and src/data/rules as future canonical sources and migrate legacy sources incrementally."
+    }
+  ]
+}
