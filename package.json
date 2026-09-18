@@ -17,6 +17,7 @@
     "dev:hygiene": "node tools/devkit/code-hygiene.js",
     "dev:deps": "node tools/devkit/dependency-audit.js",
     "dev:data": "node tools/devkit/data-audit.js",
+    "dev:data-contract": "node scripts/data-contract-audit.js && node tests/dataContractV2.test.js",
     "dev:tests": "node tools/devkit/test-discovery.js",
     "dev:size": "node tools/devkit/size-report.js",
     "dev:build-verify": "node tools/devkit/build-verify.js",
