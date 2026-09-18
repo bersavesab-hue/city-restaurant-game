@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "policy": {
+    "verifiedMappingsOnly": true,
+    "neverGuessAliases": true,
+    "canonicalIdsAreImmutable": true
+  },
+  "aliases": {
+    "ingredients": {},
+    "dishes": {},
+    "recipes": {},
+    "cookingMethods": {},
+    "suppliers": {},
+    "equipment": {},
+    "decorations": {},
+    "decorationTemplates": {},
+    "employeeGeneration": {},
+    "employeeCareerTraining": {},
+    "customerSegments": {},
+    "districts": {},
+    "restaurantFormats": {},
+    "propertyTemplates": {},
+    "competitors": {},
+    "events": {},
+    "marketingActions": {},
+    "restaurantPositions": {},
+    "salesChannels": {},
+    "membershipRules": {},
+    "complianceRules": {},
+    "storeUnlocks": {},
+    "dishGrowthRules": {},
+    "economyBalance": {}
+  }
+}
